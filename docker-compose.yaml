@@ -1,0 +1,8 @@
+version: '3'
+services:
+  xboard:
+    image: ghcr.io/cedar2025/xboard:v1.0.0
+    volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data/
+    network_mode: host
