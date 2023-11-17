@@ -131,13 +131,13 @@ class V2rayNG
         }
         // 如果传输协议为ws
         if ((string)$server['network'] === 'ws') {
-            $wsSettings = $server['networkSettings'];
+            $wsSettings = $server['network_settings'];
             if (isset($wsSettings['path'])) $config['path'] = $wsSettings['path'];
             if (isset($wsSettings['headers']['Host'])) $config['host'] = $wsSettings['headers']['Host'];
         }
         // 传输协议为grpc
         if ((string)$server['network'] === 'grpc') {
-            $grpcSettings = $server['networkSettings'];
+            $grpcSettings = $server['network_settings'];
             if (isset($grpcSettings['serviceName'])) $config['serviceName'] = $grpcSettings['serviceName'];
         }
 
