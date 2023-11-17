@@ -232,8 +232,8 @@ class ClashMeta
         }
         if ($server['network'] === 'grpc') {
             $array['network'] = 'grpc';
-            if ($server['networkSettings']) {
-                $grpcSettings = $server['networkSettings'];
+            if ($server['network_settings']) {
+                $grpcSettings = $server['network_settings'];
                 $array['grpc-opts'] = [];
                 if (isset($grpcSettings['serviceName'])) {
                     $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
