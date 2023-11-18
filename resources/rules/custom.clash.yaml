@@ -18,13 +18,12 @@ dns:
     - 1.2.4.8
   nameserver:
     - https://dns.alidns.com/dns-query
-    - quic://dns.adguard-dns.com
+    - https://dns.adguard-dns.com/dns-query
     - https://doh.pub/dns-query
     - https://1.1.1.1/dns-query
 
   fallback:
     - https://doh.pub/dns-query
-    - quic://dns.adguard-dns.com
     - https://dns.adguard-dns.com/dns-query
   fallback-filter: { geoip: false, ipcidr: [240.0.0.0/4, 0.0.0.0/32] }
 
