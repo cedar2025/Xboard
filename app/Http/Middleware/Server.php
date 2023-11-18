@@ -23,7 +23,7 @@ class Server
                 }
             }],
             'node_type' => [
-                'required',
+                'nullable',
                 'string',
                 'regex:/^(?i)(hysteria|vless|trojan|vmess|v2ray|tuic|shadowsocks|shadowsocks-plugin)$/',
                 function ($attribute, $value, $fail) {
