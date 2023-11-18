@@ -173,4 +173,12 @@ class UniProxyController extends Controller
 
         return response($response)->header('ETag', "\"{$eTag}\"");
     }
+
+     // 后端提交在线数据
+     public function alive(Request $request)
+     {
+        return response([
+            'data' => true
+        ]);
+     }
 }
