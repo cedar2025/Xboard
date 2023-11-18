@@ -7,7 +7,7 @@
     <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js"></script>
   </head>
   <body>
-    <div id="app"></div>
+    
     <script>
         window.routerBase = "/";
         window.settings = {
@@ -28,5 +28,7 @@
             logo: '{{$logo}}'
         }
     </script>
+    <div id="app"></div>
+    {!! $theme_config['custom_html'] !!}
   </body>
 </html>
