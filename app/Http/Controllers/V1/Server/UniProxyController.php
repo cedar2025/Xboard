@@ -23,6 +23,7 @@ class UniProxyController extends Controller
         $this->serverService = $serverService;
         $this->nodeId = $request->input('node_id');
         $this->nodeType = $request->input('node_type') === 'v2ray' ? 'vmess' : $request->input('node_type');
+        $this->nodeType = $request->input('node_type') === 'hysteria2' ? 'hysteria' : $request->input('node_type');
         $this->nodeInfo = $this->serverService->getServer($this->nodeId, $this->nodeType);
         if(!$this->nodeInfo) {
             Log::channel("daily")->info("$this->nodeId  $this->nodeType  $this->nodeInfo");
