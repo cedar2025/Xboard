@@ -13,6 +13,7 @@
     "require": {
         "php": "^8.1",
         "firebase/php-jwt": "^6.3",
+        "google/cloud-storage": "^1.35",
         "google/recaptcha": "^1.2",
         "guzzlehttp/guzzle": "^7.4.3",
         "hhxsv5/laravel-s": "~3.7.0",
