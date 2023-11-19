@@ -4,6 +4,7 @@
 /public/hot
 /public/storage
 /public/env.example.js
+*.user.ini
 /storage/*.key
 /vendor
 .env
