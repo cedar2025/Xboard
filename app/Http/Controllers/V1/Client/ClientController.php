@@ -17,6 +17,7 @@ class ClientController extends Controller
         // 节点类型筛选
         $allowedTypes = ['vmess', 'vless', 'trojan', 'hysteria', 'hysteria2', 'shadowsocks'];
         $types = $request->input('types', "vmess|vless|trojan|hysteria|shadowsocks");
+        if ($types === "all") $types = implode('|', $allowedTypes);
         $typesArr =  $types ?  collect(explode('|', str_replace(['|','｜',','], "|" , $types)))->reject(function($type) use ($allowedTypes){
             return !in_array($type, $allowedTypes);
         })->values()->all() : [];
