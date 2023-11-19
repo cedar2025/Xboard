@@ -12,6 +12,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "doctrine/dbal": "^3.7",
         "firebase/php-jwt": "^6.3",
         "google/cloud-storage": "^1.35",
         "google/recaptcha": "^1.2",
