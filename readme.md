@@ -227,7 +227,7 @@ location ~ .*\.(js|css)?$
 9. 配置定时任务#
 aaPanel 面板 > Cron。
 - 在 Type of Task 选择 Shell Script
-- 在 Name of Task 填写 v2board
+- 在 Name of Task 填写 xboard
 - 在 Period 选择 N Minutes 1 Minute
 - 在 Script content 填写 php /www/wwwroot/路径/artisan schedule:run
 
