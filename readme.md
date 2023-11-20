@@ -34,106 +34,8 @@ Tron： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 ## 安装 / 更新 / 回滚
 > 这里将给你介绍不同方式的 安装、更新、回滚步骤
 
-### Docker Compose 方式（推荐） aapanel用户请跳到下文
-### 安装前准备
-- 安装前你需要自行安装好Mysql数据库（用户量小的可以忽略，使用Sqlite）
-- 安装前你需要自行安装好redis
-#### **安装部署**
-1. 安装docker
-```
-curl -sSL https://get.docker.com | bash
-systemctl enable docker
-systemctl start docker
-```
-2. 获取Docker compose 文件
-```
-git clone -b  docker-compose --depth 1 https://github.com/cedar2025/Xboard
-cd Xboard
-```
-3. 执行数据库安装命令
-```
-docker compose run -it --rm xboard php artisan xboard:install
-```
-> 执行这条命令之后，会返回你的后台地址和管理员账号密码（你需要记录下来）  
-> 你需要执行下面的 ‘**启动xborad**’ 之后才能访问后台
+### 本文专注于aapanel
 
-4. 启动xboard
-```
-docker compose up -d
-```
-> 安装完成之后即可访问你的站点
-5. 配置nginx代理
-> 启动之后网站端口为7001, 你可以配置nginx分流使用80端口
-```
-location ~ .* {
-    proxy_pass http://127.0.0.1:7001;
-}
-```
-
-#### **更新**
-1、 修改版本
-```
-cd Xboard
-vi docker-compose.yaml
-```
-> 修改docker-compose.yaml 当中image后面的版本号为你需要的版本
-
-2、 更新数据库（可以执行多次都是安全的）
-```
-docker compose down
-docker compose run -it --rm xboard php artisan xboard:update
-docker compose up -d
-```
-> 即可更新成功
-
-### **回滚**
-> 需要回滚旧的版本时
-1、回滚数据库(不可回滚多次，每一次指定都会回滚到上一个版本)
-```
-docker compose down
-docker compose run -it --rm xboard php artisan xboard:rollback
-```
-2、回退版本  
-```
-vi docker-compose.yaml
-```
-> 修改docker-compose.yaml 当中image后面的版本号为更新前的版本号
-3、启动
-```
-dockcer compose up -d
-```
-
-### 从其他版本迁移
-
-#### config/v2board.php 迁移
-> xboard将配置储存到数据库了， 不再使用file进行储存，你需要对配置文件进行迁移。
-1. 将旧的 config/v2board.php 文件复制到 xboard的 config/v2board.php下
-2. 执行下面的命令，即可完成迁移
-```
-php artisan migrateFromV2b config 
-```
-如果你迁移到docker compose  
-1. 在xboard 目录下创建 config文件夹
-2. 复制旧项目的 v2board.php 到config目录
-3. 修改docker-compose.yaml 取消下面代码的注释（删除 "#"）
-```
-  # - ./config/v2board.php:/www/config/v2board.php
-```
-4. 执行下面的命令
-```
-docker compose down
-docker compose run -it --rm php artisan migrateFromV2b config 
-docker compose up -d
-```
-即可完成迁移
-
-#### 数据库迁移
-> 如果你需要从其他版本迁移过来，你需要手动配置好 .env之后按照以下引导操作  
-目前支持迁移的版本
-- v2board dev 23/10/27的版本  [点击跳转迁移引导](./v2b_dev迁移指南.md)
-- v2board 1.7.4  [点击跳转迁移引导](./docs/v2b_1.7.4迁移指南.md)
-- v2board 1.7.3  [点击跳转迁移引导](./docs/v2b_1.7.3迁移指南.md)
-- v2board wyx2685  [点击跳转迁移引导](./docs/v2b_wyx2685迁移指南.md)
 
 ### 宝塔方式(aaPanel) （不推荐，太麻烦了）
 1. 安装aaPanel 
@@ -195,6 +97,41 @@ git clone https://github.com/cedar2025/Xboard.git ./
 ```
 sh init.sh
 ```
+#### 数据库迁移
+
+### 迁移的用户请注意！！！！
+> init.sh部分输入的管理员邮箱不会生效
+执行以下命令清空数据库
+```
+php artisan db:wipe
+```
+到aapanel的database页面导入数据库
+> 导入完毕执行以下命令
+### Dev版本
+```
+php artisan migratefromv2b dev231027
+
+```
+### 1.7.3版本
+```
+php artisan migratefromv2b 1.7.3
+```
+### 1.7.4版本
+```
+php artisan migratefromv2b 1.7.4
+```
+### wyx2685版本
+```
+php artisan migratefromv2b wyx2685
+```
+#### config/v2board.php 迁移
+> 将旧的 config/v2board.php 文件复制到 xboard的 config/v2board.php 下
+> 执行下面的命令，即可完成迁移
+```
+php artisan migrateFromV2b config
+```
+
+
 > 根据提示完成安装
 7. 配置站点目录及伪静态
 > 添加完成后编辑添加的站点 > Site directory > Running directory 选择 /public 保存。  
@@ -214,7 +151,15 @@ location ~ .*\.(js|css)?$
     access_log /dev/null; 
 }
 ```
-8. 配置守护进程
+8. 配置定时任务#
+aaPanel 面板 > Cron。
+- 在 Type of Task 选择 Shell Script
+- 在 Name of Task 填写 xboard
+- 在 Period 选择 N Minutes 1 Minute
+- 在 Script content 填写 php /www/wwwroot/路径/artisan schedule:run
+
+根据上述信息添加每1分钟执行一次的定时任务。
+9. 配置守护进程
 >V2board的系统强依赖队列服务，正常使用V2Board必须启动队列服务。下面以aaPanel中supervisor服务来守护队列服务作为演示。  
 1. aaPanel 面板 > App Store > Tools  
 2. 找到Supervisor进行安装，安装完成后点击设置 > Add Daemon按照如下填写
@@ -224,11 +169,4 @@ location ~ .*\.(js|css)?$
 
 >填写后点击Confirm添加即可运行。
 
-9. 配置定时任务#
-aaPanel 面板 > Cron。
-- 在 Type of Task 选择 Shell Script
-- 在 Name of Task 填写 xboard
-- 在 Period 选择 N Minutes 1 Minute
-- 在 Script content 填写 php /www/wwwroot/路径/artisan schedule:run
 
-根据上述信息添加每1分钟执行一次的定时任务。
