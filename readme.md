@@ -108,7 +108,7 @@ dockcer compose up -d
 1. 先导入原的数据库。(<span style="color:red;">不要走安装步骤</span>)
 2. 手动写好.env 数据库账号密码  
 3. 根据你的版本查看对应的迁移指南进行迁移
-- v2board dev 23/10/27的版本  [点击跳转迁移指南](./v2b_dev迁移指南.md)
+- v2board dev 23/10/27的版本  [点击跳转迁移指南](./docs/v2b_dev迁移指南.md)
 - v2board 1.7.4  [点击跳转迁移指南](./docs/v2b_1.7.4迁移指南.md)
 - v2board 1.7.3  [点击跳转迁移指南](./docs/v2b_1.7.3迁移指南.md)
 - v2board wyx2685  [点击跳转迁移指南](./docs/v2b_wyx2685迁移指南.md)
