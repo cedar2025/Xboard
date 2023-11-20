@@ -183,8 +183,9 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 >通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。
 >以下命令都需要在站点目录进行执行。
 ```
-# 删除目录下文件（此时必须在站点目录下进行，否则后果自负）
-rm -rf /*
+# 删除目录下文件（此时必须在站点目录下进行）
+chattr -i .user.ini
+rm -rf .htaccess 404.html index.html .user.ini
 ```
 > 执行命令从 Github 克隆到当前目录。
 ```
