@@ -340,27 +340,27 @@ class ServerService
             case 'vmess':
                 return ServerVmess::query()
                         ->where("parent_id", $serverId)
-                        ->whereJsonContains('ips', $nodeIp)
+                        ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             case 'shadowsocks':
                 return ServerShadowsocks::query()
                         ->where("parent_id", $serverId)
-                        ->whereJsonContains('ips', $nodeIp)
+                        ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             case 'trojan':
                 return ServerTrojan::query()
                         ->where("parent_id", $serverId)
-                        ->whereJsonContains('ips', $nodeIp)
+                        ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             case 'hysteria':
                 return ServerHysteria::query()
                         ->where("parent_id", $serverId)
-                        ->whereJsonContains('ips', $nodeIp)
+                        ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             case 'vless':
                 return ServerVless::query()
                         ->where("parent_id", $serverId)
-                        ->whereJsonContains('ips', $nodeIp)
+                        ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             default:
                 return false;
