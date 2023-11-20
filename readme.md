@@ -32,11 +32,16 @@ TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 - Redis
 - Laravel
 
+## 性能评测 [点击查看](./docs/性能对比.md)
+
+## 页面展示
+![示例图片](./docs/images/dashboard.png)
+
 ## 安装 / 更新 / 回滚
 > 这里将给你介绍不同方式的 安装、更新、回滚步骤
 ### 安装前准备
 - 安装前你需要自行安装好Mysql数据库（用户量小的可以忽略，使用Sqlite）
-- 安装前你需要自行安装好redis
+- 安装前你需要自行安装好redis <span style="color:red">（必须）</span>
 ### Docker Compose 方式（推荐） 
 #### **安装部署**
 1. 安装docker
@@ -164,7 +169,7 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 > aaPanel 面板 > App Store > 找到PHP 8.1点击Setting > Install extentions选择以下扩展进行安装
 - redis
 - fileinfo
-- swoole5
+- swoole4
 - readline
 - event
 
