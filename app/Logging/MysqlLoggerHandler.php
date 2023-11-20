@@ -31,15 +31,15 @@ class MysqlLoggerHandler extends AbstractProcessingHandler
                 'ip' => request()->getClientIp(),
                 'data' => json_encode($record['request_data']) ,
                 'context' => isset($record['context']) ? json_encode($record['context']) : '',
-                'created_at' => strtotime($record['datetime']),
-                'updated_at' => strtotime($record['datetime']),
+                'created_at' => $record['datetime']->getTimestamp(),
+                'updated_at' => $record['datetime']->getTimestamp(),
             ];
             
             LogModel::insert(
                 $log
             );
         }catch (\Exception $e){
-            Log::channel('daily')->error($e->getMessage().$e->getFile().$e->getTraceAsString());
+            // Log::channel('daily')->error($e->getMessage().$e->getFile().$e->getTraceAsString());
         }
     }
 }
