@@ -16,7 +16,7 @@ class ResetPassword extends Command
      *
      * @var string
      */
-    protected $signature = 'reset:password {email}';
+    protected $signature = 'reset:password {email} {password?}';
 
     /**
      * The console command description.
@@ -42,9 +42,10 @@ class ResetPassword extends Command
      */
     public function handle()
     {
+        $password = $this->argument('password') ;
         $user = User::where('email', $this->argument('email'))->first();
         if (!$user) abort(500, '邮箱不存在');
-        $password = Helper::guid(false);
+        $password = $password ?? Helper::guid(false);
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->password_algo = null;
         if (!$user->save()) abort(500, '重置失败');
