@@ -6,7 +6,7 @@ Xborad是基于V2board二次开发，在性能上和功能上都有大部分增�
 # 捐赠
 > 如果本项目帮助到了你，你可以对作者进行捐赠，感谢你的支持  
 
-Tron： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
+TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 # Xborad 特点 
 基于V2board 二次开发，增加了以下特性
 - 升级Laravel10
