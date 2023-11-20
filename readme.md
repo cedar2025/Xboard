@@ -1,3 +1,4 @@
+# Xboard用户手册（aapanel版）
 # 关于Xboard
 Xborad是基于V2board二次开发，在性能上和功能上都有大部分增强的**面板
 
@@ -31,13 +32,10 @@ Tron： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 - Redis
 - Laravel
 
-## 安装 / 更新 / 回滚
-> 这里将给你介绍不同方式的 安装、更新、回滚步骤
 
 ### 本文专注于aapanel
 
-
-### 宝塔方式(aaPanel) （不推荐，太麻烦了）
+### 宝塔方式(aaPanel) 
 1. 安装aaPanel 
 
 如果是Centos系统
