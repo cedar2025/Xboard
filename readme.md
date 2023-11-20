@@ -95,6 +95,7 @@ git clone https://github.com/cedar2025/Xboard.git ./
 ```
 sh init.sh
 ```
+> 根据提示完成安装
 #### 数据库迁移
 
 ### 迁移的用户请注意！！！！
@@ -126,11 +127,13 @@ php artisan migratefromv2b wyx2685
 > 将旧的 config/v2board.php 文件复制到 xboard的 config/v2board.php 下
 > 执行下面的命令，即可使v2board.php生效
 ```
+php artisan migrateFromV2b config
+
 sh init.sh
 ```
 
 
-> 根据提示完成安装
+
 7. 配置站点目录及伪静态
 > 添加完成后编辑添加的站点 > Site directory > Running directory 选择 /public 保存。  
 > 添加完成后编辑添加的站点 > URL rewrite 填入伪静态信息。
