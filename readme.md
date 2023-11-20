@@ -109,7 +109,6 @@ php artisan db:wipe
 ### Dev版本
 ```
 php artisan migratefromv2b dev231027
-
 ```
 ### 1.7.3版本
 ```
@@ -127,8 +126,6 @@ php artisan migratefromv2b wyx2685
 > 将旧的 config/v2board.php 文件复制到 xboard的 config/v2board.php 下
 > 执行下面的命令，即可使v2board.php生效
 ```
-php artisan migrateFromV2b config
-
 sh init.sh
 ```
 
