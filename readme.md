@@ -20,6 +20,7 @@ Tron： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 - 支持直接从cloudflare获取访问者真实IP
 - 支持根据客户端版本自动下发新协议
 - 支持线路筛选（订阅地址后面增加 &filter=香港｜美国）
+- 支持Sqlite安装（代替Mysql，自用用户福音）
 - 使用Vue3 + TypeScript + NaiveUI + Unocss + Pinia重构用户前端
 - 修复大量BUG
 
@@ -103,36 +104,38 @@ dockcer compose up -d
 ```
 
 ### 从其他版本迁移
+#### 数据库迁移
+1. 先导入原的数据库。(<span style="color:red;">不要走安装步骤</span>)
+2. 手动写好.env 数据库账号密码  
+3. 根据你的版本查看对应的迁移指南进行迁移
+- v2board dev 23/10/27的版本  [点击跳转迁移指南](./v2b_dev迁移指南.md)
+- v2board 1.7.4  [点击跳转迁移指南](./docs/v2b_1.7.4迁移指南.md)
+- v2board 1.7.3  [点击跳转迁移指南](./docs/v2b_1.7.3迁移指南.md)
+- v2board wyx2685  [点击跳转迁移指南](./docs/v2b_wyx2685迁移指南.md)
 
 #### config/v2board.php 迁移
 > xboard将配置储存到数据库了， 不再使用file进行储存，你需要对配置文件进行迁移。
-1. 将旧的 config/v2board.php 文件复制到 xboard的 config/v2board.php下
-2. 执行下面的命令，即可完成迁移
-```
-php artisan migrateFromV2b config 
-```
-如果你迁移到docker compose  
+#### docker-compose 环境  
 1. 在xboard 目录下创建 config文件夹
 2. 复制旧项目的 v2board.php 到config目录
 3. 修改docker-compose.yaml 取消下面代码的注释（删除 "#"）
 ```
   # - ./config/v2board.php:/www/config/v2board.php
 ```
-4. 执行下面的命令
+4. 执行下面的命令即可完成迁移
 ```
 docker compose down
 docker compose run -it --rm php artisan migrateFromV2b config 
 docker compose up -d
 ```
-即可完成迁移
+#### aapanel 环境
+1. 将旧的 ```config/v2board.php``` 文件复制到 xboard的 ```config/v2board.php``` 下
+2. 执行下面的命令，即可完成迁移
+```
+php artisan migrateFromV2b config 
+```
 
-#### 数据库迁移
-> 如果你需要从其他版本迁移过来，你需要手动配置好 .env之后按照以下引导操作  
-目前支持迁移的版本
-- v2board dev 23/10/27的版本  [点击跳转迁移引导](./v2b_dev迁移指南.md)
-- v2board 1.7.4  [点击跳转迁移引导](./docs/v2b_1.7.4迁移指南.md)
-- v2board 1.7.3  [点击跳转迁移引导](./docs/v2b_1.7.3迁移指南.md)
-- v2board wyx2685  [点击跳转迁移引导](./docs/v2b_wyx2685迁移指南.md)
+
 
 ### 宝塔方式(aaPanel) （不推荐，太麻烦了）
 1. 安装aaPanel 
