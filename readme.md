@@ -155,8 +155,8 @@ aaPanel 面板 > Cron。
 - 在 Name of Task 填写 xboard
 - 在 Period 选择 N Minutes 1 Minute
 - 在 Script content 填写 php /www/wwwroot/路径/artisan schedule:run
-
 根据上述信息添加每1分钟执行一次的定时任务。
+
 9. 配置守护进程
 >V2board的系统强依赖队列服务，正常使用V2Board必须启动队列服务。下面以aaPanel中supervisor服务来守护队列服务作为演示。  
 1. aaPanel 面板 > App Store > Tools  
