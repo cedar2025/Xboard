@@ -168,26 +168,11 @@ class UserService
         return true;
     }
 
-    public function trafficFetch(array $server, string $protocol, array $data, array $childServer = null)
+    public function trafficFetch(array $server, string $protocol, array $data, string $nodeIp = null)
     {
-        $statService = new StatisticalService();
-        $statService->setStartAt(strtotime(date('Y-m-d')));
-        $statService->setUserStats();
-        $statService->setServerStats();
-        foreach (array_keys($data) as $userId) {
-            $u = $data[$userId][0];
-            $d = $data[$userId][1];
-            // 如果存在子节点则使用过子节点的倍率进行进行流量计算，该计算方式依赖服务器IP地址
-            if(!blank($childServer)){
-                TrafficFetchJob::dispatch($u, $d, $userId, $childServer, $protocol);
-                $statService->statUser($childServer['rate'], $userId, $u, $d);
-                $statService->statServer($childServer['id'], $protocol, $u, $d);
-            }else{
-                TrafficFetchJob::dispatch($u, $d, $userId, $server, $protocol);
-                $statService->statUser($server['rate'], $userId, $u, $d);
-            }
-            $statService->statServer($server['id'], $protocol, $u, $d);
-
-        }
+        $timestamp = strtotime(date('Y-m-d'));
+        collect($data)->chunk(1000)->each(function($chunk) use ($timestamp,$server,$protocol, $nodeIp){
+            TrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $nodeIp);
+        });
     }
 }
