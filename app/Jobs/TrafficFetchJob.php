@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Services\MailService;
+use App\Services\ServerService;
+use App\Services\StatisticalService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,12 +15,11 @@ use Illuminate\Queue\SerializesModels;
 class TrafficFetchJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    protected $u;
-    protected $d;
-    protected $userId;
+    protected $data;
     protected $server;
+    protected $childServer;
     protected $protocol;
-
+    protected $timestamp;
     public $tries = 3;
     public $timeout = 10;
 
@@ -27,14 +28,16 @@ class TrafficFetchJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($u, $d, $userId, array $server, $protocol)
+    public function __construct(array $server, array $data, $protocol, int $timestamp, $nodeIp = null)
     {
         $this->onQueue('traffic_fetch');
-        $this->u = $u;
-        $this->d = $d;
-        $this->userId = $userId;
         $this->server = $server;
+        $this->data = $data;
         $this->protocol = $protocol;
+        $this->timestamp = $timestamp;
+        // 获取子节点
+        $serverService = new ServerService();
+        $this->childServer = ($this->server['parent_id'] == null && !blank($nodeIp)) ?  $serverService->getChildServer($this->server['id'], $this->protocol, $nodeIp) : null;
     }
 
     /**
@@ -45,29 +48,40 @@ class TrafficFetchJob implements ShouldQueue
     public function handle(): void
     {
         \DB::transaction(function () {
-            $user = \DB::table('v2_user')->lockForUpdate()->where('id', $this->userId)->first();
-        
-            if (!$user) {
-                return;
+            if ($this->attempts() === 1){
+                $statService = new StatisticalService();
+                $statService->setStartAt($this->timestamp);
+                $statService->setUserStats();
+                $statService->setServerStats();
             }
-        
-            $newTime = time();
-            $newU = $user->u + ($this->u * $this->server['rate']);
-            $newD = $user->d + ($this->d * $this->server['rate']);
-        
-            $updatedRows = \DB::table('v2_user')
-                ->where('id', $this->userId)
-                ->update([
-                    't' => $newTime,
-                    'u' => $newU,
-                    'd' => $newD,
-                ]);
-        
-            if (!$updatedRows) {
-                info("流量更新失败\n未记录用户ID:{$this->userId}\n未记录上行:{$this->u}\n未记录下行:{$this->d}");
-                $this->fail();
-            } else {
-                
+            
+            // 获取子节点\
+            
+            $targetServer = $this->childServer ?? $this->server;
+            foreach ($this->data as $uid => $v) {
+                $u = $v[0];
+                $d = $v[1];
+                $user = \DB::table('v2_user')->lockForUpdate()->where('id', $uid)->first();
+                if (!$user) {
+                    continue;
+                }
+                if ($this->attempts() === 1){ // 写缓存
+                    $statService->statUser($targetServer['rate'], $uid, $u, $d); //如果存在子节点则使用子节点的倍率
+                    if(!blank($this->childServer)){ //如果存在子节点，则给子节点计算流量
+                        $statService->statServer($this->childServer['id'], $this->protocol, $u, $d);
+                    }
+                    $statService->statServer($this->server['id'], $this->protocol, $u, $d);
+                }
+                $newTime = time();
+                $newU = $user->u + ($v[0] * $targetServer['rate']);
+                $newD = $user->d + ($v[1] * $targetServer['rate']);
+                \DB::table('v2_user')
+                    ->where('id', $uid)
+                    ->update([
+                        't' => $newTime,
+                        'u' => $newU,
+                        'd' => $newD,
+                    ]);
             }
         }, 3);
     }
