@@ -363,7 +363,7 @@ class ServerService
                         ->where('ips',"like", "%\"$nodeIp\"%")
                         ->first();
             default:
-                return false;
+                return null;
         }
     }
 }

@@ -89,12 +89,8 @@ class UniProxyController extends Controller
         $online_user = $onlineCollection->sum('online_user');
         Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_ONLINE_USER', $this->nodeInfo->id), $online_user, 3600);
         Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_LAST_PUSH_AT', $this->nodeInfo->id), time(), 3600);
-
-        // 查询是否存在子节点
-        $childServer = null;
-        if ($this->nodeInfo->parent_id == null) $childServer = $this->serverService->getChildServer($this->nodeId, $this->nodeType, $ip);
         $userService = new UserService();
-        $userService->trafficFetch($this->nodeInfo->toArray(), $this->nodeType, $data, $childServer ? $childServer->toArray() : null);
+        $userService->trafficFetch($this->nodeInfo->toArray(), $this->nodeType, $data , $ip);
 
         return response([
             'data' => true
