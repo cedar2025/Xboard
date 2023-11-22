@@ -26,6 +26,7 @@
         "nunomaduro/collision": "^7.10",
         "paragonie/sodium_compat": "^1.20",
         "php-curl-class/php-curl-class": "^8.6",
+        "spatie/db-dumper": "^3.4",
         "stripe/stripe-php": "^7.36.1",
         "symfony/yaml": "*",
         "zoujingli/ip2region": "^2.0"

@@ -52,20 +52,21 @@ class XboardInstall extends Command
             if (\File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED')) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
                 $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");
-                abort(500, '如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）');
+                $this->warn("如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）");
+                $this->warn("快捷清空.env命令： \"rm .env && touch .env\"");
                 \Artisan::call('config:cache');
+                return ;
             }
 
             // 选择是否使用Sqlite
-            $isSqlite = $this->ask('是否启用Sqlite代替Mysql(默认不启动 y/n)','n');
-            if( $isSqlite == 'y' ) {
+            if( $this->ask('是否启用Sqlite(无需额外安装)代替Mysql(默认不启用 y/n)','n') == 'y' ) {
                 $sqliteFile = '.docker/.data/database.sqlite';
                 if (!file_exists(base_path($sqliteFile))) {
                     // 创建空文件
                     if (touch(base_path($sqliteFile))) {
                         echo "sqlite创建成功: $sqliteFile";
                     } else {
-                        echo "sqlite创建成功";
+                        echo "sqlite创建失败";
                     }
                 }
                 $envConfig = [
@@ -75,15 +76,7 @@ class XboardInstall extends Command
                     'DB_HOST' => '',
                     'DB_USERNAME' => '',
                     'DB_PASSWORD' => '',
-                    'REDIS_HOST'  => $this->ask('请输入redis地址(默认: 127.0.0.1)', '127.0.0.1'),
-                    'REDIS_PORT'=> $this->ask('请输入redis端口(默认: 6379)', '6379'),
-                    'REDIS_PASSWORD' => $this->ask('请输入redis密码(默认: null)', null),
-                    'INSTALLED' => 'true'
                 ];
-                if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
-                    abort(500, '复制环境文件失败，请检查目录权限');
-                }
-                $this->saveToEnv($envConfig);
             }else{
                 $envConfig = [
                     'APP_KEY' => 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC')),
@@ -93,16 +86,26 @@ class XboardInstall extends Command
                     'DB_DATABASE' => $this->ask('请输入数据库名', 'xboard'),
                     'DB_USERNAME' => $this->ask('请输入数据库用户名'),
                     'DB_PASSWORD' => $this->ask('请输入数据库密码'),
-                    'REDIS_HOST'  => $this->ask('请输入redis地址(默认: 127.0.0.1)', '127.0.0.1'),
-                    'REDIS_PORT'=> $this->ask('请输入redis端口(默认: 6379)', '6379'),
-                    'REDIS_PASSWORD' => $this->ask('请输入redis密码(默认: null)', null),
-                    'INSTALLED' => 'true'
                 ];
-                if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
-                    abort(500, '复制环境文件失败，请检查目录权限');
-                }
-                $this->saveToEnv($envConfig);
+                
             }
+
+            $envConfig['INSTALLED'] = 'true';
+            // 判断是否为Docker环境
+            if (env('docker', false) == 'true' && $this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y'){
+                $envConfig['REDIS_HOST']  =  '/run/redis-socket';
+                $envConfig['REDIS_PORT']  = 0;
+                $envConfig['REDIS_PASSWORD'] = null;
+            }else{
+                $envConfig['REDIS_HOST']  =  $this->ask('请输入redis地址(默认: 127.0.0.1)', '127.0.0.1');
+                $envConfig['REDIS_PORT']  = $this->ask('请输入redis端口(默认: 6379)', '6379');
+                $envConfig['REDIS_PASSWORD'] = $this->ask('请输入redis密码(默认: null)', null);
+            }
+
+            if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
+                abort(500, '复制环境文件失败，请检查目录权限');
+            }
+            $this->saveToEnv($envConfig);
 
             \Artisan::call('config:clear');
             \Artisan::call('config:cache');
@@ -132,7 +135,7 @@ class XboardInstall extends Command
             $defaultSecurePath = hash('crc32b', config('app.key'));
             $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
         } catch (\Exception $e) {
-            $this->error($e->getMessage());
+            $this->error($e);
         }
     }
 
