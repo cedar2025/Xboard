@@ -93,7 +93,7 @@ class XboardInstall extends Command
             $envConfig['INSTALLED'] = 'true';
             // 判断是否为Docker环境
             if (env('docker', false) == 'true' && $this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y'){
-                $envConfig['REDIS_HOST']  =  '/run/redis-socket';
+                $envConfig['REDIS_HOST']  =  '/run/redis-socket/redis.sock';
                 $envConfig['REDIS_PORT']  = 0;
                 $envConfig['REDIS_PASSWORD'] = null;
             }else{
