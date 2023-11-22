@@ -2,7 +2,7 @@
 本文教你如何在命令行使用aapanel + docker-compose来快速Xboard  
 
 ### 部署
-1. 安装aaPanel 
+1. 安装aaPanel + 和docker 
 
 如果是Centos系统
 ```
@@ -22,6 +22,8 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 ☑️ Nginx 任意版本  
 ☑️ MySQL 5.7  
 选择 Fast 快速编译后进行安装。  
+>安装过程中点击 Docker 去安装一下Docker   
+
 <span style="color:yellow">⚠️ ：无需安装php 与 redis</span>
 
 3. 添加站点  
@@ -30,13 +32,19 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 >>在 Database 选择MySQL  
 >>在 PHP Verison 选择纯静态
 
-4. 修改 Mysql访问权限 
+4. 修改 Mysql访问权限
 > 不做这一步会导致连不上数据库
 - aaPanel 面板 > Database 找到你的站点数据库  
 - 点击 Permission
 - 将访问权限改为ALL（所有人）
 
-5. 安装 Xborad
+5. 获取宿主机Docker网卡IP
+```
+ip addr show docker0 | grep -Po 'inet \K[\d.]+'
+```
+将IP记下来，在下一步安装的时候填在数据库地址里面
+
+6. 安装 Xborad
 >通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。
 >以下命令都需要在站点目录进行执行。
 ```
@@ -52,15 +60,15 @@ git clone https://github.com/cedar2025/Xboard.git ./
 ```
 docker compose run -it --rm xboard sh init.sh
 ```
-> 根据提示完成安装  
+> 根据提示完成安装  （数据库地址填写你上一步获取到的IP）
 > 执行这条命令之后，会返回你的后台地址和管理员账号密码（你需要记录下来）    
 > 你需要执行下面的 **启动xborad** 步骤之后才能访问后台  
 
-6. 启动xboard
+7. 启动xboard
 ```
 docker compose up -d
 ```
-7. 设置反向代理
+8. 设置反向代理
 > 站点设置 > 反向代理 > 添加反向代理
 >> 在 **代理名称** 填入 Xboard  
 >> 在 **目标URL** 填入 ```http://127.0.0.1:7001```

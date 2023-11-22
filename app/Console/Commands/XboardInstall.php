@@ -44,6 +44,8 @@ class XboardInstall extends Command
     {
         try {
             \Artisan::call('config:clear');
+            $isDocker = env('docker', false);
+
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
@@ -81,19 +83,17 @@ class XboardInstall extends Command
                 $envConfig = [
                     'APP_KEY' => 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC')),
                     'DB_CONNECTION' => 'mysql',
-                    'DB_HOST' => $this->ask('请输入数据库地址(默认:127.0.0.1)', '127.0.0.1'),
+                    'DB_HOST' => $this->ask("请输入数据库地址(默认:" . ($isDocker ? '172.17.0.1' :'127.0.0.1') .")", ($isDocker ? '172.17.0.1' :'127.0.0.1')),
                     'DB_PORT' => $this->ask('请输入数据库端口(默认:3306)', '3306'),
                     'DB_DATABASE' => $this->ask('请输入数据库名', 'xboard'),
                     'DB_USERNAME' => $this->ask('请输入数据库用户名'),
                     'DB_PASSWORD' => $this->ask('请输入数据库密码'),
-                ];
-                
+                ];   
             }
-
             $envConfig['INSTALLED'] = 'true';
             // 判断是否为Docker环境
-            if (env('docker', false) == 'true' && $this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y'){
-                $envConfig['REDIS_HOST']  =  '/run/redis-socket/redis.sock';
+            if ($isDocker == 'true' && ($this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y')){
+                $envConfig['REDIS_HOST']  = '/run/redis-socket/redis.sock';
                 $envConfig['REDIS_PORT']  = 0;
                 $envConfig['REDIS_PASSWORD'] = null;
             }else{
