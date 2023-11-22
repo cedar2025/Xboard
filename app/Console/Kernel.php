@@ -41,7 +41,9 @@ class Kernel extends ConsoleKernel
         // horizon metrics
         $schedule->command('horizon:snapshot')->everyFiveMinutes();
         // backup Timing
-        $schedule->command('backup:upload-cloud')->daily();
+        if(env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)){
+            $schedule->command('backup:database',['true'])->daily();
+        }
     }
 
     /**
