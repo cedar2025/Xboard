@@ -7,17 +7,20 @@ use Google\Cloud\Storage\StorageClient;
 
 class BackupDatabase extends Command
 {
-    protected $signature = 'backup:upload-cloud';
+    protected $signature = 'backup:database {upload?}';
     protected $description = '备份数据库并上传到 Google Cloud Storage';
 
     public function handle()
     {
-        // 判断是否存在必要配置
-        $requiredConfigs = ['database.connections.mysql', 'cloud_storage.google_cloud.key_file', 'cloud_storage.google_cloud.storage_bucket'];
-        foreach ($requiredConfigs as $config) {
-            if (config($config) === null) {
-                $this->error("❌：缺少必要配置项: $config ， 取消备份");
-                return;
+        $isUpload = $this->argument('upload');
+        // 如果是上传到云端则判断是否存在必要配置
+        if($isUpload){
+            $requiredConfigs = ['database.connections.mysql', 'cloud_storage.google_cloud.key_file', 'cloud_storage.google_cloud.storage_bucket'];
+            foreach ($requiredConfigs as $config) {
+                if (blank(config($config))) {
+                    $this->error("❌：缺少必要配置项: $config ， 取消备份");
+                    return;
+                }
             }
         }
 
@@ -39,27 +42,31 @@ class BackupDatabase extends Command
                     ->dumpToFile($databaseBackupPath);
                 $this->info("2️⃣：Sqlite备份完成");
             }
-            $this->info("3️⃣：开始将备份上传到Google Cloud");
-            // Google Cloud Storage 配置
-            $storage = new StorageClient([
-                'keyFilePath' => config('cloud_storage.google_cloud.key_file'),
-            ]);
-            $bucket = $storage->bucket(config('cloud_storage.google_cloud.storage_bucket'));
-            $objectName = 'backup/' . now()->format('Y-m-d_H-i-s') . '_database_backup.sql';
-            // 上传文件
-            $bucket->upload(fopen($databaseBackupPath, 'r'), [
-                'name' => $objectName,
-            ]);
-    
-            // 输出文件链接
-            
-            \Log::channel('backup')->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
-            $this->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
+            if (!$isUpload){
+                $this->info("🎉：数据库成功备份到：$databaseBackupPath");
+            }else{
+                // 传到云盘
+                $this->info("3️⃣：开始将备份上传到Google Cloud");
+                // Google Cloud Storage 配置
+                $storage = new StorageClient([
+                    'keyFilePath' => config('cloud_storage.google_cloud.key_file'),
+                ]);
+                $bucket = $storage->bucket(config('cloud_storage.google_cloud.storage_bucket'));
+                $objectName = 'backup/' . now()->format('Y-m-d_H-i-s') . '_database_backup.sql';
+                // 上传文件
+                $bucket->upload(fopen($databaseBackupPath, 'r'), [
+                    'name' => $objectName,
+                ]);
+        
+                // 输出文件链接
+                \Log::channel('backup')->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
+                $this->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
+                \File::delete($databaseBackupPath);
+            }
         }catch(\Exception $e){
-            \Log::channel('backup')->error("😔：数据库备份失败" . $e->getMessage());
-            $this->error("😔：数据库备份失败" . $e->getMessage());
+            \Log::channel('backup')->error("😔：数据库备份失败 \n" . $e);
+            $this->error("😔：数据库备份失败\n" . $e);
+            \File::delete($databaseBackupPath);
         }
-        // 开始删除本地备份
-        \File::delete($databaseBackupPath);
     }
 }
