@@ -62,12 +62,8 @@ class KnowledgeController extends Controller
 
     private function formatAccessData(&$body)
     {
-        function getBetween($input, $start, $end){$substr = substr($input, strlen($start)+strpos($input, $start),(strlen($input) - strpos($input, $end))*(-1));return $start . $substr . $end;}
-        while (strpos($body, '<!--access start-->') !== false) {
-            $accessData = getBetween($body, '<!--access start-->', '<!--access end-->');
-            if ($accessData) {
-                $body = str_replace($accessData, '<div class="v2board-no-access">'. __('You must have a valid subscription to view content in this area') .'</div>', $body);
-            }
-        }
+        $pattern = '/<!--access start-->(.*?)<!--access end-->/s';
+        $replacement = '<div class="v2board-no-access">' . __('You must have a valid subscription to view content in this area') . '</div>';
+        $body = preg_replace($pattern, $replacement, $body);
     }
 }
