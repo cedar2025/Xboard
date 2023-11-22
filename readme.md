@@ -48,7 +48,9 @@ TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 你可以点击查看下列方式的**安装、更新**步骤
 - [Docker Compose 纯命令行快速部署](./docs/docker-compose安装指南.md)
 - [aapanel + Docker Compose](./docs/aapanel+docker安装指南.md)
-- [aapanel 部署](./docs/)
+- [aapanel 部署](./docs/aapanel安装指南.md)
+- [从aapanel迁移到1panel教程](./docs/从aapanel迁移到1panel教程.md)
+- [1panel 多开Xboard教程](./docs/多开Xboard教程.md)
 ### 从其他版本迁移
 #### 数据库迁移
 1. 先导入原的数据库。(<span style="color:red;">不要走安装步骤</span>)
