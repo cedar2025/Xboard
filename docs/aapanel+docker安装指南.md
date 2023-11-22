@@ -36,7 +36,7 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 > 不做这一步会导致连不上数据库
 - aaPanel 面板 > Database 找到你的站点数据库  
 - 点击 Permission
-- 将访问权限改为ALL（所有人）
+- 将访问权限改为Everyone（所有人）
 
 5. 获取宿主机Docker网卡IP
 ```
