@@ -111,7 +111,7 @@ docker compose run -it --rm xboard php artisan migratefromv2b wyx2685
 ```
 9.执行迁移配置命令
 ```
-docker compose run -it --rm php artisan migrateFromV2b config
+docker compose run -it --rm xboard php artisan migrateFromV2b config
 ```
 10.启动
 ```
