@@ -61,3 +61,10 @@ TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 - v2board 1.7.3  [点击跳转迁移指南](./docs/v2b_1.7.3迁移指南.md)
 - v2board wyx2685  [点击跳转迁移指南](./docs/v2b_wyx2685迁移指南.md)
 
+
+### 注意
+> 修改后台路径需要重启才能生效
+```
+docker compose restart
+```
+> 如果是是aapanel安装则需要重启 webman守护进程
