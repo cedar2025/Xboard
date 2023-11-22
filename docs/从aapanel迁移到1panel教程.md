@@ -133,9 +133,9 @@ docker compose run -it --rm xboard php artisan migrateFromV2b config
 ```
 10.启动
 ```
-dockcer compose up -d
+docker compose up -d
 ```
 11.在Xboard目录下停止并更新后启动。
 ```
-dockcer compose down && dockcer compose pull && dockcer compose up -d 
+docker compose down && docker compose pull && docker compose up -d 
 ```
