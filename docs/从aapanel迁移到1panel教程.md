@@ -88,9 +88,6 @@ vim docker-compose.yaml
 ```
 version: '3'
 services:
-networks:
-  persist:
-    external: true
   xboard:
     image: ghcr.io/cedar2025/xboard:latest
     volumes:
@@ -113,7 +110,9 @@ networks:
       - redis-socket:/run/redis-socket # 挂载socket
 volumes:
   redis-socket:
-
+networks:
+  persist:
+    external: true
 ```
 8.根据v2board数据库版本执行对应的迁移数据库命令
 ```
