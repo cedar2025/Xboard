@@ -175,6 +175,8 @@ class MigrateFromV2b extends Command
             ]);
             $this->info("配置 ${k} 迁移成功");
         }
+        \Artisan::call('config:clear');
+        \Artisan::call('config:cache');
 
         $this->info('所有配置迁移完成');
     }

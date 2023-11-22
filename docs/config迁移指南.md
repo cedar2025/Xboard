@@ -27,3 +27,10 @@ docker compose down
 docker compose run -it --rm xboard php artisan migrateFromV2b config
 docker compose up -d
 ```
+
+## 注意
+> 修改后台路径需要重启才能生效
+```
+docker compose restart
+```
+> 如果是是aapanel安装则需要重启 webman守护进程
