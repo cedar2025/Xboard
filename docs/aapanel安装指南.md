@@ -105,7 +105,7 @@ aaPanel 面板 > Cron。
 1. 配置php.ini
 > 通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。
 ```
-cp /www/server/php/81/etc/php-cli.ini cli-php.ini
+cp /www/server/php/81/etc/php.ini cli-php.ini
 
 sed -i '' 's/^disable_functions=.*/disable_functions=header,header_remove,headers_sent,http_response_code,setcookie,session_create_id,session_id,session_name,session_save_path,session_status,session_start,session_write_close,session_regenerate_id,set_time_limit/' cli-php.ini
 ```
