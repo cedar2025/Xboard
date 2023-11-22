@@ -6,4 +6,18 @@ services:
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data/
       # - ./config/v2board.php:/www/config/v2board.php
-    network_mode: host
+      - redis-socket:/run/redis-socket # 挂载socket
+    environment:
+      - docker=true #用于给安装脚本判断是否为docker环境
+    depends_on:
+      - redis
+    ports:
+      - 7001:7001
+  redis:
+    build: 
+      context: .docker/services/redis
+    volumes:
+      - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
+      - redis-socket:/run/redis-socket # 挂载socket
+volumes:
+  redis-socket:
