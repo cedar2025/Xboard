@@ -32,19 +32,7 @@ wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bas
 >>在 Database 选择MySQL  
 >>在 PHP Verison 选择纯静态
 
-4. 修改 Mysql访问权限
-> 不做这一步会导致连不上数据库
-- aaPanel 面板 > Database 找到你的站点数据库  
-- 点击 Permission
-- 将访问权限改为Everyone（所有人）
-
-5. 获取宿主机Docker网卡IP
-```
-ip addr show docker0 | grep -Po 'inet \K[\d.]+'
-```
-将IP记下来，在下一步安装的时候填在数据库地址里面
-
-6. 安装 Xborad
+4. 安装 Xborad
 >通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。
 >以下命令都需要在站点目录进行执行。
 ```
@@ -56,6 +44,10 @@ rm -rf .htaccess 404.html index.html .user.ini
 ```
 git clone https://github.com/cedar2025/Xboard.git ./
 ```
+> 复制一份docker-compose.yaml文件
+```
+cp docker-compose.example.yaml docker-compose.yaml
+```
 > 执行命令安装依赖包以及Xboard
 ```
 docker compose run -it --rm xboard sh init.sh
@@ -64,11 +56,11 @@ docker compose run -it --rm xboard sh init.sh
 > 执行这条命令之后，会返回你的后台地址和管理员账号密码（你需要记录下来）    
 > 你需要执行下面的 **启动xborad** 步骤之后才能访问后台  
 
-7. 启动xboard
+5. 启动xboard
 ```
 docker compose up -d
 ```
-8. 设置反向代理
+6. 设置反向代理
 > 站点设置 > 反向代理 > 添加反向代理
 >> 在 **代理名称** 填入 Xboard  
 >> 在 **目标URL** 填入 ```http://127.0.0.1:7001```
