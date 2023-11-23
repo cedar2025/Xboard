@@ -106,6 +106,9 @@ class ConfigController extends Controller
                 'change_order_event_id' => (int)admin_setting('change_order_event_id', 0),
                 'show_info_to_server_enable' => (int)admin_setting('show_info_to_server_enable', 0),
                 'show_protocol_to_server_enable' => (int)admin_setting('show_protocol_to_server_enable', 0),
+                'default_remind_expire' => (int)admin_setting('default_remind_expire',1),
+                'default_remind_traffic' => (int)admin_setting('default_remind_traffic',1),
+
             ],
             'frontend' => [
                 'frontend_theme' => admin_setting('frontend_theme', 'Xboard'),
