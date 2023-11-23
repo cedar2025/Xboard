@@ -15,6 +15,10 @@ class Setting extends Model
             // 如果值为 null，你可能想要处理这种情况，例如返回一个默认值
             return null; // 或者返回你期望的默认值
         }
+        if (!is_string($value)) {
+            return $value;
+        }
+        
         $decodedValue = json_decode($value, true);
 
         if (json_last_error() === JSON_ERROR_NONE) {
