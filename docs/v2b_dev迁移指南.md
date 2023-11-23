@@ -31,7 +31,10 @@ docker compose down
 ```
 docker compose run -it --rm xboard php artisan db:wipe
 ```
-3. 执行迁移命令
+3. 导入旧数据库<span style="color:red">(重要)</span>数据库
+>导入你dev v2board的数据库到当前数据库当中
+
+4. 执行迁移命令
 ```
 docker compose run -it --rm xboard php artisan migratefromv2b dev231027
 ```
@@ -40,7 +43,10 @@ docker compose run -it --rm xboard php artisan migratefromv2b dev231027
 ```
 php artisan db:wipe
 ```
-2. 执行迁移命令
+2. 导入旧数据库<span style="color:red">(重要)</span>数据库
+>导入你dev v2board的数据库到当前数据库当中
+
+3. 执行迁移命令
 ```
 php artisan migratefromv2b dev231027
 ```
