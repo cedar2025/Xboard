@@ -131,6 +131,9 @@ class AuthController extends Controller
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
+        // TODO 增加过期默认值、流量告急提醒默认值 
+        $user->remind_expire = admin_setting('default_remind_expire',1);
+        $user->remind_traffic = admin_setting('default_remind_traffic',1);
         if ($request->input('invite_code')) {
             $inviteCode = InviteCode::where('code', $request->input('invite_code'))
                 ->where('status', 0)
