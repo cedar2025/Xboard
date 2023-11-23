@@ -59,7 +59,7 @@ class XboardInstall extends Command
                 \Artisan::call('config:cache');
                 return ;
             }
-
+            $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             // 选择是否使用Sqlite
             if( $this->ask('是否启用Sqlite(无需额外安装)代替Mysql(默认不启用 y/n)','n') == 'y' ) {
                 $sqliteFile = '.docker/.data/database.sqlite';
@@ -72,7 +72,6 @@ class XboardInstall extends Command
                     }
                 }
                 $envConfig = [
-                    'APP_KEY' => 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC')),
                     'DB_CONNECTION' => 'sqlite',
                     'DB_DATABASE' => $sqliteFile,
                     'DB_HOST' => '',
@@ -81,7 +80,6 @@ class XboardInstall extends Command
                 ];
             }else{
                 $envConfig = [
-                    'APP_KEY' => 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC')),
                     'DB_CONNECTION' => 'mysql',
                     'DB_HOST' => $this->ask("请输入数据库地址(默认:" . ($isDocker ? '172.17.0.1' :'127.0.0.1') .")", ($isDocker ? '172.17.0.1' :'127.0.0.1')),
                     'DB_PORT' => $this->ask('请输入数据库端口(默认:3306)', '3306'),
