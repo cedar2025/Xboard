@@ -28,12 +28,26 @@ class ClientController extends Controller
         $flag = $request->input('flag') ?? $request->header('User-Agent', '');
         $ip = $request->input('ip') ?? $request->ip();
 
-        preg_match('/(?<=\/)(\d+\.\d+\.\d+)|(?<=\/)(\d+)/', $flag, $matches);
-        $version = $matches[0]??null;
-        $isNekoBox = (stripos($flag, 'NekoBox') !== false); //判断是否为Nekobox客户端
-        $isSingBox = (stripos($flag, 'sing-box') !== false); //判断是否为stash客户端
-        $isShadowsocket = (stripos($flag, 'Shadowrocket') !== false); //判断是否为shadowsocket客户端
-        $isStash = (strpos($flag, 'Stash') !== false);
+        preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches);
+        $version = $matches[1]??null;
+        
+        $supportHy2 = false;
+        $minSupportHy2ClinetVersionMap = [
+            'NekoBox' => '1.2.7',
+            'sing-box' => '1.5.0',
+            'stash' => '2.5.0',
+            'Shadowrocket' => '1993',
+            'ClashMetaForAndroid' => '2.9.0',
+            'Nekoray' => '3.24',
+            'verge' => '1.3.8',
+            'ClashX Meta' => '1.3.5'
+        ];
+        foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
+            if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {
+                $supportHy2 = true;
+                break; // 如果已经找到支持的客户端，提前退出循环
+            }
+        }
         if(config('app.debug')){
             Log::channel('daily')->info($flag);
         }
@@ -52,15 +66,12 @@ class ClientController extends Controller
             $servers = $serverService->getAvailableServers($user);
             
             // 判断不满足，不满足的直接过滤掉
-            $serversFiltered = collect($servers)->reject(function ($server) use ($typesArr, $filterArr, $region, $isNekoBox, $isStash, $version, $isSingBox, $isShadowsocket){
+            $serversFiltered = collect($servers)->reject(function ($server) use ($typesArr, $filterArr, $region, $supportHy2){
                 // 过滤类型
                 if($typesArr){
                     // 默认过滤掉hysteria2 线路
                     if($server['type'] == "hysteria" && $server['version'] == 2 && !in_array('hysteria2', $typesArr) 
-                        && !($isNekoBox && $this->versionCompare($version, '1.2.7'))  //1.2.7<=版本 自动下发hy2
-                        && !($isSingBox && $this->versionCompare($version, '1.5.0')) //1.5.0<=版本  自动下发hy2
-                        && !($isStash && $this->versionCompare($version, '2.5.0' )) //2.5.0或者以上版本自动下发hy2
-                        && !($isShadowsocket && $this->versionCompare($version, 1993)) //1993 版本或者以上的shadowsocket下发hy2
+                        && !$supportHy2 
                         ){ 
                         return true;
                     }
@@ -169,7 +180,7 @@ class ClientController extends Controller
      */
 
     function versionCompare($version1, $version2) {
-        if (!preg_match('/^\d+\.\d+\.\d+$|\d/', $version1) || !preg_match('/^\d+\.\d+\.\d+$|\d/', $version2)) {
+        if (!preg_match('/^\d+(\.\d+){0,2}/', $version1) || !preg_match('/^\d+(\.\d+){0,2}/', $version2)) {
             return false;
         }
         $v1Parts = explode('.', $version1);
