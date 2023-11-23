@@ -46,7 +46,7 @@ git clone https://github.com/cedar2025/Xboard.git ./
 ```
 > 复制一份docker-compose.yaml文件
 ```
-cp docker-compose.example.yaml docker-compose.yaml
+cp docker-compose.sample.yaml docker-compose.yaml
 ```
 > 执行命令安装依赖包以及Xboard
 ```
