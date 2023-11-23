@@ -31,6 +31,14 @@ class VlessController extends Controller
             'rate' => 'required',
             'show' => 'nullable|in:0,1',
             'sort' => 'nullable'
+        ],[
+            'name.required' => '节点名称不能为空',
+            'group_id.required' => '权限组不能为空',
+            'host.required' => '节点地址不能为空',
+            'port.required' => '连接端口不能为空',
+            'server_port' => '服务端口不能为空',
+            'rate.required' => '倍率不能为空',
+            'network.required' => '协议不能为空',
         ]);
 
         if (isset($params['tls']) && (int)$params['tls'] === 2) {
