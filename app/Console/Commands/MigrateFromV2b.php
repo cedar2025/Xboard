@@ -172,7 +172,7 @@ class MigrateFromV2b extends Command
             }
             Setting::create([
                 'name' => $k,
-                'value' => $v,
+                'value' => is_array($v)? json_encode($v) : $v,
             ]);
             $this->info("配置 ${k} 迁移成功");
         }
