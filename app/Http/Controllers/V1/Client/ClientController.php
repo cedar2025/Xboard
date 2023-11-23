@@ -40,7 +40,8 @@ class ClientController extends Controller
             'ClashMetaForAndroid' => '2.9.0',
             'Nekoray' => '3.24',
             'verge' => '1.3.8',
-            'ClashX Meta' => '1.3.5'
+            'ClashX Meta' => '1.3.5',
+            'Hiddify' => '0.1.0'
         ];
         foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
             if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {
