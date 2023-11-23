@@ -27,3 +27,4 @@ storage/laravels.pid
 storage/laravels-timer-process.pid
 cli-php.ini
 frontend
+docker-compose.yaml
