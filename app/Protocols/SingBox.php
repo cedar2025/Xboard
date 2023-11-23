@@ -5,7 +5,7 @@ use App\Utils\Helper;
 
 class SingBox
 {
-    public $flag = 'sing-box';
+    public $flag = 'sing-box,Hiddify';
     private $servers;
     private $user;
 
