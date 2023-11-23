@@ -116,42 +116,30 @@ sed -i 's/^disable_functions[[:space:]]*=[[:space:]]*.*/disable_functions=header
 - 2️⃣. 找到Supervisor进行安装，安装完成后点击设置 > Add Daemon按照如下填写
 - - 在 Name 填写 webman
 - - 在 Run User 选择 www  
-- - 在 Run Dir 选择 站点目录 在 Start Command 填写 /www/server/php/81/bin/php -c cli-php.ini webman start 在 Processes 填写 1  
+- - 在 Run Dir 选择 站点目录 在 Start Command 填写 ```/www/server/php/81/bin/php -c cli-php.ini webman.php start``` 在 Processes 填写 1  
 >填写后点击Confirm添加即可运行。
 
-3. 添加反向代理
-> 站点设置 > 反向代理 > 添加反向代理
->> 在 **代理名称** 填入 Xboard  
->> 在 **目标URL** 填入 ```http://127.0.0.1:7010```
-> 添加添加后 需要点击该反向代理的```配置文件```编辑反向代理规则做以下修改
+3. 修改伪静态
+> 站点设置 > URL Rewrite(伪静态) 填入一下内容
 
 ```
-location ~* \.(jpg|jpeg|png|gif|js|css|svg|woff2|woff|ttf|eot|wasm|json|ico)$ {}
-location ^~ /
-{
-    proxy_pass http://127.0.0.1:8000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header REMOTE-HOST $remote_addr;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
-    proxy_http_version 1.1;
-    # proxy_hide_header Upgrade;
-    add_header X-Cache $upstream_cache_status;
+location ~* \.(jpg|jpeg|png|gif|js|css|svg|woff2|woff|ttf|eot|wasm|json|ico)$ {
 
-    #Set Nginx Cache
-    set $static_filetmMCG7Tk 0;
-    if ( $uri ~* "\.(gif|png|jpg|css|js|woff|woff2)$" )
-    {
-    	set $static_filetmMCG7Tk 1;
-    	expires 1m;
-        }
-    if ( $static_filetmMCG7Tk = 0 )
-    {
-    add_header Cache-Control no-cache;
-    }
 }
+location ~ .* {
+        proxy_pass http://127.0.0.1:7010;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Real-PORT $remote_port;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header Scheme $scheme;
+        proxy_set_header Server-Protocol $server_protocol;
+        proxy_set_header Server-Name $server_name;
+        proxy_set_header Server-Addr $server_addr;
+        proxy_set_header Server-Port $server_port;
+  }
 ```
 
 > 在此你的webman已经成功部署了
