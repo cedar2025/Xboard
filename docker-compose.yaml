@@ -11,8 +11,7 @@ services:
       - docker=true #用于给安装脚本判断是否为docker环境
     depends_on:
       - redis
-    ports:
-      - 7001:7001
+    network_mode: host
   redis:
     build: 
       context: .docker/services/redis
