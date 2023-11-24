@@ -81,7 +81,7 @@ class XboardInstall extends Command
             }else{
                 $envConfig = [
                     'DB_CONNECTION' => 'mysql',
-                    'DB_HOST' => $this->ask("请输入数据库地址(默认:" . ($isDocker ? '172.17.0.1' :'127.0.0.1') .")", ($isDocker ? '172.17.0.1' :'127.0.0.1')),
+                    'DB_HOST' => $this->ask("请输入数据库地址(默认:127.0.0.1)", '127.0.0.1'),
                     'DB_PORT' => $this->ask('请输入数据库端口(默认:3306)', '3306'),
                     'DB_DATABASE' => $this->ask('请输入数据库名', 'xboard'),
                     'DB_USERNAME' => $this->ask('请输入数据库用户名'),
