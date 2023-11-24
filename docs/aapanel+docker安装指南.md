@@ -72,7 +72,7 @@ docker compose up -d
 >通过SSH登录到服务器后访问站点路径如：/www/wwwroot/你的站点域名。  
 >以下命令都需要在站点目录进行执行。
 ```
-sh update.sh
+docker compose run -it --rm xboard sh update.sh
 ```
 2. 重启Xboard
 ```
