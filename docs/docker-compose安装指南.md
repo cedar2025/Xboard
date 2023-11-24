@@ -42,7 +42,8 @@ docker compose up -d
 cd Xboard
 vi docker-compose.yaml
 ```
-> 修改docker-compose.yaml 当中image后面的版本号为你需要的版本
+> 修改docker-compose.yaml 当中image后面的版本号为你需要的版本  
+> 如果为版本为latest 则可以忽略这一步，直接进行第二步
 
 2. 更新数据库（可以执行多次都是安全的）
 ```
