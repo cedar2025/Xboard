@@ -12,9 +12,11 @@ services:
     depends_on:
       - redis
     network_mode: host
+    restart: always
   redis:
     build: 
       context: .docker/services/redis
+    restart: always
     volumes:
       - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
       - redis-socket:/run/redis-socket # 挂载socket
