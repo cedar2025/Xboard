@@ -156,3 +156,5 @@ sh update.sh
 - 2️⃣. 找到Supervisor点击设置，找到名为webman的守护进程点击重启即可
 
 
+### 注意
+启用webman后做的任何代码修改都需要重启生效

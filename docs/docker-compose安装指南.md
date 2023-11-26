@@ -65,3 +65,6 @@ vi docker-compose.yaml
 ```
 dockcer compose up -d
 ```
+
+### 注意
+启用webman后做的任何代码修改都需要重启生效
