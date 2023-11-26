@@ -79,3 +79,6 @@ docker compose run -it --rm xboard sh update.sh
 docker compose restart
 ```
 🎉： 在此你已完成Xboard的更新
+
+### 注意
+启用webman后做的任何代码修改都需要重启生效
