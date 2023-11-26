@@ -13,11 +13,13 @@ services:
     depends_on:
       - redis
     network_mode: host #默认使用Host模式，需要Bridge模式自己注释掉
+    restart: always
     # ports:
     #   - 7001:7001
   redis:
     build: 
       context: .docker/services/redis
+    restart: always
     volumes:
       - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
       - redis-socket:/run/redis-socket # 挂载socket
