@@ -23,8 +23,9 @@ class TelegramController extends Controller
 
     public function webhook(Request $request)
     {
-        $this->formatMessage($request->input());
-        $this->formatChatJoinRequest($request->input());
+        $data = json_decode(get_request_content(),true);
+        $this->formatMessage($data);
+        $this->formatChatJoinRequest($data);
         $this->handle();
     }
 
