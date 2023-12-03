@@ -5,7 +5,7 @@ use App\Utils\Helper;
 
 class SingBox
 {
-    public $flag = 'sing-box,Hiddify';
+    public $flag = 'sing-box,hiddify';
     private $servers;
     private $user;
 
@@ -17,13 +17,16 @@ class SingBox
 
     public function handle()
     {
-        $appName = config('app_name', 'V2Board');
+        $appName = config('app_name', 'XBoard');
         $config = $this->loadConfig();
         $outbounds = $this->buildOutbounds();
         $config['outbounds'] = $outbounds;
+        $user = $this->user;
 
-        return json_encode($config);
-        //return response($config, 200);
+        return response($config, 200)
+            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}")
+            ->header('profile-update-interval', '24')
+            ->header('content-disposition', 'attachment;filename*=UTF-8\'\'' . rawurlencode($appName));
     }
 
     protected function loadConfig()
