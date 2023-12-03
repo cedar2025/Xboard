@@ -293,8 +293,8 @@ class SingBox
             $array['type'] = 'hysteria';
             $array['up_mbps'] = $user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps'];
             $array['down_mbps'] = $user->speed_limit ? min($server['up_mbps'], $user->speed_limit) : $server['up_mbps'];
-            if (isset($server['obfs']) && isset($server['obfs_password'])) {
-                $array['obfs'] = $server['obfs_password'];
+            if ($server['is_obfs']) {
+                $array['obfs'] = $server['server_key'];
             }
 
             $array['disable_mtu_discovery'] = true;
@@ -305,9 +305,9 @@ class SingBox
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
 
-            if (isset($server['obfs'])) {
-                $array['obfs']['type'] = $server['obfs'];
-                $array['obfs']['password'] = $server['obfs_password'];
+            if ($server['is_obfs']) {
+                $array['obfs']['type'] = 'salamander';
+                $array['obfs']['password'] = $server['server_key'];
             }
         }
 
