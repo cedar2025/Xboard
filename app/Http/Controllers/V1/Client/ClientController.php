@@ -26,6 +26,7 @@ class ClientController extends Controller
         $filterArr = (mb_strlen($request->input('filter')) > 20) ? null : explode("|" ,str_replace(['|','｜',','], "|" , $request->input('filter')));
 
         $flag = $request->input('flag') ?? $request->header('User-Agent', '');
+        $flag = strtolower($flag);
         $ip = $request->input('ip') ?? $request->ip();
 
         preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches);
@@ -52,7 +53,6 @@ class ClientController extends Controller
         if(config('app.debug')){
             Log::channel('daily')->info($flag);
         }
-        $flag = strtolower($flag);
         $user = $request->user;
         // account not expired and is not banned.
         $userService = new UserService();
@@ -82,7 +82,7 @@ class ClientController extends Controller
                 if($filterArr){
                     $rejectFlag = true;
                     foreach($filterArr as $filter){
-                        if(strpos($server['name'],$filter) !== false) $rejectFlag = false;
+                        if(stripos($server['name'],$filter) !== false) $rejectFlag = false;
                     }
                     if($rejectFlag) return true;
                 }
@@ -94,7 +94,7 @@ class ClientController extends Controller
                         $excludeList = explode("|",str_replace(["｜",","," ","，"],"|",$v));
                         $rejectFlag = false;
                         foreach($excludeList as $needle){
-                            if(strpos($region, $needle) !== false){
+                            if(stripos($region, $needle) !== false){
                                 return true;
                             }
                         }
@@ -131,7 +131,7 @@ class ClientController extends Controller
                     $classFlags = explode(',', $class->flag);
                     $isMatch = function() use ($classFlags, $flag){
                         foreach ($classFlags as $classFlag){
-                            if(strpos($flag, $classFlag) !== false) return true;
+                            if(stripos($flag, $classFlag) !== false) return true;
                         }
                         return false;
                     };
