@@ -59,7 +59,6 @@ class XboardInstall extends Command
                 \Artisan::call('config:cache');
                 return ;
             }
-            $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             // 选择是否使用Sqlite
             if( $this->ask('是否启用Sqlite(无需额外安装)代替Mysql(默认不启用 y/n)','n') == 'y' ) {
                 $sqliteFile = '.docker/.data/database.sqlite';
@@ -88,6 +87,7 @@ class XboardInstall extends Command
                     'DB_PASSWORD' => $this->ask('请输入数据库密码'),
                 ];   
             }
+            $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             $envConfig['INSTALLED'] = 'true';
             // 判断是否为Docker环境
             if ($isDocker == 'true' && ($this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y')){
