@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Guest;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\OrderService;
@@ -16,13 +17,13 @@ class PaymentController extends Controller
         try {
             $paymentService = new PaymentService($method, null, $uuid);
             $verify = $paymentService->notify($request->input());
-            if (!$verify) abort(500, 'verify error');
+            if (!$verify) throw new ApiException(500, 'verify error');
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
-                abort(500, 'handle error');
+                throw new ApiException(500, 'handle error');
             }
             return(isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
         } catch (\Exception $e) {
-            abort(500, 'fail');
+            throw new ApiException(500, 'fail');
         }
     }
 
@@ -30,7 +31,7 @@ class PaymentController extends Controller
     {
         $order = Order::where('trade_no', $tradeNo)->first();
         if (!$order) {
-            abort(500, 'order is not found');
+            throw new ApiException(500, 'order is not found');
         }
         if ($order->status !== 0) return true;
         $orderService = new OrderService($order);

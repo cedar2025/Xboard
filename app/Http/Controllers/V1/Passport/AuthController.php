@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Passport;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\AuthForget;
 use App\Http\Requests\Passport\AuthLogin;
@@ -23,7 +24,7 @@ class AuthController extends Controller
     public function loginWithMailLink(Request $request)
     {
         if (!(int)admin_setting('login_with_mail_link_enable')) {
-            abort(404);
+            throw new ApiException(404);
         }
         $params = $request->validate([
             'email' => 'required|email:strict',
@@ -31,7 +32,7 @@ class AuthController extends Controller
         ]);
 
         if (Cache::get(CacheKey::get('LAST_SEND_LOGIN_WITH_MAIL_LINK_TIMESTAMP', $params['email']))) {
-            abort(500, __('Sending frequently, please try again later'));
+            throw new ApiException(500, __('Sending frequently, please try again later'));
         }
 
         $user = User::where('email', $params['email'])->first();
@@ -78,7 +79,7 @@ class AuthController extends Controller
         if ((int)admin_setting('register_limit_by_ip_enable', 0)) {
             $registerCountByIP = Cache::get(CacheKey::get('REGISTER_IP_RATE_LIMIT', $request->ip())) ?? 0;
             if ((int)$registerCountByIP >= (int)admin_setting('register_limit_count', 3)) {
-                abort(500, __('Register frequently, please try again after :minute minute', [
+                throw new ApiException(500, __('Register frequently, please try again after :minute minute', [
                     'minute' => admin_setting('register_limit_expire', 60)
                 ]));
             }
@@ -87,7 +88,7 @@ class AuthController extends Controller
             $recaptcha = new ReCaptcha(admin_setting('recaptcha_key'));
             $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
             if (!$recaptchaResp->isSuccess()) {
-                abort(500, __('Invalid code is incorrect'));
+                throw new ApiException(500, __('Invalid code is incorrect'));
             }
         }
         if ((int)admin_setting('email_whitelist_enable', 0)) {
@@ -95,36 +96,36 @@ class AuthController extends Controller
                 $request->input('email'),
                 admin_setting('email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT))
             ) {
-                abort(500, __('Email suffix is not in the Whitelist'));
+                throw new ApiException(500, __('Email suffix is not in the Whitelist'));
             }
         }
         if ((int)admin_setting('email_gmail_limit_enable', 0)) {
             $prefix = explode('@', $request->input('email'))[0];
             if (strpos($prefix, '.') !== false || strpos($prefix, '+') !== false) {
-                abort(500, __('Gmail alias is not supported'));
+                throw new ApiException(500, __('Gmail alias is not supported'));
             }
         }
         if ((int)admin_setting('stop_register', 0)) {
-            abort(500, __('Registration has closed'));
+            throw new ApiException(500, __('Registration has closed'));
         }
         if ((int)admin_setting('invite_force', 0)) {
             if (empty($request->input('invite_code'))) {
-                abort(500, __('You must use the invitation code to register'));
+                throw new ApiException(500, __('You must use the invitation code to register'));
             }
         }
         if ((int)admin_setting('email_verify', 0)) {
             if (empty($request->input('email_code'))) {
-                abort(500, __('Email verification code cannot be empty'));
+                throw new ApiException(500, __('Email verification code cannot be empty'));
             }
             if ((string)Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email'))) !== (string)$request->input('email_code')) {
-                abort(500, __('Incorrect email verification code'));
+                throw new ApiException(500, __('Incorrect email verification code'));
             }
         }
         $email = $request->input('email');
         $password = $request->input('password');
         $exist = User::where('email', $email)->first();
         if ($exist) {
-            abort(500, __('Email already exists'));
+            throw new ApiException(500, __('Email already exists'));
         }
         $user = new User();
         $user->email = $email;
@@ -140,7 +141,7 @@ class AuthController extends Controller
                 ->first();
             if (!$inviteCode) {
                 if ((int)admin_setting('invite_force', 0)) {
-                    abort(500, __('Invalid invitation code'));
+                    throw new ApiException(500, __('Invalid invitation code'));
                 }
             } else {
                 $user->invite_user_id = $inviteCode->user_id ? $inviteCode->user_id : null;
@@ -164,7 +165,7 @@ class AuthController extends Controller
         }
 
         if (!$user->save()) {
-            abort(500, __('Register failed'));
+            throw new ApiException(500, __('Register failed'));
         }
         if ((int)admin_setting('email_verify', 0)) {
             Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email')));
@@ -196,7 +197,7 @@ class AuthController extends Controller
         if ((int)admin_setting('password_limit_enable', 1)) {
             $passwordErrorCount = (int)Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
             if ($passwordErrorCount >= (int)admin_setting('password_limit_count', 5)) {
-                abort(500, __('There are too many password errors, please try again after :minute minutes.', [
+                throw new ApiException(500, __('There are too many password errors, please try again after :minute minutes.', [
                     'minute' => admin_setting('password_limit_expire', 60)
                 ]));
             }
@@ -204,7 +205,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $email)->first();
         if (!$user) {
-            abort(500, __('Incorrect email or password'));
+            throw new ApiException(500, __('Incorrect email or password'));
         }
         if (!Helper::multiPasswordVerify(
             $user->password_algo,
@@ -219,11 +220,11 @@ class AuthController extends Controller
                     60 * (int)admin_setting('password_limit_expire', 60)
                 );
             }
-            abort(500, __('Incorrect email or password'));
+            throw new ApiException(500, __('Incorrect email or password'));
         }
 
         if ($user->banned) {
-            abort(500, __('Your account has been suspended'));
+            throw new ApiException(500, __('Your account has been suspended'));
         }
 
         $authService = new AuthService($user);
@@ -248,14 +249,14 @@ class AuthController extends Controller
             $key =  CacheKey::get('TEMP_TOKEN', $request->input('verify'));
             $userId = Cache::get($key);
             if (!$userId) {
-                abort(500, __('Token error'));
+                throw new ApiException(500, __('Token error'));
             }
             $user = User::find($userId);
             if (!$user) {
-                abort(500, __('The user does not '));
+                throw new ApiException(500, __('The user does not '));
             }
             if ($user->banned) {
-                abort(500, __('Your account has been suspended'));
+                throw new ApiException(500, __('Your account has been suspended'));
             }
             Cache::forget($key);
             $authService = new AuthService($user);
@@ -268,10 +269,10 @@ class AuthController extends Controller
     public function getQuickLoginUrl(Request $request)
     {
         $authorization = $request->input('auth_data') ?? $request->header('authorization');
-        if (!$authorization) abort(403, '未登录或登陆已过期');
+        if (!$authorization) throw new ApiException(403, '未登录或登陆已过期');
 
         $user = AuthService::decryptAuthData($authorization);
-        if (!$user) abort(403, '未登录或登陆已过期');
+        if (!$user) throw new ApiException(403, '未登录或登陆已过期');
 
         $code = Helper::guid();
         $key = CacheKey::get('TEMP_TOKEN', $code);
@@ -291,20 +292,20 @@ class AuthController extends Controller
     {
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $request->input('email'));
         $forgetRequestLimit = (int)Cache::get($forgetRequestLimitKey);
-        if ($forgetRequestLimit >= 3) abort(500, __('Reset failed, Please try again later'));
+        if ($forgetRequestLimit >= 3) throw new ApiException(500, __('Reset failed, Please try again later'));
         if ((string)Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email'))) !== (string)$request->input('email_code')) {
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
-            abort(500, __('Incorrect email verification code'));
+            throw new ApiException(500, __('Incorrect email verification code'));
         }
         $user = User::where('email', $request->input('email'))->first();
         if (!$user) {
-            abort(500, __('This email is not registered in the system'));
+            throw new ApiException(500, __('This email is not registered in the system'));
         }
         $user->password = password_hash($request->input('password'), PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
         if (!$user->save()) {
-            abort(500, __('Reset failed'));
+            throw new ApiException(500, __('Reset failed'));
         }
         Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email')));
         return response([

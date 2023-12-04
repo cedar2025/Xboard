@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\ServerShadowsocks;
 use App\Services\ServerService;
@@ -20,10 +21,10 @@ class ShadowsocksTidalabController extends Controller
     {
         $token = $request->input('token');
         if (empty($token)) {
-            abort(500, 'token is null');
+            throw new ApiException(500, 'token is null');
         }
         if ($token !== admin_setting('server_token')) {
-            abort(500, 'token is error');
+            throw new ApiException(500, 'token is error');
         }
     }
 
@@ -34,7 +35,7 @@ class ShadowsocksTidalabController extends Controller
         $nodeId = $request->input('node_id');
         $server = ServerShadowsocks::find($nodeId);
         if (!$server) {
-            abort(500, 'fail');
+            throw new ApiException(500, 'fail');
         }
         Cache::put(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $server->id), time(), 3600);
         $serverService = new ServerService();

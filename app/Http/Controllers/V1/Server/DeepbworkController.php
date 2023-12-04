@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\ServerVmess;
 use App\Services\ServerService;
@@ -9,8 +10,6 @@ use App\Services\UserService;
 use App\Utils\CacheKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /*
  * V2ray Aurora
@@ -23,10 +22,10 @@ class DeepbworkController extends Controller
     {
         $token = $request->input('token');
         if (empty($token)) {
-            abort(500, 'token is null');
+            throw new ApiException(500, 'token is null');
         }
         if ($token !== admin_setting('server_token')) {
-            abort(500, 'token is error');
+            throw new ApiException(500, 'token is error');
         }
     }
 
@@ -37,7 +36,7 @@ class DeepbworkController extends Controller
         $nodeId = $request->input('node_id');
         $server = ServerVmess::find($nodeId);
         if (!$server) {
-            abort(500, 'fail');
+            throw new ApiException(500, 'fail');
         }
         Cache::put(CacheKey::get('SERVER_VMESS_LAST_CHECK_AT', $server->id), time(), 3600);
         $serverService = new ServerService();
@@ -97,12 +96,12 @@ class DeepbworkController extends Controller
         $nodeId = $request->input('node_id');
         $localPort = $request->input('local_port');
         if (empty($nodeId) || empty($localPort)) {
-            abort(500, '参数错误');
+            throw new ApiException(422, '参数错误');
         }
         try {
             $json = $this->getV2RayConfig($nodeId, $localPort);
         } catch (\Exception $e) {
-            abort(500, $e->getMessage());
+            throw new ApiException(500, $e->getMessage());
         }
 
         return(json_encode($json, JSON_UNESCAPED_UNICODE));
@@ -112,7 +111,7 @@ class DeepbworkController extends Controller
     {
         $server = ServerVmess::find($nodeId);
         if (!$server) {
-            abort(500, '节点不存在');
+            throw new ApiException(500, '节点不存在');
         }
         $json = json_decode(self::V2RAY_CONFIG);
         $json->log->loglevel = (int)admin_setting('server_log_enable') ? 'debug' : 'none';

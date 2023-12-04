@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ServerVmessSave;
 use App\Http\Requests\Admin\ServerVmessUpdate;
@@ -17,12 +18,12 @@ class VmessController extends Controller
         if ($request->input('id')) {
             $server = ServerVmess::find($request->input('id'));
             if (!$server) {
-                abort(500, '服务器不存在');
+                throw new ApiException(500, '服务器不存在');
             }
             try {
                 $server->update($params);
             } catch (\Exception $e) {
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
             return response([
                 'data' => true
@@ -30,7 +31,7 @@ class VmessController extends Controller
         }
 
         if (!ServerVmess::create($params)) {
-            abort(500, '创建失败');
+            throw new ApiException(500, '创建失败');
         }
 
         return response([
@@ -43,7 +44,7 @@ class VmessController extends Controller
         if ($request->input('id')) {
             $server = ServerVmess::find($request->input('id'));
             if (!$server) {
-                abort(500, '节点ID不存在');
+                throw new ApiException(500, '节点ID不存在');
             }
         }
         return response([
@@ -60,12 +61,12 @@ class VmessController extends Controller
         $server = ServerVmess::find($request->input('id'));
 
         if (!$server) {
-            abort(500, '该服务器不存在');
+            throw new ApiException(500, '该服务器不存在');
         }
         try {
             $server->update($params);
         } catch (\Exception $e) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
 
         return response([
@@ -78,10 +79,10 @@ class VmessController extends Controller
         $server = ServerVmess::find($request->input('id'));
         $server->show = 0;
         if (!$server) {
-            abort(500, '服务器不存在');
+            throw new ApiException(500, '服务器不存在');
         }
         if (!ServerVmess::create($server->toArray())) {
-            abort(500, '复制失败');
+            throw new ApiException(500, '复制失败');
         }
 
         return response([

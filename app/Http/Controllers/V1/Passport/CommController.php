@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers\V1\Passport;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\CommSendEmailVerify;
 use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
-use App\Models\User;
 use App\Utils\CacheKey;
 use App\Utils\Dict;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
 use ReCaptcha\ReCaptcha;
 
 class CommController extends Controller
@@ -30,12 +28,12 @@ class CommController extends Controller
             $recaptcha = new ReCaptcha(admin_setting('recaptcha_key'));
             $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
             if (!$recaptchaResp->isSuccess()) {
-                abort(500, __('Invalid code is incorrect'));
+                throw new ApiException(500, __('Invalid code is incorrect'));
             }
         }
         $email = $request->input('email');
         if (Cache::get(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email))) {
-            abort(500, __('Email verification code has been sent, please request again later'));
+            throw new ApiException(500, __('Email verification code has been sent, please request again later'));
         }
         $code = rand(100000, 999999);
         $subject = admin_setting('app_name', 'XBoard') . __('Email verification code');

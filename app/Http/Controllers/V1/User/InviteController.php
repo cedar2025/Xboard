@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\User;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\CommissionLog;
 use App\Models\InviteCode;
@@ -15,7 +16,7 @@ class InviteController extends Controller
     public function save(Request $request)
     {
         if (InviteCode::where('user_id', $request->user['id'])->where('status', 0)->count() >= admin_setting('invite_gen_limit', 5)) {
-            abort(500, __('The maximum number of creations has been reached'));
+            throw new ApiException(500, __('The maximum number of creations has been reached'));
         }
         $inviteCode = new InviteCode();
         $inviteCode->user_id = $request->user['id'];

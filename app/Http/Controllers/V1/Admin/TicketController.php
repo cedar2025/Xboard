@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
 {
@@ -19,7 +18,7 @@ class TicketController extends Controller
             $ticket = Ticket::where('id', $request->input('id'))
                 ->first();
             if (!$ticket) {
-                abort(500, '工单不存在');
+                throw new ApiException(500, '工单不存在');
             }
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
             for ($i = 0; $i < count($ticket['message']); $i++) {
@@ -58,10 +57,10 @@ class TicketController extends Controller
     public function reply(Request $request)
     {
         if (empty($request->input('id'))) {
-            abort(500, '参数错误');
+            throw new ApiException(422, '参数错误');
         }
         if (empty($request->input('message'))) {
-            abort(500, '消息不能为空');
+            throw new ApiException(500, '消息不能为空');
         }
         $ticketService = new TicketService();
         $ticketService->replyByAdmin(
@@ -77,16 +76,16 @@ class TicketController extends Controller
     public function close(Request $request)
     {
         if (empty($request->input('id'))) {
-            abort(500, '参数错误');
+            throw new ApiException(422, '参数错误');
         }
         $ticket = Ticket::where('id', $request->input('id'))
             ->first();
         if (!$ticket) {
-            abort(500, '工单不存在');
+            throw new ApiException(500, '工单不存在');
         }
         $ticket->status = 1;
         if (!$ticket->save()) {
-            abort(500, '关闭失败');
+            throw new ApiException(500, '关闭失败');
         }
         return response([
             'data' => true
