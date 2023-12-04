@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\ServerRoute;
 use Illuminate\Http\Request;
@@ -47,10 +48,10 @@ class RouteController extends Controller
                     'data' => true
                 ];
             } catch (\Exception $e) {
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
         }
-        if (!ServerRoute::create($params)) abort(500, '创建失败');
+        if (!ServerRoute::create($params)) throw new ApiException(500, '创建失败');
         return [
             'data' => true
         ];
@@ -59,8 +60,8 @@ class RouteController extends Controller
     public function drop(Request $request)
     {
         $route = ServerRoute::find($request->input('id'));
-        if (!$route) abort(500, '路由不存在');
-        if (!$route->delete()) abort(500, '删除失败');
+        if (!$route) throw new ApiException(500, '路由不存在');
+        if (!$route->delete()) throw new ApiException(500, '删除失败');
         return [
             'data' => true
         ];

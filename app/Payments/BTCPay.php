@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Payments;
+use App\Exceptions\ApiException;
 
 
 class BTCPay {
@@ -52,7 +53,7 @@ class BTCPay {
         $ret = @json_decode($ret_raw, true);
 
         if(empty($ret['checkoutLink'])) {
-            abort(500, "error!");
+            throw new ApiException(500, "error!");
         }
         return [
             'type' => 1, // Redirect to url
@@ -75,7 +76,7 @@ class BTCPay {
         $computedSignature = "sha256=" . \hash_hmac('sha256', $payload, $this->config['btcpay_webhook_key']);
 
         if (!self::hashEqual($signraturHeader, $computedSignature)) {
-            abort(400, 'HMAC signature does not match');
+            throw new ApiException(400, 'HMAC signature does not match');
             return false;
         }
 

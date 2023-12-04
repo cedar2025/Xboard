@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 class ThemeService
@@ -33,22 +32,5 @@ class ThemeService
         } catch (\Exception $e) {
             abort(500, "{$this->theme}初始化失败");
         }
-        // $data = var_export($data, 1);
-        // try {
-        //     if (!File::put(base_path() . "/config/theme/{$this->theme}.php", "<?php\n return $data ;")) {
-        //         abort(500, "{$this->theme}初始化失败");
-        //     }
-        // } catch (\Exception $e) {
-        //     abort(500, '请检查V2Board目录权限');
-        // }
-
-        // try {
-        //     Artisan::call('config:cache');
-        //     while (true) {
-        //         if (config("theme.{$this->theme}")) break;
-        //     }
-        // } catch (\Exception $e) {
-        //     abort(500, "{$this->theme}初始化失败");
-        // }
     }
 }

@@ -70,6 +70,5 @@ class SendEmailJob implements ShouldQueue
 
         MailLog::create($log);
         $log['config'] = config('mail');
-        return $log;
     }
 }

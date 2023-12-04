@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\User;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
@@ -17,10 +18,10 @@ class PlanController extends Controller
         if ($request->input('id')) {
             $plan = Plan::where('id', $request->input('id'))->first();
             if (!$plan) {
-                abort(500, __('Subscription plan does not exist'));
+                throw new ApiException(500, __('Subscription plan does not exist'));
             }
             if ((!$plan->show && !$plan->renew) || (!$plan->show && $user->plan_id !== $plan->id)) {
-                abort(500, __('Subscription plan does not exist'));
+                throw new ApiException(500, __('Subscription plan does not exist'));
             }
             return response([
                 'data' => $plan

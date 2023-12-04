@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Exceptions\ApiException;
 use App\Utils\CacheKey;
 use Closure;
 use App\Models\User;
@@ -20,11 +21,11 @@ class Client
     {
         $token = $request->input('token');
         if (empty($token)) {
-            abort(403, 'token is null');
+            throw new ApiException(403, 'token is null');
         }
         $user = User::where('token', $token)->first();
         if (!$user) {
-            abort(403, 'token is error');
+            throw new ApiException(403, 'token is error');
         }
         $request->merge([
             'user' => $user

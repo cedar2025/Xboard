@@ -2,6 +2,7 @@
 namespace App\Services;
 
 
+use App\Exceptions\ApiException;
 use App\Jobs\SendEmailJob;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -36,7 +37,7 @@ class TicketService {
         $ticket = Ticket::where('id', $ticketId)
             ->first();
         if (!$ticket) {
-            abort(500, '工单不存在');
+            throw new ApiException(500, '工单不存在');
         }
         $ticket->status = 0;
         DB::beginTransaction();
@@ -52,7 +53,7 @@ class TicketService {
         }
         if (!$ticketMessage || !$ticket->save()) {
             DB::rollback();
-            abort(500, '工单回复失败');
+            throw new ApiException(500, '工单回复失败');
         }
         DB::commit();
         $this->sendEmailNotify($ticket, $ticketMessage);

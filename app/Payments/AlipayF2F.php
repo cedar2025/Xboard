@@ -4,6 +4,7 @@
  * 自己写别抄，抄NMB抄
  */
 namespace App\Payments;
+use App\Exceptions\ApiException;
 
 class AlipayF2F {
     public function __construct($config)
@@ -57,7 +58,7 @@ class AlipayF2F {
                 'data' => $gateway->getQrCodeUrl()
             ];
         } catch (\Exception $e) {
-            abort(500, $e->getMessage());
+            throw new ApiException(500, $e->getMessage());
         }
     }
 

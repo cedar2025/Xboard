@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Guest;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class TelegramController extends Controller
     public function __construct(Request $request)
     {
         if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
-            abort(401);
+            throw new ApiException(401);
         }
 
         $this->telegramService = new TelegramService();

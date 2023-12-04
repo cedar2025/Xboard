@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\User;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UserChangePassword;
 use App\Http\Requests\User\UserTransfer;
@@ -23,7 +24,7 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         $authService = new AuthService($user);
         return response([
@@ -35,7 +36,7 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         $authService = new AuthService($user);
         return response([
@@ -60,7 +61,7 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         if (!Helper::multiPasswordVerify(
             $user->password_algo,
@@ -68,13 +69,13 @@ class UserController extends Controller
             $request->input('old_password'),
             $user->password)
         ) {
-            abort(500, __('The old password is wrong'));
+            throw new ApiException(500, __('The old password is wrong'));
         }
         $user->password = password_hash($request->input('new_password'), PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
         if (!$user->save()) {
-            abort(500, __('Save failed'));
+            throw new ApiException(500, __('Save failed'));
         }
         return response([
             'data' => true
@@ -103,7 +104,7 @@ class UserController extends Controller
             ])
             ->first();
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         $user['avatar_url'] = 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
         return response([
@@ -143,12 +144,12 @@ class UserController extends Controller
             ])
             ->first();
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         if ($user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
             if (!$user['plan']) {
-                abort(500, __('Subscription plan does not exist'));
+                throw new ApiException(500, __('Subscription plan does not exist'));
             }
         }
         $user['subscribe_url'] = Helper::getSubscribeUrl("/api/v1/client/subscribe?token={$user['token']}");
@@ -163,12 +164,12 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
         if (!$user->save()) {
-            abort(500, __('Reset failed'));
+            throw new ApiException(500, __('Reset failed'));
         }
         return response([
             'data' => Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user->token)
@@ -184,12 +185,12 @@ class UserController extends Controller
 
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         try {
             $user->update($updateData);
         } catch (\Exception $e) {
-            abort(500, __('Save failed'));
+            throw new ApiException(500, __('Save failed'));
         }
 
         return response([
@@ -201,15 +202,15 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
         if ($request->input('transfer_amount') > $user->commission_balance) {
-            abort(500, __('Insufficient commission balance'));
+            throw new ApiException(500, __('Insufficient commission balance'));
         }
         $user->commission_balance = $user->commission_balance - $request->input('transfer_amount');
         $user->balance = $user->balance + $request->input('transfer_amount');
         if (!$user->save()) {
-            abort(500, __('Transfer failed'));
+            throw new ApiException(500, __('Transfer failed'));
         }
         return response([
             'data' => true
@@ -220,7 +221,7 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            abort(500, __('The user does not exist'));
+            throw new ApiException(500, __('The user does not exist'));
         }
 
         $code = Helper::guid();

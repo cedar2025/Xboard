@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ServerShadowsocksSave;
 use App\Http\Requests\Admin\ServerShadowsocksUpdate;
@@ -16,12 +17,12 @@ class ShadowsocksController extends Controller
         if ($request->input('id')) {
             $server = ServerShadowsocks::find($request->input('id'));
             if (!$server) {
-                abort(500, '服务器不存在');
+                throw new ApiException(500, '服务器不存在');
             }
             try {
                 $server->update($params);
             } catch (\Exception $e) {
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
             return response([
                 'data' => true
@@ -29,7 +30,7 @@ class ShadowsocksController extends Controller
         }
 
         if (!ServerShadowsocks::create($params)) {
-            abort(500, '创建失败');
+            throw new ApiException(500, '创建失败');
         }
 
         return response([
@@ -42,7 +43,7 @@ class ShadowsocksController extends Controller
         if ($request->input('id')) {
             $server = ServerShadowsocks::find($request->input('id'));
             if (!$server) {
-                abort(500, '节点ID不存在');
+                throw new ApiException(500, '节点ID不存在');
             }
         }
         return response([
@@ -59,12 +60,12 @@ class ShadowsocksController extends Controller
         $server = ServerShadowsocks::find($request->input('id'));
 
         if (!$server) {
-            abort(500, '该服务器不存在');
+            throw new ApiException(500, '该服务器不存在');
         }
         try {
             $server->update($params);
         } catch (\Exception $e) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
 
         return response([
@@ -77,10 +78,10 @@ class ShadowsocksController extends Controller
         $server = ServerShadowsocks::find($request->input('id'));
         $server->show = 0;
         if (!$server) {
-            abort(500, '服务器不存在');
+            throw new ApiException(500, '服务器不存在');
         }
         if (!ServerShadowsocks::create($server->toArray())) {
-            abort(500, '复制失败');
+            throw new ApiException(500, '复制失败');
         }
 
         return response([
