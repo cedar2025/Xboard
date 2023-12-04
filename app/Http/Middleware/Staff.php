@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Exceptions\ApiException;
 use App\Services\AuthService;
 use Closure;
 
@@ -17,10 +18,10 @@ class Staff
     public function handle($request, Closure $next)
     {
         $authorization = $request->input('auth_data') ?? $request->header('authorization');
-        if (!$authorization) abort(403, '未登录或登陆已过期');
+        if (!$authorization) throw new ApiException(403, '未登录或登陆已过期');
 
         $user = AuthService::decryptAuthData($authorization);
-        if (!$user || !$user['is_staff']) abort(403, '未登录或登陆已过期');
+        if (!$user || !$user['is_staff']) throw new ApiException(403, '未登录或登陆已过期');
         $request->merge([
             'user' => $user
         ]);

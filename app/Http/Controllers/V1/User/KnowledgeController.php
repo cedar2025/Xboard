@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\User;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Knowledge;
 use App\Models\User;
@@ -18,7 +19,7 @@ class KnowledgeController extends Controller
                 ->where('show', 1)
                 ->first()
                 ->toArray();
-            if (!$knowledge) abort(500, __('Article does not exist'));
+            if (!$knowledge) throw new ApiException(500, __('Article does not exist'));
             $user = User::find($request->user['id']);
             $userService = new UserService();
             if (!$userService->isAvailable($user)) {

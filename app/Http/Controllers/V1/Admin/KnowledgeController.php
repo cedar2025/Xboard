@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\KnowledgeSave;
 use App\Http\Requests\Admin\KnowledgeSort;
@@ -15,7 +16,7 @@ class KnowledgeController extends Controller
     {
         if ($request->input('id')) {
             $knowledge = Knowledge::find($request->input('id'))->toArray();
-            if (!$knowledge) abort(500, '知识不存在');
+            if (!$knowledge) throw new ApiException(500, '知识不存在');
             return response([
                 'data' => $knowledge
             ]);
@@ -40,13 +41,13 @@ class KnowledgeController extends Controller
 
         if (!$request->input('id')) {
             if (!Knowledge::create($params)) {
-                abort(500, '创建失败');
+                throw new ApiException(500, '创建失败');
             }
         } else {
             try {
                 Knowledge::find($request->input('id'))->update($params);
             } catch (\Exception $e) {
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
         }
 
@@ -58,15 +59,15 @@ class KnowledgeController extends Controller
     public function show(Request $request)
     {
         if (empty($request->input('id'))) {
-            abort(500, '参数有误');
+            throw new ApiException(422, '参数有误');
         }
         $knowledge = Knowledge::find($request->input('id'));
         if (!$knowledge) {
-            abort(500, '知识不存在');
+            throw new ApiException(500, '知识不存在');
         }
         $knowledge->show = $knowledge->show ? 0 : 1;
         if (!$knowledge->save()) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
 
         return response([
@@ -85,7 +86,7 @@ class KnowledgeController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
         DB::commit();
         return response([
@@ -96,14 +97,14 @@ class KnowledgeController extends Controller
     public function drop(Request $request)
     {
         if (empty($request->input('id'))) {
-            abort(500, '参数有误');
+            throw new ApiException(422, '参数有误');
         }
         $knowledge = Knowledge::find($request->input('id'));
         if (!$knowledge) {
-            abort(500, '知识不存在');
+            throw new ApiException(500, '知识不存在');
         }
         if (!$knowledge->delete()) {
-            abort(500, '删除失败');
+            throw new ApiException(500, '删除失败');
         }
 
         return response([

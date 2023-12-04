@@ -2,6 +2,7 @@
 
 namespace App\Plugins\Telegram\Commands;
 
+use App\Exceptions\ApiException;
 use App\Models\User;
 use App\Plugins\Telegram\Telegram;
 use App\Services\TicketService;
@@ -20,7 +21,7 @@ class ReplyTicket extends Telegram {
     {
         $user = User::where('telegram_id', $msg->chat_id)->first();
         if (!$user) {
-            abort(500, '用户不存在');
+            throw new ApiException(500, '用户不存在');
         }
         if (!$msg->text) return;
         if (!($user->is_admin || $user->is_staff)) return;

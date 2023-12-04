@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PlanSave;
 use App\Http\Requests\Admin\PlanSort;
@@ -36,7 +37,7 @@ class PlanController extends Controller
         if ($request->input('id')) {
             $plan = Plan::find($request->input('id'));
             if (!$plan) {
-                abort(500, '该订阅不存在');
+                throw new ApiException(500, '该订阅不存在');
             }
             DB::beginTransaction();
             // update user group id and transfer
@@ -51,7 +52,7 @@ class PlanController extends Controller
                 $plan->update($params);
             } catch (\Exception $e) {
                 DB::rollBack();
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
             DB::commit();
             return response([
@@ -59,7 +60,7 @@ class PlanController extends Controller
             ]);
         }
         if (!Plan::create($params)) {
-            abort(500, '创建失败');
+            throw new ApiException(500, '创建失败');
         }
         return response([
             'data' => true
@@ -69,15 +70,15 @@ class PlanController extends Controller
     public function drop(Request $request)
     {
         if (Order::where('plan_id', $request->input('id'))->first()) {
-            abort(500, '该订阅下存在订单无法删除');
+            throw new ApiException(500, '该订阅下存在订单无法删除');
         }
         if (User::where('plan_id', $request->input('id'))->first()) {
-            abort(500, '该订阅下存在用户无法删除');
+            throw new ApiException(500, '该订阅下存在用户无法删除');
         }
         if ($request->input('id')) {
             $plan = Plan::find($request->input('id'));
             if (!$plan) {
-                abort(500, '该订阅ID不存在');
+                throw new ApiException(500, '该订阅ID不存在');
             }
         }
         return response([
@@ -94,13 +95,13 @@ class PlanController extends Controller
 
         $plan = Plan::find($request->input('id'));
         if (!$plan) {
-            abort(500, '该订阅不存在');
+            throw new ApiException(500, '该订阅不存在');
         }
 
         try {
             $plan->update($updateData);
         } catch (\Exception $e) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
 
         return response([
@@ -114,7 +115,7 @@ class PlanController extends Controller
         foreach ($request->input('plan_ids') as $k => $v) {
             if (!Plan::find($v)->update(['sort' => $k + 1])) {
                 DB::rollBack();
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
         }
         DB::commit();

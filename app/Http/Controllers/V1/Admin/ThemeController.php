@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 class ThemeController extends Controller
@@ -59,11 +59,11 @@ class ThemeController extends Controller
             'config' => 'required'
         ]);
         $payload['config'] = json_decode(base64_decode($payload['config']), true);
-        if (!$payload['config'] || !is_array($payload['config'])) abort(500, '参数有误');
+        if (!$payload['config'] || !is_array($payload['config'])) throw new ApiException(422, '参数有误');
         $themeConfigFile = public_path("theme/{$payload['name']}/config.json");
-        if (!File::exists($themeConfigFile)) abort(500, '主题不存在');
+        if (!File::exists($themeConfigFile)) throw new ApiException(500, '主题不存在');
         $themeConfig = json_decode(File::get($themeConfigFile), true);
-        if (!isset($themeConfig['configs']) || !is_array($themeConfig)) abort(500, '主题配置文件有误');
+        if (!isset($themeConfig['configs']) || !is_array($themeConfig)) throw new ApiException(500, '主题配置文件有误');
         $validateFields = array_column($themeConfig['configs'], 'field_name');
         $config = [];
         foreach ($validateFields as $validateField) {
@@ -77,7 +77,7 @@ class ThemeController extends Controller
             admin_setting(["theme_{$payload['name']}" => $config]);
 //            sleep(2);
         } catch (\Exception $e) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
 
         return response([

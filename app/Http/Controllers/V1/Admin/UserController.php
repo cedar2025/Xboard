@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserFetch;
 use App\Http\Requests\Admin\UserGenerate;
@@ -20,7 +21,7 @@ class UserController extends Controller
     public function resetSecret(Request $request)
     {
         $user = User::find($request->input('id'));
-        if (!$user) abort(500, '用户不存在');
+        if (!$user) throw new ApiException(500, '用户不存在');
         $user->token = Helper::guid();
         $user->uuid = Helper::guid(true);
         return response([
@@ -85,7 +86,7 @@ class UserController extends Controller
     public function getUserInfoById(Request $request)
     {
         if (empty($request->input('id'))) {
-            abort(500, '参数错误');
+            throw new ApiException(422, '参数错误');
         }
         $user = User::find($request->input('id'));
         if ($user->invite_user_id) {
@@ -101,10 +102,10 @@ class UserController extends Controller
         $params = $request->validated();
         $user = User::find($request->input('id'));
         if (!$user) {
-            abort(500, '用户不存在');
+            throw new ApiException(500, '用户不存在');
         }
         if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
-            abort(500, '邮箱已被使用');
+            throw new ApiException(500, '邮箱已被使用');
         }
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
@@ -115,7 +116,7 @@ class UserController extends Controller
         if (isset($params['plan_id'])) {
             $plan = Plan::find($params['plan_id']);
             if (!$plan) {
-                abort(500, '订阅计划不存在');
+                throw new ApiException(500, '订阅计划不存在');
             }
             $params['group_id'] = $plan->group_id;
         }
@@ -136,7 +137,7 @@ class UserController extends Controller
         try {
             $user->update($params);
         } catch (\Exception $e) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
         return response([
             'data' => true
@@ -177,7 +178,7 @@ class UserController extends Controller
             if ($request->input('plan_id')) {
                 $plan = Plan::find($request->input('plan_id'));
                 if (!$plan) {
-                    abort(500, '订阅计划不存在');
+                    throw new ApiException(500, '订阅计划不存在');
                 }
             }
             $user = [
@@ -190,11 +191,11 @@ class UserController extends Controller
                 'token' => Helper::guid()
             ];
             if (User::where('email', $user['email'])->first()) {
-                abort(500, '邮箱已存在于系统中');
+                throw new ApiException(500, '邮箱已存在于系统中');
             }
             $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
             if (!User::create($user)) {
-                abort(500, '生成失败');
+                throw new ApiException(500, '生成失败');
             }
             return response([
                 'data' => true
@@ -210,7 +211,7 @@ class UserController extends Controller
         if ($request->input('plan_id')) {
             $plan = Plan::find($request->input('plan_id'));
             if (!$plan) {
-                abort(500, '订阅计划不存在');
+                throw new ApiException(500, '订阅计划不存在');
             }
         }
         $users = [];
@@ -232,7 +233,7 @@ class UserController extends Controller
         DB::beginTransaction();
         if (!User::insert($users)) {
             DB::rollBack();
-            abort(500, '生成失败');
+            throw new ApiException(500, '生成失败');
         }
         DB::commit();
         $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
@@ -283,7 +284,7 @@ class UserController extends Controller
                 'banned' => 1
             ]);
         } catch (\Exception $e) {
-            abort(500, '处理失败');
+            throw new ApiException(500, '处理失败');
         }
 
         return response([
