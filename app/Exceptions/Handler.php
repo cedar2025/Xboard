@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\ApiResponse;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -11,13 +12,15 @@ use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
+    use ApiResponse;
+
     /**
      * A list of the exception types that are not reported.
      *
      * @var array
      */
     protected $dontReport = [
-        //
+        ApiException::class
     ];
 
     /**
@@ -55,7 +58,14 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof ViewException) {
-            abort(500, "主题渲染失败。如更新主题，参数可能发生变化请重新配置主题后再试。");
+            $this->fail([500, '主题渲染失败。如更新主题，参数可能发生变化请重新配置主题后再试。']);
+        }
+        // ApiException主动抛出错误
+        if ($exception instanceof ApiException) {
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            $errors = $exception->errors();
+            return $this->fail([$code, $message],null,$errors);
         }
         return parent::render($request, $exception);
     }
@@ -63,7 +73,6 @@ class Handler extends ExceptionHandler
 
     protected function convertExceptionToArray(Throwable $e)
     {
-        Log::channel("daily")->info($e);
         return config('app.debug') ? [
             'message' => $e->getMessage(),
             'exception' => get_class($e),

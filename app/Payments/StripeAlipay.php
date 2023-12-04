@@ -5,6 +5,7 @@
  */
 namespace App\Payments;
 
+use App\Exceptions\ApiException;
 use Stripe\Source;
 use Stripe\Stripe;
 
@@ -40,7 +41,7 @@ class StripeAlipay {
         $currency = $this->config['currency'];
         $exchange = $this->exchange('CNY', strtoupper($currency));
         if (!$exchange) {
-            abort(500, __('Currency conversion has timed out, please try again later'));
+            throw new ApiException(500, __('Currency conversion has timed out, please try again later'));
         }
         Stripe::setApiKey($this->config['stripe_sk_live']);
         $source = Source::create([
@@ -58,7 +59,7 @@ class StripeAlipay {
             ]
         ]);
         if (!$source['redirect']['url']) {
-            abort(500, __('Payment gateway request failed'));
+            throw new ApiException(500, __('Payment gateway request failed'));
         }
         return [
             'type' => 1,
@@ -76,7 +77,7 @@ class StripeAlipay {
                 $this->config['stripe_webhook_key']
             );
         } catch (\Stripe\Error\SignatureVerification $e) {
-            abort(400);
+            throw new ApiException(400);
         }
         switch ($event->type) {
             case 'source.chargeable':
@@ -103,7 +104,7 @@ class StripeAlipay {
                 }
                 break;
             default:
-                abort(500, 'event is not support');
+                throw new ApiException(500, 'event is not support');
         }
         return('success');
     }

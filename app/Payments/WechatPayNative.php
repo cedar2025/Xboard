@@ -2,6 +2,7 @@
 
 namespace App\Payments;
 
+use App\Exceptions\ApiException;
 use Omnipay\Omnipay;
 use Omnipay\WechatPay\Helper;
 
@@ -52,7 +53,7 @@ class WechatPayNative {
         $response = $request->send();
         $response = $response->getData();
         if ($response['return_code'] !== 'SUCCESS') {
-            abort(500, $response['return_msg']);
+            throw new ApiException(500, $response['return_msg']);
         }
         return [
             'type' => 0,

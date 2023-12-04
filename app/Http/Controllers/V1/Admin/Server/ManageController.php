@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Admin\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Services\ServerService;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class ManageController extends Controller
             foreach($v as $id => $sort) {
                 if (!$model::find($id)->update(['sort' => $sort])) {
                     DB::rollBack();
-                    abort(500, '保存失败');
+                    throw new ApiException(500, '保存失败');
                 }
             }
         }

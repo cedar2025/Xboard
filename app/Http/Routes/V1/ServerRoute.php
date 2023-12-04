@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Routes\V1;
 
+use App\Exceptions\ApiException;
 use Illuminate\Contracts\Routing\Registrar;
 
 class ServerRoute
@@ -12,7 +13,11 @@ class ServerRoute
             'middleware' => 'server'
         ], function ($router) {
             $router->any('/{class}/{action}', function($class, $action) {
-                $ctrl = \App::make("\\App\\Http\\Controllers\\V1\\Server\\" . ucfirst($class) . "Controller");
+                $controllerClass = "\\App\\Http\\Controllers\\V1\\Server\\" . ucfirst($class) . "Controller";
+                if(!(class_exists($controllerClass) && method_exists($controllerClass, $action))){
+                    throw new ApiException(404,'Not Found');
+                };
+                $ctrl = \App::make($controllerClass);
                 return \App::call([$ctrl, $action]);
             });
         });

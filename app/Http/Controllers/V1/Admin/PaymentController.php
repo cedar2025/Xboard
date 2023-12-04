@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\V1\Admin;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\PaymentSave;
 use App\Models\Payment;
 use App\Services\PaymentService;
 use App\Utils\Helper;
@@ -50,9 +50,9 @@ class PaymentController extends Controller
     public function show(Request $request)
     {
         $payment = Payment::find($request->input('id'));
-        if (!$payment) abort(500, '支付方式不存在');
+        if (!$payment) throw new ApiException(500, '支付方式不存在');
         $payment->enable = !$payment->enable;
-        if (!$payment->save()) abort(500, '保存失败');
+        if (!$payment->save()) throw new ApiException(500, '保存失败');
         return response([
             'data' => true
         ]);
@@ -61,7 +61,7 @@ class PaymentController extends Controller
     public function save(Request $request)
     {
         if (!admin_setting('app_url')) {
-            abort(500, '请在站点配置中配置站点地址');
+            throw new ApiException(500, '请在站点配置中配置站点地址');
         }
         $params = $request->validate([
             'name' => 'required',
@@ -81,11 +81,11 @@ class PaymentController extends Controller
         ]);
         if ($request->input('id')) {
             $payment = Payment::find($request->input('id'));
-            if (!$payment) abort(500, '支付方式不存在');
+            if (!$payment) throw new ApiException(500, '支付方式不存在');
             try {
                 $payment->update($params);
             } catch (\Exception $e) {
-                abort(500, $e->getMessage());
+                throw new ApiException(500, $e->getMessage());
             }
             return response([
                 'data' => true
@@ -93,7 +93,7 @@ class PaymentController extends Controller
         }
         $params['uuid'] = Helper::randomChar(8);
         if (!Payment::create($params)) {
-            abort(500, '保存失败');
+            throw new ApiException(500, '保存失败');
         }
         return response([
             'data' => true
@@ -103,7 +103,7 @@ class PaymentController extends Controller
     public function drop(Request $request)
     {
         $payment = Payment::find($request->input('id'));
-        if (!$payment) abort(500, '支付方式不存在');
+        if (!$payment) throw new ApiException(500, '支付方式不存在');
         return response([
             'data' => $payment->delete()
         ]);
@@ -122,7 +122,7 @@ class PaymentController extends Controller
         foreach ($request->input('ids') as $k => $v) {
             if (!Payment::find($v)->update(['sort' => $k + 1])) {
                 DB::rollBack();
-                abort(500, '保存失败');
+                throw new ApiException(500, '保存失败');
             }
         }
         DB::commit();

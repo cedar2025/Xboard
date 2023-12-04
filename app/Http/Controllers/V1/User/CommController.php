@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\User;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Utils\Dict;
@@ -33,7 +34,7 @@ class CommController extends Controller
         $payment = Payment::where('id', $request->input('id'))
             ->where('payment', 'StripeCredit')
             ->first();
-        if (!$payment) abort(500, 'payment is not found');
+        if (!$payment) throw new ApiException(500, 'payment is not found');
         return response([
             'data' => $payment->config['stripe_pk_live']
         ]);

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Payments;
+use App\Exceptions\ApiException;
 
 class CoinPayments {
     public function __construct($config) {
@@ -62,7 +63,7 @@ class CoinPayments {
     {
 
         if (!isset($params['merchant']) || $params['merchant'] != trim($this->config['coinpayments_merchant_id'])) {
-            abort(500, 'No or incorrect Merchant ID passed');
+            throw new ApiException(500, 'No or incorrect Merchant ID passed');
         }
 
         $headers = getallheaders();
@@ -77,11 +78,11 @@ class CoinPayments {
         $hmac = hash_hmac("sha512", $request, trim($this->config['coinpayments_ipn_secret']));
 
         // if ($hmac != $signHeader) { <-- Use this if you are running a version of PHP below 5.6.0 without the hash_equals function
-        //     abort(400, 'HMAC signature does not match');
+        //     throw new ApiException(400, 'HMAC signature does not match');
         // }
 
         if (!hash_equals($hmac, $signHeader)) {
-            abort(400, 'HMAC signature does not match');
+            throw new ApiException(400, 'HMAC signature does not match');
         }
 
         // HMAC Signature verified at this point, load some variables.
@@ -95,7 +96,7 @@ class CoinPayments {
             ];
         } else if ($status < 0) {
             //payment error, this is usually final but payments will sometimes be reopened if there was no exchange rate conversion or with seller consent
-            abort(500, 'Payment Timed Out or Error');
+            throw new ApiException(500, 'Payment Timed Out or Error');
         } else {
             //payment is pending, you can optionally add a note to the order page
             return('IPN OK: pending');

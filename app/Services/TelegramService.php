@@ -1,10 +1,10 @@
 <?php
 namespace App\Services;
 
+use App\Exceptions\ApiException;
 use App\Jobs\SendTelegramJob;
 use App\Models\User;
 use \Curl\Curl;
-use Illuminate\Mail\Markdown;
 
 class TelegramService {
     protected $api;
@@ -60,9 +60,9 @@ class TelegramService {
         $curl->get($this->api . $method . '?' . http_build_query($params));
         $response = $curl->response;
         $curl->close();
-        if (!isset($response->ok)) abort(500, '请求失败');
+        if (!isset($response->ok)) throw new ApiException(500, '请求失败');
         if (!$response->ok) {
-            abort(500, '来自TG的错误：' . $response->description);
+            throw new ApiException(500, '来自TG的错误：' . $response->description);
         }
         return $response;
     }

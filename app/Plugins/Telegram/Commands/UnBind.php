@@ -2,6 +2,7 @@
 
 namespace App\Plugins\Telegram\Commands;
 
+use App\Exceptions\ApiException;
 use App\Models\User;
 use App\Plugins\Telegram\Telegram;
 
@@ -19,7 +20,7 @@ class UnBind extends Telegram {
         }
         $user->telegram_id = NULL;
         if (!$user->save()) {
-            abort(500, '解绑失败');
+            throw new ApiException(500, '解绑失败');
         }
         $telegramService->sendMessage($message->chat_id, '解绑成功', 'markdown');
     }
