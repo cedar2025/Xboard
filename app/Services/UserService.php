@@ -170,9 +170,13 @@ class UserService
 
     public function trafficFetch(array $server, string $protocol, array $data, string $nodeIp = null)
     {
+        // 获取子节点
+        $childServer = ($server['parent_id'] == null && !blank($nodeIp)) 
+        ? (new ServerService())->getChildServer($server['id'], $protocol, $nodeIp) 
+        : null;
         $timestamp = strtotime(date('Y-m-d'));
-        collect($data)->chunk(1000)->each(function($chunk) use ($timestamp,$server,$protocol, $nodeIp){
-            TrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $nodeIp);
+        collect($data)->chunk(1000)->each(function($chunk) use ($timestamp,$server,$protocol, $childServer){
+            TrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $childServer);
         });
     }
 }
