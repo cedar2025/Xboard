@@ -17,7 +17,7 @@ class TicketController extends Controller
             $ticket = Ticket::where('id', $request->input('id'))
                 ->first();
             if (!$ticket) {
-                throw new ApiException(500, '工单不存在');
+                return $this->fail([400,'工单不存在']);
             }
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
             for ($i = 0; $i < count($ticket['message']); $i++) {
@@ -27,9 +27,7 @@ class TicketController extends Controller
                     $ticket['message'][$i]['is_me'] = false;
                 }
             }
-            return response([
-                'data' => $ticket
-            ]);
+            return $this->success($ticket);
         }
         $current = $request->input('current') ? $request->input('current') : 1;
         $pageSize = $request->input('pageSize') >= 10 ? $request->input('pageSize') : 10;
@@ -48,39 +46,37 @@ class TicketController extends Controller
 
     public function reply(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
-        }
-        if (empty($request->input('message'))) {
-            throw new ApiException(500, '消息不能为空');
-        }
+        $request->validate([
+            'id' => 'required',
+            'message' => 'required|string'
+        ],[
+            'id.required' => '工单ID不能为空',
+            'message.required' => '消息不能为空'
+        ]);
         $ticketService = new TicketService();
         $ticketService->replyByAdmin(
             $request->input('id'),
             $request->input('message'),
             $request->user['id']
         );
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function close(Request $request)
     {
+
         if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
+            return $this->fail([422,'工单ID不能为空']);
         }
         $ticket = Ticket::where('id', $request->input('id'))
             ->first();
         if (!$ticket) {
-            throw new ApiException(500, '工单不存在');
+            return $this->fail([400202,'工单不存在']);
         }
         $ticket->status = 1;
         if (!$ticket->save()) {
-            throw new ApiException(500, '关闭失败');
+            return $this->fail([500, '工单关闭失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

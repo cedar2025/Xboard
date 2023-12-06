@@ -20,7 +20,7 @@ class UnBind extends Telegram {
         }
         $user->telegram_id = NULL;
         if (!$user->save()) {
-            throw new ApiException(500, '解绑失败');
+            throw new ApiException('解绑失败');
         }
         $telegramService->sendMessage($message->chat_id, '解绑成功', 'markdown');
     }

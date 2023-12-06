@@ -34,12 +34,11 @@ class ThemeController extends Controller
             $themeService = new ThemeService($theme);
             $themeService->init();
         }
-        return response([
-            'data' => [
-                'themes' => $themeConfigs,
-                'active' => admin_setting('frontend_theme', 'Xboard')
-            ]
-        ]);
+        $data = [
+            'themes' => $themeConfigs,
+            'active' => admin_setting('frontend_theme', 'Xboard')
+        ];
+        return $this->success($data);
     }
 
     public function getThemeConfig(Request $request)
@@ -47,9 +46,7 @@ class ThemeController extends Controller
         $payload = $request->validate([
             'name' => 'required|in:' . join(',', $this->themes)
         ]);
-        return response([
-            'data' => admin_setting("theme_{$payload['name']}") ?? config("theme.{$payload['name']}")
-        ]);
+        return $this->success(admin_setting("theme_{$payload['name']}") ?? config("theme.{$payload['name']}"));
     }
 
     public function saveThemeConfig(Request $request)
@@ -59,11 +56,11 @@ class ThemeController extends Controller
             'config' => 'required'
         ]);
         $payload['config'] = json_decode(base64_decode($payload['config']), true);
-        if (!$payload['config'] || !is_array($payload['config'])) throw new ApiException(422, '参数有误');
+        if (!$payload['config'] || !is_array($payload['config'])) return $this->fail([422,'参数不正确']);
         $themeConfigFile = public_path("theme/{$payload['name']}/config.json");
-        if (!File::exists($themeConfigFile)) throw new ApiException(500, '主题不存在');
+        if (!File::exists($themeConfigFile)) return $this->fail([400202,'主题不存在']);
         $themeConfig = json_decode(File::get($themeConfigFile), true);
-        if (!isset($themeConfig['configs']) || !is_array($themeConfig)) throw new ApiException(500, '主题配置文件有误');
+        if (!isset($themeConfig['configs']) || !is_array($themeConfig)) return $this->fail([422,'主题配置文件有误']);
         $validateFields = array_column($themeConfig['configs'], 'field_name');
         $config = [];
         foreach ($validateFields as $validateField) {
@@ -77,11 +74,8 @@ class ThemeController extends Controller
             admin_setting(["theme_{$payload['name']}" => $config]);
 //            sleep(2);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            return $this->fail([200002, '保存失败']);
         }
-
-        return response([
-            'data' => $config
-        ]);
+        return $this->success($config);
     }
 }

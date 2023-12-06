@@ -44,24 +44,26 @@ class RouteController extends Controller
             try {
                 $route = ServerRoute::find($request->input('id'));
                 $route->update($params);
-                return [
-                    'data' => true
-                ];
+                return $this->success(true);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500,'保存失败']);
             }
         }
-        if (!ServerRoute::create($params)) throw new ApiException(500, '创建失败');
-        return [
-            'data' => true
-        ];
+        try{
+            ServerRoute::create($params);
+            return $this->success(true);
+        }catch(\Exception $e){
+            \Log::error($e);
+            return $this->fail([500,'创建失败']);
+        }
     }
 
     public function drop(Request $request)
     {
         $route = ServerRoute::find($request->input('id'));
-        if (!$route) throw new ApiException(500, '路由不存在');
-        if (!$route->delete()) throw new ApiException(500, '删除失败');
+        if (!$route) throw new ApiException('路由不存在');
+        if (!$route->delete()) throw new ApiException('删除失败');
         return [
             'data' => true
         ];

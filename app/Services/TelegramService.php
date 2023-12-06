@@ -60,9 +60,9 @@ class TelegramService {
         $curl->get($this->api . $method . '?' . http_build_query($params));
         $response = $curl->response;
         $curl->close();
-        if (!isset($response->ok)) throw new ApiException(500, '请求失败');
+        if (!isset($response->ok)) throw new ApiException('请求失败');
         if (!$response->ok) {
-            throw new ApiException(500, '来自TG的错误：' . $response->description);
+            throw new ApiException('来自TG的错误：' . $response->description);
         }
         return $response;
     }

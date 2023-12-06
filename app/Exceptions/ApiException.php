@@ -10,7 +10,7 @@ class ApiException extends Exception
     protected $message; // 错误消息
     protected $errors; // 全部错误信息
 
-    public function __construct($code = 400, $message = null, $errors = null)
+    public function __construct($message = null, $code = 400, $errors = null)
     {
         $this->message = $message;
         $this->code = $code;

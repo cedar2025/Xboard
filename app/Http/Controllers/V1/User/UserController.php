@@ -24,24 +24,20 @@ class UserController extends Controller
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         $authService = new AuthService($user);
-        return response([
-            'data' => $authService->getSessions()
-        ]);
+        return $this->success($authService->getSessions());
     }
 
     public function removeActiveSession(Request $request)
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         $authService = new AuthService($user);
-        return response([
-            'data' => $authService->removeSession($request->input('session_id'))
-        ]);
+        return $this->success($authService->removeSession($request->input('session_id')));
     }
 
     public function checkLogin(Request $request)
@@ -52,16 +48,14 @@ class UserController extends Controller
         if ($request->user['is_admin']) {
             $data['is_admin'] = true;
         }
-        return response([
-            'data' => $data
-        ]);
+        return $this->success($data);
     }
 
     public function changePassword(UserChangePassword $request)
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         if (!Helper::multiPasswordVerify(
             $user->password_algo,
@@ -69,17 +63,15 @@ class UserController extends Controller
             $request->input('old_password'),
             $user->password)
         ) {
-            throw new ApiException(500, __('The old password is wrong'));
+            return $this->fail([400, __('The old password is wrong')]);
         }
         $user->password = password_hash($request->input('new_password'), PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
         if (!$user->save()) {
-            throw new ApiException(500, __('Save failed'));
+            return $this->fail([400, __('Save failed')]);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function info(Request $request)
@@ -104,12 +96,10 @@ class UserController extends Controller
             ])
             ->first();
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         $user['avatar_url'] = 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
-        return response([
-            'data' => $user
-        ]);
+        return $this->success($user);
     }
 
     public function getStat(Request $request)
@@ -124,9 +114,7 @@ class UserController extends Controller
             User::where('invite_user_id', $request->user['id'])
                 ->count()
         ];
-        return response([
-            'data' => $stat
-        ]);
+        return $this->success($stat);
     }
 
     public function getSubscribe(Request $request)
@@ -144,36 +132,32 @@ class UserController extends Controller
             ])
             ->first();
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         if ($user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
             if (!$user['plan']) {
-                throw new ApiException(500, __('Subscription plan does not exist'));
+                return $this->fail([400, __('Subscription plan does not exist')]);
             }
         }
         $user['subscribe_url'] = Helper::getSubscribeUrl("/api/v1/client/subscribe?token={$user['token']}");
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
-        return response([
-            'data' => $user
-        ]);
+        return $this->success($user);
     }
 
     public function resetSecurity(Request $request)
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
         if (!$user->save()) {
-            throw new ApiException(500, __('Reset failed'));
+            return $this->fail([400, __('Reset failed')]);
         }
-        return response([
-            'data' => Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user->token)
-        ]);
+        return $this->success(Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user->token));
     }
 
     public function update(UserUpdate $request)
@@ -185,43 +169,39 @@ class UserController extends Controller
 
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         try {
             $user->update($updateData);
         } catch (\Exception $e) {
-            throw new ApiException(500, __('Save failed'));
+            return $this->fail([400, __('Save failed')]);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function transfer(UserTransfer $request)
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
         if ($request->input('transfer_amount') > $user->commission_balance) {
-            throw new ApiException(500, __('Insufficient commission balance'));
+            return $this->fail([400, __('Insufficient commission balance')]);
         }
         $user->commission_balance = $user->commission_balance - $request->input('transfer_amount');
         $user->balance = $user->balance + $request->input('transfer_amount');
         if (!$user->save()) {
-            throw new ApiException(500, __('Transfer failed'));
+            return $this->fail([400, __('Transfer failed')]);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function getQuickLoginUrl(Request $request)
     {
         $user = User::find($request->user['id']);
         if (!$user) {
-            throw new ApiException(500, __('The user does not exist'));
+            return $this->fail([400, __('The user does not exist')]);
         }
 
         $code = Helper::guid();
@@ -233,8 +213,6 @@ class UserController extends Controller
         } else {
             $url = url($redirect);
         }
-        return response([
-            'data' => $url
-        ]);
+        return $this->success($url);
     }
 }

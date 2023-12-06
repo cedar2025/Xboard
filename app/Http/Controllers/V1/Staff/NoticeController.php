@@ -12,9 +12,8 @@ class NoticeController extends Controller
 {
     public function fetch(Request $request)
     {
-        return response([
-            'data' => Notice::orderBy('id', 'DESC')->get()
-        ]);
+        $data = Notice::orderBy('id', 'DESC')->get();
+        return $this->success($data);
     }
 
     public function save(NoticeSave $request)
@@ -26,34 +25,34 @@ class NoticeController extends Controller
         ]);
         if (!$request->input('id')) {
             if (!Notice::create($data)) {
-                throw new ApiException(500, '保存失败');
+                return $this->fail([500, '创建失败']);
             }
         } else {
             try {
                 Notice::find($request->input('id'))->update($data);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500, '保存失败']);
             }
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
-        }
+        $request->validate([
+            'id' => 'required'
+        ],[
+            'id.required' => '公告ID不能为空'
+        ]);
+
         $notice = Notice::find($request->input('id'));
         if (!$notice) {
-            throw new ApiException(500, '公告不存在');
+            return $this->fail([400202,'公告不存在']);
         }
         if (!$notice->delete()) {
-            throw new ApiException(500, '删除失败');
+            return $this->fail([500,'公告删除失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

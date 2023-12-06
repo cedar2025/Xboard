@@ -62,25 +62,19 @@ class VlessController extends Controller
         if ($request->input('id')) {
             $server = ServerVless::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '服务器不存在');
+                return $this->fail([400202, '服务器不存在']);
             }
             try {
                 $server->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500, '保存失败']);
             }
-            return response([
-                'data' => true
-            ]);
+            return $this->success(true);
         }
+        ServerVless::create($params);
 
-        if (!ServerVless::create($params)) {
-            throw new ApiException(500, '创建失败');
-        }
-
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
@@ -88,12 +82,10 @@ class VlessController extends Controller
         if ($request->input('id')) {
             $server = ServerVless::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '节点ID不存在');
+                return $this->fail([400202,'节点不存在']);
             }
         }
-        return response([
-            'data' => $server->delete()
-        ]);
+        return $this->success($server->delete());
     }
 
     public function update(Request $request)
@@ -105,17 +97,16 @@ class VlessController extends Controller
         $server = ServerVless::find($request->input('id'));
 
         if (!$server) {
-            throw new ApiException(500, '该服务器不存在');
+            return $this->fail([400202, '该服务器不存在']);
         }
         try {
             $server->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            \Log::error($e);
+            return $this->fail([500, '保存失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function copy(Request $request)
@@ -123,14 +114,9 @@ class VlessController extends Controller
         $server = ServerVless::find($request->input('id'));
         $server->show = 0;
         if (!$server) {
-            throw new ApiException(500, '服务器不存在');
+            return $this->fail([400202, '该服务器不存在']);
         }
-        if (!ServerVless::create($server->toArray())) {
-            throw new ApiException(500, '复制失败');
-        }
-
-        return response([
-            'data' => true
-        ]);
+        ServerVless::create($server->toArray());
+        return $this->success(true);
     }
 }

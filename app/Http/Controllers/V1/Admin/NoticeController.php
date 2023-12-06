@@ -12,9 +12,7 @@ class NoticeController extends Controller
 {
     public function fetch(Request $request)
     {
-        return response([
-            'data' => Notice::orderBy('id', 'DESC')->get()
-        ]);
+        return $this->success(Notice::orderBy('id', 'DESC')->get());
     }
 
     public function save(NoticeSave $request)
@@ -27,18 +25,16 @@ class NoticeController extends Controller
         ]);
         if (!$request->input('id')) {
             if (!Notice::create($data)) {
-                throw new ApiException(500, '保存失败');
+                return $this->fail([500 ,'保存失败']);
             }
         } else {
             try {
                 Notice::find($request->input('id'))->update($data);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                return $this->fail([500 ,'保存失败']);
             }
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
 
@@ -46,36 +42,32 @@ class NoticeController extends Controller
     public function show(Request $request)
     {
         if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数有误');
+            return $this->fail([500 ,'公告ID不能为空']);
         }
         $notice = Notice::find($request->input('id'));
         if (!$notice) {
-            throw new ApiException(500, '公告不存在');
+            return $this->fail([400202 ,'公告不存在']);
         }
         $notice->show = $notice->show ? 0 : 1;
         if (!$notice->save()) {
-            throw new ApiException(500, '保存失败');
+            return $this->fail([500 ,'保存失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
     {
         if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
+            return $this->fail([422 ,'公告ID不能为空']);
         }
         $notice = Notice::find($request->input('id'));
         if (!$notice) {
-            throw new ApiException(500, '公告不存在');
+            return $this->fail([400202 ,'公告不存在']);
         }
         if (!$notice->delete()) {
-            throw new ApiException(500, '删除失败');
+            return $this->fail([500 ,'删除失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

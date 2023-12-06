@@ -19,7 +19,7 @@ class KnowledgeController extends Controller
                 ->where('show', 1)
                 ->first()
                 ->toArray();
-            if (!$knowledge) throw new ApiException(500, __('Article does not exist'));
+            if (!$knowledge) return $this->fail([500, __('Article does not exist')]);
             $user = User::find($request->user['id']);
             $userService = new UserService();
             if (!$userService->isAvailable($user)) {
@@ -38,9 +38,7 @@ class KnowledgeController extends Controller
                 ),
                 $knowledge['body']
             );
-            return response([
-                'data' => $knowledge
-            ]);
+            return $this->success($knowledge);
         }
         $builder = Knowledge::select(['id', 'category', 'title', 'updated_at'])
             ->where('language', $request->input('language'))
@@ -56,9 +54,7 @@ class KnowledgeController extends Controller
 
         $knowledges = $builder->get()
             ->groupBy('category');
-        return response([
-            'data' => $knowledges
-        ]);
+        return $this->success($knowledges);
     }
 
     private function formatAccessData(&$body)

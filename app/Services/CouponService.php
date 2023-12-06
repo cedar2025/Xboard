@@ -86,30 +86,30 @@ class CouponService
     public function check()
     {
         if (!$this->coupon || !$this->coupon->show) {
-            throw new ApiException(500, __('Invalid coupon'));
+            throw new ApiException(__('Invalid coupon'));
         }
         if ($this->coupon->limit_use <= 0 && $this->coupon->limit_use !== NULL) {
-            throw new ApiException(500, __('This coupon is no longer available'));
+            throw new ApiException(__('This coupon is no longer available'));
         }
         if (time() < $this->coupon->started_at) {
-            throw new ApiException(500, __('This coupon has not yet started'));
+            throw new ApiException(__('This coupon has not yet started'));
         }
         if (time() > $this->coupon->ended_at) {
-            throw new ApiException(500, __('This coupon has expired'));
+            throw new ApiException(__('This coupon has expired'));
         }
         if ($this->coupon->limit_plan_ids && $this->planId) {
             if (!in_array($this->planId, $this->coupon->limit_plan_ids)) {
-                throw new ApiException(500, __('The coupon code cannot be used for this subscription'));
+                throw new ApiException(__('The coupon code cannot be used for this subscription'));
             }
         }
         if ($this->coupon->limit_period && $this->period) {
             if (!in_array($this->period, $this->coupon->limit_period)) {
-                throw new ApiException(500, __('The coupon code cannot be used for this period'));
+                throw new ApiException(__('The coupon code cannot be used for this period'));
             }
         }
         if ($this->coupon->limit_use_with_user !== NULL && $this->userId) {
             if (!$this->checkLimitUseWithUser()) {
-                throw new ApiException(500, __('The coupon can only be used :limit_use_with_user per person', [
+                throw new ApiException(__('The coupon can only be used :limit_use_with_user per person', [
                     'limit_use_with_user' => $this->coupon->limit_use_with_user
                 ]));
             }

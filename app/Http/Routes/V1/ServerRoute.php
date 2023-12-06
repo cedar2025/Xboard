@@ -15,7 +15,7 @@ class ServerRoute
             $router->any('/{class}/{action}', function($class, $action) {
                 $controllerClass = "\\App\\Http\\Controllers\\V1\\Server\\" . ucfirst($class) . "Controller";
                 if(!(class_exists($controllerClass) && method_exists($controllerClass, $action))){
-                    throw new ApiException(404,'Not Found');
+                    throw new ApiException('Not Found',404);
                 };
                 $ctrl = \App::make($controllerClass);
                 return \App::call([$ctrl, $action]);

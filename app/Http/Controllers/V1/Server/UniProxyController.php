@@ -92,9 +92,7 @@ class UniProxyController extends Controller
         $userService = new UserService();
         $userService->trafficFetch($this->nodeInfo->toArray(), $this->nodeType, $data , $ip);
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     // 后端获取配置
@@ -174,8 +172,6 @@ class UniProxyController extends Controller
      // 后端提交在线数据
      public function alive(Request $request)
      {
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
      }
 }

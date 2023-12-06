@@ -41,7 +41,7 @@ class TicketService {
         $ticket = Ticket::where('id', $ticketId)
             ->first();
         if (!$ticket) {
-            throw new ApiException(500, '工单不存在');
+            throw new ApiException('工单不存在');
         }
         $ticket->status = 0;
         try{
@@ -57,7 +57,7 @@ class TicketService {
                 $ticket->reply_status = 1;
             }
             if (!$ticketMessage || !$ticket->save()) {
-                throw new ApiException(500, '工单回复失败');
+                throw new ApiException('工单回复失败');
             }
             DB::commit();
         }catch(\Exception $e){

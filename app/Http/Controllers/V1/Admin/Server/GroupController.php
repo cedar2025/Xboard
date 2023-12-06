@@ -16,9 +16,7 @@ class GroupController extends Controller
     public function fetch(Request $request)
     {
         if ($request->input('group_id')) {
-            return response([
-                'data' => [ServerGroup::find($request->input('group_id'))]
-            ]);
+            return $this->success([ServerGroup::find($request->input('group_id'))]);
         }
         $serverGroups = ServerGroup::get();
         $serverService = new ServerService();
@@ -32,15 +30,13 @@ class GroupController extends Controller
                 }
             }
         }
-        return response([
-            'data' => $serverGroups
-        ]);
+        return $this->success($serverGroups);
     }
 
     public function save(Request $request)
     {
         if (empty($request->input('name'))) {
-            throw new ApiException(500, '组名不能为空');
+            return $this->fail([422,'组名不能为空']);
         }
 
         if ($request->input('id')) {
@@ -50,9 +46,7 @@ class GroupController extends Controller
         }
 
         $serverGroup->name = $request->input('name');
-        return response([
-            'data' => $serverGroup->save()
-        ]);
+        return $this->success($serverGroup->save());
     }
 
     public function drop(Request $request)
@@ -60,25 +54,23 @@ class GroupController extends Controller
         if ($request->input('id')) {
             $serverGroup = ServerGroup::find($request->input('id'));
             if (!$serverGroup) {
-                throw new ApiException(500, '组不存在');
+                return $this->fail([400202,'组不存在']);
             }
         }
 
         $servers = ServerVmess::all();
         foreach ($servers as $server) {
             if (in_array($request->input('id'), $server->group_id)) {
-                throw new ApiException(500, '该组已被节点所使用，无法删除');
+                return $this->fail([400,'该组已被节点所使用，无法删除']);
             }
         }
 
         if (Plan::where('group_id', $request->input('id'))->first()) {
-            throw new ApiException(500, '该组已被订阅所使用，无法删除');
+            return $this->fail([400, '该组已被订阅所使用，无法删除']);
         }
         if (User::where('group_id', $request->input('id'))->first()) {
-            throw new ApiException(500, '该组已被用户所使用，无法删除');
+            return $this->fail([400, '该组已被用户所使用，无法删除']);
         }
-        return response([
-            'data' => $serverGroup->delete()
-        ]);
+        return $this->success($serverGroup->delete());
     }
 }
