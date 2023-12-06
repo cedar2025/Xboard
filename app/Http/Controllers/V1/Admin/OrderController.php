@@ -156,33 +156,36 @@ class OrderController extends Controller
             throw new ApiException(500, '该用户还有待支付的订单，无法分配');
         }
 
-        DB::beginTransaction();
-        $order = new Order();
-        $orderService = new OrderService($order);
-        $order->user_id = $user->id;
-        $order->plan_id = $plan->id;
-        $order->period = $request->input('period');
-        $order->trade_no = Helper::guid();
-        $order->total_amount = $request->input('total_amount');
+        try {
+            DB::beginTransaction();
+            $order = new Order();
+            $orderService = new OrderService($order);
+            $order->user_id = $user->id;
+            $order->plan_id = $plan->id;
+            $order->period = $request->input('period');
+            $order->trade_no = Helper::guid();
+            $order->total_amount = $request->input('total_amount');
 
-        if ($order->period === 'reset_price') {
-            $order->type = 4;
-        } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id) {
-            $order->type = 3;
-        } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) {
-            $order->type = 2;
-        } else {
-            $order->type = 1;
+            if ($order->period === 'reset_price') {
+                $order->type = 4;
+            } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id) {
+                $order->type = 3;
+            } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) {
+                $order->type = 2;
+            } else {
+                $order->type = 1;
+            }
+
+            $orderService->setInvite($user);
+
+            if (!$order->save()) {
+                throw new ApiException(500, '订单创建失败');
+            }
+            DB::commit();
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-
-        $orderService->setInvite($user);
-
-        if (!$order->save()) {
-            DB::rollback();
-            throw new ApiException(500, '订单创建失败');
-        }
-
-        DB::commit();
 
         return response([
             'data' => $order->trade_no

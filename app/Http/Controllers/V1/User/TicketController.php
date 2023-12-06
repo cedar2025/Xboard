@@ -48,30 +48,33 @@ class TicketController extends Controller
 
     public function save(TicketSave $request)
     {
-        DB::beginTransaction();
-        if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
-            throw new ApiException(500, __('There are other unresolved tickets'));
+        try{
+            DB::beginTransaction();
+            if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
+                throw new ApiException(500, __('There are other unresolved tickets'));
+            }
+            $ticket = Ticket::create(array_merge($request->only([
+                'subject',
+                'level'
+            ]), [
+                'user_id' => $request->user['id']
+            ]));
+            if (!$ticket) {
+                throw new ApiException(500, __('Failed to open ticket'));
+            }
+            $ticketMessage = TicketMessage::create([
+                'user_id' => $request->user['id'],
+                'ticket_id' => $ticket->id,
+                'message' => $request->input('message')
+            ]);
+            if (!$ticketMessage) {
+                throw new ApiException(500, __('Failed to open ticket'));
+            }
+            DB::commit();
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-        $ticket = Ticket::create(array_merge($request->only([
-            'subject',
-            'level'
-        ]), [
-            'user_id' => $request->user['id']
-        ]));
-        if (!$ticket) {
-            DB::rollback();
-            throw new ApiException(500, __('Failed to open ticket'));
-        }
-        $ticketMessage = TicketMessage::create([
-            'user_id' => $request->user['id'],
-            'ticket_id' => $ticket->id,
-            'message' => $request->input('message')
-        ]);
-        if (!$ticketMessage) {
-            DB::rollback();
-            throw new ApiException(500, __('Failed to open ticket'));
-        }
-        DB::commit();
         $this->sendNotify($ticket, $request->input('message'));
         return response([
             'data' => true
@@ -156,31 +159,34 @@ class TicketController extends Controller
         if ($limit > ($user->commission_balance / 100)) {
             throw new ApiException(500, __('The current required minimum withdrawal commission is :limit', ['limit' => $limit]));
         }
-        DB::beginTransaction();
-        $subject = __('[Commission Withdrawal Request] This ticket is opened by the system');
-        $ticket = Ticket::create([
-            'subject' => $subject,
-            'level' => 2,
-            'user_id' => $request->user['id']
-        ]);
-        if (!$ticket) {
-            DB::rollback();
-            throw new ApiException(500, __('Failed to open ticket'));
+        try{
+            DB::beginTransaction();
+            $subject = __('[Commission Withdrawal Request] This ticket is opened by the system');
+            $ticket = Ticket::create([
+                'subject' => $subject,
+                'level' => 2,
+                'user_id' => $request->user['id']
+            ]);
+            if (!$ticket) {
+                throw new ApiException(500, __('Failed to open ticket'));
+            }
+            $message = sprintf("%s\r\n%s",
+                __('Withdrawal method') . "：" . $request->input('withdraw_method'),
+                __('Withdrawal account') . "：" . $request->input('withdraw_account')
+            );
+            $ticketMessage = TicketMessage::create([
+                'user_id' => $request->user['id'],
+                'ticket_id' => $ticket->id,
+                'message' => $message
+            ]);
+            if (!$ticketMessage) {
+                throw new ApiException(500, __('Failed to open ticket'));
+            }
+            DB::commit();
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-        $message = sprintf("%s\r\n%s",
-            __('Withdrawal method') . "：" . $request->input('withdraw_method'),
-            __('Withdrawal account') . "：" . $request->input('withdraw_account')
-        );
-        $ticketMessage = TicketMessage::create([
-            'user_id' => $request->user['id'],
-            'ticket_id' => $ticket->id,
-            'message' => $message
-        ]);
-        if (!$ticketMessage) {
-            DB::rollback();
-            throw new ApiException(500, __('Failed to open ticket'));
-        }
-        DB::commit();
         $this->sendNotify($ticket, $message);
         return response([
             'data' => true
