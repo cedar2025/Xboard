@@ -28,19 +28,21 @@ class ManageController extends Controller
                 'hysteria',
                 'vless'
             ) ?? [];
-        DB::beginTransaction();
-        foreach ($params as $k => $v) {
-            $model = 'App\\Models\\Server' . ucfirst($k);
-            foreach($v as $id => $sort) {
-                if (!$model::find($id)->update(['sort' => $sort])) {
-                    DB::rollBack();
-                    throw new ApiException(500, '保存失败');
+        try{
+            DB::beginTransaction();
+            foreach ($params as $k => $v) {
+                $model = 'App\\Models\\Server' . ucfirst($k);
+                foreach($v as $id => $sort) {
+                    if (!$model::find($id)->update(['sort' => $sort])) {
+                        throw new ApiException(500, '保存失败');
+                    }
                 }
             }
+            DB::commit();
+        }catch (\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-        DB::commit();
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

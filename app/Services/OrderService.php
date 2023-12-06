@@ -36,53 +36,51 @@ class OrderService
         if ($order->refund_amount) {
             $this->user->balance = $this->user->balance + $order->refund_amount;
         }
-        DB::beginTransaction();
-        if ($order->surplus_order_ids) {
-            try {
+        try{
+            DB::beginTransaction();
+            if ($order->surplus_order_ids) {
                 Order::whereIn('id', $order->surplus_order_ids)->update([
                     'status' => 4
                 ]);
-            } catch (\Exception $e) {
-                DB::rollback();
-                throw new ApiException(500, '开通失败');
             }
-        }
-        switch ((string)$order->period) {
-            case 'onetime_price':
-                $this->buyByOneTime($plan);
-                break;
-            case 'reset_price':
-                $this->buyByResetTraffic();
-                break;
-            default:
-                $this->buyByPeriod($order, $plan);
-        }
+            switch ((string)$order->period) {
+                case 'onetime_price':
+                    $this->buyByOneTime($plan);
+                    break;
+                case 'reset_price':
+                    $this->buyByResetTraffic();
+                    break;
+                default:
+                    $this->buyByPeriod($order, $plan);
+            }
 
-        switch ((int)$order->type) {
-            case 1:
-                $this->openEvent(admin_setting('new_order_event_id', 0));
-                break;
-            case 2:
-                $this->openEvent(admin_setting('renew_order_event_id', 0));
-                break;
-            case 3:
-                $this->openEvent(admin_setting('change_order_event_id', 0));
-                break;
-        }
+            switch ((int)$order->type) {
+                case 1:
+                    $this->openEvent(admin_setting('new_order_event_id', 0));
+                    break;
+                case 2:
+                    $this->openEvent(admin_setting('renew_order_event_id', 0));
+                    break;
+                case 3:
+                    $this->openEvent(admin_setting('change_order_event_id', 0));
+                    break;
+            }
 
-        $this->setSpeedLimit($plan->speed_limit);
+            $this->setSpeedLimit($plan->speed_limit);
 
-        if (!$this->user->save()) {
+            if (!$this->user->save()) {
+                throw new \Exception('用户信息保存失败');
+            }
+            $order->status = 3;
+            if (!$order->save()) {
+                throw new \Exception('订单信息保存失败');
+            }
+            DB::commit();
+        }catch(\Exception $e){
             DB::rollBack();
+            \Log::error($e);
             throw new ApiException(500, '开通失败');
         }
-        $order->status = 3;
-        if (!$order->save()) {
-            DB::rollBack();
-            throw new ApiException(500, '开通失败');
-        }
-
-        DB::commit();
     }
 
 
@@ -233,21 +231,25 @@ class OrderService
     public function cancel():bool
     {
         $order = $this->order;
-        DB::beginTransaction();
-        $order->status = 2;
-        if (!$order->save()) {
+        try {
+            DB::beginTransaction();
+            $order->status = 2;
+            if (!$order->save()) {
+                throw new \Exception('Failed to save order status.');
+            }
+            if ($order->balance_amount) {
+                $userService = new UserService();
+                if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
+                    throw new \Exception('Failed to add balance.');
+                }
+            }
+            DB::commit();
+            return true;
+        }catch(\Exception $e){
             DB::rollBack();
+            \Log::error($e);
             return false;
         }
-        if ($order->balance_amount) {
-            $userService = new UserService();
-            if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
-                DB::rollBack();
-                return false;
-            }
-        }
-        DB::commit();
-        return true;
     }
 
     private function setSpeedLimit($speedLimit)

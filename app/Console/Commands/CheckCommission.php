@@ -64,17 +64,22 @@ class CheckCommission extends Command
             ->where('invite_user_id', '!=', NULL)
             ->get();
         foreach ($orders as $order) {
-            DB::beginTransaction();
-            if (!$this->payHandle($order->invite_user_id, $order)) {
+            try{
+                DB::beginTransaction();
+                if (!$this->payHandle($order->invite_user_id, $order)) {
+                    DB::rollBack();
+                    continue;
+                }
+                $order->commission_status = 2;
+                if (!$order->save()) {
+                    DB::rollBack();
+                    continue;
+                }
+                DB::commit();
+            } catch (\Exception $e){
                 DB::rollBack();
-                continue;
+                throw $e;
             }
-            $order->commission_status = 2;
-            if (!$order->save()) {
-                DB::rollBack();
-                continue;
-            }
-            DB::commit();
         }
     }
 

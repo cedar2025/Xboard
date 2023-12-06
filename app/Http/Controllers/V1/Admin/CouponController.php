@@ -87,21 +87,26 @@ class CouponController extends Controller
             $coupon['code'] = Helper::randomChar(8);
             array_push($coupons, $coupon);
         }
-        DB::beginTransaction();
-        if (!Coupon::insert(array_map(function ($item) use ($coupon) {
-            // format data
-            if (isset($item['limit_plan_ids']) && is_array($item['limit_plan_ids'])) {
-                $item['limit_plan_ids'] = json_encode($coupon['limit_plan_ids']);
+        try{
+            DB::beginTransaction();
+            if (!Coupon::insert(array_map(function ($item) use ($coupon) {
+                // format data
+                if (isset($item['limit_plan_ids']) && is_array($item['limit_plan_ids'])) {
+                    $item['limit_plan_ids'] = json_encode($coupon['limit_plan_ids']);
+                }
+                if (isset($item['limit_period']) && is_array($item['limit_period'])) {
+                    $item['limit_period'] = json_encode($coupon['limit_period']);
+                }
+                return $item;
+            }, $coupons))) {
+                throw new ApiException(500, '生成失败');
             }
-            if (isset($item['limit_period']) && is_array($item['limit_period'])) {
-                $item['limit_period'] = json_encode($coupon['limit_period']);
-            }
-            return $item;
-        }, $coupons))) {
+            DB::commit();
+        }catch(\Exception $e){
             DB::rollBack();
-            throw new ApiException(500, '生成失败');
+            throw $e;
         }
-        DB::commit();
+        
         $data = "名称,类型,金额或比例,开始时间,结束时间,可用次数,可用于订阅,券码,生成时间\r\n";
         foreach($coupons as $coupon) {
             $type = ['', '金额', '比例'][$coupon['type']];

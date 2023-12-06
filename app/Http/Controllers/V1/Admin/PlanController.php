@@ -50,11 +50,11 @@ class PlanController extends Controller
                     ]);
                 }
                 $plan->update($params);
+                DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw new ApiException(500, '保存失败');
             }
-            DB::commit();
             return response([
                 'data' => true
             ]);
@@ -104,23 +104,24 @@ class PlanController extends Controller
             throw new ApiException(500, '保存失败');
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success();
     }
 
     public function sort(PlanSort $request)
     {
-        DB::beginTransaction();
-        foreach ($request->input('plan_ids') as $k => $v) {
-            if (!Plan::find($v)->update(['sort' => $k + 1])) {
-                DB::rollBack();
-                throw new ApiException(500, '保存失败');
+        
+        try{
+            DB::beginTransaction();
+            foreach ($request->input('plan_ids') as $k => $v) {
+                if (!Plan::find($v)->update(['sort' => $k + 1])) {
+                    throw new ApiException(500, '保存失败');
+                }
             }
+            DB::commit();
+        }catch (\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-        DB::commit();
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }
