@@ -13,9 +13,7 @@ class ManageController extends Controller
     public function getNodes(Request $request)
     {
         $serverService = new ServerService();
-        return response([
-            'data' => $serverService->getAllServers()
-        ]);
+        return $this->success($serverService->getAllServers());
     }
 
     public function sort(Request $request)
@@ -33,15 +31,15 @@ class ManageController extends Controller
             foreach ($params as $k => $v) {
                 $model = 'App\\Models\\Server' . ucfirst($k);
                 foreach($v as $id => $sort) {
-                    if (!$model::find($id)->update(['sort' => $sort])) {
-                        throw new ApiException(500, '保存失败');
-                    }
+                    $model::where('id', $id)->update(['sort' => $sort]);
                 }
             }
             DB::commit();
         }catch (\Exception $e){
             DB::rollBack();
-            throw $e;
+            \Log::error($e);
+            return $this->fail([500,'保存失败']);
+        
         }
         return $this->success(true);
     }

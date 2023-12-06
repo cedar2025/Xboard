@@ -22,10 +22,10 @@ class DeepbworkController extends Controller
     {
         $token = $request->input('token');
         if (empty($token)) {
-            throw new ApiException(500, 'token is null');
+            throw new ApiException('token is null');
         }
         if ($token !== admin_setting('server_token')) {
-            throw new ApiException(500, 'token is error');
+            throw new ApiException('token is error');
         }
     }
 
@@ -36,7 +36,7 @@ class DeepbworkController extends Controller
         $nodeId = $request->input('node_id');
         $server = ServerVmess::find($nodeId);
         if (!$server) {
-            throw new ApiException(500, 'fail');
+            return $this->fail([400,'节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_VMESS_LAST_CHECK_AT', $server->id), time(), 3600);
         $serverService = new ServerService();
@@ -93,15 +93,18 @@ class DeepbworkController extends Controller
     // 后端获取配置
     public function config(Request $request)
     {
-        $nodeId = $request->input('node_id');
-        $localPort = $request->input('local_port');
-        if (empty($nodeId) || empty($localPort)) {
-            throw new ApiException(422, '参数错误');
-        }
+        $request->validate([
+            'node_id' => 'required',
+            'local_port' => 'required'
+        ],[
+            'node_id.required' => '节点ID不能为空',
+            'local_port.required' => '本地端口不能为空'
+        ]);
         try {
-            $json = $this->getV2RayConfig($nodeId, $localPort);
+            $json = $this->getV2RayConfig($request->input('node_id'), $request->input('local_port'));
         } catch (\Exception $e) {
-            throw new ApiException(500, $e->getMessage());
+            \Log::error($e);
+            throw new ApiException($e->getMessage());
         }
 
         return(json_encode($json, JSON_UNESCAPED_UNICODE));
@@ -111,7 +114,7 @@ class DeepbworkController extends Controller
     {
         $server = ServerVmess::find($nodeId);
         if (!$server) {
-            throw new ApiException(500, '节点不存在');
+            return $this->fail([400,'节点不存在']);
         }
         $json = json_decode(self::V2RAY_CONFIG);
         $json->log->loglevel = (int)admin_setting('server_log_enable') ? 'debug' : 'none';

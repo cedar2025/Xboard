@@ -19,9 +19,7 @@ class ConfigController extends Controller
         $files = array_map(function ($item) use ($path) {
             return str_replace($path, '', $item);
         }, glob($path . '*'));
-        return response([
-            'data' => $files
-        ]);
+        return $this->success($files);
     }
 
     public function getThemeTemplate()
@@ -30,9 +28,7 @@ class ConfigController extends Controller
         $files = array_map(function ($item) use ($path) {
             return str_replace($path, '', $item);
         }, glob($path . '*'));
-        return response([
-            'data' => $files
-        ]);
+        return $this->success($files);
     }
 
     public function testSendMail(Request $request)
@@ -59,9 +55,7 @@ class ConfigController extends Controller
         $telegramService = new TelegramService($request->input('telegram_bot_token'));
         $telegramService->getMe();
         $telegramService->setWebhook($hookUrl);
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function fetch(Request $request)
@@ -163,16 +157,12 @@ class ConfigController extends Controller
             ]
         ];
         if ($key && isset($data[$key])) {
-            return response([
-                'data' => [
-                    $key => $data[$key]
-                ]
+            return $this->success([
+                $key => $data[$key]
             ]);
         };
         // TODO: default should be in Dict
-        return response([
-            'data' => $data
-        ]);
+        return $this->success($data);
     }
 
     public function save(ConfigSave $request)
@@ -196,8 +186,6 @@ class ConfigController extends Controller
         
         Cache::forget('admin_settings');
         // \Artisan::call('horizon:terminate'); //重启队列使配置生效
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

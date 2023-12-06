@@ -79,7 +79,7 @@ class OrderService
         }catch(\Exception $e){
             DB::rollBack();
             \Log::error($e);
-            throw new ApiException(500, '开通失败');
+            throw new ApiException('开通失败');
         }
     }
 
@@ -90,7 +90,7 @@ class OrderService
         if ($order->period === 'reset_price') {
             $order->type = 4;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
-            if (!(int)admin_setting('plan_change_enable', 1)) throw new ApiException(500, '目前不允许更改订阅，请联系客服或提交工单操作');
+            if (!(int)admin_setting('plan_change_enable', 1)) throw new ApiException('目前不允许更改订阅，请联系客服或提交工单操作');
             $order->type = 3;
             if ((int)admin_setting('surplus_enable', 1)) $this->getSurplusValue($user, $order);
             if ($order->surplus_amount >= $order->total_amount) {

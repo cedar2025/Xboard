@@ -18,25 +18,19 @@ class TrojanController extends Controller
         if ($request->input('id')) {
             $server = ServerTrojan::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '服务器不存在');
+                return $this->fail([400202,'服务器不存在']);
             }
             try {
                 $server->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500, '保存失败']);
             }
-            return response([
-                'data' => true
-            ]);
+            return $this->success(true);
         }
 
-        if (!ServerTrojan::create($params)) {
-            throw new ApiException(500, '创建失败');
-        }
-
-        return response([
-            'data' => true
-        ]);
+        ServerTrojan::create($params);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
@@ -44,12 +38,10 @@ class TrojanController extends Controller
         if ($request->input('id')) {
             $server = ServerTrojan::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '节点ID不存在');
+                return $this->fail([400202,'节点ID不存在']);
             }
         }
-        return response([
-            'data' => $server->delete()
-        ]);
+        return $this->success($server->delete());
     }
 
     public function update(ServerTrojanUpdate $request)
@@ -61,17 +53,16 @@ class TrojanController extends Controller
         $server = ServerTrojan::find($request->input('id'));
 
         if (!$server) {
-            throw new ApiException(500, '该服务器不存在');
+            return $this->fail([400202,'该服务器不存在']);
         }
         try {
             $server->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            \Log::error($e);
+            return $this->fail([500,'保存失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function copy(Request $request)
@@ -79,22 +70,15 @@ class TrojanController extends Controller
         $server = ServerTrojan::find($request->input('id'));
         $server->show = 0;
         if (!$server) {
-            throw new ApiException(500, '服务器不存在');
+            return $this->fail([400202,'服务器不存在']);
         }
-        if (!ServerTrojan::create($server->toArray())) {
-            throw new ApiException(500, '复制失败');
-        }
-
-        return response([
-            'data' => true
-        ]);
+        ServerTrojan::create($server->toArray());
+        return $this->success(true);
     }
     public function viewConfig(Request $request)
     {
         $serverService = new ServerService();
         $config = $serverService->getTrojanConfig($request->input('node_id'), 23333);
-        return response([
-            'data' => $config
-        ]);
+        return $this->success($config);
     }
 }

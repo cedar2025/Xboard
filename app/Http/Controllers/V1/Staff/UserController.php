@@ -16,16 +16,14 @@ class UserController extends Controller
     public function getUserInfoById(Request $request)
     {
         if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
+            return $this->fail([422,'用户ID不能为空']);
         }
         $user = User::where('is_admin', 0)
             ->where('id', $request->input('id'))
             ->where('is_staff', 0)
             ->first();
-        if (!$user) throw new ApiException(500, '用户不存在');
-        return response([
-            'data' => $user
-        ]);
+        if (!$user) return $this->fail([400202,'用户不存在']);
+        return $this->success($user);
     }
 
     public function update(UserUpdate $request)
@@ -33,10 +31,10 @@ class UserController extends Controller
         $params = $request->validated();
         $user = User::find($request->input('id'));
         if (!$user) {
-            throw new ApiException(500, '用户不存在');
+            return $this->fail([400202,'用户不存在']);
         }
         if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
-            throw new ApiException(500, '邮箱已被使用');
+            return $this->fail([400201,'邮箱已被使用']);
         }
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
@@ -47,7 +45,7 @@ class UserController extends Controller
         if (isset($params['plan_id'])) {
             $plan = Plan::find($params['plan_id']);
             if (!$plan) {
-                throw new ApiException(500, '订阅计划不存在');
+                return $this->fail([400202,'订阅不存在']);
             }
             $params['group_id'] = $plan->group_id;
         }
@@ -55,11 +53,10 @@ class UserController extends Controller
         try {
             $user->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            \Log::error($e);
+            return $this->fail([500,'更新失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function sendMail(UserSendMail $request)
@@ -82,9 +79,7 @@ class UserController extends Controller
             ]);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function ban(Request $request)
@@ -98,11 +93,10 @@ class UserController extends Controller
                 'banned' => 1
             ]);
         } catch (\Exception $e) {
-            throw new ApiException(500, '处理失败');
+            \Log::error($e);
+            return $this->fail([500,'处理上失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

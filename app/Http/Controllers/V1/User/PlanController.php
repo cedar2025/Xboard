@@ -8,7 +8,6 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\PlanService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PlanController extends Controller
 {
@@ -18,14 +17,12 @@ class PlanController extends Controller
         if ($request->input('id')) {
             $plan = Plan::where('id', $request->input('id'))->first();
             if (!$plan) {
-                throw new ApiException(500, __('Subscription plan does not exist'));
+                return $this->fail([400, __('Subscription plan does not exist')]);
             }
             if ((!$plan->show && !$plan->renew) || (!$plan->show && $user->plan_id !== $plan->id)) {
-                throw new ApiException(500, __('Subscription plan does not exist'));
+                return $this->fail([400, __('Subscription plan does not exist')]);
             }
-            return response([
-                'data' => $plan
-            ]);
+            return $this->success($plan);
         }
 
         $counts = PlanService::countActiveUsers();
@@ -37,8 +34,6 @@ class PlanController extends Controller
             if (!isset($counts[$plans[$k]->id])) continue;
             $plans[$k]->capacity_limit = $plans[$k]->capacity_limit - $counts[$plans[$k]->id]->count;
         }
-        return response([
-            'data' => $plans
-        ]);
+        return $this->success($plans);
     }
 }

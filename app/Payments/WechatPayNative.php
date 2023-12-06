@@ -53,7 +53,7 @@ class WechatPayNative {
         $response = $request->send();
         $response = $response->getData();
         if ($response['return_code'] !== 'SUCCESS') {
-            throw new ApiException(500, $response['return_msg']);
+            throw new ApiException($response['return_msg']);
         }
         return [
             'type' => 0,
