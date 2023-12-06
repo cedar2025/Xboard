@@ -24,7 +24,7 @@ class TicketController extends Controller
                 ->where('user_id', $request->user['id'])
                 ->first();
             if (!$ticket) {
-                throw new ApiException(500, __('Ticket does not exist'));
+                return $this->fail([400, __('Ticket does not exist')]);
             }
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
             for ($i = 0; $i < count($ticket['message']); $i++) {
@@ -34,16 +34,12 @@ class TicketController extends Controller
                     $ticket['message'][$i]['is_me'] = false;
                 }
             }
-            return response([
-                'data' => $ticket
-            ]);
+            return $this->success($ticket);
         }
         $ticket = Ticket::where('user_id', $request->user['id'])
             ->orderBy('created_at', 'DESC')
             ->get();
-        return response([
-            'data' => $ticket
-        ]);
+        return $this->success($ticket);
     }
 
     public function save(TicketSave $request)
@@ -51,7 +47,7 @@ class TicketController extends Controller
         try{
             DB::beginTransaction();
             if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
-                throw new ApiException(500, __('There are other unresolved tickets'));
+                return $this->fail([400, __('There are other unresolved tickets')]);
             }
             $ticket = Ticket::create(array_merge($request->only([
                 'subject',
@@ -60,7 +56,7 @@ class TicketController extends Controller
                 'user_id' => $request->user['id']
             ]));
             if (!$ticket) {
-                throw new ApiException(500, __('Failed to open ticket'));
+                return $this->fail([400, __('Failed to open ticket')]);
             }
             $ticketMessage = TicketMessage::create([
                 'user_id' => $request->user['id'],
@@ -68,7 +64,7 @@ class TicketController extends Controller
                 'message' => $request->input('message')
             ]);
             if (!$ticketMessage) {
-                throw new ApiException(500, __('Failed to open ticket'));
+                return $this->fail([400, __('Failed to open ticket')]);
             }
             DB::commit();
         }catch(\Exception $e){
@@ -76,30 +72,28 @@ class TicketController extends Controller
             throw $e;
         }
         $this->sendNotify($ticket, $request->input('message'));
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function reply(Request $request)
     {
         if (empty($request->input('id'))) {
-            throw new ApiException(500, __('Invalid parameter'));
+            return $this->fail([400, __('Invalid parameter')]);
         }
         if (empty($request->input('message'))) {
-            throw new ApiException(500, __('Message cannot be empty'));
+            return $this->fail([400, __('Message cannot be empty')]);
         }
         $ticket = Ticket::where('id', $request->input('id'))
             ->where('user_id', $request->user['id'])
             ->first();
         if (!$ticket) {
-            throw new ApiException(500, __('Ticket does not exist'));
+            return $this->fail([400, __('Ticket does not exist')]);
         }
         if ($ticket->status) {
-            throw new ApiException(500, __('The ticket is closed and cannot be replied'));
+            return $this->fail([400, __('The ticket is closed and cannot be replied')]);
         }
         if ($request->user['id'] == $this->getLastMessage($ticket->id)->user_id) {
-            throw new ApiException(500, __('Please wait for the technical enginneer to reply'));
+            return $this->fail([400, __('Please wait for the technical enginneer to reply')]);
         }
         $ticketService = new TicketService();
         if (!$ticketService->reply(
@@ -107,33 +101,29 @@ class TicketController extends Controller
             $request->input('message'),
             $request->user['id']
         )) {
-            throw new ApiException(500, __('Ticket reply failed'));
+            return $this->fail([400, __('Ticket reply failed')]);
         }
         $this->sendNotify($ticket, $request->input('message'));
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
 
     public function close(Request $request)
     {
         if (empty($request->input('id'))) {
-            throw new ApiException(500, __('Invalid parameter'));
+            return $this->fail([422, __('Invalid parameter')]);
         }
         $ticket = Ticket::where('id', $request->input('id'))
             ->where('user_id', $request->user['id'])
             ->first();
         if (!$ticket) {
-            throw new ApiException(500, __('Ticket does not exist'));
+            return $this->fail([400, __('Ticket does not exist')]);
         }
         $ticket->status = 1;
         if (!$ticket->save()) {
-            throw new ApiException(500, __('Close failed'));
+            return $this->fail([500, __('Close failed')]);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     private function getLastMessage($ticketId)
@@ -146,18 +136,18 @@ class TicketController extends Controller
     public function withdraw(TicketWithdraw $request)
     {
         if ((int)admin_setting('withdraw_close_enable', 0)) {
-            throw new ApiException(500, 'user.ticket.withdraw.not_support_withdraw');
+            return $this->fail([400, 'Unsupported withdraw']);
         }
         if (!in_array(
             $request->input('withdraw_method'),
             admin_setting('commission_withdraw_method',Dict::WITHDRAW_METHOD_WHITELIST_DEFAULT)
         )) {
-            throw new ApiException(500, __('Unsupported withdrawal method'));
+            return $this->fail([422, __('Unsupported withdrawal method')]);
         }
         $user = User::find($request->user['id']);
         $limit = admin_setting('commission_withdraw_limit', 100);
         if ($limit > ($user->commission_balance / 100)) {
-            throw new ApiException(500, __('The current required minimum withdrawal commission is :limit', ['limit' => $limit]));
+            return $this->fail([422, __('The current required minimum withdrawal commission is :limit', ['limit' => $limit])]);
         }
         try{
             DB::beginTransaction();
@@ -168,7 +158,7 @@ class TicketController extends Controller
                 'user_id' => $request->user['id']
             ]);
             if (!$ticket) {
-                throw new ApiException(500, __('Failed to open ticket'));
+                return $this->fail([400, __('Failed to open ticket')]);
             }
             $message = sprintf("%s\r\n%s",
                 __('Withdrawal method') . "：" . $request->input('withdraw_method'),
@@ -180,7 +170,7 @@ class TicketController extends Controller
                 'message' => $message
             ]);
             if (!$ticketMessage) {
-                throw new ApiException(500, __('Failed to open ticket'));
+                return $this->fail([400, __('Failed to open ticket')]);
             }
             DB::commit();
         }catch(\Exception $e){
@@ -188,9 +178,7 @@ class TicketController extends Controller
             throw $e;
         }
         $this->sendNotify($ticket, $message);
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     private function sendNotify(Ticket $ticket, string $message)

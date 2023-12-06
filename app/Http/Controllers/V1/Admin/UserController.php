@@ -21,12 +21,10 @@ class UserController extends Controller
     public function resetSecret(Request $request)
     {
         $user = User::find($request->input('id'));
-        if (!$user) throw new ApiException(500, '用户不存在');
+        if (!$user) return $this->fail([400202,'用户不存在']);
         $user->token = Helper::guid();
         $user->uuid = Helper::guid(true);
-        return response([
-            'data' => $user->save()
-        ]);
+        return $this->success($user->save());
     }
 
     private function filter(Request $request, $builder)
@@ -85,46 +83,45 @@ class UserController extends Controller
 
     public function getUserInfoById(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数错误');
-        }
-        $user = User::find($request->input('id'));
-        if ($user->invite_user_id) {
-            $user['invite_user'] = User::find($user->invite_user_id);
-        }
-        return response([
-            'data' => $user
+        $request->validate([
+            'id'=> 'required|numeric'
+        ],[
+            'id.required' => '用户ID不能为空'
         ]);
+        $user = User::find($request->input('id'))->load('invite_user');
+        return $this->success($user);
     }
 
     public function update(UserUpdate $request)
     {
         $params = $request->validated();
+
         $user = User::find($request->input('id'));
         if (!$user) {
-            throw new ApiException(500, '用户不存在');
+            return $this->fail([400202, '用户不存在']);
         }
+        // 检查邮箱是否被使用
         if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
-            throw new ApiException(500, '邮箱已被使用');
+            return $this->fail([400201, '邮箱已被使用']);
         }
+        // 处理密码
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
             $params['password_algo'] = NULL;
         } else {
             unset($params['password']);
         }
+        // 处理订阅计划
         if (isset($params['plan_id'])) {
             $plan = Plan::find($params['plan_id']);
             if (!$plan) {
-                throw new ApiException(500, '订阅计划不存在');
+                return $this->fail([400202, '订阅计划不存在']);
             }
             $params['group_id'] = $plan->group_id;
         }
-        if ($request->input('invite_user_email')) {
-            $inviteUser = User::where('email', $request->input('invite_user_email'))->first();
-            if ($inviteUser) {
-                $params['invite_user_id'] = $inviteUser->id;
-            }
+        // 处理邀请用户
+        if ($request->input('invite_user_email') && $inviteUser = User::where('email', $request->input('invite_user_email'))->first()) {
+            $params['invite_user_id'] = $inviteUser->id;
         } else {
             $params['invite_user_id'] = null;
         }
@@ -137,11 +134,10 @@ class UserController extends Controller
         try {
             $user->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            \Log::error($e);
+            return $this->fail([500,'保存失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function dumpCSV(Request $request)
@@ -178,7 +174,7 @@ class UserController extends Controller
             if ($request->input('plan_id')) {
                 $plan = Plan::find($request->input('plan_id'));
                 if (!$plan) {
-                    throw new ApiException(500, '订阅计划不存在');
+                    return $this->fail([400202,'订阅计划不存在']);
                 }
             }
             $user = [
@@ -191,15 +187,13 @@ class UserController extends Controller
                 'token' => Helper::guid()
             ];
             if (User::where('email', $user['email'])->first()) {
-                throw new ApiException(500, '邮箱已存在于系统中');
+                return $this->fail([400201,'邮箱已存在于系统中']);
             }
             $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
             if (!User::create($user)) {
-                throw new ApiException(500, '生成失败');
+                return $this->fail([500,'生成失败']);
             }
-            return response([
-                'data' => true
-            ]);
+            return $this->success(true);
         }
         if ($request->input('generate_count')) {
             $this->multiGenerate($request);
@@ -211,7 +205,7 @@ class UserController extends Controller
         if ($request->input('plan_id')) {
             $plan = Plan::find($request->input('plan_id'));
             if (!$plan) {
-                throw new ApiException(500, '订阅计划不存在');
+                return $this->fail([400202,'订阅计划不存在']);
             }
         }
         $users = [];
@@ -233,12 +227,13 @@ class UserController extends Controller
         try{
             DB::beginTransaction();
             if (!User::insert($users)) {
-                throw new ApiException(500, '生成失败');
+                throw new \Exception();
             }
             DB::commit();
         }catch(\Exception $e){
             DB::rollBack();
-            throw $e;
+            \Log::error($e);
+            return $this->fail([500,'生成失败']);
         }
         $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
         foreach($users as $user) {
@@ -272,9 +267,7 @@ class UserController extends Controller
             'send_email_mass');
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function ban(Request $request)
@@ -288,11 +281,10 @@ class UserController extends Controller
                 'banned' => 1
             ]);
         } catch (\Exception $e) {
-            throw new ApiException(500, '处理失败');
+            \Log::error($e);
+            return $this->fail([500,'处理失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

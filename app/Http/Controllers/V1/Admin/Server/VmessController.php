@@ -18,25 +18,20 @@ class VmessController extends Controller
         if ($request->input('id')) {
             $server = ServerVmess::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '服务器不存在');
+                return $this->fail([400202, '服务器不存在']);
             }
             try {
                 $server->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500, '保存失败']);
             }
-            return response([
-                'data' => true
-            ]);
+            return $this->success(true);
         }
 
-        if (!ServerVmess::create($params)) {
-            throw new ApiException(500, '创建失败');
-        }
+        ServerVmess::create($params);
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
@@ -44,12 +39,10 @@ class VmessController extends Controller
         if ($request->input('id')) {
             $server = ServerVmess::find($request->input('id'));
             if (!$server) {
-                throw new ApiException(500, '节点ID不存在');
+                return $this->fail([400202, '节点不存在']);
             }
         }
-        return response([
-            'data' => $server->delete()
-        ]);
+        return $this->success($server->delete());
     }
 
     public function update(ServerVmessUpdate $request)
@@ -61,17 +54,16 @@ class VmessController extends Controller
         $server = ServerVmess::find($request->input('id'));
 
         if (!$server) {
-            throw new ApiException(500, '该服务器不存在');
+            return $this->fail([400202, '该服务器不存在']);
         }
         try {
             $server->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '保存失败');
+            \Log::error($e);
+            return $this->fail([500, '保存失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function copy(Request $request)
@@ -79,14 +71,9 @@ class VmessController extends Controller
         $server = ServerVmess::find($request->input('id'));
         $server->show = 0;
         if (!$server) {
-            throw new ApiException(500, '服务器不存在');
+            return $this->fail([400202, '该服务器不存在']);
         }
-        if (!ServerVmess::create($server->toArray())) {
-            throw new ApiException(500, '复制失败');
-        }
-
-        return response([
-            'data' => true
-        ]);
+        ServerVmess::create($server->toArray());
+        return $this->success(true);
     }
 }

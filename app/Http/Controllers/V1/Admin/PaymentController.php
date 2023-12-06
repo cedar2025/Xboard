@@ -18,9 +18,7 @@ class PaymentController extends Controller
         foreach (glob(base_path('app//Payments') . '/*.php') as $file) {
             array_push($methods, pathinfo($file)['filename']);
         }
-        return response([
-            'data' => $methods
-        ]);
+        return $this->success($methods);
     }
 
     public function fetch()
@@ -34,34 +32,28 @@ class PaymentController extends Controller
             }
             $payments[$k]['notify_url'] = $notifyUrl;
         }
-        return response([
-            'data' => $payments
-        ]);
+        return $this->success($payments);
     }
 
     public function getPaymentForm(Request $request)
     {
         $paymentService = new PaymentService($request->input('payment'), $request->input('id'));
-        return response([
-            'data' => $paymentService->form()
-        ]);
+        return $this->success($paymentService->form());
     }
 
     public function show(Request $request)
     {
         $payment = Payment::find($request->input('id'));
-        if (!$payment) throw new ApiException(500, '支付方式不存在');
+        if (!$payment) return $this->fail([400202 ,'支付方式不存在']);
         $payment->enable = !$payment->enable;
-        if (!$payment->save()) throw new ApiException(500, '保存失败');
-        return response([
-            'data' => true
-        ]);
+        if (!$payment->save()) return $this->fail([500 ,'保存失败']);
+        return $this->success(true);
     }
 
     public function save(Request $request)
     {
         if (!admin_setting('app_url')) {
-            throw new ApiException(500, '请在站点配置中配置站点地址');
+            return $this->fail([400 ,'请在站点配置中配置站点地址']);
         }
         $params = $request->validate([
             'name' => 'required',
@@ -81,32 +73,27 @@ class PaymentController extends Controller
         ]);
         if ($request->input('id')) {
             $payment = Payment::find($request->input('id'));
-            if (!$payment) throw new ApiException(500, '支付方式不存在');
+            if (!$payment) return $this->fail([400202 ,'支付方式不存在']);
             try {
                 $payment->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, $e->getMessage());
+                \Log::error($e);
+                return $this->fail([500 ,'保存失败']);
             }
-            return response([
-                'data' => true
-            ]);
+            return $this->success(true);
         }
         $params['uuid'] = Helper::randomChar(8);
         if (!Payment::create($params)) {
-            throw new ApiException(500, '保存失败');
+            return $this->fail([500 ,'保存失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
     {
         $payment = Payment::find($request->input('id'));
-        if (!$payment) throw new ApiException(500, '支付方式不存在');
-        return response([
-            'data' => $payment->delete()
-        ]);
+        if (!$payment) return $this->fail([400202 ,'支付方式不存在']);
+        return $this->success($payment->delete());
     }
 
 
@@ -122,17 +109,15 @@ class PaymentController extends Controller
             DB::beginTransaction();
             foreach ($request->input('ids') as $k => $v) {
                 if (!Payment::find($v)->update(['sort' => $k + 1])) {
-                    throw new ApiException(500, '保存失败');
+                    throw new \Exception();
                 }
             }
             DB::commit();
         }catch(\Exception $e){
             DB::rollBack();
-            throw $e;
+            return $this->fail([500 ,'保存失败']);
         }
         
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

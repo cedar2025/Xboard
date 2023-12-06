@@ -13,11 +13,10 @@ class TelegramController extends Controller
     {
         $telegramService = new TelegramService();
         $response = $telegramService->getMe();
-        return response([
-            'data' => [
-                'username' => $response->result->username
-            ]
-        ]);
+        $data = [
+            'username' => $response->result->username
+        ];
+        return $this->success($data);
     }
 
     public function unbind(Request $request)

@@ -31,21 +31,21 @@ class CouponController extends Controller
 
     public function show(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数有误');
-        }
+        $request->validate([
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => '优惠券ID不能为空',
+            'id.numeric' => '优惠券ID必须为数字'
+        ]);
         $coupon = Coupon::find($request->input('id'));
         if (!$coupon) {
-            throw new ApiException(500, '优惠券不存在');
+            return $this->fail([400202,'优惠券不存在']);
         }
         $coupon->show = !$coupon->show;
         if (!$coupon->save()) {
-            throw new ApiException(500, '保存失败');
+            return $this->fail([500,'保存失败']);
         }
-
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function generate(CouponGenerate $request)
@@ -61,19 +61,18 @@ class CouponController extends Controller
                 $params['code'] = Helper::randomChar(8);
             }
             if (!Coupon::create($params)) {
-                throw new ApiException(500, '创建失败');
+                return $this->fail([500,'创建失败']);
             }
         } else {
             try {
                 Coupon::find($request->input('id'))->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500,'保存失败']);
             }
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     private function multiGenerate(CouponGenerate $request)
@@ -99,12 +98,12 @@ class CouponController extends Controller
                 }
                 return $item;
             }, $coupons))) {
-                throw new ApiException(500, '生成失败');
+                throw new \Exception();
             }
             DB::commit();
         }catch(\Exception $e){
             DB::rollBack();
-            throw $e;
+            return $this->fail([500, '生成失败']);
         }
         
         $data = "名称,类型,金额或比例,开始时间,结束时间,可用次数,可用于订阅,券码,生成时间\r\n";
@@ -123,19 +122,20 @@ class CouponController extends Controller
 
     public function drop(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数有误');
-        }
+        $request->validate([
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => '优惠券ID不能为空',
+            'id.numeric' => '优惠券ID必须为数字'
+        ]);
         $coupon = Coupon::find($request->input('id'));
         if (!$coupon) {
-            throw new ApiException(500, '优惠券不存在');
+            return $this->fail([400202,'优惠券不存在']);
         }
         if (!$coupon->delete()) {
-            throw new ApiException(500, '删除失败');
+            return $this->fail([500,'删除失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

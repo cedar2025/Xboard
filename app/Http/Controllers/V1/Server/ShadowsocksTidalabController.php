@@ -21,10 +21,10 @@ class ShadowsocksTidalabController extends Controller
     {
         $token = $request->input('token');
         if (empty($token)) {
-            throw new ApiException(500, 'token is null');
+            throw new ApiException('token is null');
         }
         if ($token !== admin_setting('server_token')) {
-            throw new ApiException(500, 'token is error');
+            throw new ApiException('token is error');
         }
     }
 
@@ -35,7 +35,7 @@ class ShadowsocksTidalabController extends Controller
         $nodeId = $request->input('node_id');
         $server = ServerShadowsocks::find($nodeId);
         if (!$server) {
-            throw new ApiException(500, 'fail');
+            return $this->fail([400,'节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $server->id), time(), 3600);
         $serverService = new ServerService();

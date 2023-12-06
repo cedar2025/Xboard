@@ -63,21 +63,21 @@ class MGate {
         $curl->post($this->config['mgate_url'] . '/v1/gateway/fetch', http_build_query($params));
         $result = $curl->response;
         if (!$result) {
-            throw new ApiException(500, '网络异常');
+            throw new ApiException('网络异常');
         }
         if ($curl->error) {
             if (isset($result->errors)) {
                 $errors = (array)$result->errors;
-                throw new ApiException(500, $errors[array_keys($errors)[0]][0]);
+                throw new ApiException($errors[array_keys($errors)[0]][0]);
             }
             if (isset($result->message)) {
-                throw new ApiException(500, $result->message);
+                throw new ApiException($result->message);
             }
-            throw new ApiException(500, '未知错误');
+            throw new ApiException('未知错误');
         }
         $curl->close();
         if (!isset($result->data->trade_no)) {
-            throw new ApiException(500, '接口请求失败');
+            throw new ApiException('接口请求失败');
         }
         return [
             'type' => 1, // 0:qrcode 1:url

@@ -37,8 +37,6 @@ class StatController extends Controller
              } 
          };
 
-        return response([
-            'data' => $records
-        ]);
+        return $this->success($records);
     }
 }

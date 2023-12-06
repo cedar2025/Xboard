@@ -12,14 +12,12 @@ class CouponController extends Controller
     public function check(Request $request)
     {
         if (empty($request->input('code'))) {
-            throw new ApiException(500, __('Coupon cannot be empty'));
+            return $this->fail([422,__('Coupon cannot be empty')]);
         }
         $couponService = new CouponService($request->input('code'));
         $couponService->setPlanId($request->input('plan_id'));
         $couponService->setUserId($request->user['id']);
         $couponService->check();
-        return response([
-            'data' => $couponService->getCoupon()
-        ]);
+        return $this->success($couponService->getCoupon());
     }
 }

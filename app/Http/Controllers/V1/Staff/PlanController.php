@@ -30,8 +30,6 @@ class PlanController extends Controller
                 if ($plans[$k]->id === $counts[$kk]->plan_id) $plans[$k]->count = $counts[$kk]->count;
             }
         }
-        return response([
-            'data' => $plans
-        ]);
+        return $this->success($plans);
     }
 }

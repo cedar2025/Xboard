@@ -13,4 +13,11 @@ class User extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
+
+
+    // 获取邀请人信息
+    public function invite_user()
+    {
+        return $this->belongsTo(self::class, 'invite_user_id', 'id');
+    }
 }
