@@ -66,13 +66,16 @@ class TrafficFetchJob implements ShouldQueue
                 $newTime = time();
                 $newU = $user->u + ($v[0] * $targetServer['rate']);
                 $newD = $user->d + ($v[1] * $targetServer['rate']);
-                \DB::table('v2_user')
+                $rows = \DB::table('v2_user')
                     ->where('id', $uid)
                     ->update([
                         't' => $newTime,
                         'u' => $newU,
                         'd' => $newD,
                     ]);
+                if($rows === 0){
+                    \Log::error("流量更新失败\n未记录用户ID:{$uid}\n未记录上行:{$user->u}\n未记录下行:{$user->d}");
+                }
             }, 3);
         }
     }
