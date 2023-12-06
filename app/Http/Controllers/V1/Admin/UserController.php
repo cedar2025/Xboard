@@ -230,12 +230,16 @@ class UserController extends Controller
             $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
             array_push($users, $user);
         }
-        DB::beginTransaction();
-        if (!User::insert($users)) {
+        try{
+            DB::beginTransaction();
+            if (!User::insert($users)) {
+                throw new ApiException(500, '生成失败');
+            }
+            DB::commit();
+        }catch(\Exception $e){
             DB::rollBack();
-            throw new ApiException(500, '生成失败');
+            throw $e;
         }
-        DB::commit();
         $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
         foreach($users as $user) {
             $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
