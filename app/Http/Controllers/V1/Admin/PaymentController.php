@@ -118,14 +118,19 @@ class PaymentController extends Controller
             'ids.required' => '参数有误',
             'ids.array' => '参数有误'
         ]);
-        DB::beginTransaction();
-        foreach ($request->input('ids') as $k => $v) {
-            if (!Payment::find($v)->update(['sort' => $k + 1])) {
-                DB::rollBack();
-                throw new ApiException(500, '保存失败');
+        try{
+            DB::beginTransaction();
+            foreach ($request->input('ids') as $k => $v) {
+                if (!Payment::find($v)->update(['sort' => $k + 1])) {
+                    throw new ApiException(500, '保存失败');
+                }
             }
+            DB::commit();
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
-        DB::commit();
+        
         return response([
             'data' => true
         ]);

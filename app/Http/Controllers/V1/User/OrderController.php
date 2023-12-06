@@ -114,54 +114,54 @@ class OrderController extends Controller
             throw new ApiException(500, __('This subscription has expired, please change to another subscription'));
         }
 
-        DB::beginTransaction();
-        $order = new Order();
-        $orderService = new OrderService($order);
-        $order->user_id = $request->user['id'];
-        $order->plan_id = $plan->id;
-        $order->period = $request->input('period');
-        $order->trade_no = Helper::generateOrderNo();
-        $order->total_amount = $plan[$request->input('period')];
+        try{
+            DB::beginTransaction();
+            $order = new Order();
+            $orderService = new OrderService($order);
+            $order->user_id = $request->user['id'];
+            $order->plan_id = $plan->id;
+            $order->period = $request->input('period');
+            $order->trade_no = Helper::generateOrderNo();
+            $order->total_amount = $plan[$request->input('period')];
 
-        if ($request->input('coupon_code')) {
-            $couponService = new CouponService($request->input('coupon_code'));
-            if (!$couponService->use($order)) {
-                DB::rollBack();
-                throw new ApiException(500, __('Coupon failed'));
-            }
-            $order->coupon_id = $couponService->getId();
-        }
-
-        $orderService->setVipDiscount($user);
-        $orderService->setOrderType($user);
-        $orderService->setInvite($user);
-
-        if ($user->balance && $order->total_amount > 0) {
-            $remainingBalance = $user->balance - $order->total_amount;
-            $userService = new UserService();
-            if ($remainingBalance > 0) {
-                if (!$userService->addBalance($order->user_id, - $order->total_amount)) {
-                    DB::rollBack();
-                    throw new ApiException(500, __('Insufficient balance'));
+            if ($request->input('coupon_code')) {
+                $couponService = new CouponService($request->input('coupon_code'));
+                if (!$couponService->use($order)) {
+                    throw new ApiException(500, __('Coupon failed'));
                 }
-                $order->balance_amount = $order->total_amount;
-                $order->total_amount = 0;
-            } else {
-                if (!$userService->addBalance($order->user_id, - $user->balance)) {
-                    DB::rollBack();
-                    throw new ApiException(500, __('Insufficient balance'));
-                }
-                $order->balance_amount = $user->balance;
-                $order->total_amount = $order->total_amount - $user->balance;
+                $order->coupon_id = $couponService->getId();
             }
-        }
 
-        if (!$order->save()) {
-            DB::rollback();
-            throw new ApiException(500, __('Failed to create order'));
-        }
+            $orderService->setVipDiscount($user);
+            $orderService->setOrderType($user);
+            $orderService->setInvite($user);
 
-        DB::commit();
+            if ($user->balance && $order->total_amount > 0) {
+                $remainingBalance = $user->balance - $order->total_amount;
+                $userService = new UserService();
+                if ($remainingBalance > 0) {
+                    if (!$userService->addBalance($order->user_id, - $order->total_amount)) {
+                        throw new ApiException(500, __('Insufficient balance'));
+                    }
+                    $order->balance_amount = $order->total_amount;
+                    $order->total_amount = 0;
+                } else {
+                    if (!$userService->addBalance($order->user_id, - $user->balance)) {
+                        throw new ApiException(500, __('Insufficient balance'));
+                    }
+                    $order->balance_amount = $user->balance;
+                    $order->total_amount = $order->total_amount - $user->balance;
+                }
+            }
+
+            if (!$order->save()) {
+                throw new ApiException(500, __('Failed to create order'));
+            }
+            DB::commit();
+        }catch (\Exception $e){
+            DB::rollBack();
+            throw $e;
+        }
 
         return response([
             'data' => $order->trade_no
