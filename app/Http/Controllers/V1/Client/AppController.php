@@ -65,31 +65,26 @@ class AppController extends Controller
             || strpos($request->header('user-agent'), 'tunnelab/4.0.0') !== false
         ) {
             if (strpos($request->header('user-agent'), 'Win64') !== false) {
-                return response([
-                    'data' => [
+                $data = [
                         'version' => admin_setting('windows_version'),
                         'download_url' => admin_setting('windows_download_url')
-                    ]
-                ]);
+                ];
             } else {
-                return response([
-                    'data' => [
+                $data = [
                         'version' => admin_setting('macos_version'),
                         'download_url' => admin_setting('macos_download_url')
-                    ]
-                ]);
+                ];
             }
-            return;
-        }
-        return response([
-            'data' => [
+        }else{
+            $data = [
                 'windows_version' => admin_setting('windows_version'),
                 'windows_download_url' => admin_setting('windows_download_url'),
                 'macos_version' => admin_setting('macos_version'),
                 'macos_download_url' => admin_setting('macos_download_url'),
                 'android_version' => admin_setting('android_version'),
                 'android_download_url' => admin_setting('android_download_url')
-            ]
-        ]);
+            ];
+        }
+        return $this->success($data);
     }
 }

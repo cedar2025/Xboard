@@ -53,7 +53,7 @@ class BTCPay {
         $ret = @json_decode($ret_raw, true);
 
         if(empty($ret['checkoutLink'])) {
-            throw new ApiException(500, "error!");
+            throw new ApiException("error!");
         }
         return [
             'type' => 1, // Redirect to url
@@ -76,7 +76,7 @@ class BTCPay {
         $computedSignature = "sha256=" . \hash_hmac('sha256', $payload, $this->config['btcpay_webhook_key']);
 
         if (!self::hashEqual($signraturHeader, $computedSignature)) {
-            throw new ApiException(400, 'HMAC signature does not match');
+            throw new ApiException('HMAC signature does not match',400);
             return false;
         }
 
@@ -98,7 +98,6 @@ class BTCPay {
             'trade_no' => $out_trade_no,
             'callback_no' => $pay_trade_no
         ];
-        return response('success', 200);
 
     }
 

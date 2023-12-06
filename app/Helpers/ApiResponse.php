@@ -47,7 +47,7 @@ trait ApiResponse
         return response()
             ->json([
             'status'  => $status,
-            'code'    => $code,
+            // 'code'    => $code,
             'message' => $message,
             'data'    => $data ?? null,
             'error'  => $error,

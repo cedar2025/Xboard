@@ -58,7 +58,8 @@ class AlipayF2F {
                 'data' => $gateway->getQrCodeUrl()
             ];
         } catch (\Exception $e) {
-            throw new ApiException(500, $e->getMessage());
+            \Log::error($e);
+            throw new ApiException($e->getMessage());
         }
     }
 

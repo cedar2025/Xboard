@@ -17,7 +17,7 @@ class PaymentService
     {
         $this->method = $method;
         $this->class = '\\App\\Payments\\' . $this->method;
-        if (!class_exists($this->class)) throw new ApiException(500, 'gate is not found');
+        if (!class_exists($this->class)) throw new ApiException('gate is not found');
         if ($id) $payment = Payment::find($id)->toArray();
         if ($uuid) $payment = Payment::where('uuid', $uuid)->first()->toArray();
         $this->config = [];
@@ -33,7 +33,7 @@ class PaymentService
 
     public function notify($params)
     {
-        if (!$this->config['enable']) throw new ApiException(500, 'gate is not enable');
+        if (!$this->config['enable']) throw new ApiException('gate is not enable');
         return $this->payment->notify($params);
     }
 

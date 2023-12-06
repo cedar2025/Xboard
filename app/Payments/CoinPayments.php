@@ -63,7 +63,7 @@ class CoinPayments {
     {
 
         if (!isset($params['merchant']) || $params['merchant'] != trim($this->config['coinpayments_merchant_id'])) {
-            throw new ApiException(500, 'No or incorrect Merchant ID passed');
+            throw new ApiException('No or incorrect Merchant ID passed');
         }
 
         $headers = getallheaders();
@@ -82,7 +82,7 @@ class CoinPayments {
         // }
 
         if (!hash_equals($hmac, $signHeader)) {
-            throw new ApiException(400, 'HMAC signature does not match');
+            throw new ApiException('HMAC signature does not match', 400);
         }
 
         // HMAC Signature verified at this point, load some variables.
@@ -96,7 +96,7 @@ class CoinPayments {
             ];
         } else if ($status < 0) {
             //payment error, this is usually final but payments will sometimes be reopened if there was no exchange rate conversion or with seller consent
-            throw new ApiException(500, 'Payment Timed Out or Error');
+            throw new ApiException('Payment Timed Out or Error');
         } else {
             //payment is pending, you can optionally add a note to the order page
             return('IPN OK: pending');

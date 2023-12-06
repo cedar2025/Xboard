@@ -16,14 +16,12 @@ class InviteController extends Controller
     public function save(Request $request)
     {
         if (InviteCode::where('user_id', $request->user['id'])->where('status', 0)->count() >= admin_setting('invite_gen_limit', 5)) {
-            throw new ApiException(500, __('The maximum number of creations has been reached'));
+            return $this->fail([400,__('The maximum number of creations has been reached')]);
         }
         $inviteCode = new InviteCode();
         $inviteCode->user_id = $request->user['id'];
         $inviteCode->code = Helper::randomChar(8);
-        return response([
-            'data' => $inviteCode->save()
-        ]);
+        return $this->success($inviteCode->save());
     }
 
     public function details(Request $request)
@@ -79,11 +77,12 @@ class InviteController extends Controller
             //可用佣金
             (int)$user->commission_balance
         ];
-        return response([
+        $data = [
             'data' => [
                 'codes' => $codes,
                 'stat' => $stat
             ]
-        ]);
+        ];
+        return $this->success($data);
     }
 }

@@ -47,7 +47,7 @@ class StripeCredit {
         $currency = $this->config['currency'];
         $exchange = $this->exchange('CNY', strtoupper($currency));
         if (!$exchange) {
-            throw new ApiException(500, __('Currency conversion has timed out, please try again later'));
+            throw new ApiException(__('Currency conversion has timed out, please try again later'));
         }
         Stripe::setApiKey($this->config['stripe_sk_live']);
         try {
@@ -63,10 +63,10 @@ class StripeCredit {
             ]);
         } catch (\Exception $e) {
             info($e);
-            throw new ApiException(500, __('Payment failed. Please check your credit card information'));
+            throw new ApiException(__('Payment failed. Please check your credit card information'));
         }
         if (!$charge->paid) {
-            throw new ApiException(500, __('Payment failed. Please check your credit card information'));
+            throw new ApiException(__('Payment failed. Please check your credit card information'));
         }
         return [
             'type' => 2,
@@ -84,7 +84,8 @@ class StripeCredit {
                 $this->config['stripe_webhook_key']
             );
         } catch (\Stripe\Error\SignatureVerification $e) {
-            throw new ApiException(400);
+            \Log::error($e);
+            abort(400);
         }
         switch ($event->type) {
             case 'source.chargeable':
@@ -111,7 +112,7 @@ class StripeCredit {
                 }
                 break;
             default:
-                throw new ApiException(500, 'event is not support');
+                throw new ApiException('event is not support');
         }
         return('success');
     }

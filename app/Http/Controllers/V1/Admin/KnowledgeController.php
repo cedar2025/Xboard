@@ -16,23 +16,18 @@ class KnowledgeController extends Controller
     {
         if ($request->input('id')) {
             $knowledge = Knowledge::find($request->input('id'))->toArray();
-            if (!$knowledge) throw new ApiException(500, '知识不存在');
-            return response([
-                'data' => $knowledge
-            ]);
+            if (!$knowledge) return $this->fail([400202,'知识不存在']);
+            return $this->success($knowledge);
         }
-        return response([
-            'data' => Knowledge::select(['title', 'id', 'updated_at', 'category', 'show'])
-                ->orderBy('sort', 'ASC')
-                ->get()
-        ]);
+        $data = Knowledge::select(['title', 'id', 'updated_at', 'category', 'show'])
+        ->orderBy('sort', 'ASC')
+        ->get();
+        return $this->success($data);
     }
 
     public function getCategory(Request $request)
     {
-        return response([
-            'data' => array_keys(Knowledge::get()->groupBy('category')->toArray())
-        ]);
+        return $this->success(array_keys(Knowledge::get()->groupBy('category')->toArray()));
     }
 
     public function save(KnowledgeSave $request)
@@ -41,38 +36,37 @@ class KnowledgeController extends Controller
 
         if (!$request->input('id')) {
             if (!Knowledge::create($params)) {
-                throw new ApiException(500, '创建失败');
+                return $this->fail([500,'创建失败']);
             }
         } else {
             try {
                 Knowledge::find($request->input('id'))->update($params);
             } catch (\Exception $e) {
-                throw new ApiException(500, '保存失败');
+                \Log::error($e);
+                return $this->fail([500,'创建失败']);
             }
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function show(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数有误');
-        }
+        $request->validate([
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => '知识库ID不能为空' 
+        ]);
         $knowledge = Knowledge::find($request->input('id'));
         if (!$knowledge) {
-            throw new ApiException(500, '知识不存在');
+            throw new ApiException('知识不存在');
         }
-        $knowledge->show = $knowledge->show ? 0 : 1;
+        $knowledge->show = !$knowledge->show;
         if (!$knowledge->save()) {
-            throw new ApiException(500, '保存失败');
+            throw new ApiException('保存失败');
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function sort(KnowledgeSort $request)
@@ -87,28 +81,26 @@ class KnowledgeController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new ApiException(500, '保存失败');
+            throw new ApiException('保存失败');
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function drop(Request $request)
     {
-        if (empty($request->input('id'))) {
-            throw new ApiException(422, '参数有误');
-        }
+        $request->validate([
+            'id' => 'required|numeric'
+        ],[
+            'id.required' => '知识库ID不能为空' 
+        ]);
         $knowledge = Knowledge::find($request->input('id'));
         if (!$knowledge) {
-            throw new ApiException(500, '知识不存在');
+            return $this->fail([400202,'知识不存在']);
         }
         if (!$knowledge->delete()) {
-            throw new ApiException(500, '删除失败');
+            return $this->fail([500,'删除失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 }

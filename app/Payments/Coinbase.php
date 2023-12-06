@@ -51,7 +51,7 @@ class Coinbase {
         $ret = @json_decode($ret_raw, true);
 
         if(empty($ret['data']['hosted_url'])) {
-            throw new ApiException(500, "error!");
+            throw new ApiException("error!");
         }
         return [
             'type' => 1,
@@ -71,7 +71,7 @@ class Coinbase {
         $computedSignature = \hash_hmac('sha256', $payload, $this->config['coinbase_webhook_key']);
 
         if (!self::hashEqual($signatureHeader, $computedSignature)) {
-            throw new ApiException(400, 'HMAC signature does not match');
+            throw new ApiException( 'HMAC signature does not match', 400);
         }
 
         $out_trade_no = $json_param['event']['data']['metadata']['outTradeNo'];
@@ -80,7 +80,6 @@ class Coinbase {
             'trade_no' => $out_trade_no,
             'callback_no' => $pay_trade_no
         ];
-        return response('success', 200);
 
     }
 

@@ -17,9 +17,7 @@ class CommController extends Controller
 {
     private function isEmailVerify()
     {
-        return response([
-            'data' => (int)admin_setting('email_verify', 0) ? 1 : 0
-        ]);
+        return $this->success((int)admin_setting('email_verify', 0) ? 1 : 0);
     }
 
     public function sendEmailVerify(CommSendEmailVerify $request)
@@ -28,12 +26,12 @@ class CommController extends Controller
             $recaptcha = new ReCaptcha(admin_setting('recaptcha_key'));
             $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
             if (!$recaptchaResp->isSuccess()) {
-                throw new ApiException(500, __('Invalid code is incorrect'));
+                return $this->fail([400, __('Invalid code is incorrect')]);
             }
         }
         $email = $request->input('email');
         if (Cache::get(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email))) {
-            throw new ApiException(500, __('Email verification code has been sent, please request again later'));
+            return $this->fail([400, __('Email verification code has been sent, please request again later')]);
         }
         $code = rand(100000, 999999);
         $subject = admin_setting('app_name', 'XBoard') . __('Email verification code');
@@ -51,9 +49,7 @@ class CommController extends Controller
 
         Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $email), $code, 300);
         Cache::put(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email), time(), 60);
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function pv(Request $request)
@@ -64,9 +60,7 @@ class CommController extends Controller
             $inviteCode->save();
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     private function getEmailSuffix()

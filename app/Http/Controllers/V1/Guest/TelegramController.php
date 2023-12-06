@@ -16,7 +16,7 @@ class TelegramController extends Controller
     public function __construct(Request $request)
     {
         if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
-            throw new ApiException(401);
+            throw new ApiException('access_token is error', 401);
         }
 
         $this->telegramService = new TelegramService();

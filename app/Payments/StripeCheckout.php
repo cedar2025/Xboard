@@ -48,7 +48,7 @@ class StripeCheckout {
         $currency = $this->config['currency'];
         $exchange = $this->exchange('CNY', strtoupper($currency));
         if (!$exchange) {
-            throw new ApiException(500, __('Currency conversion has timed out, please try again later'));
+            throw new ApiException(__('Currency conversion has timed out, please try again later'));
         }
         $customFieldName = isset($this->config['stripe_custom_field_name']) ? $this->config['stripe_custom_field_name'] : 'Contact Infomation';
 
@@ -87,7 +87,7 @@ class StripeCheckout {
             $session = Session::create($params);
         } catch (\Exception $e) {
             info($e);
-            throw new ApiException(500, "Failed to create order. Error: {$e->getMessage}");
+            throw new ApiException("Failed to create order. Error: {$e->getMessage}");
         }
         return [
             'type' => 1, // 0:qrcode 1:url
@@ -105,7 +105,7 @@ class StripeCheckout {
                 $this->config['stripe_webhook_key']
             );
         } catch (\Stripe\Error\SignatureVerification $e) {
-            throw new ApiException(400);
+            abort(400);
         }
 
         switch ($event->type) {
@@ -126,7 +126,7 @@ class StripeCheckout {
                 ];
                 break;
             default:
-                throw new ApiException(500, 'event is not support');
+                throw new ApiException('event is not support');
         }
         return('success');
     }

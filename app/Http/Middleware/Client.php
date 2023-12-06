@@ -21,11 +21,11 @@ class Client
     {
         $token = $request->input('token');
         if (empty($token)) {
-            throw new ApiException(403, 'token is null');
+            throw new ApiException('token is null',403);
         }
         $user = User::where('token', $token)->first();
         if (!$user) {
-            throw new ApiException(403, 'token is error');
+            throw new ApiException('token is error',403);
         }
         $request->merge([
             'user' => $user

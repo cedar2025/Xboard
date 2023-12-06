@@ -41,14 +41,12 @@ class OrderController extends Controller
     public function detail(Request $request)
     {
         $order = Order::find($request->input('id'));
-        if (!$order) throw new ApiException(500, '订单不存在');
+        if (!$order) return $this->fail([400202 ,'订单不存在']);
         $order['commission_log'] = CommissionLog::where('trade_no', $order->trade_no)->get();
         if ($order->surplus_order_ids) {
             $order['surplus_orders'] = Order::whereIn('id', $order->surplus_order_ids)->get();
         }
-        return response([
-            'data' => $order
-        ]);
+        return $this->success($order);
     }
 
     public function fetch(OrderFetch $request)
@@ -84,17 +82,15 @@ class OrderController extends Controller
         $order = Order::where('trade_no', $request->input('trade_no'))
             ->first();
         if (!$order) {
-            throw new ApiException(500, '订单不存在');
+            return $this->fail([400202 ,'订单不存在']);
         }
-        if ($order->status !== 0) throw new ApiException(500, '只能对待支付的订单进行操作');
+        if ($order->status !== 0) return $this->fail([400 ,'只能对待支付的订单进行操作']);
 
         $orderService = new OrderService($order);
         if (!$orderService->paid('manual_operation')) {
-            throw new ApiException(500, '更新失败');
+            return $this->fail([500 ,'更新失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function cancel(Request $request)
@@ -102,17 +98,15 @@ class OrderController extends Controller
         $order = Order::where('trade_no', $request->input('trade_no'))
             ->first();
         if (!$order) {
-            throw new ApiException(500, '订单不存在');
+            return $this->fail([400202 ,'订单不存在']);
         }
-        if ($order->status !== 0) throw new ApiException(500, '只能对待支付的订单进行操作');
+        if ($order->status !== 0) return $this->fail([400 ,'只能对待支付的订单进行操作']);
 
         $orderService = new OrderService($order);
         if (!$orderService->cancel()) {
-            throw new ApiException(500, '更新失败');
+            return $this->fail([400 ,'更新失败']);
         }
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function update(OrderUpdate $request)
@@ -124,18 +118,17 @@ class OrderController extends Controller
         $order = Order::where('trade_no', $request->input('trade_no'))
             ->first();
         if (!$order) {
-            throw new ApiException(500, '订单不存在');
+            return $this->fail([400202 ,'订单不存在']);
         }
 
         try {
             $order->update($params);
         } catch (\Exception $e) {
-            throw new ApiException(500, '更新失败');
+            \Log::error($e);
+            return $this->fail([500 ,'更新失败']);
         }
 
-        return response([
-            'data' => true
-        ]);
+        return $this->success(true);
     }
 
     public function assign(OrderAssign $request)
@@ -144,16 +137,16 @@ class OrderController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user) {
-            throw new ApiException(500, '该用户不存在');
+            return $this->fail([400202 ,'该用户不存在']);
         }
 
         if (!$plan) {
-            throw new ApiException(500, '该订阅不存在');
+            return $this->fail([400202 ,'该订阅不存在']);
         }
 
         $userService = new UserService();
         if ($userService->isNotCompleteOrderByUserId($user->id)) {
-            throw new ApiException(500, '该用户还有待支付的订单，无法分配');
+            return $this->fail([400 ,'该用户还有待支付的订单，无法分配']);
         }
 
         try {
@@ -179,7 +172,7 @@ class OrderController extends Controller
             $orderService->setInvite($user);
 
             if (!$order->save()) {
-                throw new ApiException(500, '订单创建失败');
+                return $this->fail([500 ,'订单创建失败']);
             }
             DB::commit();
         }catch(\Exception $e){
@@ -187,8 +180,6 @@ class OrderController extends Controller
             throw $e;
         }
 
-        return response([
-            'data' => $order->trade_no
-        ]);
+        return $this->success($order->trade_no);
     }
 }

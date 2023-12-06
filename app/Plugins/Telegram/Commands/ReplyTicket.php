@@ -21,7 +21,7 @@ class ReplyTicket extends Telegram {
     {
         $user = User::where('telegram_id', $msg->chat_id)->first();
         if (!$user) {
-            throw new ApiException(500, '用户不存在');
+            throw new ApiException('用户不存在');
         }
         if (!$msg->text) return;
         if (!($user->is_admin || $user->is_staff)) return;
