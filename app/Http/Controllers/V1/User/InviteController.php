@@ -78,10 +78,8 @@ class InviteController extends Controller
             (int)$user->commission_balance
         ];
         $data = [
-            'data' => [
-                'codes' => $codes,
-                'stat' => $stat
-            ]
+            'codes' => $codes,
+            'stat' => $stat
         ];
         return $this->success($data);
     }
