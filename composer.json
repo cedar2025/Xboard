@@ -29,7 +29,8 @@
         "spatie/db-dumper": "^3.4",
         "stripe/stripe-php": "^7.36.1",
         "symfony/yaml": "*",
-        "zoujingli/ip2region": "^2.0"
+        "zoujingli/ip2region": "^2.0",
+        "cedar2025/http-foundation": "v6.4.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.9",
@@ -81,10 +82,10 @@
             "@php artisan key:generate --ansi"
         ]
     },
-    "repositories": {
-        "packagist": {
+    "repositories": [
+        {
             "type": "composer",
             "url": "https://packagist.org"
         }
-    }
+    ]
 }
