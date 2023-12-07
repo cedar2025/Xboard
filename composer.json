@@ -12,6 +12,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "aws/aws-sdk-php": "^3.288.1",
         "doctrine/dbal": "^3.7",
         "firebase/php-jwt": "^6.3",
         "google/cloud-storage": "^1.35",
