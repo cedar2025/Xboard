@@ -52,7 +52,7 @@ cp docker-compose.sample.yaml docker-compose.yaml
 ```
 docker compose run -it --rm xboard sh init.sh
 ```
-> 根据提示完成安装  （数据库地址填写你上一步获取到的IP）
+> 根据提示完成安装
 > 执行这条命令之后，会返回你的后台地址和管理员账号密码（你需要记录下来）    
 > 你需要执行下面的 **启动xborad** 步骤之后才能访问后台  
 
