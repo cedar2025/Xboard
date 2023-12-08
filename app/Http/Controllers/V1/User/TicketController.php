@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1\User;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\TicketSave;
 use App\Http\Requests\User\TicketWithdraw;
@@ -71,7 +70,7 @@ class TicketController extends Controller
             DB::rollBack();
             throw $e;
         }
-        $this->sendNotify($ticket, $request->input('message'));
+        $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
         return $this->success(true);
     }
 
@@ -103,7 +102,7 @@ class TicketController extends Controller
         )) {
             return $this->fail([400, __('Ticket reply failed')]);
         }
-        $this->sendNotify($ticket, $request->input('message'));
+        $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
         return $this->success(true);
     }
 
@@ -177,13 +176,48 @@ class TicketController extends Controller
             DB::rollBack();
             throw $e;
         }
-        $this->sendNotify($ticket, $message);
+        $this->sendNotify($ticket, $message, $request->user['id']);
         return $this->success(true);
     }
 
-    private function sendNotify(Ticket $ticket, string $message)
+    private function sendNotify(Ticket $ticket, string $message, $user_id)
     {
+        $user = User::find($user_id)->load('plan');
+        $transfer_enable = $this->getFlowData($user->transfer_enable); // 总流量
+        $remaining_traffic = $this->getFlowData($user->transfer_enable - $user->u - $user->d); // 剩余流量
+        $u = $this->getFlowData($user->u); // 上传
+        $d = $this->getFlowData($user->d); // 下载
+        $expired_at = date("Y-m-d h:m:s", $user->expired_at); // 到期时间
+        $money = $user->balance / 100;
+        $affmoney = $user->commission_balance / 100;
+        $plan = $user->plan;
+        $ip = request()->ip();
+        $region = filter_var($ip,FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? (new \Ip2Region())->simple($ip) : "NULL";
+        $TGmessage = "📮工单提醒 #{$ticket->id}\n———————————————\n";
+        $TGmessage .= "邮箱: `{$user->email}`\n";
+        $TGmessage .= "用户位置: \n`{$region}`\n";
+        if($user->plan){
+            $TGmessage .= "套餐与流量: \n`{$plan->name} {$transfer_enable}/{$remaining_traffic}`\n";
+        }else{
+            $TGmessage .= "套餐与流量: \n `未订购任何套餐`\n";
+        }
+        $TGmessage .= "上传/下载:\n`{$u}/{$d}`\n";
+        $TGmessage .= "到期时间: \n`{$expired_at}`\n";
+        $TGmessage .= "余额/佣金余额: \n`{$money}/{$affmoney}`\n";
+        $TGmessage .= "主题：\n`{$ticket->subject}`\n内容：\n`{$message}`\n";
         $telegramService = new TelegramService();
-        $telegramService->sendMessageWithAdmin("📮工单提醒 #{$ticket->id}\n———————————————\n主题：\n`{$ticket->subject}`\n内容：\n`{$message}`", true);
+        $telegramService->sendMessageWithAdmin($TGmessage, true);
+    }
+
+    private function getFlowData($b)
+    {
+        $m = $b / (1024 * 1024);
+        if ($m >= 1024) {
+            $g = $m / 1024;
+            $text = round($g, 2) . "GB";
+        } else {
+            $text = round($m, 2) . "MB";
+        }
+        return $text;
     }
 }
