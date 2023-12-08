@@ -1,5 +1,5 @@
 # 关于Xboard
-Xborad是基于V2board二次开发，在性能上和功能上都有大部分增强的**面板
+Xboard是基于V2board二次开发，在性能上和功能上都有大部分增强的**面板
 
 # 免责声明
 本项目只是本人个人开发维护，本人不保证任何可用性，也不对使用本软件造成的任何后果负责。
@@ -7,7 +7,7 @@ Xborad是基于V2board二次开发，在性能上和功能上都有大部分增�
 > 如果本项目帮助到了你，你可以对作者进行捐赠，感谢你的支持  
 
 TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
-# Xborad 特点 
+# Xboard 特点 
 基于V2board 二次开发，增加了以下特性
 - 升级Laravel10
 - 适配Laravels  （提升至10+倍并发）
