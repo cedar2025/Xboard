@@ -64,6 +64,23 @@ docker compose up -d
 > 站点设置 > 反向代理 > 添加反向代理
 >> 在 **代理名称** 填入 Xboard  
 >> 在 **目标URL** 填入 ```http://127.0.0.1:7001```
+>> 修改反向代理规则为：
+```
+location ^~ / {
+    proxy_pass http://127.0.0.1:7001;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Real-PORT $remote_port;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_set_header Scheme $scheme;
+    proxy_set_header Server-Protocol $server_protocol;
+    proxy_set_header Server-Name $server_name;
+    proxy_set_header Server-Addr $server_addr;
+    proxy_set_header Server-Port $server_port;
+}
+```
 
 🎉： 到这里，你可以已经可以通过域名访问你的站点了
 
