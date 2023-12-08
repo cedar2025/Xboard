@@ -7,6 +7,9 @@ use Illuminate\Encryption\Encrypter;
 use App\Models\User;
 use App\Utils\Helper;
 use Illuminate\Support\Env;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\note;
 
 class XboardInstall extends Command
 {
@@ -41,10 +44,9 @@ class XboardInstall extends Command
      */
     public function handle()
     {
-        try {
-            \Artisan::call('config:clear');
+        try {      
+            // \Artisan::call('config:clear');
             $isDocker = env('docker', false);
-
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
@@ -56,16 +58,20 @@ class XboardInstall extends Command
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
                 $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");
                 $this->warn("如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）");
-                $this->warn("快捷清空.env命令： \"rm .env && touch .env\"");
-                \Artisan::call('config:cache');
+                $this->warn("快捷清空.env命令：");
+                note('rm .env && touch .env');
+                return ;
+            }
+            if (is_dir(base_path() . '/.env')){
+                $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
                 return ;
             }
             // 选择是否使用Sqlite
-            if( $this->ask('是否启用Sqlite(无需额外安装)代替Mysql(默认不启用 y/n)','n') == 'y' ) {
+            if(confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql',default: false, yes: '启用', no: '不启用')) {
                 $sqliteFile = '.docker/.data/database.sqlite';
                 if (!file_exists(base_path($sqliteFile))) {
                     // 创建空文件
-                    if (touch(base_path($sqliteFile))) {
+                    if (!touch(base_path($sqliteFile))) {
                         echo "sqlite创建成功: $sqliteFile";
                     } else {
                         echo "sqlite创建失败";
@@ -81,53 +87,51 @@ class XboardInstall extends Command
             }else{
                 $envConfig = [
                     'DB_CONNECTION' => 'mysql',
-                    'DB_HOST' => $this->ask("请输入数据库地址(默认:127.0.0.1)", '127.0.0.1'),
-                    'DB_PORT' => $this->ask('请输入数据库端口(默认:3306)', '3306'),
-                    'DB_DATABASE' => $this->ask('请输入数据库名', 'xboard'),
-                    'DB_USERNAME' => $this->ask('请输入数据库用户名'),
-                    'DB_PASSWORD' => $this->ask('请输入数据库密码'),
+                    'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
+                    'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
+                    'DB_DATABASE' => text(label:'请输入数据库名', default:'xboard', required: true),
+                    'DB_USERNAME' => text(label:'请输入数据库用户名', required: true),
+                    'DB_PASSWORD' => text(label:'请输入数据库密码', required: false),
                 ];   
             }
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
-            $envConfig['INSTALLED'] = 'true';
+            $envConfig['INSTALLED'] = true;
             // 判断是否为Docker环境
-            if ($isDocker == 'true' && ($this->ask('是否启用Docker内置的Redis(默认启用 y/n)','y') === 'y')){
+            if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes:'启用', no:'不启用'))){
                 $envConfig['REDIS_HOST']  = '/run/redis-socket/redis.sock';
                 $envConfig['REDIS_PORT']  = 0;
                 $envConfig['REDIS_PASSWORD'] = null;
             }else{
-                $envConfig['REDIS_HOST']  =  $this->ask('请输入redis地址(默认: 127.0.0.1)', '127.0.0.1');
-                $envConfig['REDIS_PORT']  = $this->ask('请输入redis端口(默认: 6379)', '6379');
-                $envConfig['REDIS_PASSWORD'] = $this->ask('请输入redis密码(默认: null)', null);
+                $envConfig['REDIS_HOST']  = text(label: '请输入Redis地址', default: '127.0.0.1',required: true);
+                $envConfig['REDIS_PORT']  = text(label: '请输入Redis端口', default: '6379', required: true);
+                $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
             }
 
             if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
                 abort(500, '复制环境文件失败，请检查目录权限');
-            }
+            };
+            $email = text(label: '请输入管理员账号',required: true,
+                validate: fn (string $email): ?string => match (true) {
+                    ! filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
+                    default => null,
+                });
+            $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
-            \Artisan::call('config:clear');
             \Artisan::call('config:cache');
             \Artisan::call('cache:clear');
-            
             $this->info('正在清空数据库请稍等');
             \Artisan::call('db:wipe');
             $this->info('数据库清空完成');
             $this->info('正在导入数据库请稍等...');
             \Artisan::call("migrate");
             $this->info(\Artisan::output());
-            
             $this->info('数据库导入完成');
-            $email = '';
-            while (!$email) {
-                $email = $this->ask('请输入管理员邮箱?');
-            }
-            $password = Helper::guid(false);
+            $this->info('开始注册管理员账号');
             if (!$this->registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
             }
-
-            $this->info('一切就绪');
+            $this->info('🎉：一切就绪');
             $this->info("管理员邮箱：{$email}");
             $this->info("管理员密码：{$password}");
 
