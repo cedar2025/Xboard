@@ -198,11 +198,11 @@ class TicketController extends Controller
         $TGmessage .= "用户位置: \n`{$region}`\n";
         if($user->plan){
             $TGmessage .= "套餐与流量: \n`{$plan->name} {$transfer_enable}/{$remaining_traffic}`\n";
+            $TGmessage .= "上传/下载: \n`{$u}/{$d}`\n";
+            $TGmessage .= "到期时间: \n`{$expired_at}`\n";
         }else{
-            $TGmessage .= "套餐与流量: \n `未订购任何套餐`\n";
+            $TGmessage .= "套餐与流量: \n`未订购任何套餐`\n";
         }
-        $TGmessage .= "上传/下载:\n`{$u}/{$d}`\n";
-        $TGmessage .= "到期时间: \n`{$expired_at}`\n";
         $TGmessage .= "余额/佣金余额: \n`{$money}/{$affmoney}`\n";
         $TGmessage .= "主题：\n`{$ticket->subject}`\n内容：\n`{$message}`\n";
         $telegramService = new TelegramService();
