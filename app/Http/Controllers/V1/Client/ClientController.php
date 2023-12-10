@@ -82,7 +82,9 @@ class ClientController extends Controller
                 if($filterArr){
                     $rejectFlag = true;
                     foreach($filterArr as $filter){
-                        if(stripos($server['name'],$filter) !== false) $rejectFlag = false;
+                        if(stripos($server['name'],$filter) !== false 
+                        || in_array($filter, $server['tags'])
+                        ) $rejectFlag = false;
                     }
                     if($rejectFlag) return true;
                 }
