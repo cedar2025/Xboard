@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\TicketSave;
 use App\Http\Requests\User\TicketWithdraw;
+use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
@@ -38,7 +39,9 @@ class TicketController extends Controller
         $ticket = Ticket::where('user_id', $request->user['id'])
             ->orderBy('created_at', 'DESC')
             ->get();
-        return $this->success($ticket);
+            
+
+        return $this->success(TicketResource::collection($ticket));
     }
 
     public function save(TicketSave $request)
