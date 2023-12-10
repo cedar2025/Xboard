@@ -118,6 +118,7 @@ class XboardInstall extends Command
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
+            \Artisan::call('config:clear');
             \Artisan::call('config:cache');
             \Artisan::call('cache:clear');
             $this->info('正在清空数据库请稍等');
