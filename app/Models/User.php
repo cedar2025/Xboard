@@ -27,4 +27,16 @@ class User extends Model
     {
         return $this->belongsTo(Plan::class, 'plan_id', 'id');
     }
+
+    // 获取用户邀请码列表
+    public function codes()
+    {
+        return $this->hasMany(InviteCode::class, 'user_id', 'id');
+    }
+
+    // 关联工单列表
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'user_id', 'id');
+    }
 }

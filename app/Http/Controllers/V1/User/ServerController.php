@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NodeResource;
 use App\Models\User;
 use App\Services\ServerService;
 use App\Services\UserService;
@@ -25,9 +26,10 @@ class ServerController extends Controller
         if (strpos($request->header('If-None-Match'), $eTag) !== false ) {
             return response(null,304);
         }
-
+        $data = NodeResource::collection($servers);
         return response([
-            'data' => $servers
-        ])->header('ETag', "\"{$eTag}\"");
+            'data' => $data
+        ])->header('ETag', "\"{$eTag}\"")
+        ->header('Cache-Control', 'public, max-age=3600');
     }
 }
