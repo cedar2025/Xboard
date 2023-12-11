@@ -13,13 +13,14 @@ class TicketResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    {  
         $data = [
             "id" => $this['id'],
             "level" => $this['level'],
             "reply_status" => $this['reply_status'],
             "status" => $this['status'],
             "subject" => $this['subject'],
+            "message" => array_key_exists('message',$this->additional) ? MessageResource::collection($this['message']) : null,
             "created_at" => $this['created_at'],
             "updated_at" => $this['updated_at']
         ];

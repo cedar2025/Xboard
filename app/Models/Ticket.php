@@ -13,4 +13,10 @@ class Ticket extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
+
+
+    public function message()
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id', 'id');
+    }
 }

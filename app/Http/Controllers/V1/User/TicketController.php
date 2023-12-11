@@ -22,25 +22,20 @@ class TicketController extends Controller
         if ($request->input('id')) {
             $ticket = Ticket::where('id', $request->input('id'))
                 ->where('user_id', $request->user['id'])
-                ->first();
+                ->first()
+                ->load('message');
             if (!$ticket) {
                 return $this->fail([400, __('Ticket does not exist')]);
             }
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
-            for ($i = 0; $i < count($ticket['message']); $i++) {
-                if ($ticket['message'][$i]['user_id'] == $ticket->user_id) {
-                    $ticket['message'][$i]['is_me'] = true;
-                } else {
-                    $ticket['message'][$i]['is_me'] = false;
-                }
-            }
-            return $this->success($ticket);
+            $ticket['message']->each(function ($message) use ($ticket) {
+                $message['is_me'] = ($message['user_id'] == $ticket->user_id);
+            });
+            return $this->success(TicketResource::make($ticket)->additional(['message' => true]));
         }
         $ticket = Ticket::where('user_id', $request->user['id'])
             ->orderBy('created_at', 'DESC')
             ->get();
-            
-
         return $this->success(TicketResource::collection($ticket));
     }
 
