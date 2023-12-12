@@ -44,7 +44,7 @@ class TicketController extends Controller
         try{
             DB::beginTransaction();
             if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
-                return $this->fail([400, __('There are other unresolved tickets')]);
+                throw new \Exception(__('There are other unresolved tickets'));
             }
             $ticket = Ticket::create(array_merge($request->only([
                 'subject',
@@ -53,7 +53,7 @@ class TicketController extends Controller
                 'user_id' => $request->user['id']
             ]));
             if (!$ticket) {
-                return $this->fail([400, __('Failed to open ticket')]);
+                throw new \Exception(__('There are other unresolved tickets'));
             }
             $ticketMessage = TicketMessage::create([
                 'user_id' => $request->user['id'],
@@ -61,15 +61,17 @@ class TicketController extends Controller
                 'message' => $request->input('message')
             ]);
             if (!$ticketMessage) {
-                return $this->fail([400, __('Failed to open ticket')]);
+                throw new \Exception(__('Failed to open ticket'));
             }
             DB::commit();
+            $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
+            return $this->success(true);
         }catch(\Exception $e){
             DB::rollBack();
-            throw $e;
+            \Log::error($e);
+            return $this->fail([400, $e->getMessage()]);
         }
-        $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
-        return $this->success(true);
+        
     }
 
     public function reply(Request $request)
