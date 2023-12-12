@@ -38,6 +38,9 @@ class Loon
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria($user['uuid'], $item, $user);
+            }
         }
         return response($uri, 200)
                 ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
@@ -127,6 +130,27 @@ class Loon
         if (!empty($server['allow_insecure'])) {
             array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria($password, $server, $user)
+    {
+        if ($server['version'] !== 2){
+            return ;
+        }
+        $config = [
+            "{$server['name']}=Hysteria2",
+            $server['host'],
+            $server['port'],
+            $password,
+            $server['server_name'] ? "tls={$server['server_name']}" : "(null)"
+        ];
+        if ($server['insecure'])  $config[] = "skip-cert-verify=true";
+        $config[] = "download-bandwidth=" . ($user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps']);
+        $config[] = "udp=true";
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
