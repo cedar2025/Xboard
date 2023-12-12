@@ -163,7 +163,8 @@ class ServerService
 
     public function getAvailableUsers($groupId)
     {
-        return User::whereIn('group_id', $groupId)
+        return \DB::table('v2_user')
+            ->whereIn('group_id', $groupId)
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
