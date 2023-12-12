@@ -42,7 +42,8 @@ class ClientController extends Controller
             'Nekoray' => '3.24',
             'verge' => '1.3.8',
             'ClashX Meta' => '1.3.5',
-            'Hiddify' => '0.1.0'
+            'Hiddify' => '0.1.0',
+            'loon' => '637'
         ];
         foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
             if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {
