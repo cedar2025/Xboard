@@ -25,10 +25,10 @@ class BackupDatabase extends Command
             }
         }
 
-        // 数据库备份逻辑（用你自己的逻辑替换）
-        $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_database_backup.sql');
+        // 数据库备份逻辑
         try{
             if (config('database.default') === 'mysql'){
+                $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_' . config('database.connections.mysql.database') . '_database_backup.sql');
                 $this->info("1️⃣：开始备份Mysql");
                 \Spatie\DbDumper\Databases\MySql::create()
                     ->setHost(config('database.connections.mysql.host'))
@@ -39,11 +39,15 @@ class BackupDatabase extends Command
                     ->dumpToFile($databaseBackupPath);
                 $this->info("2️⃣：Mysql备份完成");
             }elseif(config('database.default') === 'sqlite'){
+                $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_sqlite'  . '_database_backup.sql');
                 $this->info("1️⃣：开始备份Sqlite");
                 \Spatie\DbDumper\Databases\Sqlite::create()
                     ->setDbName(config('database.connections.sqlite.database'))
                     ->dumpToFile($databaseBackupPath);
                 $this->info("2️⃣：Sqlite备份完成");
+            }else{
+                $this->error('备份失败，你的数据库不是sqlite或者mysql');
+                return;
             }
             $this->info('3️⃣：开始压缩备份文件');
             // 使用 gzip 压缩备份文件
