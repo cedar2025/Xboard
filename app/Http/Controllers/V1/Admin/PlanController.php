@@ -49,12 +49,12 @@ class PlanController extends Controller
                 }
                 $plan->update($params);
                 DB::commit();
+                return $this->success(true);
             } catch (\Exception $e) {
                 DB::rollBack();
                 \Log::error($e);
                 return $this->fail([500 ,'保存失败']);
             }
-            return $this->success(true);
         }
         if (!Plan::create($params)) {
             return $this->fail([500 ,'创建失败']);

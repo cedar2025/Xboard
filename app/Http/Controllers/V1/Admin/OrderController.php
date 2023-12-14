@@ -172,6 +172,7 @@ class OrderController extends Controller
             $orderService->setInvite($user);
 
             if (!$order->save()) {
+                DB::rollBack();
                 return $this->fail([500 ,'订单创建失败']);
             }
             DB::commit();

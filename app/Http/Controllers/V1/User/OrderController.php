@@ -144,6 +144,7 @@ class OrderController extends Controller
             }
 
             if (!$order->save()) {
+                DB::rollBack();
                 return $this->fail([400, __('Failed to create order')]);
             }
             DB::commit();
