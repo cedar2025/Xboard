@@ -169,6 +169,7 @@ class TicketController extends Controller
                 'message' => $message
             ]);
             if (!$ticketMessage) {
+                DB::rollBack();
                 return $this->fail([400, __('Failed to open ticket')]);
             }
             DB::commit();
