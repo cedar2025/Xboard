@@ -49,7 +49,7 @@ class DeepbworkController extends Controller
                 "alter_id" => 0,
                 "level" => 0,
             ];
-            unset($user['uuid']);
+            unset($user->uuid);
             array_push($result, $user);
         }
         $eTag = sha1(json_encode($result));

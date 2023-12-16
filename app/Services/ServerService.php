@@ -12,6 +12,7 @@ use App\Models\ServerVmess;
 use App\Models\ServerTrojan;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class ServerService
@@ -161,7 +162,7 @@ class ServerService
         }, $servers);
     }
 
-    public function getAvailableUsers($groupId)
+    public function getAvailableUsers($groupId): Collection
     {
         return \DB::table('v2_user')
             ->whereIn('group_id', $groupId)
