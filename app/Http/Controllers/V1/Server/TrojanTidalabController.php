@@ -46,7 +46,7 @@ class TrojanTidalabController extends Controller
             $user->trojan_user = [
                 "password" => $user->uuid,
             ];
-            unset($user['uuid']);
+            unset($user->uuid);
             array_push($result, $user);
         }
         $eTag = sha1(json_encode($result));
