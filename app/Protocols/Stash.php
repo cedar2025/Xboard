@@ -205,7 +205,17 @@ class Stash
         }
 
         if ($server['network'] === 'tcp') {
-            $tcpSettings = $server['network_settings'];
+            $tcpSettings = $server['networkSettings'];
+            if (isset($tcpSettings['header']['type']) && $tcpSettings['header']['type'] == 'http') {
+                $array['network'] = $tcpSettings['header']['type'];
+                if (isset($tcpSettings['header']['request']['headers']['Host'])){
+                    $array['http-opts']['headers']['Host'] = $tcpSettings['header']['request']['headers']['Host'];
+                }
+                if (isset($tcpSettings['header']['request']['path'][0])){
+                    $paths = $tcpSettings['header']['request']['path'];
+                    $array['http-opts']['path'] = $paths[array_rand($paths)];
+                };
+            }
         }
 
         if ($server['network'] === 'ws') {

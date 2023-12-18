@@ -84,9 +84,14 @@ class Loon
                 if (isset($tcpSettings['header']['type']) && !empty($tcpSettings['header']['type']))
                     $config = str_replace('transport=tcp', "transport={$tcpSettings['header']['type']}", $config);
                 if (isset($tcpSettings['header']['request']['path'][0]) && !empty($tcpSettings['header']['request']['path'][0]))
-                    array_push($config, "path={$tcpSettings['header']['request']['path'][0]}");
-                if (isset($tcpSettings['header']['Host']) && !empty($tcpSettings['header']['Host']))
-                    array_push($config, "host={$tcpSettings['header']['Host']}");
+                    $paths = $tcpSettings['header']['request']['path'];
+                    $path = array_rand(array_rand($paths));
+                    array_push($config, "path={$path}");
+                if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
+                    $hosts = $tcpSettings['header']['request']['headers']['Host'];
+                    $host = $hosts[array_rand($hosts)];
+                    array_push($config, "host={$host}");
+                }
             }
         }
         if ($server['tls']) {

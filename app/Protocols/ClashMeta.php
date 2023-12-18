@@ -140,7 +140,15 @@ class ClashMeta
         if ($server['network'] === 'tcp') {
             $tcpSettings = $server['networkSettings'];
             if (isset($tcpSettings['header']['type'])) $array['network'] = $tcpSettings['header']['type'];
-            if (isset($tcpSettings['header']['request']['path'][0])) $array['http-opts']['path'] = $tcpSettings['header']['request']['path'][0];
+
+            if (isset($tcpSettings['header']['request']['headers'])){
+                $headers = $$tcpSettings['header']['request']['headers'];
+                $array['http-opts']['headers'] = $headers;
+            }
+            if (isset($tcpSettings['header']['request']['path'][0])){
+                $paths = $tcpSettings['header']['request']['path'];
+                $array['http-opts']['path'] = $paths;
+            }
         }
         if ($server['network'] === 'ws') {
             $array['network'] = 'ws';

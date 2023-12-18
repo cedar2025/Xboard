@@ -87,7 +87,14 @@ class V2rayN
         if ((string)$server['network'] === 'tcp') {
             $tcpSettings = $server['networkSettings'];
             if (isset($tcpSettings['header']['type'])) $config['type'] = $tcpSettings['header']['type'];
-            if (isset($tcpSettings['header']['request']['path'][0])) $config['path'] = $tcpSettings['header']['request']['path'][0];
+            if (isset($tcpSettings['header']['request']['path'][0])){
+                $paths = $tcpSettings['header']['request']['path'];
+                $config['path'] = $paths[array_rand($paths)];
+            }
+            if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
+                $hosts = $tcpSettings['header']['request']['headers']['Host'];
+                $config['host'] = $hosts[array_rand($hosts)];
+            }
         }
         if ((string)$server['network'] === 'ws') {
             $wsSettings = $server['networkSettings'];
@@ -137,7 +144,7 @@ class V2rayN
                         $config['servername'] = $tls_settings['server_name'];
                         $config['spx'] = "/";
                         $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq']; //随机客户端指纹
-                        $config['fp'] = $fingerprints[rand(0,count($fingerprints) - 1)];
+                        $config['fp'] = $fingerprints[array_rand($fingerprints)];
                     };
                     break;
             }
