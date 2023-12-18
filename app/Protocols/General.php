@@ -86,7 +86,14 @@ class General
         if ((string)$server['network'] === 'tcp') {
             $tcpSettings = $server['networkSettings'];
             if (isset($tcpSettings['header']['type'])) $config['type'] = $tcpSettings['header']['type'];
-            if (isset($tcpSettings['header']['request']['path'][0])) $config['path'] = $tcpSettings['header']['request']['path'][0];
+            if (isset($tcpSettings['header']['request']['path'][0])){
+                $paths = $tcpSettings['header']['request']['path'];
+                $config['path'] = $paths[array_rand($paths)];
+            }
+            if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
+                $hosts = $tcpSettings['header']['request']['headers']['Host'];
+                $config['host'] = $hosts[array_rand($hosts)];
+            }
         }
         if ((string)$server['network'] === 'ws') {
             $wsSettings = $server['networkSettings'];

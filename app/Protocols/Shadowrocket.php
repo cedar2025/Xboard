@@ -185,6 +185,10 @@ class Shadowrocket
                     $config['obfs'] = $tcpSettings['header']['type'];
                 if (isset($tcpSettings['header']['request']['path'][0]) && !empty($tcpSettings['header']['request']['path'][0]))
                     $config['path'] = $tcpSettings['header']['request']['path'][0];
+                if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
+                    $hosts = $tcpSettings['header']['request']['headers']['Host'];
+                    $config['obfsParam'] = $hosts[array_rand($hosts)];
+                }
             }
         }
         if ($server['network'] === 'ws') {
