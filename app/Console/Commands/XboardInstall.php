@@ -85,26 +85,64 @@ class XboardInstall extends Command
                     'DB_PASSWORD' => '',
                 ];
             }else{
-                $envConfig = [
-                    'DB_CONNECTION' => 'mysql',
-                    'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
-                    'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
-                    'DB_DATABASE' => text(label:'请输入数据库名', default:'xboard', required: true),
-                    'DB_USERNAME' => text(label:'请输入数据库用户名', required: true),
-                    'DB_PASSWORD' => text(label:'请输入数据库密码', required: false),
-                ];   
+                $isMysqlValid = false;
+                while(!$isMysqlValid){
+                    $envConfig = [
+                        'DB_CONNECTION' => 'mysql',
+                        'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
+                        'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
+                        'DB_DATABASE' => text(label:'请输入数据库名', default:'xboard', required: true),
+                        'DB_USERNAME' => text(label:'请输入数据库用户名', required: true),
+                        'DB_PASSWORD' => text(label:'请输入数据库密码', required: false),
+                    ];
+                    try {
+                        \Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
+                        \Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
+                        \Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
+                        \Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
+                        \Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
+                        \DB::purge('mysql');
+                        \DB::connection('mysql')->getPdo();
+                        $isMysqlValid = true;
+                    } catch (\Exception $e) {
+                        // 连接失败，输出错误消息
+                        $this->error("数据库连接失败：" . $e->getMessage());
+                        $this->info("请重新输入数据库配置");
+                    }
+                }
             }
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             $envConfig['INSTALLED'] = true;
-            // 判断是否为Docker环境
-            if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes:'启用', no:'不启用'))){
-                $envConfig['REDIS_HOST']  = '/run/redis-socket/redis.sock';
-                $envConfig['REDIS_PORT']  = 0;
-                $envConfig['REDIS_PASSWORD'] = null;
-            }else{
-                $envConfig['REDIS_HOST']  = text(label: '请输入Redis地址', default: '127.0.0.1',required: true);
-                $envConfig['REDIS_PORT']  = text(label: '请输入Redis端口', default: '6379', required: true);
-                $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
+            $isReidsValid = false;
+            while(!$isReidsValid){
+                // 判断是否为Docker环境
+                if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes:'启用', no:'不启用'))){
+                    $envConfig['REDIS_HOST']  = '/run/redis-socket/redis.sock';
+                    $envConfig['REDIS_PORT']  = 0;
+                    $envConfig['REDIS_PASSWORD'] = null;
+                }else{
+                    $envConfig['REDIS_HOST']  = text(label: '请输入Redis地址', default: '127.0.0.1',required: true);
+                    $envConfig['REDIS_PORT']  = text(label: '请输入Redis端口', default: '6379', required: true);
+                    $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
+                }
+                $redisConfig = [
+                    'client' => 'phpredis', // 或 'phpredis'
+                    'default' => [
+                        'host' => $envConfig['REDIS_HOST'],
+                        'password' => $envConfig['REDIS_PASSWORD'],
+                        'port' => $envConfig['REDIS_PORT'],
+                        'database' => 0,
+                    ],
+                ];
+                try{
+                    $redis = new \Illuminate\Redis\RedisManager(app(), 'phpredis', $redisConfig);
+                    $redis->ping();
+                    $isReidsValid = true;
+                }catch(\Exception $e){
+                    // 连接失败，输出错误消息
+                    $this->error("redis连接失败：" . $e->getMessage());
+                    $this->info("请重新输入REDIS配置");
+                }
             }
 
             if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
