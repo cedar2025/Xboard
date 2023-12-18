@@ -147,7 +147,14 @@ class SingBox
         if ($server['network'] === 'tcp') {
             $tcpSettings = $server['networkSettings'];
             if (isset($tcpSettings['header']['type']) && $tcpSettings['header']['type'] == 'http') $array['transport']['type'] = $tcpSettings['header']['type'];
-            if (isset($tcpSettings['header']['request']['path'])) $array['transport']['path'] = $tcpSettings['header']['request']['path'];
+            if (isset($tcpSettings['header']['request']['path'][0])){
+                $paths = $tcpSettings['header']['request']['path'];
+                $array['transport']['path'] = $paths[array_rand($paths)];
+            }
+            if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
+                $hosts = $tcpSettings['header']['request']['headers']['Host'];
+                $array['transport']['host'] = $hosts;
+            }
         }
         if ($server['network'] === 'ws') {
             $array['transport']['type'] ='ws';
