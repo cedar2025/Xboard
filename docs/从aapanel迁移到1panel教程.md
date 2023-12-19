@@ -39,6 +39,8 @@ docker compose down
 ```
 docker compose run -it --rm xboard php artisan db:wipe
 ```
+##导入旧数据库(重要)
+##导入你v2board的数据库到当前数据库当中。
 3.v2board用户根据对应的数据库版本执行迁移命令。
 ```
 docker compose run -it --rm xboard php artisan migratefromv2b 1.7.3
