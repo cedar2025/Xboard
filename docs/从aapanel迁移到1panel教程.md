@@ -24,7 +24,7 @@ git clone https://github.com/cedar2025/Xboard && cd Xboard && cp docker-compose.
 ```
 rm -f .env && touch .env && docker compose run -it --rm xboard sh init.sh 
 ```
-7. 迁移用户此时可以导入xboard数据库。  
+7. xboard迁移用户此时可以导入xboard数据库。  
 xboard迁移用户和新安装用户，可以启动容器。
 ```
 docker compose up -d 
