@@ -24,14 +24,24 @@ git clone https://github.com/cedar2025/Xboard && cd Xboard && cp docker-compose.
 ```
 rm -f .env && touch .env && docker compose run -it --rm xboard sh init.sh 
 ```
-7. 迁移用户此时可以导入xboard数据库。  
+7. xboard迁移用户此时可以导入xboard数据库。  
 xboard迁移用户和新安装用户，可以启动容器。
 ```
 docker compose up -d 
 ```
-## 新安装到此结束。
-
-8.v2board用户根据对应的数据库版本执行迁移命令。
+## 新安装和Xboard迁移教程到此结束，自行设置网站。
+v2board用户迁移需要：
+1. 停止Xboard
+```
+docker compose down
+```
+2. 清空数据库
+```
+docker compose run -it --rm xboard php artisan db:wipe
+```
+##导入旧数据库(重要)
+##导入你v2board的数据库到当前数据库当中。
+3.v2board用户根据对应的数据库版本执行迁移命令。
 ```
 docker compose run -it --rm xboard php artisan migratefromv2b 1.7.3
 ```
@@ -44,15 +54,15 @@ docker compose run -it --rm xboard php artisan migratefromv2b dev231027
 ```
 docker compose run -it --rm xboard php artisan migratefromv2b wyx2685
 ```
-9.v2board用户，在1panel >文件，上传v2board.php到Xboard目录下，接着执行命令迁移配置到数据库。
+4.v2board用户，在1panel >文件，上传v2board.php到Xboard目录下，接着执行命令迁移配置到数据库。
 ```
 docker compose run -it --rm xboard php artisan migrateFromV2b config
 ```
-10.启动容器，否则网站上不去。
+5.启动容器，否则网站上不去。
 ```
 docker compose up -d
 ```
-11.后续更新。
+6.后续更新。
 ```
 docker compose pull && docker compose up -d 
 ```
