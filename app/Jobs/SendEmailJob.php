@@ -37,12 +37,12 @@ class SendEmailJob implements ShouldQueue
     public function handle()
     {
         if (admin_setting('email_host')) {
-            Config::set('mail.host', admin_setting('email_host', env('mail.host')));
-            Config::set('mail.port', admin_setting('email_port', env('mail.port')));
-            Config::set('mail.encryption', admin_setting('email_encryption', env('mail.encryption')));
-            Config::set('mail.username', admin_setting('email_username', env('mail.username')));
-            Config::set('mail.password', admin_setting('email_password', env('mail.password')));
-            Config::set('mail.from.address', admin_setting('email_from_address', env('mail.from.address')));
+            Config::set('mail.host', admin_setting('email_host', config('mail.host')));
+            Config::set('mail.port', admin_setting('email_port', config('mail.port')));
+            Config::set('mail.encryption', admin_setting('email_encryption', config('mail.encryption')));
+            Config::set('mail.username', admin_setting('email_username', config('mail.username')));
+            Config::set('mail.password', admin_setting('email_password', config('mail.password')));
+            Config::set('mail.from.address', admin_setting('email_from_address', config('mail.from.address')));
             Config::set('mail.from.name', admin_setting('app_name', 'XBoard'));
         }
         $params = $this->params;
