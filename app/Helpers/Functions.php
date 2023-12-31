@@ -28,6 +28,6 @@ if (! function_exists('admin_setting')) {
             return;
         }
         $default = config('v2board.'. $key) ?? $default;
-        return app('setting')->get($key, $default) ;
+        return app('setting')->get($key) ?? $default ;
     }
 }
