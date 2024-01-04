@@ -25,6 +25,11 @@ class EPay {
                 'label' => 'KEY',
                 'description' => '',
                 'type' => 'input',
+            ],
+             'type' => [
+                'label' => '支付类型',
+                'description' => 'alipay,wxpay,输错不能付款',
+                'type' => 'input',
             ]
         ];
     }
@@ -36,6 +41,7 @@ class EPay {
             'name' => $order['trade_no'],
             'notify_url' => $order['notify_url'],
             'return_url' => $order['return_url'],
+            'type' => $this->config['type'],
             'out_trade_no' => $order['trade_no'],
             'pid' => $this->config['pid']
         ];
