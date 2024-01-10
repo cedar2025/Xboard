@@ -21,8 +21,9 @@ class PaymentController extends Controller
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
                 return $this->fail([400,'handle error']);
             }
-            return(isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
+            return (isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
         } catch (\Exception $e) {
+            \Log::error($e);
             return $this->fail([500,'fail']);
         }
     }
