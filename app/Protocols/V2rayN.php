@@ -36,6 +36,9 @@ class V2rayN
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria($user['uuid'], $item);
+            }
 
         }
         return base64_encode($uri);
@@ -196,6 +199,22 @@ class V2rayN
         $query = http_build_query($params);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria($password, $server)
+    {
+        $name = rawurlencode($server['name']);
+        if ($server['server_name']) $params = ['sni' => $server['server_name']];
+        $params['insecure'] = $server['insecure'] ? 1 : 0;
+        $query = http_build_query($params);
+        if ($server['version'] == 2) {
+            $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+            $uri .= "\r\n";
+        } else {
+            // V2rayN似乎不支持v1, 返回空
+            $uri = "";
+        }
         return $uri;
     }
 
