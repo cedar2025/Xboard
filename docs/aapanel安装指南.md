@@ -120,7 +120,7 @@ sed -i 's/^disable_functions[[:space:]]*=[[:space:]]*.*/disable_functions=header
 >填写后点击Confirm添加即可运行。
 
 3. 修改伪静态
-> 站点设置 > URL Rewrite(伪静态) 填入一下内容
+> 站点设置 > URL Rewrite(伪静态) 填入一下内容<span style="color:red">(覆盖前伪静态配置)</span>
 
 ```
 location ~* \.(jpg|jpeg|png|gif|js|css|svg|woff2|woff|ttf|eot|wasm|json|ico)$ {
