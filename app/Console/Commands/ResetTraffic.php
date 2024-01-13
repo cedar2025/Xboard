@@ -55,110 +55,147 @@ class ResetTraffic extends Command
             $planIds = explode(',', $resetMethod['plan_ids']);
             switch (true) {
                 case ($resetMethod['method'] === NULL): {
-                    $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    switch ((int)$resetTrafficMethod) {
-                        // month first day
-                        case 0:
-                            $this->resetByMonthFirstDay($builder);
-                            break;
-                        // expire day
-                        case 1:
-                            $this->resetByExpireDay($builder);
-                            break;
-                        // no action
-                        case 2:
-                            break;
-                        // year first day
-                        case 3:
-                            $this->resetByYearFirstDay($builder);
-                        // year expire day
-                        case 4:
-                            $this->resetByExpireYear($builder);
+                        $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
+                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
+                        switch ((int) $resetTrafficMethod) {
+                            // month first day
+                            case 0:
+                                $this->resetByMonthFirstDay($builder);
+                                break;
+                            // expire day
+                            case 1:
+                                $this->resetByExpireDay($builder);
+                                break;
+                            // no action
+                            case 2:
+                                break;
+                            // year first day
+                            case 3:
+                                $this->resetByYearFirstDay($builder);
+                            // year expire day
+                            case 4:
+                                $this->resetByExpireYear($builder);
+                        }
+                        break;
                     }
-                    break;
-                }
                 case ($resetMethod['method'] === 0): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByMonthFirstDay($builder);
-                    break;
-                }
+                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
+                        $this->resetByMonthFirstDay($builder);
+                        break;
+                    }
                 case ($resetMethod['method'] === 1): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByExpireDay($builder);
-                    break;
-                }
+                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
+                        $this->resetByExpireDay($builder);
+                        break;
+                    }
                 case ($resetMethod['method'] === 2): {
-                    break;
-                }
+                        break;
+                    }
                 case ($resetMethod['method'] === 3): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByYearFirstDay($builder);
-                    break;
-                }
+                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
+                        $this->resetByYearFirstDay($builder);
+                        break;
+                    }
                 case ($resetMethod['method'] === 4): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByExpireYear($builder);
-                    break;
-                }
+                        $builder = with(clone ($this->builder))->whereIn('plan_id', $planIds);
+                        $this->resetByExpireYear($builder);
+                        break;
+                    }
             }
         }
     }
 
-    private function resetByExpireYear($builder):void
+    private function resetByExpireYear($builder): void
     {
-        $users = [];
-        foreach ($builder->get() as $item) {
-            $expireDay = date('m-d', $item->expired_at);
+
+        $users = $builder->with('plan')->get();
+        $usersToUpdate = [];
+        foreach ($users as $user) {
+            $expireDay = date('m-d', $user->expired_at);
             $today = date('m-d');
             if ($expireDay === $today) {
-                array_push($users, $item->id);
+                $usersToUpdate[] = [
+                    'id' => $user->id,
+                    'transfer_enable' => $user->plan->transfer_enable
+                ];
             }
         }
-        User::whereIn('id', $users)->update([
-            'u' => 0,
-            'd' => 0
-        ]);
-    }
 
-    private function resetByYearFirstDay($builder):void
-    {
-        if ((string)date('md') === '0101') {
-            $builder->update([
+        foreach ($usersToUpdate as $userData) {
+            User::where('id', $userData['id'])->update([
+                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
                 'u' => 0,
                 'd' => 0
             ]);
         }
     }
 
-    private function resetByMonthFirstDay($builder):void
+    private function resetByYearFirstDay($builder): void
     {
-        if ((string)date('d') === '01') {
-            $builder->update([
+        $users = $builder->with('plan')->get();
+        $usersToUpdate = [];
+        foreach ($users as $user) {
+            if ((string) date('md') === '0101') {
+                $usersToUpdate[] = [
+                    'id' => $user->id,
+                    'transfer_enable' => $user->plan->transfer_enable
+                ];
+            }
+        }
+
+        foreach ($usersToUpdate as $userData) {
+            User::where('id', $userData['id'])->update([
+                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
                 'u' => 0,
                 'd' => 0
             ]);
         }
     }
 
-    private function resetByExpireDay($builder):void
+    private function resetByMonthFirstDay($builder): void
+    {
+        $users = $builder->with('plan')->get();
+        $usersToUpdate = [];
+        foreach ($users as $user) {
+            if ((string) date('d') === '01') {
+                $usersToUpdate[] = [
+                    'id' => $user->id,
+                    'transfer_enable' => $user->plan->transfer_enable
+                ];
+            }
+        }
+
+        foreach ($usersToUpdate as $userData) {
+            User::where('id', $userData['id'])->update([
+                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
+                'u' => 0,
+                'd' => 0
+            ]);
+        }
+    }
+    private function resetByExpireDay($builder): void
     {
         $lastDay = date('d', strtotime('last day of +0 months'));
-        $users = [];
-        foreach ($builder->get() as $item) {
-            $expireDay = date('d', $item->expired_at);
-            $today = date('d');
-            if ($expireDay === $today) {
-                array_push($users, $item->id);
-            }
+        $today = date('d');
+        $users = $builder->with('plan')->get();
+        $usersToUpdate = [];
 
-            if (($today === $lastDay) && $expireDay >= $lastDay) {
-                array_push($users, $item->id);
+        foreach ($users as $user) {
+            $expireDay = date('d', $user->expired_at);
+            if ($expireDay === $today || ($today === $lastDay && $expireDay >= $today)) {
+                $usersToUpdate[] = [
+                    'id' => $user->id,
+                    'transfer_enable' => $user->plan->transfer_enable
+                ];
             }
         }
-        User::whereIn('id', $users)->update([
-            'u' => 0,
-            'd' => 0
-        ]);
+
+        foreach ($usersToUpdate as $userData) {
+            User::where('id', $userData['id'])->update([
+                'transfer_enable' => (intval($userData['transfer_enable']) * 1073741824),
+                'u' => 0,
+                'd' => 0
+            ]);
+        }
     }
 }
