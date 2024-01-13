@@ -205,7 +205,8 @@ class V2rayN
     public static function buildHysteria($password, $server)
     {
         $name = rawurlencode($server['name']);
-        if ($server['server_name']) $params = ['sni' => $server['server_name']];
+        $params = [];
+        if ($server['server_name']) $params['sni'] = $server['server_name'];
         $params['insecure'] = $server['insecure'] ? 1 : 0;
         $query = http_build_query($params);
         if ($server['version'] == 2) {
