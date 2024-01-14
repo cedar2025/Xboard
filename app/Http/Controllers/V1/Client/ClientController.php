@@ -43,7 +43,8 @@ class ClientController extends Controller
             'verge' => '1.3.8',
             'ClashX Meta' => '1.3.5',
             'Hiddify' => '0.1.0',
-            'loon' => '637'
+            'loon' => '637',
+            'v2rayN' => '6.31'
         ];
         foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
             if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {
