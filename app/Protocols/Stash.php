@@ -184,7 +184,7 @@ class Stash
             $array['tls'] = true;
             switch($server['tls']){
                 case 1:
-                    if ($server['tlsSettings']) {
+                    if ($server['tls_settings']) {
                         $tlsSettings = $server['tls_settings'];
                         if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
                             $array['servername'] = $tlsSettings['server_name'];
