@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1\Server;
 
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Services\ServerService;
 use App\Services\UserService;
@@ -25,8 +26,7 @@ class UniProxyController extends Controller
         $this->nodeType = $request->input('node_type');
         $this->nodeInfo = $this->serverService->getServer($this->nodeId, $this->nodeType);
         if(!$this->nodeInfo) {
-            Log::channel("daily")->info("$this->nodeId  $this->nodeType  $this->nodeInfo");
-            throw new \Exception('server is not exist', 500);
+            throw new ApiException('server is not exist', 500);
         };
     }
 

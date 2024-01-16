@@ -29,7 +29,6 @@ class ServerController extends Controller
         $data = NodeResource::collection($servers);
         return response([
             'data' => $data
-        ])->header('ETag', "\"{$eTag}\"")
-        ->header('Cache-Control', 'public, max-age=3600');
+        ])->header('ETag', "\"{$eTag}\"");
     }
 }

@@ -112,8 +112,8 @@ class Passwall
         if ($server['tls']) {
             switch($server['tls']){
                 case 1:
-                    if ($server['tlsSettings']) {
-                        $tlsSettings = $server['tlsSettings'];
+                    if ($server['tls_settings']) {
+                        $tlsSettings = $server['tls_settings'];
                         if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
                             $config['sni'] = $tlsSettings['serverName'];
                             $config['security'] = "tls";

@@ -154,8 +154,8 @@ class Shadowrocket
             switch($server['tls']){
                 case 1:
                     $config['tls'] = 1;
-                    if ($server['tlsSettings']) {
-                        $tlsSettings = $server['tlsSettings'];
+                    if ($server['tls_settings']) {
+                        $tlsSettings = $server['tls_settings'];
                         if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
                             $config['allowInsecure'] = (int)$tlsSettings['allowInsecure'];
                         if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
