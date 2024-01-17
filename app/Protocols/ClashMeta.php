@@ -199,8 +199,8 @@ class ClashMeta
                         $tlsSettings = $server['tls_settings'];
                         if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
                             $array['skip-cert-verify'] = ($tlsSettings['allowInsecure'] ? true : false);
-                        if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                            $array['servername'] = $tlsSettings['serverName'];
+                        if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
+                            $array['servername'] = $tlsSettings['server_name'];
                     }
                     break;
                 case 2:  //开启reality

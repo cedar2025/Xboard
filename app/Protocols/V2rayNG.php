@@ -114,8 +114,8 @@ class V2rayNG
                 case 1:
                     if ($server['tls_settings']) {
                         $tlsSettings = $server['tls_settings'];
-                        if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                            $config['sni'] = $tlsSettings['serverName'];
+                        if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
+                            $config['sni'] = $tlsSettings['server_name'];
                             $config['security'] = "tls";
                     }
                     break;
