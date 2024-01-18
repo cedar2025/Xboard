@@ -49,8 +49,6 @@ TRC20： TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB
 - [Docker Compose 纯命令行快速部署](./docs/docker-compose安装指南.md)
 - [aapanel + Docker Compose](./docs/aapanel+docker安装指南.md)
 - [aapanel 部署](./docs/aapanel安装指南.md)
-- [从aapanel迁移到1panel教程](./docs/从aapanel迁移到1panel教程.md)
-- [1panel 多开Xboard教程](./docs/多开Xboard教程.md)
 ### 从其他版本迁移
 #### 数据库迁移
 **根据你的版本查看对应的迁移指南进行迁移**
