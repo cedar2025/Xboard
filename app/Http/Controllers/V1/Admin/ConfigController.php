@@ -128,7 +128,9 @@ class ConfigController extends Controller
                 'email_username' => admin_setting('email_username'),
                 'email_password' => admin_setting('email_password'),
                 'email_encryption' => admin_setting('email_encryption'),
-                'email_from_address' => admin_setting('email_from_address')
+                'email_from_address' => admin_setting('email_from_address'),
+                'email_postal_host' => admin_setting('email_postal_host'),
+                'email_postal_key' => admin_setting('email_postal_key'),
             ],
             'telegram' => [
                 'telegram_bot_enable' => admin_setting('telegram_bot_enable', 0),
@@ -188,7 +190,7 @@ class ConfigController extends Controller
                 );
             }
         }
-        
+
         Cache::forget('admin_settings');
         // \Artisan::call('horizon:terminate'); //重启队列使配置生效
         return $this->success(true);
