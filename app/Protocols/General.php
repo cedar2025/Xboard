@@ -36,6 +36,9 @@ class General
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -180,4 +183,20 @@ class General
         return $uri;
     }
 
+    public static function buildHysteria($password, $server)
+    {
+        $name = rawurlencode($server['name']);
+        $params = [];
+        if ($server['server_name']) $params['sni'] = $server['server_name'];
+        $params['insecure'] = $server['insecure'] ? 1 : 0;
+        $query = http_build_query($params);
+        if ($server['version'] == 2) {
+            $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+            $uri .= "\r\n";
+        } else {
+            // TODO 现在已经没有人用 V1 了，返回空
+            $uri = "";
+        }
+        return $uri;
+    }
 }
