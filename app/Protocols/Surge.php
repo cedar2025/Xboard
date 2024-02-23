@@ -172,6 +172,7 @@ class Surge
             "{$server['name']}=hysteria2",
             "{$server['host']}",
             "{$server['port']}",
+            "password={$password}",
             $server['server_name'] ? "sni={$server['server_name']}" : "",
             $server['insecure'] ? "skip-cert-verify=true" : "",
         ];
