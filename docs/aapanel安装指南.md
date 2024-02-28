@@ -83,9 +83,9 @@ location ~ .*\.(js|css)?$
 >Xboard的系统强依赖队列服务，正常使用XBoard必须启动队列服务。下面以aaPanel中supervisor服务来守护队列服务作为演示。  
 - 1️⃣. aaPanel 面板 > App Store > Tools  
 - 2️⃣. 找到Supervisor进行安装，安装完成后点击设置 > Add Daemon按照如下填写
-- - 在 Name 填写 Xboard  
+- - 在 Name 填写 `Xboard`
 - - 在 Run User 选择 www  
-- - 在 Run Dir 选择 站点目录 在 Start Command 填写 php artisan horizon 在 Processes 填写 1  
+- - 在 Run Dir 选择 站点目录 在 Start Command 填写 `php artisan horizon` 在 Processes 填写 1  
 
 >填写后点击Confirm添加即可运行。
 
@@ -94,7 +94,7 @@ aaPanel 面板 > Cron。
 - 在 Type of Task 选择 Shell Script
 - 在 Name of Task 填写 v2board
 - 在 Period 选择 N Minutes 1 Minute
-- 在 Script content 填写 php /www/wwwroot/路径/artisan schedule:run
+- 在 Script content 填写 `php /www/wwwroot/路径/artisan schedule:run`
 
 根据上述信息添加每1分钟执行一次的定时任务。
 
