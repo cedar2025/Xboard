@@ -44,7 +44,7 @@ Xboard是基于V2board二次开发，在性能上和功能上都有大部分增�
 ## 安装 / 更新 / 回滚
 你可以点击查看下列方式的**安装、更新**步骤
 - [Docker Compose 纯命令行快速部署](./docs/docker-compose安装指南.md)
-- [aapanel + Docker Compose](./docs/aapanel+docker安装指南.md)
+- [aapanel + Docker Compose (推荐)](./docs/aapanel+docker安装指南.md)
 - [aapanel 部署](./docs/aapanel安装指南.md)
 ### 从其他版本迁移
 #### 数据库迁移
