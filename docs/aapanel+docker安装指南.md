@@ -4,17 +4,8 @@
 ### 部署
 1. 安装aaPanel + 和docker 
 
-如果是Centos系统
 ```
-yum install -y wget && wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh && bash install.sh aapanel
-```
-如果是Ubuntu/Deepin系统
-```
-wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && sudo bash install.sh aapanel
-``` 
-如果是Debian 系统
-```
-wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh aapanel
+URL=https://www.aapanel.com/script/install_6.0_en.sh && if [ -f /usr/bin/curl ];then curl -ksSO "$URL" ;else wget --no-check-certificate -O install_6.0_en.sh "$URL";fi;bash install_6.0_en.sh aapanel
 ```
 
 安装完成后我们登陆 aaPanel 进行环境的安装。
