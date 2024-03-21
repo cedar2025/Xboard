@@ -133,7 +133,7 @@ class StripeCheckout {
 
     private function exchange($from, $to)
     {
-        $result = file_get_contents('https://api.exchangerate.host/latest?symbols=' . $to . '&base=' . $from);
+        $result = file_get_contents('https://api.vatcomply.com/rates?base='. $from);
         $result = json_decode($result, true);
         return $result['rates'][$to];
     }
