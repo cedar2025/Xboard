@@ -185,9 +185,14 @@ class SingBox
             "server" => $server['host'],
             "server_port" => $server['port'],
             "uuid" => $password,
-            "packet_encoding" => "xudp"
+            "packet_encoding" => "xudp",
+            "multiplex" => [
+                "enabled" => false,
+                "protocol" => "smux",
+                "max_streams" => 32
+            ]
         ];
-
+        
         $tlsSettings = $server['tls_settings'] ?? [];
 
         if ($server['tls']) {
@@ -196,8 +201,8 @@ class SingBox
             $array['flow'] = !empty($server['flow']) ? $server['flow'] : "";
             $tlsSettings = $server['tls_settings'] ?? [];
             if ($server['tls_settings']) {
-                $tlsConfig['insecure'] = isset($tlsSettings['allow_insecure']) && $tlsSettings['allow_insecure'] == 1 ? true : false;
                 $tlsConfig['server_name'] = $tlsSettings['server_name'] ?? null;
+                $tlsConfig['insecure'] = isset($tlsSettings['allow_insecure']) && $tlsSettings['allow_insecure'] == 1 ? false : true;
                 if ($server['tls'] == 2) {
                     $tlsConfig['reality'] = [
                         'enabled' => true,
@@ -224,9 +229,7 @@ class SingBox
             if ($server['network_settings']) {
                 $wsSettings = $server['network_settings'];
                 if (isset($wsSettings['path']) && !empty($wsSettings['path'])) $array['transport']['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) $array['transport']['headers'] = ['Host' => array($wsSettings['headers']['Host'])];
-                $array['transport']['max_early_data'] = 2048;
-                $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
+                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) $array['transport']['headers'] = ['Host' => $wsSettings['headers']['Host']];
             }
         }
         if ($server['network'] === 'grpc') {
@@ -266,16 +269,16 @@ class SingBox
         if(isset($server['network']) && in_array($server['network'], ["grpc", "ws"])){
             $array['transport']['type'] = $server['network'];
             // grpc配置
-            if($server['network'] === "grpc" && isset($server['network_settings']['serviceName'])) {
-                $array['transport']['service_name'] = $server['network_settings']['serviceName'];
+            if($server['network'] === "grpc" && isset($server['networkSettings']['serviceName'])) {
+                $array['transport']['service_name'] = $server['networkSettings']['serviceName'];
             }
             // ws配置
             if($server['network'] === "ws") {
-                if(isset($server['network_settings']['path'])) {
-                    $array['transport']['path'] = $server['network_settings']['path'];
+                if(isset($server['networkSettings']['path'])) {
+                    $array['transport']['path'] = $server['networkSettings']['path'];
                 }
-                if(isset($server['network_settings']['headers']['Host'])){
-                    $array['transport']['headers'] = ['Host' => array($server['network_settings']['headers']['Host'])];
+                if(isset($server['networkSettings']['headers']['Host'])){
+                    $array['transport']['headers'] = ['Host' => array($server['networkSettings']['headers']['Host'])];
                 }
                 $array['transport']['max_early_data'] = 2048;
                 $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';

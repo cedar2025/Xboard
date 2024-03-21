@@ -170,11 +170,29 @@ class General
     public static function buildTrojan($password, $server)
     {
         $name = rawurlencode($server['name']);
-        $query = http_build_query([
+        $params = [
             'allowInsecure' => $server['allow_insecure'],
             'peer' => $server['server_name'],
             'sni' => $server['server_name']
-        ]);
+        ];
+        // 判断是否是grpc与ws协议
+        if(in_array($server['network'], ["grpc", "ws"])){
+            $params['type'] = $server['network'];
+            // grpc配置
+            if($server['network'] === "grpc" && isset($server['networkSettings']['serviceName'])) {
+                $params['serviceName'] = $server['networkSettings']['serviceName'];
+            };
+            // ws配置
+            if($server['network'] === "ws") {
+                if(isset($server['networkSettings']['path'])) {
+                    $params['path'] = $server['networkSettings']['path'];
+                }
+                if(isset($server['networkSettings']['headers']['Host'])){
+                    $params['host'] = $server['networkSettings']['headers']['Host'];
+                }
+            }
+        }
+        $query = http_build_query($params);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;

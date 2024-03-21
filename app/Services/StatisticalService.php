@@ -154,8 +154,8 @@ class StatisticalService {
                     $stats[] = [
                         'server_id' => $serverId,
                         'server_type' => $serverType,
-                        'u' => $v[$serverId][0],
-                        'd' => $v[$serverId][1],
+                        'u' => $v[$serverId][0] ?: 0,
+                        'd' => $v[$serverId][1] ?: 0,
                     ];
                 }
             }
