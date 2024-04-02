@@ -15,9 +15,6 @@
     window.settings = {
       title: '{{$title}}',
       assets_path: '/theme/{{$theme}}/assets',
-      theme: {
-          color: '{{$theme_config['theme_color']??"default"}}',
-      },
       version: '{{$version}}',
       background_url: '{{$theme_config['background_url']}}',
       description: '{{$description}}',
