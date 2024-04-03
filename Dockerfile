@@ -2,7 +2,7 @@ FROM phpswoole/swoole:php8.1-alpine
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions pcntl
+RUN install-php-extensions pcntl bcmath
 
 RUN apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git
 
