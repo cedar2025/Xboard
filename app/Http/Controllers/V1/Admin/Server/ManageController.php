@@ -12,8 +12,7 @@ class ManageController extends Controller
 {
     public function getNodes(Request $request)
     {
-        $serverService = new ServerService();
-        return $this->success($serverService->getAllServers());
+        return $this->success(ServerService::getAllServers());
     }
 
     public function sort(Request $request)

@@ -17,17 +17,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class TrojanTidalabController extends Controller
 {
-    CONST TROJAN_CONFIG = '{"run_type":"server","local_addr":"0.0.0.0","local_port":443,"remote_addr":"www.taobao.com","remote_port":80,"password":[],"ssl":{"cert":"server.crt","key":"server.key","sni":"domain.com"},"api":{"enabled":true,"api_addr":"127.0.0.1","api_port":10000}}';
-    public function __construct(Request $request)
-    {
-        $token = $request->input('token');
-        if (empty($token)) {
-            throw new ApiException('token is null');
-        }
-        if ($token !== admin_setting('server_token')) {
-            throw new ApiException('token is error');
-        }
-    }
+    const TROJAN_CONFIG = '{"run_type":"server","local_addr":"0.0.0.0","local_port":443,"remote_addr":"www.taobao.com","remote_port":80,"password":[],"ssl":{"cert":"server.crt","key":"server.key","sni":"domain.com"},"api":{"enabled":true,"api_addr":"127.0.0.1","api_port":10000}}';
 
     // 后端获取用户
     public function user(Request $request)
@@ -36,11 +26,10 @@ class TrojanTidalabController extends Controller
         $nodeId = $request->input('node_id');
         $server = ServerTrojan::find($nodeId);
         if (!$server) {
-            return $this->fail([400,'节点不存在']);
+            return $this->fail([400, '节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_TROJAN_LAST_CHECK_AT', $server->id), time(), 3600);
-        $serverService = new ServerService();
-        $users = $serverService->getAvailableUsers($server->group_id);
+        $users = ServerService::getAvailableUsers($server->group_id);
         $result = [];
         foreach ($users as $user) {
             $user->trojan_user = [
@@ -50,8 +39,8 @@ class TrojanTidalabController extends Controller
             array_push($result, $user);
         }
         $eTag = sha1(json_encode($result));
-        if (strpos($request->header('If-None-Match'), $eTag) !== false ) {
-            return response(null,304);
+        if (strpos($request->header('If-None-Match'), $eTag) !== false) {
+            return response(null, 304);
         }
         return response([
             'msg' => 'ok',
@@ -92,7 +81,7 @@ class TrojanTidalabController extends Controller
         $request->validate([
             'node_id' => 'required',
             'local_port' => 'required'
-        ],[
+        ], [
             'node_id.required' => '节点ID不能为空',
             'local_port.required' => '本地端口不能为空'
         ]);
@@ -100,10 +89,10 @@ class TrojanTidalabController extends Controller
             $json = $this->getTrojanConfig($request->input('node_id'), $request->input('local_port'));
         } catch (\Exception $e) {
             \Log::error($e);
-            return $this->fail([500,'配置获取失败']);
+            return $this->fail([500, '配置获取失败']);
         }
 
-        return(json_encode($json, JSON_UNESCAPED_UNICODE));
+        return (json_encode($json, JSON_UNESCAPED_UNICODE));
     }
 
     private function getTrojanConfig(int $nodeId, int $localPort)

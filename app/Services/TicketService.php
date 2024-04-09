@@ -21,9 +21,9 @@ class TicketService {
                 'message' => $message
             ]);
             if ($userId !== $ticket->user_id) {
-                $ticket->reply_status = 0;
+                $ticket->reply_status = Ticket::STATUS_OPENING;
             } else {
-                $ticket->reply_status = 1;
+                $ticket->reply_status = Ticket::STATUS_CLOSED;
             }
             if (!$ticketMessage || !$ticket->save()) {
                 throw new \Exception();
@@ -43,7 +43,7 @@ class TicketService {
         if (!$ticket) {
             throw new ApiException('工单不存在');
         }
-        $ticket->status = 0;
+        $ticket->status = Ticket::STATUS_OPENING;
         try{
             DB::beginTransaction();
             $ticketMessage = TicketMessage::create([
@@ -52,9 +52,9 @@ class TicketService {
                 'message' => $message
             ]);
             if ($userId !== $ticket->user_id) {
-                $ticket->reply_status = 0;
+                $ticket->reply_status = Ticket::STATUS_OPENING;
             } else {
-                $ticket->reply_status = 1;
+                $ticket->reply_status = Ticket::STATUS_CLOSED;
             }
             if (!$ticketMessage || !$ticket->save()) {
                 throw new ApiException('工单回复失败');

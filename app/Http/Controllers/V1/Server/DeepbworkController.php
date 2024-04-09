@@ -18,16 +18,6 @@ use Illuminate\Support\Facades\Cache;
 class DeepbworkController extends Controller
 {
     CONST V2RAY_CONFIG = '{"log":{"loglevel":"debug","access":"access.log","error":"error.log"},"api":{"services":["HandlerService","StatsService"],"tag":"api"},"dns":{},"stats":{},"inbounds":[{"port":443,"protocol":"vmess","settings":{"clients":[]},"sniffing":{"enabled":true,"destOverride":["http","tls"]},"streamSettings":{"network":"tcp"},"tag":"proxy"},{"listen":"127.0.0.1","port":23333,"protocol":"dokodemo-door","settings":{"address":"0.0.0.0"},"tag":"api"}],"outbounds":[{"protocol":"freedom","settings":{}},{"protocol":"blackhole","settings":{},"tag":"block"}],"routing":{"rules":[{"type":"field","inboundTag":"api","outboundTag":"api"}]},"policy":{"levels":{"0":{"handshake":4,"connIdle":300,"uplinkOnly":5,"downlinkOnly":30,"statsUserUplink":true,"statsUserDownlink":true}}}}';
-    public function __construct(Request $request)
-    {
-        $token = $request->input('token');
-        if (empty($token)) {
-            throw new ApiException('token is null');
-        }
-        if ($token !== admin_setting('server_token')) {
-            throw new ApiException('token is error');
-        }
-    }
 
     // 后端获取用户
     public function user(Request $request)
@@ -39,8 +29,7 @@ class DeepbworkController extends Controller
             return $this->fail([400,'节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_VMESS_LAST_CHECK_AT', $server->id), time(), 3600);
-        $serverService = new ServerService();
-        $users = $serverService->getAvailableUsers($server->group_id);
+        $users = ServerService::getAvailableUsers($server->group_id);
         $result = [];
         foreach ($users as $user) {
             $user->v2ray_user = [

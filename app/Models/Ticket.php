@@ -14,6 +14,12 @@ class Ticket extends Model
         'updated_at' => 'timestamp'
     ];
 
+    const STATUS_OPENING = 0;
+    const STATUS_CLOSED = 1;
+    public static $statusMap = [
+        self::STATUS_OPENING => '开启',
+        self::STATUS_CLOSED => '关闭'
+    ];
 
     public function message()
     {

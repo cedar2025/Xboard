@@ -19,8 +19,7 @@ class GroupController extends Controller
             return $this->success([ServerGroup::find($request->input('group_id'))]);
         }
         $serverGroups = ServerGroup::get();
-        $serverService = new ServerService();
-        $servers = $serverService->getAllServers();
+        $servers = ServerService::getAllServers();
         foreach ($serverGroups as $k => $v) {
             $serverGroups[$k]['user_count'] = User::where('group_id', $v['id'])->count();
             $serverGroups[$k]['server_count'] = 0;

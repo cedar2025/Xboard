@@ -44,7 +44,7 @@ class XboardInstall extends Command
      */
     public function handle()
     {
-        try {      
+        try {
             // \Artisan::call('config:clear');
             $isDocker = env('docker', false);
             $this->info("__    __ ____                      _  ");
@@ -52,7 +52,8 @@ class XboardInstall extends Command
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
             $this->info(" / /\ \ | |_) | (_) | (_| | | | (_| | ");
             $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
-            if ((\File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED')) 
+            if (
+                (\File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
                 || (env('INSTALLED', false) && $isDocker)
             ) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
@@ -60,23 +61,15 @@ class XboardInstall extends Command
                 $this->warn("如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）");
                 $this->warn("快捷清空.env命令：");
                 note('rm .env && touch .env');
-                return ;
+                return;
             }
-            if (is_dir(base_path() . '/.env')){
+            if (is_dir(base_path() . '/.env')) {
                 $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
-                return ;
+                return;
             }
             // 选择是否使用Sqlite
-            if(confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql',default: false, yes: '启用', no: '不启用')) {
+            if (confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
                 $sqliteFile = '.docker/.data/database.sqlite';
-                if (!file_exists(base_path($sqliteFile))) {
-                    // 创建空文件
-                    if (!touch(base_path($sqliteFile))) {
-                        echo "sqlite创建成功: $sqliteFile";
-                    } else {
-                        echo "sqlite创建失败";
-                    }
-                }
                 $envConfig = [
                     'DB_CONNECTION' => 'sqlite',
                     'DB_DATABASE' => $sqliteFile,
@@ -84,16 +77,16 @@ class XboardInstall extends Command
                     'DB_USERNAME' => '',
                     'DB_PASSWORD' => '',
                 ];
-            }else{
+            } else {
                 $isMysqlValid = false;
-                while(!$isMysqlValid){
+                while (!$isMysqlValid) {
                     $envConfig = [
                         'DB_CONNECTION' => 'mysql',
                         'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
                         'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
-                        'DB_DATABASE' => text(label:'请输入数据库名', default:'xboard', required: true),
-                        'DB_USERNAME' => text(label:'请输入数据库用户名', required: true),
-                        'DB_PASSWORD' => text(label:'请输入数据库密码', required: false),
+                        'DB_DATABASE' => text(label: '请输入数据库名', default: 'xboard', required: true),
+                        'DB_USERNAME' => text(label: '请输入数据库用户名', required: true),
+                        'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
                     ];
                     try {
                         \Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
@@ -114,15 +107,15 @@ class XboardInstall extends Command
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             $envConfig['INSTALLED'] = true;
             $isReidsValid = false;
-            while(!$isReidsValid){
+            while (!$isReidsValid) {
                 // 判断是否为Docker环境
-                if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes:'启用', no:'不启用'))){
-                    $envConfig['REDIS_HOST']  = '/run/redis-socket/redis.sock';
-                    $envConfig['REDIS_PORT']  = 0;
+                if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
+                    $envConfig['REDIS_HOST'] = '/run/redis-socket/redis.sock';
+                    $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
-                }else{
-                    $envConfig['REDIS_HOST']  = text(label: '请输入Redis地址', default: '127.0.0.1',required: true);
-                    $envConfig['REDIS_PORT']  = text(label: '请输入Redis端口', default: '6379', required: true);
+                } else {
+                    $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
+                    $envConfig['REDIS_PORT'] = text(label: '请输入Redis端口', default: '6379', required: true);
                     $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
                 }
                 $redisConfig = [
@@ -134,11 +127,11 @@ class XboardInstall extends Command
                         'database' => 0,
                     ],
                 ];
-                try{
+                try {
                     $redis = new \Illuminate\Redis\RedisManager(app(), 'phpredis', $redisConfig);
                     $redis->ping();
                     $isReidsValid = true;
-                }catch(\Exception $e){
+                } catch (\Exception $e) {
                     // 连接失败，输出错误消息
                     $this->error("redis连接失败：" . $e->getMessage());
                     $this->info("请重新输入REDIS配置");
@@ -147,12 +140,16 @@ class XboardInstall extends Command
 
             if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
                 abort(500, '复制环境文件失败，请检查目录权限');
-            };
-            $email = text(label: '请输入管理员账号',required: true,
-                validate: fn (string $email): ?string => match (true) {
-                    ! filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
+            }
+            ;
+            $email = text(
+                label: '请输入管理员账号',
+                required: true,
+                validate: fn(string $email): ?string => match (true) {
+                    !filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
                     default => null,
-                });
+                }
+            );
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
@@ -197,32 +194,30 @@ class XboardInstall extends Command
 
     private function saveToEnv($data = [])
     {
-        function set_env_var($key, $value)
-        {
-            if (! is_bool(strpos($value, ' '))) {
-                $value = '"' . $value . '"';
-            }
-            $key = strtoupper($key);
+        foreach ($data as $key => $value) {
+            function ($key, $value) {
+                if (!is_bool(strpos($value, ' '))) {
+                    $value = '"' . $value . '"';
+                }
+                $key = strtoupper($key);
 
-            $envPath = app()->environmentFilePath();
-            $contents = file_get_contents($envPath);
+                $envPath = app()->environmentFilePath();
+                $contents = file_get_contents($envPath);
 
-            preg_match("/^{$key}=[^\r\n]*/m", $contents, $matches);
+                preg_match("/^{$key}=[^\r\n]*/m", $contents, $matches);
 
-            $oldValue = count($matches) ? $matches[0] : '';
+                $oldValue = count($matches) ? $matches[0] : '';
 
-            if ($oldValue) {
-                $contents = str_replace("{$oldValue}", "{$key}={$value}", $contents);
-            } else {
-                $contents = $contents . "\n{$key}={$value}\n";
-            }
+                if ($oldValue) {
+                    $contents = str_replace("{$oldValue}", "{$key}={$value}", $contents);
+                } else {
+                    $contents = $contents . "\n{$key}={$value}\n";
+                }
 
-            $file = fopen($envPath, 'w');
-            fwrite($file, $contents);
-            return fclose($file);
-        }
-        foreach($data as $key => $value) {
-            set_env_var($key, $value);
+                $file = fopen($envPath, 'w');
+                fwrite($file, $contents);
+                return fclose($file);
+            };
         }
         return true;
     }

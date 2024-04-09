@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1\Passport;
 
-use App\Exceptions\ApiException;
 use App\Helpers\ResponseEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\AuthForget;
