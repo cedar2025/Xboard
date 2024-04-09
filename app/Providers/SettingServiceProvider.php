@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Support\Setting;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Foundation\Application;
 
 class SettingServiceProvider extends ServiceProvider
 {
@@ -14,9 +15,11 @@ class SettingServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('setting', function ($app) {
-            return Setting::fromDatabase(); // 假设 AdminSetting 是您的设置类
+
+        $this->app->bind(Setting::class, function (Application $app) {
+            return new Setting();
         });
+
     }
 
     /**
@@ -26,6 +29,5 @@ class SettingServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
     }
 }

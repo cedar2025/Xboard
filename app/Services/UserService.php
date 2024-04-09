@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\StatServerJob;
-use App\Jobs\StatUserJob;
 use App\Jobs\TrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
@@ -172,7 +170,7 @@ class UserService
     {
         // 获取子节点
         $childServer = ($server['parent_id'] == null && !blank($nodeIp)) 
-        ? (new ServerService())->getChildServer($server['id'], $protocol, $nodeIp) 
+        ? ServerService::getChildServer($server['id'], $protocol, $nodeIp) 
         : null;
         $timestamp = strtotime(date('Y-m-d'));
         collect($data)->chunk(1000)->each(function($chunk) use ($timestamp,$server,$protocol, $childServer){

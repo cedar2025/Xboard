@@ -65,8 +65,7 @@ class ClientController extends Controller
             $region = $geo['region'] ?? null;
 
             // 获取服务器列表
-            $serverService = new ServerService();
-            $servers = $serverService->getAvailableServers($user);
+            $servers = ServerService::getAvailableServers($user);
             
             // 判断不满足，不满足的直接过滤掉
             $serversFiltered = collect($servers)->reject(function ($server) use ($typesArr, $filterArr, $region, $supportHy2){

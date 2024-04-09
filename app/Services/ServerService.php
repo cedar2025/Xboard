@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Cache;
 
 class ServerService
 {
-    public function getAvailableVless(User $user):array
+    // 获取可用的 VLESS 服务器列表
+    public static function getAvailableVless(User $user): array
     {
         $servers = [];
         $model = ServerVless::orderBy('sort', 'ASC');
@@ -41,15 +42,15 @@ class ServerService
                     unset($serverData['tls_settings']['private_key']);
                 }
             }
-            
+
             $servers[] = $serverData;
         }
-
 
         return $servers;
     }
 
-    public function getAvailableVmess(User $user):array
+    // 获取可用的 VMESS 服务器列表
+    public static function getAvailableVmess(User $user): array
     {
         $servers = [];
         $model = ServerVmess::orderBy('sort', 'ASC');
@@ -69,11 +70,11 @@ class ServerService
             $servers[] = $vmess[$key]->toArray();
         }
 
-
         return $servers;
     }
 
-    public function getAvailableTrojan(User $user):array
+    // 获取可用的 TROJAN 服务器列表
+    public static function getAvailableTrojan(User $user): array
     {
         $servers = [];
         $model = ServerTrojan::orderBy('sort', 'ASC');
@@ -95,7 +96,8 @@ class ServerService
         return $servers;
     }
 
-    public function getAvailableHysteria(User $user)
+    // 获取可用的 HYSTERIA 服务器列表
+    public static function getAvailableHysteria(User $user)
     {
         $availableServers = [];
         $model = ServerHysteria::orderBy('sort', 'ASC');
@@ -119,7 +121,8 @@ class ServerService
         return $availableServers;
     }
 
-    public function getAvailableShadowsocks(User $user)
+    // 获取可用的 SHADOWSOCKS 服务器列表
+    public static function getAvailableShadowsocks(User $user)
     {
         $servers = [];
         $model = ServerShadowsocks::orderBy('sort', 'ASC');
@@ -141,15 +144,16 @@ class ServerService
         return $servers;
     }
 
-    public function getAvailableServers(User $user)
+    // 获取可用的服务器列表
+    public static function getAvailableServers(User $user)
     {
         $servers = Cache::remember('serversAvailable_'. $user->id, 5, function() use($user){
             return array_merge(
-                $this->getAvailableShadowsocks($user),
-                $this->getAvailableVmess($user),
-                $this->getAvailableTrojan($user),
-                $this->getAvailableHysteria($user),
-                $this->getAvailableVless($user)
+                self::getAvailableShadowsocks($user),
+                self::getAvailableVmess($user),
+                self::getAvailableTrojan($user),
+                self::getAvailableHysteria($user),
+                self::getAvailableVless($user)
             );
         });
         $tmp = array_column($servers, 'sort');
@@ -162,7 +166,8 @@ class ServerService
         }, $servers);
     }
 
-    public function getAvailableUsers($groupId): Collection
+    // 获取可用的用户列表
+    public static function getAvailableUsers($groupId): Collection
     {
         return \DB::table('v2_user')
             ->whereIn('group_id', $groupId)
@@ -180,7 +185,8 @@ class ServerService
             ->get();
     }
 
-    public function log(int $userId, int $serverId, int $u, int $d, float $rate, string $method)
+    // 记录流量日志
+    public static function log(int $userId, int $serverId, int $u, int $d, float $rate, string $method)
     {
         if (($u + $d) < 10240) return true;
         $timestamp = strtotime(date('Y-m-d'));
@@ -212,7 +218,8 @@ class ServerService
         }
     }
 
-    public function getAllShadowsocks()
+    // 获取所有 SHADOWSOCKS 服务器列表
+    public static function getAllShadowsocks()
     {
         $servers = ServerShadowsocks::orderBy('sort', 'ASC')
             ->get()
@@ -223,7 +230,8 @@ class ServerService
         return $servers;
     }
 
-    public function getAllVMess()
+    // 获取所有 VMESS 服务器列表
+    public static function getAllVMess()
     {
         $servers = ServerVmess::orderBy('sort', 'ASC')
             ->get()
@@ -234,7 +242,8 @@ class ServerService
         return $servers;
     }
 
-    public function getAllVLess()
+    // 获取所有 VLESS 服务器列表
+    public static function getAllVLess()
     {
         $servers = ServerVless::orderBy('sort', 'ASC')
             ->get()
@@ -245,7 +254,8 @@ class ServerService
         return $servers;
     }
 
-    public function getAllTrojan()
+    // 获取所有 TROJAN 服务器列表
+    public static function getAllTrojan()
     {
         $servers = ServerTrojan::orderBy('sort', 'ASC')
             ->get()
@@ -256,7 +266,8 @@ class ServerService
         return $servers;
     }
 
-    public function getAllHysteria()
+    // 获取所有 HYSTERIA 服务器列表
+    public static function getAllHysteria()
     {
         $servers = ServerHysteria::orderBy('sort', 'ASC')
             ->get()
@@ -267,7 +278,8 @@ class ServerService
         return $servers;
     }
 
-    private function mergeData(&$servers)
+    // 合并数据
+    private static function mergeData(&$servers)
     {
         foreach ($servers as $k => $v) {
             $serverType = strtoupper($v['type']);
@@ -291,22 +303,24 @@ class ServerService
         }
     }
 
-    public function getAllServers()
+    // 获取所有服务器列表
+    public static function getAllServers()
     {
         $servers = array_merge(
-            $this->getAllShadowsocks(),
-            $this->getAllVMess(),
-            $this->getAllTrojan(),
-            $this->getAllHysteria(),
-            $this->getAllVLess()
+            self::getAllShadowsocks(),
+            self::getAllVMess(),
+            self::getAllTrojan(),
+            self::getAllHysteria(),
+            self::getAllVLess()
         );
-        $this->mergeData($servers);
+        self::mergeData($servers);
         $tmp = array_column($servers, 'sort');
         array_multisort($tmp, SORT_ASC, $servers);
         return $servers;
     }
 
-    public function getRoutes(array $routeIds)
+    // 获取路由规则
+    public static function getRoutes(array $routeIds)
     {
         $routes = ServerRoute::select(['id', 'match', 'action', 'action_value'])->whereIn('id', $routeIds)->get();
         // TODO: remove on 1.8.0
@@ -318,7 +332,8 @@ class ServerService
         return $routes;
     }
 
-    public function getServer($serverId, $serverType)
+    // 获取服务器
+    public static function getServer($serverId, $serverType)
     {
         switch ($serverType) {
             case 'vmess':
@@ -336,8 +351,8 @@ class ServerService
         }
     }
 
-    // 根据节点IP和父级别节点ID查询字节点
-    public function getChildServer($serverId, $serverType, $nodeIp){
+    // 根据节点IP和父级别节点ID查询子节点
+    public static function getChildServer($serverId, $serverType, $nodeIp){
         switch ($serverType) {
             case 'vmess':
                 return ServerVmess::query()

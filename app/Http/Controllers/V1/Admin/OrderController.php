@@ -160,13 +160,13 @@ class OrderController extends Controller
             $order->total_amount = $request->input('total_amount');
 
             if ($order->period === 'reset_price') {
-                $order->type = 4;
+                $order->type = Order::TYPE_RESET_TRAFFIC;
             } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id) {
-                $order->type = 3;
+                $order->type = Order::TYPE_UPGRADE;
             } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) {
-                $order->type = 2;
+                $order->type = Order::TYPE_RENEWAL;
             } else {
-                $order->type = 1;
+                $order->type = Order::TYPE_NEW_PURCHASE;
             }
 
             $orderService->setInvite($user);

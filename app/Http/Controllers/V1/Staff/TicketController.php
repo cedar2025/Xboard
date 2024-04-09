@@ -73,7 +73,7 @@ class TicketController extends Controller
         if (!$ticket) {
             return $this->fail([400202,'工单不存在']);
         }
-        $ticket->status = 1;
+        $ticket->status = Ticket::STATUS_CLOSED;
         if (!$ticket->save()) {
             return $this->fail([500, '工单关闭失败']);
         }

@@ -1,10 +1,14 @@
 <?php
 
 namespace App\Payments;
+
 use App\Exceptions\ApiException;
 
-class CoinPayments {
-    public function __construct($config) {
+class CoinPayments
+{
+    protected $config;
+    public function __construct($config)
+    {
         $this->config = $config;
     }
 
@@ -99,7 +103,7 @@ class CoinPayments {
             throw new ApiException('Payment Timed Out or Error');
         } else {
             //payment is pending, you can optionally add a note to the order page
-            return('IPN OK: pending');
+            return ('IPN OK: pending');
         }
     }
 }

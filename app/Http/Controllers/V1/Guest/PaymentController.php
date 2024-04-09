@@ -17,14 +17,15 @@ class PaymentController extends Controller
         try {
             $paymentService = new PaymentService($method, null, $uuid);
             $verify = $paymentService->notify($request->input());
-            if (!$verify) return $this->fail([422,'verify error']);
+            if (!$verify)
+                return $this->fail([422, 'verify error']);
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
-                return $this->fail([400,'handle error']);
+                return $this->fail([400, 'handle error']);
             }
             return (isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
         } catch (\Exception $e) {
             \Log::error($e);
-            return $this->fail([500,'fail']);
+            return $this->fail([500, 'fail']);
         }
     }
 
@@ -32,9 +33,10 @@ class PaymentController extends Controller
     {
         $order = Order::where('trade_no', $tradeNo)->first();
         if (!$order) {
-            return $this->fail([400202,'order is not found']);
+            return $this->fail([400202, 'order is not found']);
         }
-        if ($order->status !== 0) return true;
+        if ($order->status !== Order::STATUS_PENDING)
+            return true;
         $orderService = new OrderService($order);
         if (!$orderService->paid($callbackNo)) {
             return false;

@@ -45,7 +45,7 @@ class CheckTicket extends Command
             ->get();
         foreach ($tickets as $ticket) {
             if ($ticket->user_id === $ticket->last_reply_user_id) continue;
-            $ticket->status = 1;
+            $ticket->status = Ticket::STATUS_CLOSED;
             $ticket->save();
         }
     }

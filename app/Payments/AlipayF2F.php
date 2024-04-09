@@ -7,6 +7,7 @@ namespace App\Payments;
 use App\Exceptions\ApiException;
 
 class AlipayF2F {
+    protected $config;
     public function __construct($config)
     {
         $this->config = $config;

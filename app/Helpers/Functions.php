@@ -1,4 +1,5 @@
 <?php
+use App\Support\Setting;
 
 
 if (! function_exists("get_request_content")){
@@ -20,14 +21,14 @@ if (! function_exists('admin_setting')) {
     function admin_setting($key = null, $default = null)
     {
         if ($key === null) {
-            return app('setting');
+            return App::make(Setting::class)->toArray();
         }
 
         if (is_array($key)) {
-            app('setting')->save($key);
-            return;
+            App::make(Setting::class)->save($key);
+            return '';
         }
         $default = config('v2board.'. $key) ?? $default;
-        return app('setting')->get($key) ?? $default ;
+        return App::make(Setting::class)->get($key) ?? $default ;
     }
 }

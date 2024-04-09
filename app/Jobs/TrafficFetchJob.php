@@ -2,9 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
-use App\Services\MailService;
-use App\Services\ServerService;
 use App\Services\StatisticalService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

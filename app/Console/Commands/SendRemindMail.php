@@ -5,8 +5,6 @@ namespace App\Console\Commands;
 use App\Services\MailService;
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Models\MailLog;
-use App\Jobs\SendEmailJob;
 
 class SendRemindMail extends Command
 {

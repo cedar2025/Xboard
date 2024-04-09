@@ -10,6 +10,10 @@ use Illuminate\Support\Fluent;
 
 class Setting extends Fluent
 {
+    public function __construct()
+    {
+        $this->attributes = self::fromDatabase();
+    }
     /**
      * 获取配置，并转化为数组.
      *
@@ -129,21 +133,12 @@ class Setting extends Fluent
     public static function fromDatabase()
     {
         $values = [];
-
         try {
-            if(env('ADMIN_SETTING_CACHE') > 0){
-                $values = Cache::remember('admin_settings', env('ADMIN_SETTING_CACHE'), function () {
-                        return SettingModel::pluck('value', 'name')->toArray();
-                    }
-                );
-            }else{
-                $values = SettingModel::pluck('value', 'name')->toArray();
-            }
+            $values = Cache::remember('admin_settings', env('ADMIN_SETTING_CACHE', 0), function () {
+                return SettingModel::pluck('value', 'name')->toArray();
+            });
         } catch (QueryException $e) {
-            return new static($values);
-            // throw new \Exception('配置获取失败、请检查数据库配置');
         }
-
-        return new static($values);
+        return $values;
     }
 }

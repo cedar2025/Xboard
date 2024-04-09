@@ -118,7 +118,7 @@ class TicketController extends Controller
         if (!$ticket) {
             return $this->fail([400, __('Ticket does not exist')]);
         }
-        $ticket->status = 1;
+        $ticket->status = Ticket::STATUS_CLOSED;
         if (!$ticket->save()) {
             return $this->fail([500, __('Close failed')]);
         }

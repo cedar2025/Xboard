@@ -17,17 +17,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class ShadowsocksTidalabController extends Controller
 {
-    public function __construct(Request $request)
-    {
-        $token = $request->input('token');
-        if (empty($token)) {
-            throw new ApiException('token is null');
-        }
-        if ($token !== admin_setting('server_token')) {
-            throw new ApiException('token is error');
-        }
-    }
-
     // 后端获取用户
     public function user(Request $request)
     {
@@ -38,8 +27,7 @@ class ShadowsocksTidalabController extends Controller
             return $this->fail([400,'节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $server->id), time(), 3600);
-        $serverService = new ServerService();
-        $users = $serverService->getAvailableUsers($server->group_id);
+        $users = ServerService::getAvailableUsers($server->group_id);
         $result = [];
         foreach ($users as $user) {
             array_push($result, [

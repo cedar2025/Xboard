@@ -13,24 +13,23 @@ class TelegramController extends Controller
     protected $commands = [];
     protected $telegramService;
 
-    public function __construct(Request $request)
+    public function __construct(TelegramService $telegramService)
     {
-        if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
-            throw new ApiException('access_token is error', 401);
-        }
-
-        $this->telegramService = new TelegramService();
+        $this->telegramService = $telegramService;
     }
 
     public function webhook(Request $request)
     {
+        if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
+            throw new ApiException('access_token is error', 401);
+        }
         $data = json_decode(get_request_content(),true);
         $this->formatMessage($data);
         $this->formatChatJoinRequest($data);
         $this->handle();
     }
 
-    public function handle()
+    private function handle()
     {
         if (!$this->msg) return;
         $msg = $this->msg;
@@ -68,7 +67,7 @@ class TelegramController extends Controller
         }
     }
 
-    public function getBotName()
+    private function getBotName()
     {
         $response = $this->telegramService->getMe();
         return $response->result->username;

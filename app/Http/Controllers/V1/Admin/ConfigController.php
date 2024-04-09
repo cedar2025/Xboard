@@ -4,8 +4,8 @@ namespace App\Http\Controllers\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ConfigSave;
-use App\Jobs\SendEmailJob;
 use App\Models\Setting;
+use App\Services\MailService;
 use App\Services\TelegramService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ class ConfigController extends Controller
 
     public function testSendMail(Request $request)
     {
-        $obj = new SendEmailJob([
+        $mailLog = MailService::sendEmail([
             'email' => $request->user['email'],
             'subject' => 'This is xboard test email',
             'template_name' => 'notify',
@@ -45,7 +45,7 @@ class ConfigController extends Controller
         ]);
         return response([
             'data' => true,
-            'log' => $obj->handle()
+            'log' => $mailLog
         ]);
     }
 

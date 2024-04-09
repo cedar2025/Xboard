@@ -40,7 +40,7 @@ class OrderService
             DB::beginTransaction();
             if ($order->surplus_order_ids) {
                 Order::whereIn('id', $order->surplus_order_ids)->update([
-                    'status' => 4
+                    'status' => Order::STATUS_DISCOUNTED
                 ]);
             }
             switch ((string)$order->period) {
@@ -71,7 +71,7 @@ class OrderService
             if (!$this->user->save()) {
                 throw new \Exception('用户信息保存失败');
             }
-            $order->status = 3;
+            $order->status = Order::STATUS_COMPLETED;
             if (!$order->save()) {
                 throw new \Exception('订单信息保存失败');
             }
@@ -88,10 +88,10 @@ class OrderService
     {
         $order = $this->order;
         if ($order->period === 'reset_price') {
-            $order->type = 4;
+            $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
             if (!(int)admin_setting('plan_change_enable', 1)) throw new ApiException('目前不允许更改订阅，请联系客服或提交工单操作');
-            $order->type = 3;
+            $order->type = Order::TYPE_UPGRADE;
             if ((int)admin_setting('surplus_enable', 1)) $this->getSurplusValue($user, $order);
             if ($order->surplus_amount >= $order->total_amount) {
                 $order->refund_amount = $order->surplus_amount - $order->total_amount;
@@ -100,9 +100,9 @@ class OrderService
                 $order->total_amount = $order->total_amount - $order->surplus_amount;
             }
         } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) { // 用户订阅未过期且购买订阅与当前订阅相同 === 续费
-            $order->type = 2;
+            $order->type = Order::TYPE_RENEWAL;
         } else { // 新购
-            $order->type = 1;
+            $order->type = Order::TYPE_NEW_PURCHASE;
         }
     }
 
@@ -215,8 +215,8 @@ class OrderService
     public function paid(string $callbackNo)
     {
         $order = $this->order;
-        if ($order->status !== 0) return true;
-        $order->status = 1;
+        if ($order->status !== Order::STATUS_PENDING) return true;
+        $order->status = Order::STATUS_PROCESSING;
         $order->paid_at = time();
         $order->callback_no = $callbackNo;
         if (!$order->save()) return false;
@@ -233,7 +233,7 @@ class OrderService
         $order = $this->order;
         try {
             DB::beginTransaction();
-            $order->status = 2;
+            $order->status = Order::STATUS_CANCELLED;
             if (!$order->save()) {
                 throw new \Exception('Failed to save order status.');
             }

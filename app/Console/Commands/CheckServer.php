@@ -46,8 +46,7 @@ class CheckServer extends Command
 
     private function checkOffline()
     {
-        $serverService = new ServerService();
-        $servers = $serverService->getAllServers();
+        $servers = ServerService::getAllServers();
         foreach ($servers as $server) {
             if ($server['parent_id']) continue;
             if ($server['last_check_at'] && (time() - $server['last_check_at']) > 1800) {

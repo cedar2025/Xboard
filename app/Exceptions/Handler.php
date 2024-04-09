@@ -5,10 +5,8 @@ namespace App\Exceptions;
 use App\Helpers\ApiResponse;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Arr;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\View\ViewException;
 use Throwable;
-use Facade\Ignition\Exceptions\ViewException;
-use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {

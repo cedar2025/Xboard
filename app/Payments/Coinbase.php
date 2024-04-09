@@ -1,10 +1,14 @@
 <?php
 
 namespace App\Payments;
+
 use App\Exceptions\ApiException;
 
-class Coinbase {
-    public function __construct($config) {
+class Coinbase
+{
+    protected $config;
+    public function __construct($config)
+    {
         $this->config = $config;
     }
 
@@ -29,7 +33,8 @@ class Coinbase {
         ];
     }
 
-    public function pay($order) {
+    public function pay($order)
+    {
 
         $params = [
             'name' => '订阅套餐',
@@ -50,7 +55,7 @@ class Coinbase {
 
         $ret = @json_decode($ret_raw, true);
 
-        if(empty($ret['data']['hosted_url'])) {
+        if (empty($ret['data']['hosted_url'])) {
             throw new ApiException("error!");
         }
         return [
@@ -59,7 +64,8 @@ class Coinbase {
         ];
     }
 
-    public function notify($params) {
+    public function notify($params)
+    {
 
         $payload = trim(get_request_content());
         $json_param = json_decode($payload, true);
@@ -71,20 +77,20 @@ class Coinbase {
         $computedSignature = \hash_hmac('sha256', $payload, $this->config['coinbase_webhook_key']);
 
         if (!self::hashEqual($signatureHeader, $computedSignature)) {
-            throw new ApiException( 'HMAC signature does not match', 400);
+            throw new ApiException('HMAC signature does not match', 400);
         }
 
         $out_trade_no = $json_param['event']['data']['metadata']['outTradeNo'];
-        $pay_trade_no=$json_param['event']['id'];
+        $pay_trade_no = $json_param['event']['id'];
         return [
             'trade_no' => $out_trade_no,
             'callback_no' => $pay_trade_no
         ];
-
     }
 
 
-    private function _curlPost($url,$params=false){
+    private function _curlPost($url, $params = false)
+    {
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -93,7 +99,9 @@ class Coinbase {
         curl_setopt($ch, CURLOPT_TIMEOUT, 300);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         curl_setopt(
-            $ch, CURLOPT_HTTPHEADER, array('X-CC-Api-Key:' .$this->config['coinbase_api_key'], 'X-CC-Version: 2018-03-22')
+            $ch,
+            CURLOPT_HTTPHEADER,
+            array('X-CC-Api-Key:' . $this->config['coinbase_api_key'], 'X-CC-Version: 2018-03-22')
         );
         $result = curl_exec($ch);
         curl_close($ch);
@@ -124,6 +132,4 @@ class Coinbase {
             return !$ret;
         }
     }
-
 }
-
