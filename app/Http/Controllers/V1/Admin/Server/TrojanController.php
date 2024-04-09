@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\V1\Admin\Server;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ServerTrojanSave;
 use App\Http\Requests\Admin\ServerTrojanUpdate;
 use App\Models\ServerTrojan;
-use App\Services\ServerService;
 use Illuminate\Http\Request;
 
 class TrojanController extends Controller
@@ -74,11 +72,5 @@ class TrojanController extends Controller
         }
         ServerTrojan::create($server->toArray());
         return $this->success(true);
-    }
-    public function viewConfig(Request $request)
-    {
-        $serverService = new ServerService();
-        $config = $serverService->getTrojanConfig($request->input('node_id'), 23333);
-        return $this->success($config);
     }
 }

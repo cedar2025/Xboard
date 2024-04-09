@@ -80,7 +80,7 @@ class TicketController extends Controller
         ]);
         try {
             $ticket = Ticket::findOrFail($request->input('id'));
-            $ticket->status = 1;
+            $ticket->status = Ticket::STATUS_CLOSED;
             $ticket->save();
             return $this->success(true);
         } catch (ModelNotFoundException $e) {
