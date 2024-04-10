@@ -70,6 +70,14 @@ class XboardInstall extends Command
             // 选择是否使用Sqlite
             if (confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
                 $sqliteFile = '.docker/.data/database.sqlite';
+                if (!file_exists(base_path($sqliteFile))) {
+                    // 创建空文件
+                    if (!touch(base_path($sqliteFile))) {
+                        echo "sqlite创建成功: $sqliteFile";
+                    } else {
+                        echo "sqlite创建失败";
+                    }
+                }
                 $envConfig = [
                     'DB_CONNECTION' => 'sqlite',
                     'DB_DATABASE' => $sqliteFile,
@@ -192,32 +200,27 @@ class XboardInstall extends Command
         return $user->save();
     }
 
+    private function set_env_var($key, $value)
+    {
+        $value = !strpos($value, ' ') ? $value : '"' . $value . '"';
+        $key = strtoupper($key);
+
+        $envPath = app()->environmentFilePath();
+        $contents = file_get_contents($envPath);
+
+        if (preg_match("/^{$key}=[^\r\n]*/m", $contents, $matches)) {
+            $contents = str_replace($matches[0], "{$key}={$value}", $contents);
+        } else {
+            $contents .= "\n{$key}={$value}\n";
+        }
+
+        return file_put_contents($envPath, $contents) !== false;
+    }
+
     private function saveToEnv($data = [])
     {
         foreach ($data as $key => $value) {
-            function ($key, $value) {
-                if (!is_bool(strpos($value, ' '))) {
-                    $value = '"' . $value . '"';
-                }
-                $key = strtoupper($key);
-
-                $envPath = app()->environmentFilePath();
-                $contents = file_get_contents($envPath);
-
-                preg_match("/^{$key}=[^\r\n]*/m", $contents, $matches);
-
-                $oldValue = count($matches) ? $matches[0] : '';
-
-                if ($oldValue) {
-                    $contents = str_replace("{$oldValue}", "{$key}={$value}", $contents);
-                } else {
-                    $contents = $contents . "\n{$key}={$value}\n";
-                }
-
-                $file = fopen($envPath, 'w');
-                fwrite($file, $contents);
-                return fclose($file);
-            };
+            self::set_env_var($key, $value);
         }
         return true;
     }
