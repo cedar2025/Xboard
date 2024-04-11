@@ -6,12 +6,13 @@ RUN install-php-extensions pcntl bcmath
 
 RUN apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git
 
+RUN addgroup -S -g 1001 www && adduser -S -G www -u 1001 www
 #复制项目文件以及配置文件
 WORKDIR /www
 COPY .docker /
 COPY . /www
 RUN composer install --optimize-autoloader --no-cache --no-dev \
 && php artisan storage:link \
-&& chmod -R 777 ./
+&& chown -R www:www /www
 
 CMD [ "/usr/bin/supervisord", "--nodaemon", "-c" ,"/etc/supervisor/supervisord.conf" ]
