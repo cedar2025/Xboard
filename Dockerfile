@@ -12,6 +12,6 @@ COPY . /www
 RUN composer install --optimize-autoloader --no-cache --no-dev \
 && php artisan storage:link \
 && chown -R www:www /www \
-&& chmod -R 777 /www
+&& chmod -R 775 /www
 
-CMD [ "/usr/bin/supervisord", "--nodaemon", "-c" ,"/etc/supervisor/supervisord.conf" ]
+CMD ["sh", "-c", "chown -R www:www /www && chmod -R 775 /www && /usr/bin/supervisord --nodaemon -c /etc/supervisor/supervisord.conf"]
