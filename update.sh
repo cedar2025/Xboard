@@ -17,6 +17,6 @@ wget https://github.com/composer/composer/releases/latest/download/composer.phar
 php composer.phar update -vvv
 php artisan xboard:update
 
-if [ -f "/etc/init.d/bt" ]; then
-  chown -R www $(pwd);
+if [ -f "/etc/init.d/bt" ] || [ "$docker" ]; then
+  chown -R www:www $(pwd);
 fi
