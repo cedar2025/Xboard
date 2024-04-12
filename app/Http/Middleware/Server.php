@@ -16,7 +16,7 @@ class Server
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, $node_type = null)
     {
         // alias
         $aliasTypes = [
@@ -27,6 +27,7 @@ class Server
             'token' => ['required', 'string', 'in:' . admin_setting('server_token')],
             'node_id' => 'required',
             'node_type' => [
+                'nullable',
                 'regex:/^(?i)(hysteria|hysteria2|vless|trojan|vmess|v2ray|tuic|shadowsocks|shadowsocks-plugin)$/',
                 function ($attribute, $value, $fail) use ($aliasTypes, $request) {
                     $request->merge([$attribute => strtolower(isset ($aliasTypes[$value]) ? $aliasTypes[$value] : $value)]);
@@ -36,7 +37,7 @@ class Server
             'token.in' => 'Token is error!',
             'node_type.regex' => 'node_type is error!'
         ]);
-        $nodeInfo = ServerService::getServer($request->input('node_id'), $request->input('node_type'));
+        $nodeInfo = ServerService::getServer($request->input('node_id'), $request->input('node_type') ?? $node_type);
         if (!$nodeInfo)
             throw new ApiException('server is not exist!');
         $request->merge(['node_info' => $nodeInfo]);
