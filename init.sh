@@ -5,6 +5,6 @@ wget https://github.com/composer/composer/releases/latest/download/composer.phar
 php composer.phar install -vvv
 php artisan xboard:install
 
-if [ -f "/etc/init.d/bt" ]; then
-  chown -R www $(pwd);
+if [ -f "/etc/init.d/bt" ] || [ "$docker" ]; then
+  chown -R www:www $(pwd);
 fi
