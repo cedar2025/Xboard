@@ -1,0 +1,23 @@
+diff --git a/src/Http.php b/src/Http.php
+index 6c6cb16..f1a7f3f 100644
+--- a/src/Http.php
++++ b/src/Http.php
+@@ -680,7 +680,7 @@
+         }
+ 
+         // Parse $_POST.
+-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['CONTENT_TYPE']) {
++        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+             switch ($_SERVER['CONTENT_TYPE']) {
+                 case 'multipart/form-data':
+                     static::parseUploadFiles($http_body, $http_post_boundary);
+@@ -691,6 +691,8 @@
+                 case 'application/x-www-form-urlencoded':
+                     \parse_str($http_body, $_POST);
+                     break;
++                default: 
++                    $_POST = \json_decode($http_body, true) ?? [];
+             }
+-        }
++        } 
+ }

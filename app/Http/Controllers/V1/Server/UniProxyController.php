@@ -9,6 +9,7 @@ use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Validator;
 
 class UniProxyController extends Controller
 {
@@ -33,10 +34,11 @@ class UniProxyController extends Controller
     // 后端提交数据
     public function push(Request $request)
     {
-        $data = $request->validate([
-            "*.0" => 'integer',
-            "*.1" => 'integer'
-        ]);
+        $res = json_decode(get_request_content(), true);
+        $data = Validator::make($res, [
+            '*.0' => 'integer',
+            '*.1' => 'integer',
+        ])->validate();
 
         $nodeType = $request->input('node_type');
         $nodeId = $request->input('node_id');
