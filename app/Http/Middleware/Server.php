@@ -24,7 +24,14 @@ class Server
             'hysteria2' => 'hysteria'
         ];
         $request->validate([
-            'token' => ['required', 'string', 'in:' . admin_setting('server_token')],
+            'token' => [
+                "string",
+                function ($attribute, $value, $fail) {
+                    if ($value !== admin_setting('server_token')) {
+                        $fail('The ' . $attribute . ' is invalid.');
+                    }
+                },
+            ],
             'node_id' => 'required',
             'node_type' => [
                 'nullable',
@@ -34,7 +41,6 @@ class Server
                 },
             ]
         ], [
-            'token.in' => 'Token is error!',
             'node_type.regex' => 'node_type is error!'
         ]);
         $nodeInfo = ServerService::getServer($request->input('node_id'), $request->input('node_type') ?? $node_type);
