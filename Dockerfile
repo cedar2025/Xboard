@@ -14,4 +14,4 @@ RUN composer install --optimize-autoloader --no-cache --no-dev \
 && chown -R www:www /www \
 && chmod -R 775 /www
 
-CMD ["sh", "-c", "chown -R www:www /www && chmod -R 775 /www && /usr/bin/supervisord --nodaemon -c /etc/supervisor/supervisord.conf"]
+CMD chown -R www:www /www ; chmod -R 775 /www ; /usr/bin/supervisord --nodaemon -c /etc/supervisor/supervisord.conf
