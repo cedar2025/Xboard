@@ -63,7 +63,7 @@ vi docker-compose.yaml
 > 修改docker-compose.yaml 当中image后面的版本号为更新前的版本号
 2. 启动
 ```
-dockcer compose up -d
+docker compose up -d
 ```
 
 ### 注意
