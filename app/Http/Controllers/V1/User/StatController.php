@@ -24,7 +24,6 @@ class StatController extends Controller
         $recordAt = strtotime(date('Y-m-d'));
         $statService = new StatisticalService();
         $statService->setStartAt($recordAt);
-        $statService->setUserStats();
         $todayTraffics = $statService->getStatUserByUserID($request->user['id']);
         if (count($todayTraffics) > 0) {
             $todayTraffics = collect($todayTraffics)->map(function ($todayTraffic) {

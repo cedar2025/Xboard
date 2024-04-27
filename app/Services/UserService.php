@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
-use App\Jobs\TrafficFetchJob;
+use App\Jobs\BatchTrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use Illuminate\Support\Facades\Bus;
 
 class UserService
 {
@@ -21,10 +22,10 @@ class UserService
         $day = date('d', $expiredAt);
         $today = date('d');
         $lastDay = date('d', strtotime('last day of +0 months'));
-        if ((int)$day >= (int)$today && (int)$day >= (int)$lastDay) {
+        if ((int) $day >= (int) $today && (int) $day >= (int) $lastDay) {
             return $lastDay - $today;
         }
-        if ((int)$day >= (int)$today) {
+        if ((int) $day >= (int) $today) {
             return $day - $today;
         }
 
@@ -34,7 +35,7 @@ class UserService
     private function calcResetDayByYearFirstDay(): int
     {
         $nextYear = strtotime(date("Y-01-01", strtotime('+1 year')));
-        return (int)(($nextYear - time()) / 86400);
+        return (int) (($nextYear - time()) / 86400);
     }
 
     private function calcResetDayByYearExpiredAt(int $expiredAt): int
@@ -43,9 +44,9 @@ class UserService
         $nowYear = strtotime(date("Y-{$md}"));
         $nextYear = strtotime('+1 year', $nowYear);
         if ($nowYear > time()) {
-            return (int)(($nowYear - time()) / 86400);
+            return (int) (($nowYear - time()) / 86400);
         }
-        return (int)(($nextYear - time()) / 86400);
+        return (int) (($nextYear - time()) / 86400);
     }
 
     public function getResetDay(User $user)
@@ -53,13 +54,15 @@ class UserService
         if (!isset($user->plan)) {
             $user->plan = Plan::find($user->plan_id);
         }
-        if ($user->expired_at <= time() || $user->expired_at === NULL) return null;
+        if ($user->expired_at <= time() || $user->expired_at === NULL)
+            return null;
         // if reset method is not reset
-        if ($user->plan->reset_traffic_method === 2) return null;
+        if ($user->plan->reset_traffic_method === 2)
+            return null;
         switch (true) {
             case ($user->plan->reset_traffic_method === NULL): {
                 $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
-                switch ((int)$resetTrafficMethod) {
+                switch ((int) $resetTrafficMethod) {
                     // month first day
                     case 0:
                         return $this->calcResetDayByMonthFirstDay();
@@ -123,9 +126,9 @@ class UserService
                 ->orWhere('expired_at', 0);
         })
             ->where(function ($query) {
-            $query->where('plan_id', NULL)
-                ->orWhere('transfer_enable', 0);
-        })
+                $query->where('plan_id', NULL)
+                    ->orWhere('transfer_enable', 0);
+            })
             ->get();
     }
 
@@ -139,7 +142,7 @@ class UserService
         return User::all();
     }
 
-    public function addBalance(int $userId, int $balance):bool
+    public function addBalance(int $userId, int $balance): bool
     {
         $user = User::lockForUpdate()->find($userId);
         if (!$user) {
@@ -155,7 +158,7 @@ class UserService
         return true;
     }
 
-    public function isNotCompleteOrderByUserId(int $userId):bool
+    public function isNotCompleteOrderByUserId(int $userId): bool
     {
         $order = Order::whereIn('status', [0, 1])
             ->where('user_id', $userId)
@@ -168,13 +171,24 @@ class UserService
 
     public function trafficFetch(array $server, string $protocol, array $data, string $nodeIp = null)
     {
-        // 获取子节点
-        $childServer = ($server['parent_id'] == null && !blank($nodeIp)) 
-        ? ServerService::getChildServer($server['id'], $protocol, $nodeIp) 
-        : null;
+
         $timestamp = strtotime(date('Y-m-d'));
-        collect($data)->chunk(1000)->each(function($chunk) use ($timestamp,$server,$protocol, $childServer){
-            TrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $childServer);
+        $statService = new StatisticalService();
+        $statService->setStartAt($timestamp);
+        // 获取子节点
+        $childServer = ($server['parent_id'] == null && $nodeIp) ? ServerService::getChildServer($server['id'], $protocol, $nodeIp) : null;
+        foreach ($data as $uid => $v) {
+            $u = $v[0];
+            $d = $v[1];
+            $targetServer = $childServer ?? $server;
+            $statService->statUser($targetServer['rate'], $uid, $u, $d); //如果存在子节点则使用子节点的倍率
+            if (!blank($childServer)) { //如果存在子节点，则给子节点计算流量
+                $statService->statServer($childServer['id'], $protocol, $u, $d);
+            }
+            $statService->statServer($server['id'], $protocol, $u, $d);
+        }
+        collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol, $childServer) {
+            BatchTrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $childServer);
         });
     }
 }

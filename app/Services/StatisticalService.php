@@ -7,44 +7,41 @@ use App\Models\Stat;
 use App\Models\StatServer;
 use App\Models\StatUser;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
-class StatisticalService {
+class StatisticalService
+{
     protected $userStats;
     protected $startAt;
     protected $endAt;
     protected $serverStats;
+    protected $statServerKey;
+    protected $statUserKey;
+    protected $redis;
 
     public function __construct()
     {
         ini_set('memory_limit', -1);
+        $this->redis = Redis::connection();
+
     }
 
-    public function setStartAt($timestamp) {
+    public function setStartAt($timestamp)
+    {
         $this->startAt = $timestamp;
+        $this->statServerKey = "stat_server_{$this->startAt}";
+        $this->statUserKey = "stat_user_{$this->startAt}";
     }
 
-    public function setEndAt($timestamp) {
+    public function setEndAt($timestamp)
+    {
         $this->endAt = $timestamp;
     }
 
-    public function setServerStats() {
-        $this->serverStats = Cache::get("stat_server_{$this->startAt}");
-        $this->serverStats = json_decode($this->serverStats, true) ?? [];
-        if (!is_array($this->serverStats)) {
-            $this->serverStats = [];
-        }
-    }
-
-    public function setUserStats() {
-        $this->userStats = Cache::get("stat_user_{$this->startAt}");
-        $this->userStats = json_decode($this->userStats, true) ?? [];
-        if (!is_array($this->userStats)) {
-            $this->userStats = [];
-        }
-    }
-
+    /**
+     * 生成统计报表
+     */
     public function generateStatData(): array
     {
         $startAt = $this->startAt;
@@ -80,97 +77,120 @@ class StatisticalService {
             ->whereNotNull('invite_user_id')
             ->count();
         $data['transfer_used_total'] = StatServer::where('created_at', '>=', $startAt)
-                ->where('created_at', '<', $endAt)
-                ->select(DB::raw('SUM(u) + SUM(d) as total'))
-                ->value('total') ?? 0;
+            ->where('created_at', '<', $endAt)
+            ->select(DB::raw('SUM(u) + SUM(d) as total'))
+            ->value('total') ?? 0;
         return $data;
     }
 
+    /**
+     * 往服务器报表缓存正追加流量使用数据
+     */
     public function statServer($serverId, $serverType, $u, $d)
     {
-        $this->serverStats[$serverType] = $this->serverStats[$serverType] ?? [];
-        if (isset($this->serverStats[$serverType][$serverId])) {
-            $this->serverStats[$serverType][$serverId][0] += $u;
-            $this->serverStats[$serverType][$serverId][1] += $d;
-        } else {
-            $this->serverStats[$serverType][$serverId] = [$u, $d];
-        }
-        Cache::set("stat_server_{$this->startAt}", json_encode($this->serverStats));
+        $u_menber = "{$serverType}_{$serverId}_u"; //储存上传流量的集合成员
+        $d_menber = "{$serverType}_{$serverId}_d"; //储存下载流量的集合成员
+        $this->redis->zincrby($this->statServerKey, $u, $u_menber);
+        $this->redis->zincrby($this->statServerKey, $d, $d_menber);
     }
 
+    /**
+     * 追加用户使用流量
+     */
     public function statUser($rate, $userId, $u, $d)
     {
-        $this->userStats[$rate] = $this->userStats[$rate] ?? [];
-        if (isset($this->userStats[$rate][$userId])) {
-            $this->userStats[$rate][$userId][0] += $u;
-            $this->userStats[$rate][$userId][1] += $d;
-        } else {
-            $this->userStats[$rate][$userId] = [$u, $d];
-        }
-        Cache::set("stat_user_{$this->startAt}", json_encode($this->userStats));
+        $u_menber = "{$rate}_{$userId}_u"; //储存上传流量的集合成员
+        $d_menber = "{$rate}_{$userId}_d"; //储存下载流量的集合成员
+        $this->redis->zincrby($this->statUserKey, $u, $u_menber);
+        $this->redis->zincrby($this->statUserKey, $d, $d_menber);
     }
 
+    /**
+     * 获取指定用户的流量使用情况
+     */
     public function getStatUserByUserID($userId): array
     {
+
         $stats = [];
-        foreach (array_keys($this->userStats) as $rate) {
-            if (!isset($this->userStats[$rate][$userId])) continue;
-            $stats[] = [
+        $statsUser = $this->redis->zrange($this->statUserKey, 0, -1, true);
+        foreach ($statsUser as $member => $value) {
+            list($rate, $uid, $type) = explode('_', $member);
+            if ($uid !== $userId)
+                continue;
+            $key = "{$rate}_{$uid}";
+            $stats[$key] = $stats[$key] ?? [
                 'record_at' => $this->startAt,
-                'server_rate' => $rate,
-                'u' => $this->userStats[$rate][$userId][0],
-                'd' => $this->userStats[$rate][$userId][1],
-                'user_id' => $userId
+                'server_rate' => floatval($rate),
+                'u' => 0,
+                'd' => 0,
+                'user_id' => intval($userId),
             ];
+            $stats[$key][$type] += $value;
         }
-        return $stats;
+        return array_values($stats);
     }
 
+    /**
+     * 获取缓存中的用户报表
+     */
     public function getStatUser()
     {
         $stats = [];
-        foreach ($this->userStats as $k => $v) {
-            foreach (array_keys($v) as $userId) {
-                if (isset($v[$userId])) {
-                    $stats[] = [
-                        'server_rate' => $k,
-                        'u' => $v[$userId][0],
-                        'd' => $v[$userId][1],
-                        'user_id' => $userId
-                    ];
-                }
-            }
+        $statsUser = $this->redis->zrange($this->statUserKey, 0, -1, true);
+        foreach ($statsUser as $member => $value) {
+            list($rate, $uid, $type) = explode('_', $member);
+            $key = "{$rate}_{$uid}";
+            $stats[$key] = $stats[$key] ?? [
+                'record_at' => $this->startAt,
+                'server_rate' => $rate,
+                'u' => 0,
+                'd' => 0,
+                'user_id' => intval($uid),
+            ];
+            $stats[$key][$type] += $value;
         }
-        return $stats;
+        return array_values($stats);
     }
 
 
+    /**
+     * 获取缓存中的服务器爆表
+     */
     public function getStatServer()
     {
         $stats = [];
-        foreach ($this->serverStats as $serverType => $v) {
-            foreach (array_keys($v) as $serverId) {
-                if (isset($v[$serverId])) {
-                    $stats[] = [
-                        'server_id' => $serverId,
-                        'server_type' => $serverType,
-                        'u' => $v[$serverId][0],
-                        'd' => $v[$serverId][1],
-                    ];
-                }
+        $statsServer = $this->redis->zrange($this->statServerKey, 0, -1, true);
+        foreach ($statsServer as $member => $value) {
+            list($serverType, $serverId, $type) = explode('_', $member);
+            $key = "{$serverType}_{$serverId}";
+            if (!isset($stats[$key])) {
+                $stats[$key] = [
+                    'server_id' => intval($serverId),
+                    'server_type' => $serverType,
+                    'u' => 0,
+                    'd' => 0,
+                ];
             }
+            $stats[$key][$type] += $value;
         }
-        return $stats;
+        return array_values($stats);
+
     }
 
+    /**
+     * 清除用户报表缓存数据
+     */
     public function clearStatUser()
     {
-        Cache::forget("stat_user_{$this->startAt}");
+        $this->redis->del($this->statUserKey);
     }
 
+    /**
+     * 清除服务器报表缓存数据
+     */
     public function clearStatServer()
     {
-        Cache::forget("stat_server_{$this->startAt}");
+        $this->redis->del($this->statServerKey);
     }
 
     public function getStatRecord($type)
@@ -236,7 +256,8 @@ class StatisticalService {
 
         $users = User::whereIn('id', $stats->pluck('invite_user_id')->toArray())->get()->keyBy('id');
         foreach ($stats as $k => $v) {
-            if (!isset($users[$v['invite_user_id']])) continue;
+            if (!isset($users[$v['invite_user_id']]))
+                continue;
             $stats[$k]['email'] = $users[$v['invite_user_id']]['email'];
         }
         return $stats;
@@ -258,7 +279,8 @@ class StatisticalService {
             ->get();
         $users = User::whereIn('id', $stats->pluck('user_id')->toArray())->get()->keyBy('id');
         foreach ($stats as $k => $v) {
-            if (!isset($users[$v['user_id']])) continue;
+            if (!isset($users[$v['user_id']]))
+                continue;
             $stats[$k]['email'] = $users[$v['user_id']]['email'];
         }
         return $stats;

@@ -35,11 +35,9 @@ class UniProxyController extends Controller
     public function push(Request $request)
     {
         $res = json_decode(get_request_content(), true);
-        $data = Validator::make($res, [
-            '*.0' => 'integer',
-            '*.1' => 'integer',
-        ])->validate();
-
+        $data = array_filter($res, function ($item) {
+            return is_array($item) && count($item) === 2 && is_numeric($item[0]) && is_numeric($item[1]);
+        });
         $nodeType = $request->input('node_type');
         $nodeId = $request->input('node_id');
         // 增加单节点多服务器统计在线人数
