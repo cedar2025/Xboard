@@ -165,7 +165,7 @@ class OrderService
     {
         $lastOneTimeOrder = Order::where('user_id', $user->id)
             ->where('period', 'onetime_price')
-            ->where('status', 3)
+            ->where('status', Order::STATUS_COMPLETED)
             ->orderBy('id', 'DESC')
             ->first();
         if (!$lastOneTimeOrder) return;
@@ -176,7 +176,7 @@ class OrderService
         $trafficUnitPrice = $paidTotalAmount / $nowUserTraffic;
         $notUsedTraffic = $nowUserTraffic - (($user->u + $user->d) / 1073741824);
         $result = $trafficUnitPrice * $notUsedTraffic;
-        $orderModel = Order::where('user_id', $user->id)->where('period', '!=', 'reset_price')->where('status', 3);
+        $orderModel = Order::where('user_id', $user->id)->where('period', '!=', 'reset_price')->where('status', Order::STATUS_COMPLETED);
         $order->surplus_amount = $result > 0 ? $result : 0;
         $order->surplus_order_ids = array_column($orderModel->get()->toArray(), 'id');
     }
@@ -184,9 +184,8 @@ class OrderService
     private function getSurplusValueByPeriod(User $user, Order $order)
     {
         $orders = Order::where('user_id', $user->id)
-            ->where('period', '!=', 'reset_price')
-            ->where('period', '!=', 'onetime_price')
-            ->where('status', 3)
+            ->whereNotIn('period', ['reset_price', 'onetime_price'])
+            ->where('status', Order::STATUS_COMPLETED)
             ->get()
             ->toArray();
         if (!$orders) return;

@@ -28,21 +28,21 @@ class Kernel extends ConsoleKernel
     {
         Cache::put(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null), time());
         // v2board
-        $schedule->command('xboard:statistics')->dailyAt('0:10');
+        $schedule->command('xboard:statistics')->dailyAt('0:10')->onOneServer();
         // check
-        $schedule->command('check:order')->everyMinute();
-        $schedule->command('check:commission')->everyMinute();
-        $schedule->command('check:ticket')->everyMinute();
+        $schedule->command('check:order')->everyMinute()->onOneServer();
+        $schedule->command('check:commission')->everyMinute()->onOneServer();
+        $schedule->command('check:ticket')->everyMinute()->onOneServer();
         // reset
-        $schedule->command('reset:traffic')->daily();
-        $schedule->command('reset:log')->daily();
+        $schedule->command('reset:traffic')->daily()->onOneServer();
+        $schedule->command('reset:log')->daily()->onOneServer();
         // send
-        $schedule->command('send:remindMail')->dailyAt('11:30');
+        $schedule->command('send:remindMail')->dailyAt('11:30')->onOneServer();
         // horizon metrics
-        $schedule->command('horizon:snapshot')->everyFiveMinutes();
+        $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
         // backup Timing
-        if(env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)){
-            $schedule->command('backup:database',['true'])->daily();
+        if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
+            $schedule->command('backup:database', ['true'])->daily()->onOneServer();
         }
     }
 
