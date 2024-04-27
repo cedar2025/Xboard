@@ -58,7 +58,6 @@ class XboardStatistics extends Command
             $recordAt = strtotime('-1 day', strtotime(date('Y-m-d')));
             $statService = new StatisticalService();
             $statService->setStartAt($recordAt);
-            $statService->setServerStats();
             $stats = $statService->getStatServer();
             foreach ($stats as $stat) {
                 if (!StatServer::insert([
@@ -90,7 +89,6 @@ class XboardStatistics extends Command
             $recordAt = strtotime('-1 day', strtotime(date('Y-m-d')));
             $statService = new StatisticalService();
             $statService->setStartAt($recordAt);
-            $statService->setUserStats();
             $stats = $statService->getStatUser();
             foreach ($stats as $stat) {
                 if (!StatUser::insert([
