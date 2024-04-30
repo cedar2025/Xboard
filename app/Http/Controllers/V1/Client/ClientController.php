@@ -84,7 +84,7 @@ class ClientController extends Controller
                     $rejectFlag = true;
                     foreach($filterArr as $filter){
                         if(stripos($server['name'],$filter) !== false 
-                        || in_array($filter, $server['tags'])
+                        || in_array($filter, $server['tags'] ?? [])
                         ) $rejectFlag = false;
                     }
                     if($rejectFlag) return true;
