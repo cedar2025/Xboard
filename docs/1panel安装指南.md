@@ -89,7 +89,7 @@
 4. 执行以下命令安装 Xboard：
 
     ```
-    docker compose run -it --rm xboard sh init.sh
+    docker compose run -it --rm xboard php artisan xboard:install
     ```
 
 5. 根据提示输入上述创建的数据库账号密码，选择使用内置 redis 完成安装。  
