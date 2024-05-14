@@ -272,7 +272,7 @@ class Shadowrocket
                     $params["obfsParam"] =$server['server_key'];
                 }
                 if($server['insecure']) $params['insecure'] = $server['insecure'];
-                if($server['ports']) $params['mport'] = $server['ports'];
+                if(isset($server['ports'])) $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
                 $uri = "hysteria://{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";
@@ -285,7 +285,7 @@ class Shadowrocket
                 ];
                 if($server['is_obfs']) $params['obfs-password'] = $server['server_key'];
                 if($server['insecure']) $params['insecure'] = $server['insecure'];
-                if($server['ports']) $params['mport'] = $server['ports'];
+                if(isset($server['ports'])) $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
                 $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";
