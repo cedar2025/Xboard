@@ -2,16 +2,12 @@
     "dns": {
         "rules": [
             {
-                "outbound": [
-                    "any"
-                ],
+                "outbound": ["any"],
                 "server": "local"
             },
             {
-                "disable_cache": true,
-                "geosite": [
-                    "category-ads-all"
-                ],
+                "disable_cache": false,
+                "geosite": ["category-ads-all"],
                 "server": "block"
             },
             {
@@ -87,6 +83,20 @@
         }
     ],
     "outbounds": [
+        {
+            "tag": "节点选择",
+            "type": "selector",
+            "default": "自动选择",
+            "outbounds": ["自动选择"]
+        },
+        { "tag": "direct", "type": "direct" },
+        { "tag": "block", "type": "block" },
+        { "tag": "dns-out", "type": "dns" },
+        {
+            "tag": "自动选择",
+            "type": "urltest",
+            "outbounds": []
+        }
     ],
     "route": {
         "auto_detect_interface": true,
@@ -108,10 +118,7 @@
                 "outbound": "节点选择"
             },
             {
-                "geoip": [
-                    "cn",
-                    "private"
-                ],
+                "geoip": ["cn", "private"],
                 "outbound": "direct"
             },
             {
