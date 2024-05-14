@@ -44,7 +44,8 @@ class ClientController extends Controller
             'ClashX Meta' => '1.3.5',
             'Hiddify' => '0.1.0',
             'loon' => '637',
-            'v2rayN' => '6.31'
+            'v2rayN' => '6.31',
+            'surge' => '2398'
         ];
         foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
             if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {

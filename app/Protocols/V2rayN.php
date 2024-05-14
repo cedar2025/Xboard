@@ -208,6 +208,10 @@ class V2rayN
         $params = [];
         if ($server['server_name']) $params['sni'] = $server['server_name'];
         $params['insecure'] = $server['insecure'] ? 1 : 0;
+        if($server['is_obfs']) {
+            $params['obfs'] = 'salamander';
+            $params['obfs-password'] = $server['server_key'];
+        }
         $query = http_build_query($params);
         if ($server['version'] == 2) {
             $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
