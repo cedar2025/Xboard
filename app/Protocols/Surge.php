@@ -52,6 +52,12 @@ class Surge
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
+            if ($item['type'] === 'hysteria') {
+                // [Proxy]
+                $proxies .= self::buildHysteria($user['uuid'], $item);
+                // [Proxy Group]
+                $proxyGroup .= $item['name'] . ', ';
+            }
         }
 
         $defaultConfig = base_path() . '/resources/rules/default.surge.conf';
@@ -155,6 +161,29 @@ class Surge
         if (!empty($server['allow_insecure'])) {
             array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    //参考文档: https://manual.nssurge.com/policy/proxy.html
+    public static function buildHysteria($password, $server)
+    {
+        if($server['version'] != 2) return '';
+        $config = [
+            "{$server['name']}=hysteria2",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+            "download-bandwidth={$server['up_mbps']}",
+            $server['server_name'] ? "sni={$server['server_name']}" : "",
+            // 'tfo=true', 
+            'udp-relay=true'
+        ];
+        if ($server['insecure']) {
+            $config[] = $server['insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+        }    
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
