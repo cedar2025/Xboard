@@ -24,9 +24,12 @@ class Stash
         $appName = admin_setting('app_name', 'XBoard');
         // 暂时使用clash配置文件，后续根据Stash更新情况更新
         $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
-        $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
-        if (\File::exists($customConfig)) {
-            $config = Yaml::parseFile($customConfig);
+        $customClashConfig = base_path() . '/resources/rules/custom.clash.yaml';
+        $customStashConfig = base_path() . '/resources/rules/custom.stash.yaml';
+        if (\File::exists($customStashConfig)) {
+            $config = Yaml::parseFile($customStashConfig);
+        } elseif (\File::exists($customClashConfig)) {
+            $config = Yaml::parseFile($customClashConfig);
         } else {
             $config = Yaml::parseFile($defaultConfig);
         }
@@ -296,6 +299,7 @@ class Stash
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
+                if(isset($server['ports'])) $array['ports'] = $server['ports'];
                 break;
         }
         return $array;
