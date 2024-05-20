@@ -47,6 +47,6 @@ class ExportV2Log extends Command
         }
 
         fclose($handle);
-        $this->info("Logs exported to $fileName");
+        $this->info("日志成功导出到：  ". storage_path("logs/$fileName"));
     }
 }
