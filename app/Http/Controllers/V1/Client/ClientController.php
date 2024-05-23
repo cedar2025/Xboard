@@ -31,9 +31,7 @@ class ClientController extends Controller
 
         preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches);
         $version = $matches[1]??null;
-        
-        $supportHy2 = false;
-        $minSupportHy2ClinetVersionMap = [
+        $supportedClientVersions = [
             'NekoBox' => '1.2.7',
             'sing-box' => '1.5.0',
             'stash' => '2.5.0',
@@ -47,14 +45,12 @@ class ClientController extends Controller
             'v2rayN' => '6.31',
             'surge' => '2398'
         ];
-        foreach($minSupportHy2ClinetVersionMap as $client => $minVersion){
-            if (stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) {
-                $supportHy2 = true;
-                break; // 如果已经找到支持的客户端，提前退出循环
-            }
-        }
-        if(config('app.debug')){
-            Log::channel('daily')->info($flag);
+        $supportHy2 = true;
+        if ($version) {
+            $supportHy2 = collect($supportedClientVersions)
+                ->contains(function ($minVersion, $client) use ($flag, $version) {
+                    return stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion);
+                });
         }
         $user = $request->user;
         // account not expired and is not banned.
