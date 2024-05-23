@@ -23,6 +23,7 @@ URL=https://www.aapanel.com/script/install_6.0_en.sh && if [ -f /usr/bin/curl ];
 - swoole4
 - readline
 - event
+- inotify
 
 4. 解除被禁止函数
 > aaPanel 面板 > App Store > 找到PHP 8.1点击Setting > Disabled functions 将以下函数从列表中删除
