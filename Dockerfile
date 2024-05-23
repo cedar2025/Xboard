@@ -2,7 +2,7 @@ FROM phpswoole/swoole:php8.1-alpine
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions pcntl bcmath \ 
+RUN install-php-extensions pcntl bcmath inotify \ 
 && apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git patch \
 && addgroup -S -g 1000 www && adduser -S -G www -u 1000 www 
 #复制项目文件以及配置文件

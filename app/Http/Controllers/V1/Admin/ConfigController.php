@@ -188,7 +188,10 @@ class ConfigController extends Controller
                 );
             }
         }
-        
+        // 如果是workerman环境，则触发reload
+        if(isset(get_defined_constants(true)['user']['Workerman'])){
+            posix_kill(posix_getppid(), SIGUSR1);
+        }
         Cache::forget('admin_settings');
         // \Artisan::call('horizon:terminate'); //重启队列使配置生效
         return $this->success(true);
