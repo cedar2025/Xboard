@@ -27,7 +27,7 @@ class AddColumnVersionAndIsObfsToServerHysteriaTable extends Migration
     public function down()
     {
         Schema::table('v2_server_hysteria', function (Blueprint $table) {
-            $table->dropColumn('alversionpn','is_obfs');
+            $table->dropColumn('version','is_obfs');
         });
     }
 }
