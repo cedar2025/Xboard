@@ -22,7 +22,7 @@ class QuantumultX
         $uri = '';
         foreach ($servers as $item) {
             if ($item['type'] === 'shadowsocks') {
-                $uri .= self::buildShadowsocks($user['uuid'], $item);
+                $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
                 $uri .= self::buildVmess($user['uuid'], $item);

@@ -30,7 +30,7 @@ class Loon
                     'chacha20-ietf-poly1305'
                 ])
             ) {
-                $uri .= self::buildShadowsocks($user['uuid'], $item);
+                $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
                 $uri .= self::buildVmess($user['uuid'], $item);

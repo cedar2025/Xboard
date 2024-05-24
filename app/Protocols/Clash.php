@@ -47,7 +47,7 @@ class Clash
                     'chacha20-ietf-poly1305'
                 ])
             ) {
-                array_push($proxy, self::buildShadowsocks($user['uuid'], $item));
+                array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'vmess') {
