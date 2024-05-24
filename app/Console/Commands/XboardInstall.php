@@ -45,7 +45,6 @@ class XboardInstall extends Command
     public function handle()
     {
         try {
-            // \Artisan::call('config:clear');
             $isDocker = env('docker', false);
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
@@ -73,9 +72,7 @@ class XboardInstall extends Command
                 if (!file_exists(base_path($sqliteFile))) {
                     // 创建空文件
                     if (!touch(base_path($sqliteFile))) {
-                        echo "sqlite创建成功: $sqliteFile";
-                    } else {
-                        echo "sqlite创建失败";
+                        $this->info("sqlite创建成功: $sqliteFile");
                     }
                 }
                 $envConfig = [
@@ -85,6 +82,24 @@ class XboardInstall extends Command
                     'DB_USERNAME' => '',
                     'DB_PASSWORD' => '',
                 ];
+                try {
+                    \Config::set("database.default", 'sqlite');
+                    \Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
+                    \DB::purge('sqlite');
+                    \DB::connection('sqlite')->getPdo();
+                    if (!blank(\DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
+                        if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '退出安装')) {
+                            $this->info('正在清空数据库请稍等');
+                            $this->call('db:wipe', ['--force' => true]);
+                            $this->info('数据库清空完成');
+                        } else {
+                            return;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // 连接失败，输出错误消息
+                    $this->error("数据库连接失败：" . $e->getMessage());
+                }
             } else {
                 $isMysqlValid = false;
                 while (!$isMysqlValid) {
@@ -93,10 +108,11 @@ class XboardInstall extends Command
                         'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
                         'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
                         'DB_DATABASE' => text(label: '请输入数据库名', default: 'xboard', required: true),
-                        'DB_USERNAME' => text(label: '请输入数据库用户名', required: true),
+                        'DB_USERNAME' => text(label: '请输入数据库用户名', default: 'root', required: true),
                         'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
                     ];
                     try {
+                        \Config::set("database.default", 'mysql');
                         \Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
                         \Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
                         \Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
@@ -105,6 +121,15 @@ class XboardInstall extends Command
                         \DB::purge('mysql');
                         \DB::connection('mysql')->getPdo();
                         $isMysqlValid = true;
+                        if (!blank(\DB::connection('mysql')->select('SHOW TABLES'))) {
+                            if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
+                                $this->info('正在清空数据库请稍等');
+                                $this->call('db:wipe', ['--force' => true]);
+                                $this->info('数据库清空完成');
+                            } else {
+                                $isMysqlValid = false;
+                            }
+                        }
                     } catch (\Exception $e) {
                         // 连接失败，输出错误消息
                         $this->error("数据库连接失败：" . $e->getMessage());
@@ -127,7 +152,7 @@ class XboardInstall extends Command
                     $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
                 }
                 $redisConfig = [
-                    'client' => 'phpredis', // 或 'phpredis'
+                    'client' => 'phpredis',
                     'default' => [
                         'host' => $envConfig['REDIS_HOST'],
                         'password' => $envConfig['REDIS_PASSWORD'],
@@ -152,6 +177,7 @@ class XboardInstall extends Command
             ;
             $email = text(
                 label: '请输入管理员账号',
+                default: 'admin@demo.com',
                 required: true,
                 validate: fn(string $email): ?string => match (true) {
                     !filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
@@ -161,14 +187,10 @@ class XboardInstall extends Command
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
-            \Artisan::call('config:clear');
-            \Artisan::call('config:cache');
-            \Artisan::call('cache:clear');
-            $this->info('正在清空数据库请稍等');
-            \Artisan::call('db:wipe');
-            $this->info('数据库清空完成');
+            $this->call('config:cache');
+            $this->call('cache:clear');
             $this->info('正在导入数据库请稍等...');
-            \Artisan::call("migrate");
+            \Artisan::call("migrate", ['--force' => true]);
             $this->info(\Artisan::output());
             $this->info('数据库导入完成');
             $this->info('开始注册管理员账号');
