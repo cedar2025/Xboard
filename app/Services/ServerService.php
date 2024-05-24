@@ -139,6 +139,28 @@ class ServerService
                 $shadowsocks[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $v['parent_id']));
                 $shadowsocks[$key]['created_at'] = $shadowsocks[$v['parent_id']]['created_at'];
             }
+            // 处理ss2022密码
+            $cipherConfiguration = [
+                '2022-blake3-aes-128-gcm' => [
+                    'serverKeySize' => 16,
+                    'userKeySize' => 16,
+                ],
+                '2022-blake3-aes-256-gcm' => [
+                    'serverKeySize' => 32,
+                    'userKeySize' => 32,
+                ],
+                '2022-blake3-chacha20-poly1305' => [
+                    'serverKeySize' => 32,
+                    'userKeySize' => 32,
+                ]
+            ];
+            $shadowsocks[$key]['password'] = $user['uuid'];
+            if (array_key_exists($cipher = $v['cipher'], $cipherConfiguration)) {
+                $config = $cipherConfiguration[$cipher];
+                $serverKey = Helper::getServerKey($v['created_at'], $config['serverKeySize']);
+                $userKey = Helper::uuidToBase64($user['uuid'], $config['userKeySize']);
+                $shadowsocks[$key]['password'] = "{$serverKey}:{$userKey}";
+            }
             $servers[] = $shadowsocks[$key]->toArray();
         }
         return $servers;

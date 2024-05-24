@@ -44,7 +44,7 @@ class SingBox
         $proxies = [];
         foreach ($this->servers as $item) {
             if ($item['type'] === 'shadowsocks') {
-                $ssConfig = $this->buildShadowsocks($this->user['uuid'], $item);
+                $ssConfig = $this->buildShadowsocks($item['password'], $item);
                 $proxies[] = $ssConfig;
             }
             if ($item['type'] === 'trojan') {
@@ -77,16 +77,6 @@ class SingBox
 
     protected function buildShadowsocks($password, $server)
     {
-        if ($server['cipher'] === '2022-blake3-aes-128-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 16);
-            $userKey = Helper::uuidToBase64($password, 16);
-            $password = "{$serverKey}:{$userKey}";
-        }
-        if ($server['cipher'] === '2022-blake3-aes-256-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 32);
-            $userKey = Helper::uuidToBase64($password, 32);
-            $password = "{$serverKey}:{$userKey}";
-        }
         $array = [];
         $array['tag'] = $server['name'];
         $array['type'] = 'shadowsocks';
