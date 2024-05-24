@@ -25,7 +25,7 @@ class SagerNet
                 $uri .= self::buildVmess($user['uuid'], $item);
             }
             if ($item['type'] === 'shadowsocks') {
-                $uri .= self::buildShadowsocks($user['uuid'], $item);
+                $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);

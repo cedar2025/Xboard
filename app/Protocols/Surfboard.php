@@ -36,7 +36,7 @@ class Surfboard
                 ])
             ) {
                 // [Proxy]
-                $proxies .= self::buildShadowsocks($user['uuid'], $item);
+                $proxies .= self::buildShadowsocks($item['password'], $item);
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }

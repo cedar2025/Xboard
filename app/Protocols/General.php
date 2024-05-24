@@ -31,7 +31,7 @@ class General
                 $uri .= self::buildVless($user['uuid'], $item);
             }
             if ($item['type'] === 'shadowsocks') {
-                $uri .= self::buildShadowsocks($user['uuid'], $item);
+                $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
@@ -42,16 +42,6 @@ class General
 
     public static function buildShadowsocks($password, $server)
     {
-        if ($server['cipher'] === '2022-blake3-aes-128-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 16);
-            $userKey = Helper::uuidToBase64($password, 16);
-            $password = "{$serverKey}:{$userKey}";
-        }
-        if ($server['cipher'] === '2022-blake3-aes-256-gcm') {
-            $serverKey = Helper::getServerKey($server['created_at'], 32);
-            $userKey = Helper::uuidToBase64($password, 32);
-            $password = "{$serverKey}:{$userKey}";
-        }
         $name = rawurlencode($server['name']);
         $str = str_replace(
             ['+', '/', '='],
