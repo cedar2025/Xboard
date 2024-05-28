@@ -188,7 +188,7 @@ class XboardInstall extends Command
             $this->saveToEnv($envConfig);
 
             $this->call('config:cache');
-            $this->call('cache:clear');
+            \Artisan::call('cache:clear');
             $this->info('正在导入数据库请稍等...');
             \Artisan::call("migrate", ['--force' => true]);
             $this->info(\Artisan::output());
