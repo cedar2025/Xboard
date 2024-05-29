@@ -69,6 +69,8 @@ class SSRPlus
                 $tlsSettings = $server['tlsSettings'];
                 if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
                     $config['sni'] = $tlsSettings['serverName'];
+                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
+                    $config['allowInsecure'] = $tlsSettings['allowInsecure'];
             }
         }
         if ((string)$server['network'] === 'ws') {
@@ -105,6 +107,8 @@ class SSRPlus
                         if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
                             $config['sni'] = $tlsSettings['server_name'];
                             $config['security'] = "tls";
+                        if (isset($tlsSettings['allow_insecure']) && !empty($tlsSettings['allow_insecure']))
+                            $config['allowInsecure'] = $tlsSettings['allow_insecure'];
                     }
                     break;
                 case 2: //reality
