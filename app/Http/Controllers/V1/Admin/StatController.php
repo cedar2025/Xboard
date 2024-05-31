@@ -126,7 +126,7 @@ class StatController extends Controller
         }
         array_multisort(array_column($statistics, 'total'), SORT_DESC, $statistics);
         return [
-            'data' => $statistics
+            'data' => collect($statistics)->take(15)->all()
         ];
     }
     // 获取昨日节点流量排行
