@@ -6,11 +6,6 @@
                 "server": "local"
             },
             {
-                "disable_cache": false,
-                "geosite": ["category-ads-all"],
-                "server": "block"
-            },
-            {
                 "clash_mode": "global",
                 "server": "remote"
             },
@@ -19,7 +14,7 @@
                 "server": "local"
             },
             {
-                "geosite": "cn",
+                "rule_set": ["geosite-cn"],
                 "server": "local"
             }
         ],
@@ -42,9 +37,11 @@
         "strategy": "prefer_ipv4"
     },
     "experimental": {
-        "clash_api": {
-            "external_controller": "127.0.0.1:9090",
-            "secret": ""
+        "cache_file": {
+            "enabled": true,
+            "path": "cache.db",
+            "cache_id": "cache_db",
+            "store_fakeip": true
         }
     },
     "inbounds": [
@@ -102,10 +99,6 @@
         "auto_detect_interface": true,
         "rules": [
             {
-                "geosite": "category-ads-all",
-                "outbound": "block"
-            },
-            {
                 "outbound": "dns-out",
                 "protocol": "dns"
             },
@@ -118,12 +111,28 @@
                 "outbound": "节点选择"
             },
             {
-                "geoip": ["cn", "private"],
+                "ip_is_private": true,
                 "outbound": "direct"
             },
             {
-                "geosite": "cn",
+                "rule_set": ["geosite-cn", "geoip-cn"],
                 "outbound": "direct"
+            }
+        ],
+        "rule_set": [
+            {
+                "tag": "geosite-cn",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+                "download_detour": "节点选择"
+            },
+            {
+                "tag": "geoip-cn",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+                "download_detour": "节点选择"
             }
         ]
     }
