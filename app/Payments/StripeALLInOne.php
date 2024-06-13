@@ -102,7 +102,7 @@ class StripeALLInOne {
                     $jumpUrl = $nextAction['alipay_handle_redirect']['url'];
                     $actionType = 1;
                 }else {
-                    throw new ApiException('unable get alipay redirect url', 500);
+                    throw new ApiException('unable get Alipay redirect url', 500);
                 }
                 break;
             case "wechat_pay":
@@ -110,7 +110,7 @@ class StripeALLInOne {
                     $jumpUrl = $nextAction['wechat_pay_display_qr_code']['data'];
                     Log::info($jumpUrl);
                 }else {
-                    throw new ApiException('unable get alipay redirect url', 500);
+                    throw new ApiException('unable get WeChat Pay redirect url', 500);
                 }
         }
         return [
