@@ -4,9 +4,7 @@
  * 自己写别抄，抄NMB抄
  */
 namespace App\Payments;
-
 use App\Exceptions\ApiException;
-use Illuminate\Support\Facades\Log;
 
 class StripeALLInOne {
     public function __construct($config)
@@ -108,7 +106,6 @@ class StripeALLInOne {
             case "wechat_pay":
                 if (isset($nextAction['wechat_pay_display_qr_code'])){
                     $jumpUrl = $nextAction['wechat_pay_display_qr_code']['data'];
-                    Log::info($jumpUrl);
                 }else {
                     throw new ApiException('unable get WeChat Pay redirect url', 500);
                 }
