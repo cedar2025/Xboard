@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1\Guest;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\TelegramService;
