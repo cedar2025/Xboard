@@ -48,7 +48,7 @@ class StripeALLInOne {
         $currency = $this->config['currency'];
         $exchange = $this->exchange('CNY', strtoupper($currency));
         if (!$exchange) {
-            throw new ApiException(__('Currency conversion has timed out, please try again later'));
+            throw new ApiException('Currency conversion has timed out, please try again later', 500);
         }
         $stripe = new \Stripe\StripeClient($this->config['stripe_sk_live']);
 
