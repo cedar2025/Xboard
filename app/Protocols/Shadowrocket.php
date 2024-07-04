@@ -76,7 +76,7 @@ class Shadowrocket
 
         }
         $query = http_build_query($config, '', ';', PHP_QUERY_RFC3986);
-        $uri = "ss://{$str}@{$server['host']}:{$server['port']}?{$query}";
+        $uri = "ss://{$str}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
