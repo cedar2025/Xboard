@@ -58,7 +58,27 @@ class Shadowrocket
             ['-', '_', ''],
             base64_encode("{$server['cipher']}:{$password}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $config = [
+
+        ];
+        if ($server['obfs']) {
+            $config['plugin'] = "obfs-local";
+            $config['obfs'] = $server['obfs'];
+            if ($server['obfs_settings']) {
+                $obfsSettings = $server['obfs_settings'];
+                if (isset($obfsSettings['path']) && !empty($obfsSettings['path'])) {
+                    $config['obfs-uri'] = $obfsSettings['path'];
+                }
+                if (isset($obfsSettings['host']) && !empty($obfsSettings['host'])) {
+                    $config['obfs-host'] = $obfsSettings['host'];
+                }
+            }
+
+        }
+        $query = http_build_query($config, '', ';', PHP_QUERY_RFC3986);
+        $uri = "ss://{$str}@{$server['host']}:{$server['port']}?{$query}";
+        $uri .= "\r\n";
+        return $uri;
     }
 
     public static function buildVmess($uuid, $server)
