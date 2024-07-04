@@ -58,6 +58,10 @@ class Loon
             'fast-open=false',
             'udp=true'
         ];
+        if ($server['obfs'] === 'http') {
+            $config[] = "obfs-name=http";
+            $config[] = "obfs-host={$server['obfs_settings']['host']}";
+        }
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";

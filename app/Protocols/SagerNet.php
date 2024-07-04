@@ -42,7 +42,11 @@ class SagerNet
             ['-', '_', ''],
             base64_encode("{$server['cipher']}:{$uuid}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        if ($server['obfs'] === 'http') {
+            $plugin = rawurlencode("obfs-local;obfs=http;obfs-host={$server['obfs_settings']['host']}");
+            $obfs = "?plugin={$plugin}";
+        }
+        return "ss://{$str}@{$server['host']}:{$server['port']}/{$obfs}#{$name}\r\n";
     }
 
     public static function buildShadowsocksSIP008($uuid, $server)
