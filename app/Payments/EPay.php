@@ -2,9 +2,7 @@
 
 namespace App\Payments;
 
-class EPay
-{
-    protected $config;
+class EPay {
     public function __construct($config)
     {
         $this->config = $config;
@@ -15,17 +13,22 @@ class EPay
         return [
             'url' => [
                 'label' => 'URL',
-                'description' => '',
+                'description' => '接口地址',
                 'type' => 'input',
             ],
             'pid' => [
                 'label' => 'PID',
-                'description' => '',
+                'description' => '商户ID',
                 'type' => 'input',
             ],
             'key' => [
                 'label' => 'KEY',
-                'description' => '',
+                'description' => '商户密钥',
+                'type' => 'input',
+            ],
+            'type' => [
+                'label' => 'TYPE',
+                'description' => '支付方式：alipay/wxpay/qqpay',
                 'type' => 'input',
             ]
         ];
@@ -39,7 +42,8 @@ class EPay
             'notify_url' => $order['notify_url'],
             'return_url' => $order['return_url'],
             'out_trade_no' => $order['trade_no'],
-            'pid' => $this->config['pid']
+            'pid' => $this->config['pid'],
+            'type' => $this->config['type']
         ];
         ksort($params);
         reset($params);

@@ -45,6 +45,10 @@ class QuantumultX
             'udp-relay=true',
             "tag={$server['name']}"
         ];
+        if ($server['obfs'] === 'http') {
+            $config[] = "obfs=http";
+            $config[] = "obfs-host={$server['obfs_settings']['host']}";
+        }
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
