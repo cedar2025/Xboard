@@ -28,7 +28,7 @@
         "paragonie/sodium_compat": "^1.20",
         "php-curl-class/php-curl-class": "^8.6",
         "spatie/db-dumper": "^3.4",
-        "stripe/stripe-php": "^7.36.1",
+        "stripe/stripe-php": "^v14.9.0",
         "symfony/http-client": "^6.4",
         "symfony/mailgun-mailer": "^6.4",
         "symfony/yaml": "*",
