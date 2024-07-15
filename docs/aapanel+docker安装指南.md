@@ -34,7 +34,7 @@ URL=https://www.aapanel.com/script/install_6.0_en.sh && if [ -f /usr/bin/curl ];
 ```
 # 删除目录下文件
 chattr -i .user.ini
-rm -rf .htaccess 404.html index.html .user.ini
+rm -rf .htaccess 404.html 502.html index.html .user.ini
 ```
 > 执行命令从 Github 克隆到当前目录。
 ```
