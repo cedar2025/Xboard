@@ -112,7 +112,7 @@ class Helper
     {
         $subscribeUrls = explode(',', admin_setting('subscribe_url'));
         $subscribeUrl = $subscribeUrls[array_rand($subscribeUrls)];
-        $subscribeUrl = self::replaceRandomNumber($subscribeUrl);
+        $subscribeUrl = self::replaceByPattern($subscribeUrl);
         if ($subscribeUrl) return $subscribeUrl . $path;
         return url($path);
     }
