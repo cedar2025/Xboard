@@ -28,7 +28,7 @@ class ClientController extends Controller
         'surge' => '2398'
     ];
     // allowed types
-    const AllowedTypes = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks'];
+    const AllowedTypes = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
 
     public function subscribe(Request $request)
     {
@@ -41,9 +41,8 @@ class ClientController extends Controller
         $ip = $request->input('ip', $request->ip());
         // get client version
         $version = preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches) ? $matches[1] : null;
-        $supportHy2 = $version
-            && collect(self::SupportedHy2ClientVersions)
-                ->contains(fn($minVersion, $client) => stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion));
+        $supportHy2 = $version ? collect(self::SupportedHy2ClientVersions)
+                ->contains(fn($minVersion, $client) => stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) : true;
         $user = $request->user;
         // account not expired and is not banned.
         $userService = new UserService();
@@ -85,13 +84,12 @@ class ClientController extends Controller
     private function serverFilter($servers, $typesArr, $filterArr, $region, $supportHy2)
     {
         return collect($servers)->reject(function ($server) use ($typesArr, $filterArr, $region, $supportHy2) {
-            if (
-                $typesArr && (
-                    ($server['type'] == "hysteria" && $server['version'] == 2 && !in_array('hysteria2', $typesArr) && !$supportHy2) ||
-                    (!in_array($server['type'], $typesArr) && !($server['type'] == "hysteria" && $server['version'] == 2 && in_array('hysteria2', $typesArr)))
-                )
-            ) {
-                return true;
+            if ($server['type'] == "hysteria" && $server['version'] == 2) {
+                if(!in_array('hysteria2', $typesArr)){
+                    return true;
+                }elseif(false == $supportHy2){
+                    return true;
+                }
             }
 
             if ($filterArr) {
@@ -167,7 +165,6 @@ class ClientController extends Controller
         $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : '长期有效';
         $userService = new UserService();
         $resetDay = $userService->getResetDay($user);
-        // 筛选提示
         array_unshift($servers, array_merge($servers[0], [
             'name' => "套餐到期：{$expiredDate}",
         ]));
