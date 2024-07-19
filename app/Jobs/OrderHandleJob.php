@@ -14,6 +14,7 @@ class OrderHandleJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $order;
+    protected $tradeNo;
 
     public $tries = 3;
     public $timeout = 5;
@@ -25,9 +26,7 @@ class OrderHandleJob implements ShouldQueue
     public function __construct($tradeNo)
     {
         $this->onQueue('order_handle');
-        $this->order = Order::where('trade_no', $tradeNo)
-            ->lockForUpdate()
-            ->first();
+        $this->tradeNo = $tradeNo;
     }
 
     /**
@@ -37,12 +36,15 @@ class OrderHandleJob implements ShouldQueue
      */
     public function handle()
     {
-        if (!$this->order) return;
-        $orderService = new OrderService($this->order);
-        switch ($this->order->status) {
+        $order = Order::where('trade_no', $this->tradeNo)
+            ->lockForUpdate()
+            ->first();
+        if (!$order) return;
+        $orderService = new OrderService($order);
+        switch ($order->status) {
             // cancel
             case 0:
-                if ($this->order->created_at <= (time() - 3600 * 2)) {
+                if ($order->created_at <= (time() - 3600 * 2)) {
                     $orderService->cancel();
                 }
                 break;
