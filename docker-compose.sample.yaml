@@ -1,7 +1,7 @@
 version: '3'
 services:
   xboard:
-    # build: 
+    # build:
     #   context: .
     image: ghcr.io/cedar2025/xboard:latest
     volumes:
@@ -17,7 +17,7 @@ services:
     # ports:
     #   - 7001:7001
   redis:
-    build: 
+    build:
       context: .docker/services/redis
     restart: always
     volumes:
