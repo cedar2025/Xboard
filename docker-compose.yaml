@@ -4,14 +4,16 @@ services:
     volumes:
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data/
-      # - ./.env:/www/.env
-      - redis-socket:/run/redis-socket # 挂载socket
+      - redis-socket:/run/redis-socket
     environment:
-      - docker=true #用于给安装脚本判断是否为docker环境
+      - docker=true
     depends_on:
       - redis
       - mysql
-    network_mode: host #默认使用Host模式，需要Bridge模式自己注释掉
+    ports:
+      - "9000:9000"
+    networks:
+      - xboard-network
     restart: always
 
   redis:
@@ -19,8 +21,10 @@ services:
       context: .docker/services/redis
     restart: always
     volumes:
-      - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
-      - redis-socket:/run/redis-socket # 挂载socket
+      - ./.docker/.data/redis:/data/
+      - redis-socket:/run/redis-socket
+    networks:
+      - xboard-network
 
   mysql:
     image: mysql:5.7
@@ -28,7 +32,13 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: xb123456
     volumes:
-      - mysql-data:/var/lib/mysql # 挂载MySQL数据
+      - mysql-data:/var/lib/mysql
+    networks:
+      - xboard-network
+
+networks:
+  xboard-network:
+    driver: bridge
 
 volumes:
   redis-socket:
