@@ -1,0 +1,34 @@
+services:
+  xboard:
+    image: ghcr.io/admin8800/xboard:latest
+    volumes:
+      - ./:/www/
+      # - ./.env:/www/.env
+      - redis-socket:/run/redis-socket # 挂载socket
+    environment:
+      - docker=true #用于给安装脚本判断是否为docker环境
+    depends_on:
+      - redis
+      - mysql
+    network_mode: host #默认使用Host模式，需要Bridge模式自己注释掉
+    restart: always
+
+  redis:
+    build: 
+      context: .docker/services/redis
+    restart: always
+    volumes:
+      - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
+      - redis-socket:/run/redis-socket # 挂载socket
+
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: xb123456
+    volumes:
+      - mysql-data:/var/lib/mysql # 挂载MySQL数据
+
+volumes:
+  redis-socket:
+  mysql-data:

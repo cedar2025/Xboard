@@ -1,0 +1,115 @@
+{
+  "name": "aurora",
+  "description": "aurora主题",
+  "version": "1.6.24",
+  "images": "https://images.unsplash.com/photo-1654886848152-93c1baed9e14?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1975&q=80",
+  "configs": [
+    {
+      "label": "接口根地址",
+      "placeholder": "请输入接口根地址，可不填",
+      "field_name": "server_url",
+      "field_type": "input"
+    },
+    {
+      "label": "着陆页",
+      "placeholder": "请选择着陆页",
+      "field_name": "land_page",
+      "field_type": "select",
+      "select_options": {
+        "index": "首页",
+        "login": "登录页"
+      },
+      "default_value": "index"
+    },
+    {
+      "label": "加载文本",
+      "placeholder": "支持html标签",
+      "field_name": "loading_text",
+      "field_type": "textarea"
+    },
+    {
+      "label": "注册邀请码",
+      "placeholder": "注册时是否显示邀请码",
+      "field_name": "show_reg_invite",
+      "field_type": "select",
+      "select_options": {
+        "show": "显示",
+        "hide": "隐藏"
+      },
+      "default_value": "show"
+    },
+    {
+      "label": "主题模式",
+      "placeholder": "请选择主题模式",
+      "field_name": "app_theme",
+      "field_type": "select",
+      "select_options": {
+        "light": "浅色",
+        "dark": "深色",
+        "auto": "跟随系统"
+      },
+      "default_value": "auto"
+    },
+    {
+      "label": "主题颜色",
+      "placeholder": "请选择主题颜色",
+      "field_name": "app_color",
+      "field_type": "select",
+      "select_options": {
+        "default": "默认",
+        "dustRed": "薄暮",
+        "volcano": "火山",
+        "sunsetOrange": "日暮",
+        "calendulaGold": "金盏花",
+        "sunriseYellow": "日出",
+        "lime": "青柠",
+        "polarGreen": "极光绿",
+        "cyan": "明青",
+        "daybreakBlue": "拂晓蓝"
+      },
+      "default_value": "default"
+    },
+    {
+      "label": "iOS客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_ios",
+      "field_type": "input"
+    },
+    {
+      "label": "Android客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_android",
+      "field_type": "input"
+    },
+    {
+      "label": "Windows客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_windows",
+      "field_type": "input"
+    },
+    {
+      "label": "MacOS客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_macos",
+      "field_type": "input"
+    },
+    {
+      "label": "Openwrt客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_openwrt",
+      "field_type": "input"
+    },
+    {
+      "label": "Linux客户端下载地址",
+      "placeholder": "请输入下载地址",
+      "field_name": "client_linux",
+      "field_type": "input"
+    },
+    {
+      "label": "自定义页脚HTML",
+      "placeholder": "可以实现客服JS代码的加入等",
+      "field_name": "custom_html",
+      "field_type": "textarea"
+    }
+  ]
+}

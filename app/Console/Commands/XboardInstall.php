@@ -105,11 +105,11 @@ class XboardInstall extends Command
                 while (!$isMysqlValid) {
                     $envConfig = [
                         'DB_CONNECTION' => 'mysql',
-                        'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
+                        'DB_HOST' => text(label: "请输入数据库地址", default: 'mysql', required: true),
                         'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
-                        'DB_DATABASE' => text(label: '请输入数据库名', default: 'xboard', required: true),
+                        'DB_DATABASE' => text(label: '请输入数据库名', default: 'mysql', required: true),
                         'DB_USERNAME' => text(label: '请输入数据库用户名', default: 'root', required: true),
-                        'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
+                        'DB_PASSWORD' => text(label: '请输入数据库密码', default: 'xb123456', required: false),
                     ];
                     try {
                         \Config::set("database.default", 'mysql');
@@ -147,7 +147,7 @@ class XboardInstall extends Command
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
                 } else {
-                    $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
+                    $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: 'redis', required: true);
                     $envConfig['REDIS_PORT'] = text(label: '请输入Redis端口', default: '6379', required: true);
                     $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
                 }
@@ -177,7 +177,7 @@ class XboardInstall extends Command
             ;
             $email = text(
                 label: '请输入管理员账号',
-                default: 'admin@demo.com',
+                default: 'admin8800@demo.com',
                 required: true,
                 validate: fn(string $email): ?string => match (true) {
                     !filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
@@ -202,7 +202,7 @@ class XboardInstall extends Command
             $this->info("管理员密码：{$password}");
 
             $defaultSecurePath = hash('crc32b', config('app.key'));
-            $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
+            $this->info("访问 http(s)://127.0.0.1:9000/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
         } catch (\Exception $e) {
             $this->error($e);
         }
