@@ -7,11 +7,13 @@ use App\Jobs\OrderHandleJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\DB;
+use Log;
 
 class OrderService
 {
-    CONST STR_TO_TIME = [
+    const STR_TO_TIME = [
         'month_price' => 1,
         'quarter_price' => 3,
         'half_year_price' => 6,
@@ -36,7 +38,7 @@ class OrderService
         if ($order->refund_amount) {
             $this->user->balance = $this->user->balance + $order->refund_amount;
         }
-        try{
+        try {
             DB::beginTransaction();
             if ($order->surplus_order_ids) {
                 Order::whereIn('id', $order->surplus_order_ids)->update([
@@ -66,27 +68,99 @@ class OrderService
                     break;
             }
 
-            $this->setSpeedLimit($plan->speed_limit);
+            // store period
+            $this->user->last_plan_period = (string)$order->period;
 
+            $this->setSpeedLimit($plan->speed_limit);
             if (!$this->user->save()) {
-                throw new \Exception('用户信息保存失败');
+                throw new Exception('用户信息保存失败');
             }
+
             $order->status = Order::STATUS_COMPLETED;
             if (!$order->save()) {
-                throw new \Exception('订单信息保存失败');
+                throw new Exception('订单信息保存失败');
             }
+
             DB::commit();
-        }catch(\Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             throw new ApiException('开通失败');
         }
     }
 
+    private function buyByOneTime(Plan $plan)
+    {
+        $this->buyByResetTraffic();
+        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
+        $this->user->plan_id = $plan->id;
+        $this->user->group_id = $plan->group_id;
+        $this->user->expired_at = NULL;
+    }
+
+    private function buyByResetTraffic()
+    {
+        $this->user->u = 0;
+        $this->user->d = 0;
+    }
+
+    private function buyByPeriod(Order $order, Plan $plan)
+    {
+        // change plan process
+        if ((int)$order->type === 3) {
+            $this->user->expired_at = time();
+        }
+        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
+        // 从一次性转换到循环
+        if ($this->user->expired_at === NULL) $this->buyByResetTraffic();
+        // 新购
+        if ($order->type === 1) $this->buyByResetTraffic();
+        $this->user->plan_id = $plan->id;
+        $this->user->group_id = $plan->group_id;
+        $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
+    }
+
+    private function getTime($str, $timestamp)
+    {
+        if ($timestamp < time()) {
+            $timestamp = time();
+        }
+        switch ($str) {
+            case 'month_price':
+                return strtotime('+1 month', $timestamp);
+            case 'quarter_price':
+                return strtotime('+3 month', $timestamp);
+            case 'half_year_price':
+                return strtotime('+6 month', $timestamp);
+            case 'year_price':
+                return strtotime('+12 month', $timestamp);
+            case 'two_year_price':
+                return strtotime('+24 month', $timestamp);
+            case 'three_year_price':
+                return strtotime('+36 month', $timestamp);
+        }
+    }
+
+    private function openEvent($eventId)
+    {
+        switch ((int)$eventId) {
+            case 0:
+                break;
+            case 1:
+                $this->buyByResetTraffic();
+                break;
+        }
+    }
+
+    private function setSpeedLimit($speedLimit)
+    {
+        $this->user->speed_limit = $speedLimit;
+    }
 
     public function setOrderType(User $user)
     {
         $order = $this->order;
+        $user->last_plan_period = $order->period;
         if ($order->period === 'reset_price') {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
@@ -106,51 +180,6 @@ class OrderService
         }
     }
 
-    public function setVipDiscount(User $user)
-    {
-        $order = $this->order;
-        if ($user->discount) {
-            $order->discount_amount = $order->discount_amount + ($order->total_amount * ($user->discount / 100));
-        }
-        $order->total_amount = $order->total_amount - $order->discount_amount;
-    }
-
-    public function setInvite(User $user):void
-    {
-        $order = $this->order;
-        if ($user->invite_user_id && ($order->total_amount <= 0)) return;
-        $order->invite_user_id = $user->invite_user_id;
-        $inviter = User::find($user->invite_user_id);
-        if (!$inviter) return;
-        $isCommission = false;
-        switch ((int)$inviter->commission_type) {
-            case 0:
-                $commissionFirstTime = (int)admin_setting('commission_first_time_enable', 1);
-                $isCommission = (!$commissionFirstTime || ($commissionFirstTime && !$this->haveValidOrder($user)));
-                break;
-            case 1:
-                $isCommission = true;
-                break;
-            case 2:
-                $isCommission = !$this->haveValidOrder($user);
-                break;
-        }
-
-        if (!$isCommission) return;
-        if ($inviter && $inviter->commission_rate) {
-            $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
-        } else {
-            $order->commission_balance = $order->total_amount * (admin_setting('invite_commission', 10) / 100);
-        }
-    }
-
-    private function haveValidOrder(User $user)
-    {
-        return Order::where('user_id', $user->id)
-            ->whereNotIn('status', [0, 2])
-            ->first();
-    }
-
     private function getSurplusValue(User $user, Order $order)
     {
         if ($user->expired_at === NULL) {
@@ -159,7 +188,6 @@ class OrderService
             $this->getSurplusValueByPeriod($user, $order);
         }
     }
-
 
     private function getSurplusValueByOneTime(User $user, Order $order)
     {
@@ -211,6 +239,51 @@ class OrderService
         $order->surplus_order_ids = array_column($orders, 'id');
     }
 
+    public function setVipDiscount(User $user)
+    {
+        $order = $this->order;
+        if ($user->discount) {
+            $order->discount_amount = $order->discount_amount + ($order->total_amount * ($user->discount / 100));
+        }
+        $order->total_amount = $order->total_amount - $order->discount_amount;
+    }
+
+    public function setInvite(User $user): void
+    {
+        $order = $this->order;
+        if ($user->invite_user_id && ($order->total_amount <= 0)) return;
+        $order->invite_user_id = $user->invite_user_id;
+        $inviter = User::find($user->invite_user_id);
+        if (!$inviter) return;
+        $isCommission = false;
+        switch ((int)$inviter->commission_type) {
+            case 0:
+                $commissionFirstTime = (int)admin_setting('commission_first_time_enable', 1);
+                $isCommission = (!$commissionFirstTime || ($commissionFirstTime && !$this->haveValidOrder($user)));
+                break;
+            case 1:
+                $isCommission = true;
+                break;
+            case 2:
+                $isCommission = !$this->haveValidOrder($user);
+                break;
+        }
+
+        if (!$isCommission) return;
+        if ($inviter && $inviter->commission_rate) {
+            $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
+        } else {
+            $order->commission_balance = $order->total_amount * (admin_setting('invite_commission', 10) / 100);
+        }
+    }
+
+    private function haveValidOrder(User $user)
+    {
+        return Order::where('user_id', $user->id)
+            ->whereNotIn('status', [0, 2])
+            ->first();
+    }
+
     public function paid(string $callbackNo)
     {
         $order = $this->order;
@@ -221,101 +294,33 @@ class OrderService
         if (!$order->save()) return false;
         try {
             OrderHandleJob::dispatchSync($order->trade_no);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
         return true;
     }
 
-    public function cancel():bool
+    public function cancel(): bool
     {
         $order = $this->order;
         try {
             DB::beginTransaction();
             $order->status = Order::STATUS_CANCELLED;
             if (!$order->save()) {
-                throw new \Exception('Failed to save order status.');
+                throw new Exception('Failed to save order status.');
             }
             if ($order->balance_amount) {
                 $userService = new UserService();
                 if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
-                    throw new \Exception('Failed to add balance.');
+                    throw new Exception('Failed to add balance.');
                 }
             }
             DB::commit();
             return true;
-        }catch(\Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             return false;
-        }
-    }
-
-    private function setSpeedLimit($speedLimit)
-    {
-        $this->user->speed_limit = $speedLimit;
-    }
-
-    private function buyByResetTraffic()
-    {
-        $this->user->u = 0;
-        $this->user->d = 0;
-    }
-
-    private function buyByPeriod(Order $order, Plan $plan)
-    {
-        // change plan process
-        if ((int)$order->type === 3) {
-            $this->user->expired_at = time();
-        }
-        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
-        // 从一次性转换到循环
-        if ($this->user->expired_at === NULL) $this->buyByResetTraffic();
-        // 新购
-        if ($order->type === 1) $this->buyByResetTraffic();
-        $this->user->plan_id = $plan->id;
-        $this->user->group_id = $plan->group_id;
-        $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
-    }
-
-    private function buyByOneTime(Plan $plan)
-    {
-        $this->buyByResetTraffic();
-        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
-        $this->user->plan_id = $plan->id;
-        $this->user->group_id = $plan->group_id;
-        $this->user->expired_at = NULL;
-    }
-
-    private function getTime($str, $timestamp)
-    {
-        if ($timestamp < time()) {
-            $timestamp = time();
-        }
-        switch ($str) {
-            case 'month_price':
-                return strtotime('+1 month', $timestamp);
-            case 'quarter_price':
-                return strtotime('+3 month', $timestamp);
-            case 'half_year_price':
-                return strtotime('+6 month', $timestamp);
-            case 'year_price':
-                return strtotime('+12 month', $timestamp);
-            case 'two_year_price':
-                return strtotime('+24 month', $timestamp);
-            case 'three_year_price':
-                return strtotime('+36 month', $timestamp);
-        }
-    }
-
-    private function openEvent($eventId)
-    {
-        switch ((int) $eventId) {
-            case 0:
-                break;
-            case 1:
-                $this->buyByResetTraffic();
-                break;
         }
     }
 }

@@ -12,9 +12,9 @@ services:
     ports:
       - "6379:6379"
     networks:
-        - app-network
+      - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
 
   mariadb:
@@ -36,9 +36,29 @@ services:
     depends_on:
       - redis
       - mariadb
+    environment:
+      docker: true
+      INSTALLED: true
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_DATABASE: xboard
+      DB_USERNAME: xboard
+      DB_PASSWORD: xboard
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    env_file:
+      - .env.example
     ports:
       - "7001:7001"
     networks:
       - app-network
     volumes:
       - xboard-config:/www/config
+      - type: bind
+        source: ./app
+        target: /www/app
+        read_only: true
+      - type: bind
+        source: ./database
+        target: /www/database
+        read_only: true
