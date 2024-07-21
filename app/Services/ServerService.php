@@ -161,6 +161,11 @@ class ServerService
                 $userKey = Helper::uuidToBase64($user['uuid'], $config['userKeySize']);
                 $shadowsocks[$key]['password'] = "{$serverKey}:{$userKey}";
             }
+            if ($v['obfs'] === 'http') {
+                $shadowsocks[$key]['obfs'] = 'http';
+                $shadowsocks[$key]['obfs-host'] = $v['obfs_settings']['host'];
+                $shadowsocks[$key]['obfs-path'] = $v['obfs_settings']['path'];
+            }
             $servers[] = $shadowsocks[$key]->toArray();
         }
         return $servers;
