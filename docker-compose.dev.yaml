@@ -12,9 +12,9 @@ services:
     ports:
       - "6379:6379"
     networks:
-        - app-network
+      - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
 
   mariadb:
@@ -42,3 +42,4 @@ services:
       - app-network
     volumes:
       - xboard-config:/www/config
+      - ./:/www
