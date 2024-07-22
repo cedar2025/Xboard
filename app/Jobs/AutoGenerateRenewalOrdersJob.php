@@ -115,7 +115,6 @@ class AutoGenerateRenewalOrdersJob implements ShouldQueue
             }
 
             if (!$order->save()) {
-                DB::rollBack();
                 throw new ApiException(__('Failed to create order'));
             }
 
