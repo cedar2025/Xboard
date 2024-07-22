@@ -4,7 +4,7 @@ namespace App\Http\Controllers\V2\Passport;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendEmailJob;
-use App\Models\User;
+use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +32,8 @@ class AuthController extends Controller
         }
         Cache::put(CacheKey::get('LAST_SEND_LOGIN_WITH_MAIL_LINK_TIMESTAMP', $params['email']), time(), 60); // 1 minute
 
-        $user = User::where('email', $params['email'])->first();
+        $userService = new UserService();
+        $user = $userService->getUsersByEmail($params['email'])->first();
         if (!$user) {
             return $this->success(__('If the email exists, a login link will be sent to the email'));
         }

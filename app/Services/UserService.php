@@ -6,49 +6,9 @@ use App\Jobs\BatchTrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
-use Illuminate\Support\Facades\Bus;
 
 class UserService
 {
-    private function calcResetDayByMonthFirstDay()
-    {
-        $today = date('d');
-        $lastDay = date('d', strtotime('last day of +0 months'));
-        return $lastDay - $today;
-    }
-
-    private function calcResetDayByExpireDay(int $expiredAt)
-    {
-        $day = date('d', $expiredAt);
-        $today = date('d');
-        $lastDay = date('d', strtotime('last day of +0 months'));
-        if ((int) $day >= (int) $today && (int) $day >= (int) $lastDay) {
-            return $lastDay - $today;
-        }
-        if ((int) $day >= (int) $today) {
-            return $day - $today;
-        }
-
-        return $lastDay - $today + $day;
-    }
-
-    private function calcResetDayByYearFirstDay(): int
-    {
-        $nextYear = strtotime(date("Y-01-01", strtotime('+1 year')));
-        return (int) (($nextYear - time()) / 86400);
-    }
-
-    private function calcResetDayByYearExpiredAt(int $expiredAt): int
-    {
-        $md = date('m-d', $expiredAt);
-        $nowYear = strtotime(date("Y-{$md}"));
-        $nextYear = strtotime('+1 year', $nowYear);
-        if ($nowYear > time()) {
-            return (int) (($nowYear - time()) / 86400);
-        }
-        return (int) (($nextYear - time()) / 86400);
-    }
-
     public function getResetDay(User $user)
     {
         if (!isset($user->plan)) {
@@ -60,9 +20,10 @@ class UserService
         if ($user->plan->reset_traffic_method === 2)
             return null;
         switch (true) {
-            case ($user->plan->reset_traffic_method === NULL): {
+            case ($user->plan->reset_traffic_method === NULL):
+            {
                 $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
-                switch ((int) $resetTrafficMethod) {
+                switch ((int)$resetTrafficMethod) {
                     // month first day
                     case 0:
                         return $this->calcResetDayByMonthFirstDay();
@@ -81,23 +42,67 @@ class UserService
                 }
                 break;
             }
-            case ($user->plan->reset_traffic_method === 0): {
+            case ($user->plan->reset_traffic_method === 0):
+            {
                 return $this->calcResetDayByMonthFirstDay();
             }
-            case ($user->plan->reset_traffic_method === 1): {
+            case ($user->plan->reset_traffic_method === 1):
+            {
                 return $this->calcResetDayByExpireDay($user->expired_at);
             }
-            case ($user->plan->reset_traffic_method === 2): {
+            case ($user->plan->reset_traffic_method === 2):
+            {
                 return null;
             }
-            case ($user->plan->reset_traffic_method === 3): {
+            case ($user->plan->reset_traffic_method === 3):
+            {
                 return $this->calcResetDayByYearFirstDay();
             }
-            case ($user->plan->reset_traffic_method === 4): {
+            case ($user->plan->reset_traffic_method === 4):
+            {
                 return $this->calcResetDayByYearExpiredAt($user->expired_at);
             }
         }
         return null;
+    }
+
+    private function calcResetDayByMonthFirstDay()
+    {
+        $today = date('d');
+        $lastDay = date('d', strtotime('last day of +0 months'));
+        return $lastDay - $today;
+    }
+
+    private function calcResetDayByExpireDay(int $expiredAt)
+    {
+        $day = date('d', $expiredAt);
+        $today = date('d');
+        $lastDay = date('d', strtotime('last day of +0 months'));
+        if ((int)$day >= (int)$today && (int)$day >= (int)$lastDay) {
+            return $lastDay - $today;
+        }
+        if ((int)$day >= (int)$today) {
+            return $day - $today;
+        }
+
+        return $lastDay - $today + $day;
+    }
+
+    private function calcResetDayByYearFirstDay(): int
+    {
+        $nextYear = strtotime(date("Y-01-01", strtotime('+1 year')));
+        return (int)(($nextYear - time()) / 86400);
+    }
+
+    private function calcResetDayByYearExpiredAt(int $expiredAt): int
+    {
+        $md = date('m-d', $expiredAt);
+        $nowYear = strtotime(date("Y-{$md}"));
+        $nextYear = strtotime('+1 year', $nowYear);
+        if ($nowYear > time()) {
+            return (int)(($nowYear - time()) / 86400);
+        }
+        return (int)(($nextYear - time()) / 86400);
     }
 
     public function isAvailable(User $user)
@@ -130,6 +135,11 @@ class UserService
                     ->orWhere('transfer_enable', 0);
             })
             ->get();
+    }
+
+    public function getUsersByEmail(string $email)
+    {
+        return User::where('email', $email)->get();
     }
 
     public function getUsersByIds($ids)
