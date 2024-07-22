@@ -76,11 +76,7 @@ class AutoGenerateRenewalOrdersJob implements ShouldQueue
         }
 
         // check if user has any renewal order
-        $renewalOrder = Order::where('user_id', $user->id)
-            ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_PROCESSING])
-            ->where('type', Order::TYPE_RENEWAL)
-            ->first();
-        if ($renewalOrder) {
+        if ($userService->hasRenewalOrder($user->id)) {
             // user has renewal order
             return;
         }

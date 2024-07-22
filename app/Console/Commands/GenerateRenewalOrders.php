@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\AutoGenerateRenewalOrdersJob;
-use App\Models\User;
+use App\Services\UserService;
 use Exception;
 use Illuminate\Console\Command;
 
@@ -17,12 +17,8 @@ class GenerateRenewalOrders extends Command
         $this->info('开始生成续费订单');
 
         try {
-            $users = User::where('banned', false)
-                ->where('expired_at', '<=', now()->addDays(7))
-                ->where('expired_at', '>=', now())
-                ->whereNotNull('plan_id')
-                ->whereNotNull('last_plan_period')
-                ->get();
+            $userService = new UserService();
+            $users = $userService->listUsersHaveSubscription();
 
             foreach ($users as $user) {
                 try {
