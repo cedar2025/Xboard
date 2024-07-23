@@ -157,6 +157,11 @@ class UserService
             ->get();
     }
 
+    public function getUsersByEmail(string $email)
+    {
+        return User::where('email', $email)->get();
+    }
+
     public function getUsersByIds($ids)
     {
         return User::whereIn('id', $ids)->get();

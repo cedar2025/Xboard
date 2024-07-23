@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
+use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AuthService
 {
@@ -17,25 +18,6 @@ class AuthService
     public function __construct(User $user)
     {
         $this->user = $user;
-    }
-
-    public function generateAuthData(Request $request)
-    {
-        $guid = Helper::guid();
-        $authData = JWT::encode([
-            'id' => $this->user->id,
-            'session' => $guid,
-        ], config('app.key'), 'HS256');
-        self::addSession($this->user->id, $guid, [
-            'ip' => $request->ip(),
-            'login_at' => time(),
-            'ua' => $request->userAgent()
-        ]);
-        return [
-            'token' => $this->user->token,
-            'is_admin' => $this->user->is_admin,
-            'auth_data' => $authData
-        ];
     }
 
     public static function decryptAuthData($jwt)
@@ -55,7 +37,7 @@ class AuthService
                 Cache::put($jwt, $user->toArray(), 3600);
             }
             return Cache::get($jwt);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -65,6 +47,27 @@ class AuthService
         $sessions = (array)Cache::get(CacheKey::get("USER_SESSIONS", $userId)) ?? [];
         if (!in_array($session, array_keys($sessions))) return false;
         return true;
+    }
+
+    public function generateAuthData(Request $request)
+    {
+        $guid = Helper::guid();
+        $authData = JWT::encode([
+            'id' => $this->user->id,
+            'session' => $guid,
+        ], config('app.key'), 'HS256');
+        
+        self::addSession($this->user->id, $guid, [
+            'ip' => $request->ip(),
+            'login_at' => time(),
+            'ua' => $request->userAgent()
+        ]);
+
+        return [
+            'token' => $this->user->token,
+            'is_admin' => $this->user->is_admin,
+            'auth_data' => $authData
+        ];
     }
 
     private static function addSession($userId, $guid, $meta)
