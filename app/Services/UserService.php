@@ -113,6 +113,26 @@ class UserService
         return false;
     }
 
+    public function hasRenewalOrder($id): bool
+    {
+        // check if user has any renewal order
+        $renewalOrder = Order::where('user_id', $id)
+            ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_PROCESSING])
+            ->where('type', Order::TYPE_RENEWAL)
+            ->first();
+        return !!$renewalOrder;
+    }
+
+    public function listUsersHaveSubscription()
+    {
+        return User::where('banned', false)
+            ->where('expired_at', '<=', now()->addDays(7))
+            ->where('expired_at', '>=', now())
+            ->whereNotNull('plan_id')
+            ->whereNotNull('last_plan_period')
+            ->get();
+    }
+
     public function getAvailableUsers()
     {
         return User::whereRaw('u + d < transfer_enable')
