@@ -78,10 +78,7 @@ class StripePaymentIntent
             $event = Webhook::constructEvent(
                 $payload, $sig_header, $this->config['webhook_secret']
             );
-        } catch (UnexpectedValueException $e) {
-            Log::error("Webhook signature verification failed: " . $e->getMessage());
-            throw new ApiException('Webhook signature verification failed');
-        } catch (SignatureVerificationException $e) {
+        } catch (UnexpectedValueException|SignatureVerificationException $e) {
             Log::error("Webhook signature verification failed: " . $e->getMessage());
             throw new ApiException('Webhook signature verification failed');
         }
