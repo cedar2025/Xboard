@@ -26,20 +26,20 @@ spec:
             - containerPort: 7001
           env:
             - name: docker
-              value: true
+              value: "true"
             - name: INSTALLED
-              value: true
+              value: "true"
             - name: DB_HOST
               value: "msyql-service"
             - name: DB_PORT
-              value: 3306
+              value: "3306"
             - name: DB_DATABASE
               value: "direct-access"
             - name: DB_USERNAME
               value: "direct-access"
             - name: DB_PASSWORD
-              value: "direct-access"
+              value: "n6cPhUKq7t&EiCw"
             - name: REDIS_HOST
               value: "redis"
             - name: REDIS_PORT
-              value: 6379
+              value: "6379"
