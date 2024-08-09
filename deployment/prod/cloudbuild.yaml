@@ -1,0 +1,44 @@
+steps:
+  - name: "gcr.io/cloud-builders/mvn"
+    args: ["install", "-Dmaven.test.skip=true"]
+    id: install_package
+#  - name: "gcr.io/$PROJECT_ID/apidoc"
+#    args: ["-i", "src", "-o", "apidoc"]
+#    id: generate_doc
+#  - name: "gcr.io/cloud-builders/gsutil:latest"
+#    args: ["cp", "-r", "apidoc", "gs://apidoc.uat.fatpipe.work/node-centre-api"]
+#    id: copying_doc
+#  - name: "gcr.io/cloud-builders/mvn"
+#    args: ["package", "-Dmaven.test.skip=true"]
+#    id: build_war
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "build", "-t", "gcr.io/$PROJECT_ID/node-centre-api-prod:$COMMIT_SHA", "." ]
+    id: build_image
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "push", "gcr.io/$PROJECT_ID/node-centre-api-prod:$COMMIT_SHA"]
+    id: push_image
+  - name: "ubuntu"
+    args: ["sed", "-i" ,"s/latest/$COMMIT_SHA/", "deployment/prod/deployment.yml"]
+    id: replace_image
+  - name: "ubuntu"
+    args: ["sed", "-i" ,"s/latest/$COMMIT_SHA/", "deployment/o2-prod/deployment.yml"]
+    id: replace_image_o2
+  - name: "bitnami/kubectl"
+    args:
+      - apply
+      - -f
+      - deployment/prod/deployment.yml
+    env:
+    - "KUBECONFIG=/workspace/deployment/prod/kubeconfig.yml"
+    id: kube_deploy
+  - name: "bitnami/kubectl"
+    args:
+      - apply
+      - -f
+      - deployment/o2-prod/deployment.yml
+    env:
+      - "KUBECONFIG=/workspace/deployment/prod/kubeconfig.yml"
+    id: kube_deploy_o2
+images:
+  - "gcr.io/$PROJECT_ID/node-centre-api-prod:$COMMIT_SHA"

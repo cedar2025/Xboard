@@ -1,0 +1,27 @@
+steps:
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "build", "-t", "gcr.io/$PROJECT_ID/da-xboard-uat:$COMMIT_SHA", "." ]
+    id: build_image
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "tag" ,"gcr.io/$PROJECT_ID/da-xboard-uat:$COMMIT_SHA", "gcr.io/$PROJECT_ID/da-xboard-uat:latest" ]
+    id: build_tag
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "push" ,"gcr.io/$PROJECT_ID/da-xboard-uat:latest" ]
+    id: push_latest
+  - name: "gcr.io/cloud-builders/docker"
+    args: [ "push" ,"gcr.io/$PROJECT_ID/da-xboard-uat:$COMMIT_SHA" ]
+    id: push_commit_sha
+  - name: "ubuntu"
+    args: ["sed", "-i" ,"s/latest/$COMMIT_SHA/", "deployment/uat/deployment.yml"]
+    id: replace_image
+  - name: "bitnami/kubectl"
+    args:
+      - apply
+      - -f
+      - deployment/uat/deployment.yml
+    env:
+    - "KUBECONFIG=/workspace/deployment/uat/kubeconfig.yml"
+    id: kube_deploy
+images:
+  - "gcr.io/$PROJECT_ID/da-xboard-uat:$COMMIT_SHA"

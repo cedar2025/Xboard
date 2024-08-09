@@ -1,0 +1,45 @@
+apiVersion: apps/v1 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  namespace: direct-access
+  name: da-xboard
+spec:
+  selector:
+    matchLabels:
+      k8s-app: da-xboard
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        k8s-app: da-xboard
+    spec:
+      imagePullSecrets:
+      - name: gcr-image-secret
+      containers:
+        - name: redis
+          images: redis:latest
+          ports:
+            - containerPort: 6379
+        - name: da-xboard
+          image: gcr.io/o2-network-297904/da-xboard-prod:latest
+          ports:
+            - containerPort: 7001
+          env:
+            - name: docker
+              value: true
+            - name: INSTALLED
+              value: true
+            - name: DB_HOST
+              value: "msyql-service"
+            - name: DB_PORT
+              value: 3306
+            - name: DB_DATABASE
+              value: "direct-access"
+            - name: DB_USERNAME
+              value: "direct-access"
+            - name: DB_PASSWORD
+              value: "direct-access"
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: 6379

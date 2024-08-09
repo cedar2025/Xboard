@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: direct-access
+  name: node-centre-api-srv
+#  annotations:
+#    cloud.google.com/load-balancer-type: "Internal"
+  labels:
+    k8s-app: node-centre-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      name: signing1
+    - port: 443
+      name: signing2
+  selector:
+    k8s-app: node-centre-api
