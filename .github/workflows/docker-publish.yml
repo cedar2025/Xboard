@@ -10,6 +10,7 @@ on:
     branches: [ "dev" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
+  workflow_dispatch:  # Enable manual trigger
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -60,7 +61,7 @@ jobs:
         uses: docker/metadata-action@v5.5.1
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Get version
         id: get_version
         run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
