@@ -58,7 +58,11 @@ class Shadowrocket
             ['-', '_', ''],
             base64_encode("{$server['cipher']}:{$password}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $uri = "ss://{$str}@{$server['host']}:{$server['port']}";
+        if ($server['obfs'] == 'http') {
+            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$server['obfs-host']};obfs-uri={$server['obfs-path']}";
+        }
+        return $uri."#{$name}\r\n";
     }
 
     public static function buildVmess($uuid, $server)
