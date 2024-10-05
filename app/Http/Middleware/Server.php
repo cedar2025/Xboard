@@ -18,6 +18,11 @@ class Server
      */
     public function handle(Request $request, Closure $next, $node_type = null)
     {
+        $token = $request->input('token');
+        if (empty($token)) {
+            throw new ApiException('token is null',403);
+        }
+
         // alias
         $aliasTypes = [
             'v2ray' => 'vmess',
