@@ -26,6 +26,7 @@ class Server
         $request->validate([
             'token' => [
                 "string",
+                "required",
                 function ($attribute, $value, $fail) {
                     if ($value !== admin_setting('server_token')) {
                         $fail('The ' . $attribute . ' is invalid.');
@@ -34,10 +35,11 @@ class Server
             ],
             'node_id' => 'required',
             'node_type' => [
+                'required',
                 'nullable',
                 'regex:/^(?i)(hysteria|hysteria2|vless|trojan|vmess|v2ray|tuic|shadowsocks|shadowsocks-plugin)$/',
                 function ($attribute, $value, $fail) use ($aliasTypes, $request) {
-                    $request->merge([$attribute => strtolower(isset ($aliasTypes[$value]) ? $aliasTypes[$value] : $value)]);
+                    $request->merge([$attribute => strtolower(isset($aliasTypes[$value]) ? $aliasTypes[$value] : $value)]);
                 },
             ]
         ], [
