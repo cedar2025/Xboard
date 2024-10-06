@@ -151,7 +151,7 @@ class Loon
             $server['host'],
             $server['port'],
             $password,
-            $server['server_name'] ? "tls={$server['server_name']}" : "(null)"
+            $server['server_name'] ? "sni={$server['server_name']}" : "(null)"
         ];
         if ($server['insecure'])  $config[] = "skip-cert-verify=true";
         $config[] = "download-bandwidth=" . ($user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps']);
