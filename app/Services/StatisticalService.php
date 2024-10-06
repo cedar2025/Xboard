@@ -110,12 +110,11 @@ class StatisticalService
      */
     public function getStatUserByUserID($userId): array
     {
-
         $stats = [];
         $statsUser = $this->redis->zrange($this->statUserKey, 0, -1, true);
         foreach ($statsUser as $member => $value) {
             list($rate, $uid, $type) = explode('_', $member);
-            if ($uid !== $userId)
+            if (intval($uid) !== intval($userId))
                 continue;
             $key = "{$rate}_{$uid}";
             $stats[$key] = $stats[$key] ?? [
