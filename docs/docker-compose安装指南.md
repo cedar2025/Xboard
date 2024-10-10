@@ -18,6 +18,10 @@ cd Xboard
 3. 执行数据库安装命令
 > 选择 **启用sqlite** 和 **Docker内置的Redis**
 ```
+docker compose run -it --rm -e enable_sqlite=true -e enable_redis=true -e admin_account=your_admin_email@example.com xboard php artisan xboard:install
+```
+> 或者根据自己的需要在运行时选择
+```
 docker compose run -it --rm xboard php artisan xboard:install
 ```
 > 执行这条命令之后，会返回你的后台地址和管理员账号密码（你需要记录下来）  
