@@ -298,8 +298,8 @@ class ClashMeta
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         if($server['server_name']) $array['sni'] = $server['server_name'];
-        $array['up'] = $user->speed_limit ? min($server['up_mbps'], $user->speed_limit) : $server['up_mbps'];
-        $array['down'] = $user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps'];
+        $array['up'] = $user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps'];
+        $array['down'] = $user->speed_limit ? min($server['up_mbps'], $user->speed_limit) : $server['up_mbps'];
         $array['skip-cert-verify'] = $server['insecure'] ? true : false;
         switch($server['version']){
             case 1: 
