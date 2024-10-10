@@ -34,6 +34,9 @@ class V2rayNG
             if ($item['type'] === 'vless') {
                 $uri .= self::buildVless($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -187,6 +190,35 @@ class V2rayNG
         $query = http_build_query($params);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria($password, $server)
+    {
+        $params = [];
+        // Return empty if version is not 2
+        if ($server['version'] !== 2) {
+            return '';
+        }
+
+        if ($server['server_name']) {
+            $params['sni'] = $server['server_name'];
+            $params['security'] = 'tls';
+        }
+
+        if ($server['is_obfs']) {
+            $params['obfs'] = 'salamander';
+            $params['obfs-password'] = $server['server_key'];
+        }
+
+        $params['insecure'] = $server['insecure'] ? 1 : 0;
+
+        $query = http_build_query($params);
+        $name = rawurlencode($server['name']);
+
+        $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri .= "\r\n";
+
         return $uri;
     }
 
