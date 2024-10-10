@@ -108,14 +108,14 @@ class StatisticalService
     /**
      * 获取指定用户的流量使用情况
      */
-    public function getStatUserByUserID($userId): array
+    public function getStatUserByUserID(int|string $userId): array
     {
 
         $stats = [];
         $statsUser = $this->redis->zrange($this->statUserKey, 0, -1, true);
         foreach ($statsUser as $member => $value) {
             list($rate, $uid, $type) = explode('_', $member);
-            if ($uid !== $userId)
+            if (intval($uid) !== intval($userId))
                 continue;
             $key = "{$rate}_{$uid}";
             $stats[$key] = $stats[$key] ?? [
