@@ -57,7 +57,7 @@ class PaymentController extends Controller
             $payment->name,
             $order->trade_no
         );
-        
+
         $telegramService->sendMessageWithAdmin($message);
         return true;
     }
