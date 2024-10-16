@@ -207,8 +207,8 @@ class ClashMeta
                     $array['tls'] = true;
                     if ($server['tls_settings']) {
                         $tlsSettings = $server['tls_settings'];
-                        if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                            $array['skip-cert-verify'] = ($tlsSettings['allowInsecure'] ? true : false);
+                        if (isset($tlsSettings['allow_insecure']) && !empty($tlsSettings['allow_insecure']))
+                            $array['skip-cert-verify'] = ($tlsSettings['allow_insecure'] ? true : false);
                         if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
                             $array['servername'] = $tlsSettings['server_name'];
                     }
