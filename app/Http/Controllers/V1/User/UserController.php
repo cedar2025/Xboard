@@ -140,7 +140,7 @@ class UserController extends Controller
                 return $this->fail([400, __('Subscription plan does not exist')]);
             }
         }
-        $user['subscribe_url'] = Helper::getSubscribeUrl("/api/v1/client/subscribe?token={$user['token']}");
+        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
         return $this->success($user);
@@ -157,7 +157,7 @@ class UserController extends Controller
         if (!$user->save()) {
             return $this->fail([400, __('Reset failed')]);
         }
-        return $this->success(Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user->token));
+        return $this->success(Helper::getSubscribeUrl($user->token));
     }
 
     public function update(UserUpdate $request)
