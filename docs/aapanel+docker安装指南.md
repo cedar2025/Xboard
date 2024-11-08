@@ -6,6 +6,7 @@
 ```
 # 安装Docker
 curl -sSL https://get.docker.com | bash
+# Centos系统可能还需要执行下面命令来启动Docker
 systemctl enable docker
 systemctl start docker
 ```
