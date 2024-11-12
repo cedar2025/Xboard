@@ -1,11 +1,5 @@
 FROM phpswoole/swoole:php8.1-alpine
 
-# Environments
-ENV TZ=Asia/Shanghai
-
-# Set timezone
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN install-php-extensions pcntl bcmath inotify \ 
