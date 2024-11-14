@@ -37,7 +37,7 @@ class V2rayN
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
             if ($item['type'] === 'hysteria') {
-                $uri .= self::buildHysteria($user['uuid'], $item);
+                $uri .= General::buildHysteria($user['uuid'], $item);
             }
 
         }
@@ -192,25 +192,5 @@ class V2rayN
         return $uri;
     }
 
-    public static function buildHysteria($password, $server)
-    {
-        $name = rawurlencode($server['name']);
-        $params = [];
-        if ($server['server_name']) $params['sni'] = $server['server_name'];
-        $params['insecure'] = $server['insecure'] ? 1 : 0;
-        if($server['is_obfs']) {
-            $params['obfs'] = 'salamander';
-            $params['obfs-password'] = $server['server_key'];
-        }
-        $query = http_build_query($params);
-        if ($server['version'] == 2) {
-            $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
-            $uri .= "\r\n";
-        } else {
-            // V2rayN似乎不支持v1, 返回空
-            $uri = "";
-        }
-        return $uri;
-    }
 
 }

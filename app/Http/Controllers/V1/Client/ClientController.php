@@ -24,6 +24,7 @@ class ClientController extends Controller
         'ClashX Meta' => '1.3.5',
         'Hiddify' => '0.1.0',
         'loon' => '637',
+        'v2rayng' => '1.9.5',
         'v2rayN' => '6.31',
         'surge' => '2398'
     ];

@@ -26,6 +26,7 @@ class SingBox
 
         return response()
             ->json($this->config)
+            ->header('profile-title', 'base64:'. base64_encode($appName))
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}")
             ->header('profile-update-interval', '24');
     }

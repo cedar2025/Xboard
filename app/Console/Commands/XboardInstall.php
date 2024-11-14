@@ -46,6 +46,9 @@ class XboardInstall extends Command
     {
         try {
             $isDocker = env('docker', false);
+            $enableSqlite = env('enable_sqlite', false);
+            $enableRedis = env('enable_redis', false);
+            $adminAccount = env('admin_account', '');
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
@@ -67,7 +70,7 @@ class XboardInstall extends Command
                 return;
             }
             // 选择是否使用Sqlite
-            if (confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
+            if ($enableSqlite || confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
                 $sqliteFile = '.docker/.data/database.sqlite';
                 if (!file_exists(base_path($sqliteFile))) {
                     // 创建空文件
@@ -142,7 +145,7 @@ class XboardInstall extends Command
             $isReidsValid = false;
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
-                if ($isDocker == 'true' && (confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
+                if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
                     $envConfig['REDIS_HOST'] = '/run/redis-socket/redis.sock';
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
@@ -175,7 +178,7 @@ class XboardInstall extends Command
                 abort(500, '复制环境文件失败，请检查目录权限');
             }
             ;
-            $email = text(
+            $email = !empty($adminAccount) ? $adminAccount : text(
                 label: '请输入管理员账号',
                 default: 'admin@demo.com',
                 required: true,
