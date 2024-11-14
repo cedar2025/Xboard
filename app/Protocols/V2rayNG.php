@@ -34,6 +34,9 @@ class V2rayNG
             if ($item['type'] === 'vless') {
                 $uri .= self::buildVless($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= General::buildHysteria($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -189,6 +192,5 @@ class V2rayNG
         $uri .= "\r\n";
         return $uri;
     }
-
 
 }

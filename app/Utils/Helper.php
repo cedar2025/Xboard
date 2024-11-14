@@ -108,13 +108,15 @@ class Helper
         }
     }
 
-    public static function getSubscribeUrl($path)
+    public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
-        $subscribeUrls = explode(',', admin_setting('subscribe_url'));
-        $subscribeUrl = $subscribeUrls[array_rand($subscribeUrls)];
-        $subscribeUrl = self::replaceByPattern($subscribeUrl);
-        if ($subscribeUrl) return $subscribeUrl . $path;
-        return url($path);
+        $path = route('client.subscribe', ['token' => $token], false);
+        if(!$subscribeUrl){
+            $subscribeUrls = explode(',', admin_setting('subscribe_url'));
+            $subscribeUrl = \Arr::random($subscribeUrls);
+            $subscribeUrl = self::replaceByPattern($subscribeUrl);
+        }
+        return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
     }
 
     public static function randomPort($range) {

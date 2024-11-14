@@ -106,6 +106,8 @@ docker compose up -d
 
 🎉： 到这里，你已经可以通过域名访问你的站点了。
 
+⚠️： 请务必开启防火墙防止7001端口暴露到公网当中。
+
 ## 更新
 
 1. 通过 SSH 登录到服务器后，访问站点路径如：`/opt/1panel/apps/openresty/openresty/www/sites/xboard/index`，然后在站点目录中执行以下命令：
