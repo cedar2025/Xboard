@@ -12,6 +12,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "cedar2025/http-foundation": "6.4.x-dev",
         "cweagans/composer-patches": "^1.7",
         "doctrine/dbal": "^3.7",
         "firebase/php-jwt": "^6.3",
