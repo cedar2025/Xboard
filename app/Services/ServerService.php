@@ -196,7 +196,7 @@ class ServerService
     // 获取可用的用户列表
     public static function getAvailableUsers($groupId): Collection
     {
-        return \DB::table('v2_user')
+        return User::toBase()
             ->whereIn('group_id', $groupId)
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
