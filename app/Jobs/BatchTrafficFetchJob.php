@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,7 +18,7 @@ class BatchTrafficFetchJob implements ShouldQueue
     protected $protocol;
     protected $timestamp;
     public $tries = 1;
-    public $timeout = 10;
+    public $timeout = 20;
 
     /**
      * Create a new job instance.
@@ -36,34 +37,16 @@ class BatchTrafficFetchJob implements ShouldQueue
 
     public function handle(): void
     {
-        // 获取子节点
         $targetServer = $this->childServer ?? $this->server;
         foreach ($this->data as $uid => $v) {
-            $u = $v[0];
-            $d = $v[1];
-            $result = \DB::transaction(function () use ($uid, $u, $d, $targetServer) {
-                $user = \DB::table('v2_user')->lockForUpdate()->where('id', $uid)->first();
-                if (!$user) {
-                    return true;
-                }
-                $newTime = time();
-                $newU = $user->u + ($u * $targetServer['rate']);
-                $newD = $user->d + ($d * $targetServer['rate']);
-                $rows = \DB::table('v2_user')
-                    ->where('id', $uid)
-                    ->update([
-                        't' => $newTime,
-                        'u' => $newU,
-                        'd' => $newD,
-                    ]);
-                if ($rows === 0) {
-                    return false;
-                }
-                return true;
-            }, 3);
-            if (!$result) {
-                TrafficFetchJob::dispatch($u, $d, $uid, $targetServer, $this->protocol);
-            }
+            User::where('id', $uid)
+                ->incrementEach(
+                    [
+                        'u' => $v[0] * $targetServer['rate'],
+                        'd' => $v[1] * $targetServer['rate'],
+                    ],
+                    ['t' => time()]
+                );
         }
     }
 }
