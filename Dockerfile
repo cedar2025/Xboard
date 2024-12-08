@@ -13,7 +13,6 @@ WORKDIR /www
 # 复制项目文件和配置文件
 COPY .docker /
 COPY . /www
-COPY .env.example /www/.env.example
 
 # 生成环境变量文件并安装依赖
 RUN envsubst < /www/.env.example > /www/.env \
