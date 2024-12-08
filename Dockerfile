@@ -3,7 +3,7 @@ FROM phpswoole/swoole:php8.1-alpine
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN install-php-extensions pcntl bcmath inotify \
-    && apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git patch gettext \
+    && apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git patch \
     && addgroup -S -g 1000 www && adduser -S -G www -u 1000 www
 
 # 设置工作目录
@@ -11,15 +11,14 @@ WORKDIR /www
 
 # 复制项目文件和配置文件
 COPY .docker /
-COPY .env.example /www/.env.example
 COPY . /www
 
 # 生成环境变量文件并安装依赖
-RUN envsubst < /www/.env.example > /www/.env \
+RUN cp /www/.env.example /www/.env \
     && composer install --optimize-autoloader --no-cache --no-dev \
     && php artisan storage:link \
     && chown -R www:www /www \
     && chmod -R 775 /www
 
 # 启动 supervisor
-CMD /usr/bin/supervisord --nodaemon -c /etc/supervisor/supervisord.conf
+CMD ["/usr/bin/supervisord", "--nodaemon", "-c", "/etc/supervisor/supervisord.conf"]
