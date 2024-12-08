@@ -2,7 +2,6 @@ FROM phpswoole/swoole:php8.1-alpine
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# 安装基础软件包，包括 gettext (提供 envsubst)
 RUN install-php-extensions pcntl bcmath inotify \
     && apk --no-cache add shadow supervisor nginx sqlite nginx-mod-http-brotli mysql-client git patch gettext \
     && addgroup -S -g 1000 www && adduser -S -G www -u 1000 www
@@ -12,6 +11,7 @@ WORKDIR /www
 
 # 复制项目文件和配置文件
 COPY .docker /
+COPY .env.example /www/.env.example
 COPY . /www
 
 # 生成环境变量文件并安装依赖
