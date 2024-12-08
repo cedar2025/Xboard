@@ -16,7 +16,7 @@ COPY . /www
 COPY .env.example /www/.env.example
 
 # 生成环境变量文件并安装依赖
-RUN envsubst < /www/.env.template > /www/.env \
+RUN envsubst < /www/.env.example > /www/.env \
     && composer install --optimize-autoloader --no-cache --no-dev \
     && php artisan storage:link \
     && chown -R www:www /www \
