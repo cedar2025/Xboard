@@ -34,6 +34,9 @@ class SSRPlus
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= General::buildHysteria($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }

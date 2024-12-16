@@ -12,12 +12,16 @@ assignees: ''
 
 
 The XBoard version number you are using
-当前使用的XBoard版本号
+当前使用的XBoard版本号(git commit id)
+--------
+
+Would you like to deploy using Docker?
+你的部署方式（是否为Docker）
 --------
 
 
-Briefly describe the problem you are experiencing
-简单描述你遇到的问题
+Please briefly describe the issue you encountered (preferably with reproducible steps).
+简单描述你遇到的问题（最好带上复现步骤）
 --------
 
 
@@ -34,6 +38,6 @@ Screenshot of the reported error(Please do desensitization)
 
 
 
-The latest log files in the storage/logs directory report from #1 (Please do desensitization)
-storage/logs 目录下最新的日志文件从 #1 开始报告（请做脱敏处理）
+Run the php artisan log:export 7 command to export log files (where 7 represents logs for the last 7 days).
+运行`php artisan log:export 7` 命令导出的日志文件(其中7为最近7天的日志)。
 --------

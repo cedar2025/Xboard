@@ -25,7 +25,7 @@ class KnowledgeController extends Controller
             if (!$userService->isAvailable($user)) {
                 $this->formatAccessData($knowledge['body']);
             }
-            $subscribeUrl = Helper::getSubscribeUrl("/api/v1/client/subscribe?token={$user['token']}");
+            $subscribeUrl = Helper::getSubscribeUrl($user['token']);
             $knowledge['body'] = str_replace('{{siteName}}', admin_setting('app_name', 'XBoard'), $knowledge['body']);
             $knowledge['body'] = str_replace('{{subscribeUrl}}', $subscribeUrl, $knowledge['body']);
             $knowledge['body'] = str_replace('{{urlEncodeSubscribeUrl}}', urlencode($subscribeUrl), $knowledge['body']);

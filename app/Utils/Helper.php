@@ -108,13 +108,15 @@ class Helper
         }
     }
 
-    public static function getSubscribeUrl($path)
+    public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
-        $subscribeUrls = explode(',', admin_setting('subscribe_url'));
-        $subscribeUrl = $subscribeUrls[array_rand($subscribeUrls)];
-        $subscribeUrl = self::replaceRandomNumber($subscribeUrl);
-        if ($subscribeUrl) return $subscribeUrl . $path;
-        return url($path);
+        $path = route('client.subscribe', ['token' => $token], false);
+        if(!$subscribeUrl){
+            $subscribeUrls = explode(',', admin_setting('subscribe_url'));
+            $subscribeUrl = \Arr::random($subscribeUrls);
+            $subscribeUrl = self::replaceByPattern($subscribeUrl);
+        }
+        return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
     }
 
     public static function randomPort($range) {
@@ -129,25 +131,34 @@ class Helper
     }
 
     /**
-     * 替换字符串中的 [num1-num2] 格式为介于 num1 和 num2 之间的随机数字
+     * 根据规则替换域名中对应的字符串
      *
      * @param string $input 用户输入的字符串
      * @return string 替换后的字符串
      */
-    public static function replaceRandomNumber($input) {
-        // 匹配 [1-4999] 格式的正则表达式
-        $pattern = '/\[(\d+)-(\d+)\]/';
-    
-        // 使用 preg_replace_callback 替换匹配到的内容
-        $result = preg_replace_callback($pattern, function ($matches) {
-            // 提取最小和最大值
-            $min = intval($matches[1]);
-            $max = intval($matches[2]);
-            // 生成随机数
-            $randomNumber = rand($min, $max);
-            return $randomNumber;
-        }, $input);
-    
-        return $result;
+    public static function replaceByPattern($input)
+    {
+        $patterns = [
+            '/\[(\d+)-(\d+)\]/' => function ($matches) {
+                $min = intval($matches[1]);
+                $max = intval($matches[2]);
+                if ($min > $max) {
+                    list($min, $max) = [$max, $min];
+                }
+                $randomNumber = rand($min, $max);
+                return $randomNumber;
+            },
+            '/\[uuid\]/' => function () {
+                return  self::guid(true);
+            }
+        ];
+        foreach ($patterns as $pattern => $callback) {
+            $input = preg_replace_callback($pattern, $callback, $input);
+        }
+        return $input;
+    }
+
+    public static function getIpByDomainName($domain) {
+        return gethostbynamel($domain) ?: [];
     }
 }

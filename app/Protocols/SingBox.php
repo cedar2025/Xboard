@@ -21,12 +21,14 @@ class SingBox
         $appName = admin_setting('app_name', 'XBoard');
         $this->config = $this->loadConfig();
         $this->buildOutbounds();
+        $this->buildRule();
         $user = $this->user;
 
-        return response($this->config, 200)
+        return response()
+            ->json($this->config)
+            ->header('profile-title', 'base64:'. base64_encode($appName))
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}")
-            ->header('profile-update-interval', '24')
-            ->header('content-disposition', 'attachment;filename*=UTF-8\'\'' . rawurlencode($appName));
+            ->header('profile-update-interval', '24');
     }
 
     protected function loadConfig()
@@ -73,6 +75,21 @@ class SingBox
         $outbounds = array_merge($outbounds, $proxies);
         $this->config['outbounds'] = $outbounds;
         return $outbounds;
+    }
+
+    /**
+     * Build rule
+     */
+    protected function buildRule(){
+        $rules = $this->config['route']['rules'];
+        // Force the nodes ip to be a direct rule
+        array_unshift($rules, [
+            'ip_cidr' => collect($this->servers)->pluck('host')->map(function($host){
+                return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
+            })->flatten()->unique()->values(),
+            'outbound' => 'direct',
+        ]);
+        $this->config['route']['rules'] = $rules;
     }
 
     protected function buildShadowsocks($password, $server)
@@ -293,6 +310,8 @@ class SingBox
             $array['tag'] = $server['name'];
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
+            $array['up_mbps'] = $user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps'];
+            $array['down_mbps'] = $user->speed_limit ? min($server['up_mbps'], $user->speed_limit) : $server['up_mbps'];
 
             if ($server['is_obfs']) {
                 $array['obfs']['type'] = 'salamander';

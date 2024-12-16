@@ -21,7 +21,7 @@
         "guzzlehttp/guzzle": "^7.4.3",
         "hhxsv5/laravel-s": "~3.7.0",
         "joanhey/adapterman": "^0.6.1",
-        "laravel/framework": "^10.0",
+        "laravel/framework": "10.48.22",
         "laravel/horizon": "^5.9.6",
         "laravel/tinker": "^2.5",
         "linfo/linfo": "^4.0",

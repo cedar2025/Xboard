@@ -2,6 +2,7 @@
 
 namespace App\Protocols;
 
+use App\Utils\Helper;
 use phpDocumentor\Reflection\Types\Self_;
 use Symfony\Component\Yaml\Yaml;
 
@@ -32,11 +33,6 @@ class Clash
         $proxy = [];
         $proxies = [];
 
-        // 增加不支持提示
-        // array_push($proxy, [ "name" => "您的客户端不支持", "type" => "vmess", "server" => "1.1.1.1", "port" => 80, "uuid" => "aaaaaaaa-bbbb-cccc-cccc-dddddddddddd", "alterId" => 0, "cipher" => "auto", "udp" => false, "tls" => false]);
-        // array_push($proxies, "您的客户端不支持");
-        // array_push($proxy, [ "name" => "请使用clash Meta内核的客户端", "type" => "vmess", "server" => "1.1.1.1", "port" => 80, "uuid" => "aaaaaaaa-bbbb-cccc-cccc-dddddddddddd", "alterId" => 0, "cipher" => "auto", "udp" => false, "tls" => false]);
-        // array_push($proxies, "请使用clash Meta内核的客户端");
         foreach ($servers as $item) {
 
             if ($item['type'] === 'shadowsocks'
@@ -83,11 +79,9 @@ class Clash
             return $group['proxies'];
         });
         $config['proxy-groups'] = array_values($config['proxy-groups']);
-        // Force the current subscription domain to be a direct rule
-        $subsDomain = request()->header('Host');
-        if ($subsDomain) {
-            array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
-        }
+        
+        $config = $this->buildRules($config);
+
 
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
         $yaml = str_replace('$app_name', admin_setting('app_name', 'XBoard'), $yaml);
@@ -96,6 +90,27 @@ class Clash
             ->header('profile-update-interval', '24')
             ->header('content-disposition', 'attachment;filename*=UTF-8\'\'' . rawurlencode($appName))
             ->header('profile-web-page-url', admin_setting('app_url'));
+    }
+
+    /**
+     * Build the rules for Clash.
+     */
+    public function buildRules($config)
+    {
+        // Force the current subscription domain to be a direct rule
+        $subsDomain = request()->header('Host');
+        if ($subsDomain) {
+            array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
+        }
+        // Force the nodes ip to be a direct rule
+        collect($this->servers)->pluck('host')->map(function($host){
+            $host = trim($host);
+            return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
+        })->flatten()->unique()->each(function($nodeIP) use ( &$config ) {
+            array_unshift($config['rules'], "IP-CIDR,{$nodeIP}/32,DIRECT,no-resolve");
+        });
+
+        return $config;
     }
 
     public static function buildShadowsocks($uuid, $server)

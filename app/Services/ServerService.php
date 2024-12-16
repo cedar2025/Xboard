@@ -161,6 +161,11 @@ class ServerService
                 $userKey = Helper::uuidToBase64($user['uuid'], $config['userKeySize']);
                 $shadowsocks[$key]['password'] = "{$serverKey}:{$userKey}";
             }
+            if ($v['obfs'] === 'http') {
+                $shadowsocks[$key]['obfs'] = 'http';
+                $shadowsocks[$key]['obfs-host'] = $v['obfs_settings']['host'];
+                $shadowsocks[$key]['obfs-path'] = $v['obfs_settings']['path'];
+            }
             $servers[] = $shadowsocks[$key]->toArray();
         }
         return $servers;
@@ -191,7 +196,7 @@ class ServerService
     // 获取可用的用户列表
     public static function getAvailableUsers($groupId): Collection
     {
-        return \DB::table('v2_user')
+        return User::toBase()
             ->whereIn('group_id', $groupId)
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
@@ -309,9 +314,11 @@ class ServerService
             $servers[$k]['online'] = Cache::get(CacheKey::get("SERVER_{$serverType}_ONLINE_USER", $v['parent_id'] ?? $v['id'])) ?? 0;
             // 如果是子节点，先尝试从缓存中获取
             if($pid = $v['parent_id']){
-                // 获取缓存
-                $onlineUsers = Cache::get(CacheKey::get('MULTI_SERVER_' . $serverType . '_ONLINE_USER', $pid)) ?? [];
-                $servers[$k]['online'] = (collect($onlineUsers)->whereIn('ip', $v['ips'])->sum('online_user')) . "|{$servers[$k]['online']}";
+                $cacheKey = CacheKey::get('MULTI_SERVER_' . $serverType . '_ONLINE_USER', $pid);
+                $onlineUsers = Cache::get($cacheKey) ?? [];
+                $onlineUserSum = collect($onlineUsers)->whereIn('ip', $v['ips'])->sum('online_user');
+                $online = ($onlineUserSum > 0 ? $onlineUserSum . "|" : "") . $servers[$k]['online'];
+                $servers[$k]['online'] = $online;
             }
             $servers[$k]['last_check_at'] = Cache::get(CacheKey::get("SERVER_{$serverType}_LAST_CHECK_AT", $v['parent_id'] ?? $v['id']));
             $servers[$k]['last_push_at'] = Cache::get(CacheKey::get("SERVER_{$serverType}_LAST_PUSH_AT", $v['parent_id'] ?? $v['id']));

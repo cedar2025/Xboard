@@ -10,6 +10,7 @@ on:
     branches: [ "dev" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
+  workflow_dispatch:  # Enable manual trigger
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -32,6 +33,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -58,7 +61,7 @@ jobs:
         uses: docker/metadata-action@v5.5.1
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Get version
         id: get_version
         run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT

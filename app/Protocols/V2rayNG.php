@@ -34,6 +34,9 @@ class V2rayNG
             if ($item['type'] === 'vless') {
                 $uri .= self::buildVless($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= General::buildHysteria($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -46,7 +49,11 @@ class V2rayNG
             ['-', '_', ''],
             base64_encode("{$server['cipher']}:{$password}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $uri = "ss://{$str}@{$server['host']}:{$server['port']}";
+        if ($server['obfs'] == 'http') {
+            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$server['obfs-host']};path={$server['obfs-path']}";
+        }
+        return $uri."#{$name}\r\n";
     }
 
     public static function buildVmess($uuid, $server)
@@ -189,6 +196,5 @@ class V2rayNG
         $uri .= "\r\n";
         return $uri;
     }
-
 
 }
