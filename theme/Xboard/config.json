@@ -1,0 +1,33 @@
+{
+  "name": "Xboard",
+  "description": "Xboard",
+  "version": "1.0.0",
+  "images": "",
+  "configs": [
+    {
+      "label": "主题色",
+      "placeholder": "请选择主题颜色",
+      "field_name": "theme_color",
+      "field_type": "select",
+      "select_options": {
+        "default": "默认(绿色)",
+        "blue": "蓝色",
+        "black": "黑色",
+        "darkblue": "暗蓝色"
+      },
+      "default_value": "default"
+    },
+    {
+      "label": "背景",
+      "placeholder": "请输入背景图片URL",
+      "field_name": "background_url",
+      "field_type": "input"
+    },
+    {
+      "label": "自定义页脚HTML",
+      "placeholder": "可以实现客服JS代码的加入等",
+      "field_name": "custom_html",
+      "field_type": "textarea"
+    }
+  ]
+}

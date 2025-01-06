@@ -31,7 +31,7 @@ return new class extends Migration
             $table->integer('three_year_price')->nullable();
             $table->integer('onetime_price')->nullable();
             $table->integer('reset_price')->nullable();
-            $table->boolean('reset_traffic_method')->nullable();
+            $table->boolean('reset_traffic_method')->nullable()->comment('重置流量方式:0跟随系统设置、1每月1号、2按月重置、3不重置、4每年1月1日、5按年重置');
             $table->integer('capacity_limit')->nullable();
             $table->integer('created_at');
             $table->integer('updated_at');

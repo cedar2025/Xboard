@@ -3,10 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\ApiException;
-use App\Utils\CacheKey;
 use Closure;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class Client
 {
@@ -19,7 +18,7 @@ class Client
      */
     public function handle($request, Closure $next)
     {
-        $token = $request->input('token');
+        $token = $request->input('token', $request->route('token'));
         if (empty($token)) {
             throw new ApiException('token is null',403);
         }
@@ -27,9 +26,8 @@ class Client
         if (!$user) {
             throw new ApiException('token is error',403);
         }
-        $request->merge([
-            'user' => $user
-        ]);
+        
+        Auth::setUser($user);
         return $next($request);
     }
 }

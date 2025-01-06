@@ -2,13 +2,13 @@
 
 namespace App\Protocols;
 
+use App\Contracts\ProtocolInterface;
 use App\Utils\Helper;
-use phpDocumentor\Reflection\Types\Self_;
 use Symfony\Component\Yaml\Yaml;
 
-class Clash
+class Clash implements ProtocolInterface
 {
-    public $flag = 'clash';
+    public $flags = ['clash'];
     private $servers;
     private $user;
 
@@ -16,6 +16,11 @@ class Clash
     {
         $this->user = $user;
         $this->servers = $servers;
+    }
+
+    public function getFlags(): array
+    {
+        return $this->flags;
     }
 
     public function handle()
@@ -35,8 +40,9 @@ class Clash
 
         foreach ($servers as $item) {
 
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
+            if (
+                $item['type'] === 'shadowsocks'
+                && in_array(data_get($item['protocol_settings'], 'cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
@@ -58,28 +64,32 @@ class Clash
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
-            if (!is_array($config['proxy-groups'][$k]['proxies'])) $config['proxy-groups'][$k]['proxies'] = [];
+            if (!is_array($config['proxy-groups'][$k]['proxies']))
+                $config['proxy-groups'][$k]['proxies'] = [];
             $isFilter = false;
             foreach ($config['proxy-groups'][$k]['proxies'] as $src) {
                 foreach ($proxies as $dst) {
-                    if (!$this->isRegex($src)) continue;
+                    if (!$this->isRegex($src))
+                        continue;
                     $isFilter = true;
                     $config['proxy-groups'][$k]['proxies'] = array_values(array_diff($config['proxy-groups'][$k]['proxies'], [$src]));
                     if ($this->isMatch($src, $dst)) {
                         array_push($config['proxy-groups'][$k]['proxies'], $dst);
                     }
                 }
-                if ($isFilter) continue;
+                if ($isFilter)
+                    continue;
             }
-            if ($isFilter) continue;
+            if ($isFilter)
+                continue;
             $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
 
-        $config['proxy-groups'] = array_filter($config['proxy-groups'], function($group) {
+        $config['proxy-groups'] = array_filter($config['proxy-groups'], function ($group) {
             return $group['proxies'];
         });
         $config['proxy-groups'] = array_values($config['proxy-groups']);
-        
+
         $config = $this->buildRules($config);
 
 
@@ -103,10 +113,10 @@ class Clash
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
         // Force the nodes ip to be a direct rule
-        collect($this->servers)->pluck('host')->map(function($host){
+        collect($this->servers)->pluck('host')->map(function ($host) {
             $host = trim($host);
             return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
-        })->flatten()->unique()->each(function($nodeIP) use ( &$config ) {
+        })->flatten()->unique()->each(function ($nodeIP) use (&$config) {
             array_unshift($config['rules'], "IP-CIDR,{$nodeIP}/32,DIRECT,no-resolve");
         });
 
@@ -115,12 +125,13 @@ class Clash
 
     public static function buildShadowsocks($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'ss';
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
-        $array['cipher'] = $server['cipher'];
+        $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
         return $array;
@@ -128,6 +139,7 @@ class Clash
 
     public static function buildVmess($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'vmess';
@@ -138,58 +150,40 @@ class Clash
         $array['cipher'] = 'auto';
         $array['udp'] = true;
 
-        if ($server['tls']) {
+        if (data_get($protocol_settings, 'tls')) {
             $array['tls'] = true;
-            if ($server['tlsSettings']) {
-                $tlsSettings = $server['tlsSettings'];
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                    $array['skip-cert-verify'] = ($tlsSettings['allowInsecure'] ? true : false);
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                    $array['servername'] = $tlsSettings['serverName'];
-            }
-        }
-        if ($server['network'] === 'tcp') {
-            $tcpSettings = $server['networkSettings'];
-            if (isset($tcpSettings['header']['type'])) $array['network'] = $tcpSettings['header']['type'];
-
-            if (isset($tcpSettings['header']['request']['headers'])){
-                $headers = $$tcpSettings['header']['request']['headers'];
-                $array['http-opts']['headers'] = $headers;
-            }
-            if (isset($tcpSettings['header']['request']['path'][0])){
-                $paths = $tcpSettings['header']['request']['path'];
-                $array['http-opts']['path'] = $paths;
-            }
-        }
-        if ($server['network'] === 'ws') {
-            $array['network'] = 'ws';
-            if ($server['networkSettings']) {
-                $wsSettings = $server['networkSettings'];
-                $array['ws-opts'] = [];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-opts']['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-headers'] = ['Host' => $wsSettings['headers']['Host']];
-            }
-        }
-        if ($server['network'] === 'grpc') {
-            $array['network'] = 'grpc';
-            if ($server['networkSettings']) {
-                $grpcSettings = $server['networkSettings'];
-                $array['grpc-opts'] = [];
-                if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
-            }
+            $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
+            $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
 
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
+                $array['http-opts'] = [
+                    'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                    'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                ];
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = [
+                    'path' => data_get($protocol_settings, 'network_settings.path'),
+                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
+                ];
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                $array['grpc-opts'] = [
+                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
+                ];
+                break;
+        }
         return $array;
     }
 
     public static function buildTrojan($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'trojan';
@@ -197,23 +191,30 @@ class Clash
         $array['port'] = $server['port'];
         $array['password'] = $password;
         $array['udp'] = true;
-        if (!empty($server['server_name'])) $array['sni'] = $server['server_name'];
-        if (!empty($server['allow_insecure'])) $array['skip-cert-verify'] = ($server['allow_insecure'] ? true : false);
-        // trojan-go配置
-        if(in_array($server['network'], ["grpc", "ws"])){
-            $array['network'] = $server['network'];
-            // grpc配置
-            if($server['network'] === "grpc" && isset($server['networkSettings']['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $server['networkSettings']['serviceName'];
-            // ws配置
-            if($server['network'] === "ws") {
-                if(isset($server['networkSettings']['path'])) {
-                    $array['ws-opts']['path'] = $server['networkSettings']['path'];
-                }
-                if(isset($server['networkSettings']['headers']['Host'])){
-                    $array['ws-opts']['headers']['Host'] = $server['networkSettings']['headers']['Host'];
-                }
-            }
-        };
+        $array['sni'] = data_get($protocol_settings, 'server_name');
+        $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
+
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = 'tcp';
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = [
+                    'path' => data_get($protocol_settings, 'network_settings.path'),
+                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
+                ];
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                $array['grpc-opts'] = [
+                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
+                ];
+                break;
+            default:
+                $array['network'] = 'tcp';
+                break;
+        }
         return $array;
     }
 

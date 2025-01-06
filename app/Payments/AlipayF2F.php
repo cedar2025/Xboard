@@ -4,16 +4,18 @@
  * 自己写别抄，抄NMB抄
  */
 namespace App\Payments;
+use App\Contracts\PaymentInterface;
 use App\Exceptions\ApiException;
 
-class AlipayF2F {
+class AlipayF2F implements PaymentInterface
+{
     protected $config;
     public function __construct($config)
     {
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'app_id' => [
@@ -39,7 +41,7 @@ class AlipayF2F {
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
         try {
             $gateway = new \Library\AlipayF2F();
@@ -66,7 +68,8 @@ class AlipayF2F {
 
     public function notify($params)
     {
-        if ($params['trade_status'] !== 'TRADE_SUCCESS') return false;
+        if ($params['trade_status'] !== 'TRADE_SUCCESS')
+            return false;
         $gateway = new \Library\AlipayF2F();
         $gateway->setAppId($this->config['app_id']);
         $gateway->setPrivateKey($this->config['private_key']); // 可以是路径，也可以是密钥内容

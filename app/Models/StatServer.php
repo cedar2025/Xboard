@@ -13,4 +13,9 @@ class StatServer extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
+
+    public function server()
+    {
+        return $this->belongsTo(Server::class, 'server_id');
+    }
 }

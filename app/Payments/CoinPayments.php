@@ -2,9 +2,10 @@
 
 namespace App\Payments;
 
+use App\Contracts\PaymentInterface;
 use App\Exceptions\ApiException;
 
-class CoinPayments
+class CoinPayments implements PaymentInterface
 {
     protected $config;
     public function __construct($config)
@@ -12,7 +13,7 @@ class CoinPayments
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'coinpayments_merchant_id' => [
@@ -33,7 +34,7 @@ class CoinPayments
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
 
         // IPN notifications are slow, when the transaction is successful, we should return to the user center to avoid user confusion
@@ -59,7 +60,7 @@ class CoinPayments
 
         return [
             'type' => 1, // Redirect to url
-            'data' =>  'https://www.coinpayments.net/index.php?' . $params_string
+            'data' => 'https://www.coinpayments.net/index.php?' . $params_string
         ];
     }
 

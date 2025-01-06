@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Model
+class User extends Authenticatable
 {
+    use HasApiTokens;
     protected $table = 'v2_user';
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
@@ -14,6 +16,7 @@ class User extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
+    protected $hidden = ['password'];
 
 
     // 获取邀请人信息
@@ -26,6 +29,11 @@ class User extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class, 'plan_id', 'id');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(ServerGroup::class, 'group_id', 'id');
     }
 
     // 获取用户邀请码列表

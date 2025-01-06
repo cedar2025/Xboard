@@ -55,13 +55,13 @@ class OrderService
             }
 
             switch ((int)$order->type) {
-                case 1:
+                case Order::STATUS_PROCESSING:
                     $this->openEvent(admin_setting('new_order_event_id', 0));
                     break;
-                case 2:
+                case Order::TYPE_RENEWAL:
                     $this->openEvent(admin_setting('renew_order_event_id', 0));
                     break;
-                case 3:
+                case Order::TYPE_UPGRADE:
                     $this->openEvent(admin_setting('change_order_event_id', 0));
                     break;
             }
@@ -222,6 +222,7 @@ class OrderService
         try {
             OrderHandleJob::dispatchSync($order->trade_no);
         } catch (\Exception $e) {
+            \Log::error($e);
             return false;
         }
         return true;
@@ -265,14 +266,14 @@ class OrderService
     private function buyByPeriod(Order $order, Plan $plan)
     {
         // change plan process
-        if ((int)$order->type === 3) {
+        if ((int)$order->type === Order::TYPE_UPGRADE) {
             $this->user->expired_at = time();
         }
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         // 从一次性转换到循环
         if ($this->user->expired_at === NULL) $this->buyByResetTraffic();
         // 新购
-        if ($order->type === 1) $this->buyByResetTraffic();
+        if ($order->type === Order::TYPE_NEW_PURCHASE) $this->buyByResetTraffic();
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);

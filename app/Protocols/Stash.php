@@ -4,10 +4,11 @@ namespace App\Protocols;
 
 use App\Models\ServerHysteria;
 use Symfony\Component\Yaml\Yaml;
+use App\Contracts\ProtocolInterface;
 
-class Stash
+class Stash implements ProtocolInterface
 {
-    public $flag = 'stash';
+    public $flags = ['stash'];
     private $servers;
     private $user;
 
@@ -15,6 +16,11 @@ class Stash
     {
         $this->user = $user;
         $this->servers = $servers;
+    }
+
+    public function getFlags(): array
+    {
+        return $this->flags;
     }
 
     public function handle()
@@ -37,8 +43,9 @@ class Stash
         $proxies = [];
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
+            if (
+                $item['type'] === 'shadowsocks'
+                && in_array(data_get($item, 'protocol_settings.cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
@@ -68,23 +75,27 @@ class Stash
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
-            if (!is_array($config['proxy-groups'][$k]['proxies'])) $config['proxy-groups'][$k]['proxies'] = [];
+            if (!is_array($config['proxy-groups'][$k]['proxies']))
+                $config['proxy-groups'][$k]['proxies'] = [];
             $isFilter = false;
             foreach ($config['proxy-groups'][$k]['proxies'] as $src) {
                 foreach ($proxies as $dst) {
-                    if (!$this->isRegex($src)) continue;
+                    if (!$this->isRegex($src))
+                        continue;
                     $isFilter = true;
                     $config['proxy-groups'][$k]['proxies'] = array_values(array_diff($config['proxy-groups'][$k]['proxies'], [$src]));
                     if ($this->isMatch($src, $dst)) {
                         array_push($config['proxy-groups'][$k]['proxies'], $dst);
                     }
                 }
-                if ($isFilter) continue;
+                if ($isFilter)
+                    continue;
             }
-            if ($isFilter) continue;
+            if ($isFilter)
+                continue;
             $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
-        $config['proxy-groups'] = array_filter($config['proxy-groups'], function($group) {
+        $config['proxy-groups'] = array_filter($config['proxy-groups'], function ($group) {
             return $group['proxies'];
         });
         $config['proxy-groups'] = array_values($config['proxy-groups']);
@@ -104,12 +115,13 @@ class Stash
 
     public static function buildShadowsocks($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'ss';
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
-        $array['cipher'] = $server['cipher'];
+        $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
         return $array;
@@ -117,6 +129,7 @@ class Stash
 
     public static function buildVmess($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'vmess';
@@ -127,122 +140,77 @@ class Stash
         $array['cipher'] = 'auto';
         $array['udp'] = true;
 
-        if ($server['tls']) {
-            $array['tls'] = true;
-            if ($server['tlsSettings']) {
-                $tlsSettings = $server['tlsSettings'];
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                    $array['skip-cert-verify'] = ($tlsSettings['allowInsecure'] ? true : false);
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                    $array['servername'] = $tlsSettings['serverName'];
-            }
-        }
-        if ($server['network'] === 'tcp') {
-            $tcpSettings = $server['networkSettings'];
-            if (isset($tcpSettings['header']['type'])) $array['network'] = $tcpSettings['header']['type'];
-            if (isset($tcpSettings['header']['request']['path'][0])) $array['http-opts']['path'] = $tcpSettings['header']['request']['path'][0];
-        }
-        if ($server['network'] === 'ws') {
-            $array['network'] = 'ws';
-            if ($server['networkSettings']) {
-                $wsSettings = $server['networkSettings'];
-                $array['ws-opts'] = [];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-opts']['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-headers'] = ['Host' => $wsSettings['headers']['Host']];
-            }
-        }
-        if ($server['network'] === 'grpc') {
-            $array['network'] = 'grpc';
-            if ($server['networkSettings']) {
-                $grpcSettings = $server['networkSettings'];
-                $array['grpc-opts'] = [];
-                if (isset($grpcSettings['serviceName']))  $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
-            }
-        }
+        $array['tls'] = data_get($protocol_settings, 'tls');
+        $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
+        $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
 
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
+                $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                $array['grpc-opts'] = [];
+                $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
+                break;
+            default:
+                break;
+        }
         return $array;
     }
 
     public static function buildVless($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'vless';
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['uuid'] = $uuid;
-        $array['flow'] = !empty($server['flow']) ? $server['flow']: "";
+        $array['flow'] = data_get($protocol_settings, 'flow');
         $array['udp'] = true;
 
         $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq']; //随机客户端指纹
-        $array['client-fingerprint'] = $fingerprints[rand(0,count($fingerprints) - 1)];
+        $array['client-fingerprint'] = $fingerprints[rand(0, count($fingerprints) - 1)];
 
-        if ($server['tls']) {
-            $array['tls'] = true;
-            switch($server['tls']){
-                case 1:
-                    if ($server['tls_settings']) {
-                        $tlsSettings = $server['tls_settings'];
-                        if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
-                            $array['servername'] = $tlsSettings['server_name'];
-                    }
-                    break;
-                case 2:
-                    if (!isset($server['network_settings'])) break;
-                    $networkSettings = $server['network_settings'];
-                    if (isset($networkSettings['reality-opts'])){
-                        $realitySettings = $networkSettings['reality-opts'];
-                        $array['reality-opts'] = [];
-                        $array['reality-opts']['public-key'] = $realitySettings['public-key'];
-                        $array['reality-opts']['short-id'] = $realitySettings['short-id'];
-                    }
-                    break;
-            }
-
+        switch (data_get($protocol_settings, 'tls')) {
+            case 1:
+                $array['tls'] = true;
+                $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
+                $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+                break;
+            case 2:
+                $array['tls'] = true;
+                $array['skip-cert-verify'] = data_get($protocol_settings, 'reality_settings.allow_insecure');
+                $array['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $array['reality-opts'] = [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
+                ];
+                break;
         }
 
-        if ($server['network'] === 'tcp') {
-            $tcpSettings = $server['networkSettings'];
-            if (isset($tcpSettings['header']['type']) && $tcpSettings['header']['type'] == 'http') {
-                $array['network'] = $tcpSettings['header']['type'];
-                if (isset($tcpSettings['header']['request']['headers']['Host'])){
-                    $array['http-opts']['headers']['Host'] = $tcpSettings['header']['request']['headers']['Host'];
-                }
-                if (isset($tcpSettings['header']['request']['path'][0])){
-                    $paths = $tcpSettings['header']['request']['path'];
-                    $array['http-opts']['path'] = $paths[array_rand($paths)];
-                };
-            }
-        }
-
-        if ($server['network'] === 'ws') {
-            $array['network'] = 'ws';
-            if ($server['network_settings']) {
-                $wsSettings = $server['network_settings'];
-                $array['ws-opts'] = [];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-opts']['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-headers'] = ['Host' => $wsSettings['headers']['Host']];
-            }
-        }
-        if ($server['network'] === 'grpc') {
-            $array['network'] = 'grpc';
-            if ($server['network_settings']) {
-                $grpcSettings = $server['network_settings'];
-                $array['grpc-opts'] = [];
-                if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
-            }
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
+                $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
+                break;
         }
 
         return $array;
@@ -250,6 +218,7 @@ class Stash
 
     public static function buildTrojan($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'trojan';
@@ -257,49 +226,44 @@ class Stash
         $array['port'] = $server['port'];
         $array['password'] = $password;
         $array['udp'] = true;
-        // trojan-go配置
-        if(in_array($server['network'], ["grpc", "ws"])){
-            $array['network'] = $server['network'];
-            // grpc配置
-            if($server['network'] === "grpc" && isset($server['networkSettings']['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $server['networkSettings']['serviceName'];
-            // ws配置
-            if($server['network'] === "ws") {
-                if(isset($server['networkSettings']['path'])) {
-                    $array['ws-opts']['path'] = $server['networkSettings']['path'];
-                }
-                if(isset($server['networkSettings']['headers']['Host'])){
-                    $array['ws-opts']['headers']['Host'] = $server['networkSettings']['headers']['Host'];
-                }
-            }
-        };
-        if (!empty($server['server_name'])) $array['sni'] = $server['server_name'];
-        if (!empty($server['allow_insecure'])) $array['skip-cert-verify'] = ($server['allow_insecure'] ? true : false);
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
+                $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
+                break;
+        }
+        $array['sni'] = data_get($protocol_settings, 'server_name');
+        $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
         return $array;
     }
 
     public static function buildHysteria($password, $server)
     {
-        $array = [];
+        $protocol_settings = $server['protocol_settings'];
         $array['name'] = $server['name'];
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
-        $array['up-speed'] = $server['up_mbps'];
-        $array['down-speed'] = $server['down_mbps'];
-        $array['skip-cert-verify'] = $server['insecure'];
-        $array['sni'] = $server['server_name']??'';
-        switch($server['version']){
+        $array['up-speed'] = data_get($protocol_settings, 'bandwidth.up');
+        $array['down-speed'] = data_get($protocol_settings, 'bandwidth.down');
+        $array['skip-cert-verify'] = data_get($protocol_settings, 'tls.allow_insecure');
+        $array['sni'] = data_get($protocol_settings, 'tls.server_name') ?? '';
+        switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $array['type'] = 'hysteria';
                 $array['auth-str'] = $password;
                 $array['protocol'] = 'udp';
-                $array['obfs'] = $server['server_key'];
-                $array['alpn'] = [ServerHysteria::$alpnMap[$server['alpn']]];
+                $array['obfs'] = data_get($protocol_settings, 'obfs.open') ? data_get($protocol_settings, 'obfs.type') : null;
                 break;
             case 2:
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
-                if(isset($server['ports'])) $array['ports'] = $server['ports'];
+                $array['ports'] = data_get($protocol_settings, 'ports');
                 break;
         }
         return $array;

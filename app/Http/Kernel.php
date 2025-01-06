@@ -29,7 +29,7 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
-//            \App\Http\Middleware\EncryptCookies::class,
+            //            \App\Http\Middleware\EncryptCookies::class,
 //            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
 //            \Illuminate\Session\Middleware\StartSession::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class,
@@ -39,9 +39,12 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-//            \App\Http\Middleware\EncryptCookies::class,
+            //            \App\Http\Middleware\EncryptCookies::class,
 //            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
 //            \Illuminate\Session\Middleware\StartSession::class,
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
+            // \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\ForceJson::class,
             \App\Http\Middleware\Language::class,
             'bindings',
@@ -56,6 +59,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middlewareAliases = [
+        'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
@@ -70,6 +74,8 @@ class Kernel extends HttpKernel
         'staff' => \App\Http\Middleware\Staff::class,
         'log' => \App\Http\Middleware\RequestLog::class,
         'server' => \App\Http\Middleware\Server::class,
+        'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+        'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
     ];
 
     /**

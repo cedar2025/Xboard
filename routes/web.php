@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 |
 */
 
+Route::get('/s/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])->middleware('client')->name('client.subscribe');
+
 Route::get('/', function (Request $request) {
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
         if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
@@ -28,13 +30,14 @@ Route::get('/', function (Request $request) {
         'logo' => admin_setting('logo')
     ];
 
-    if (!admin_setting("theme_{$renderParams['theme']}")) {
-        $themeService = new ThemeService($renderParams['theme']);
-        $themeService->init();
+    $theme = admin_setting('frontend_theme', 'Xboard');
+
+    if (!admin_setting("theme_{$theme}")) {
+        ThemeService::switchTheme($theme);
     }
 
-    $renderParams['theme_config'] = admin_setting("theme_". admin_setting('frontend_theme', 'Xboard')) ?? config('theme.' . admin_setting('frontend_theme', 'Xboard'));
-    return view('theme::' . admin_setting('frontend_theme', 'Xboard') . '.dashboard', $renderParams);
+    $renderParams['theme_config'] = (new ThemeService())->getConfig($theme);
+    return view('theme::' . $theme . '.dashboard', $renderParams);
 });
 
 //TODO:: 兼容

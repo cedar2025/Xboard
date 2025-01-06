@@ -60,8 +60,16 @@ class PaymentService
     {
         $form = $this->payment->form();
         $keys = array_keys($form);
-        foreach ($keys as $key) {
-            if (isset($this->config[$key])) $form[$key]['value'] = $this->config[$key];
+        foreach ($form as $key => $field) {
+            $form[$key] = [
+                'label' => $field['label'],
+                'field_name' => $key,
+                'field_type' => $field['type'],
+                'type' => $field['type'],
+                'placeholder' => $field['placeholder'] ?? '',
+                'value' => $this->config[$key] ?? '',
+                'select_options' => $field['select_options'] ?? [],
+            ];
         }
         return $form;
     }

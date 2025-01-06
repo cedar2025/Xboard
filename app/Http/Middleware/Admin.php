@@ -3,9 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\ApiException;
-use App\Services\AuthService;
+use Illuminate\Support\Facades\Auth;
 use Closure;
-use Illuminate\Support\Facades\Cache;
 
 class Admin
 {
@@ -18,14 +17,15 @@ class Admin
      */
     public function handle($request, Closure $next)
     {
-        $authorization = $request->input('auth_data') ?? $request->header('authorization');
-        if (!$authorization) throw new ApiException('未登录或登陆已过期', 403);
+        if (!Auth::guard('sanctum')->check()) {
+            throw new ApiException('未登录或登陆已过期', 403);
+        }
 
-        $user = AuthService::decryptAuthData($authorization);
-        if (!$user || !$user['is_admin']) throw new ApiException('未登录或登陆已过期',403);
-        $request->merge([
-            'user' => $user
-        ]);
+        $user = Auth::guard('sanctum')->user();
+        if (!$user->is_admin) {
+            throw new ApiException('无管理员权限', 403);
+        }
+
         return $next($request);
     }
 }

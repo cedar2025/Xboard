@@ -161,4 +161,9 @@ class Helper
     public static function getIpByDomainName($domain) {
         return gethostbynamel($domain) ?: [];
     }
+
+    public static function getRandFingerprint() {
+        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq'];
+        return \Arr::random($fingerprints);
+    }
 }
