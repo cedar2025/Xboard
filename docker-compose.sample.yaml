@@ -14,7 +14,7 @@ services:
   horizon:
     build: .
     volumes:
-      - ./.env:/www/.env
+      - ./:/www/
       - redis-socket:/run/redis-socket
     restart: on-failure
     network_mode: host
