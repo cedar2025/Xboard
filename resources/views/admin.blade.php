@@ -7,13 +7,14 @@
   <title>{{ $title }}</title>
   <script>
     window.settings = {
+      base_url: "/",
       title: "{{ $title }}",
       version: "{{ $version }}",
       logo: "{{ $logo }}",
       secure_path: "{{ $secure_path }}",
     };
   </script>
-  <script type="module" crossorigin src="/assets/admin/assets/index-_xd8OyP8.js"></script>
+  <script type="module" crossorigin src="/assets/admin/assets/index-ra1jmRmU.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/admin/assets/index-B8YrTAgq.css" />
 </head>
 
