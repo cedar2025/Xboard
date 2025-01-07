@@ -59,6 +59,11 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:new
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.4.0
+        with:
+          cosign-release: 'v2.2.2'
+
       - name: Sign image
         env:
           TAGS: ${{ steps.meta.outputs.tags }}

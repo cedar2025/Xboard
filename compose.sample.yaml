@@ -1,9 +1,9 @@
 services:
   web:
-    image: ghcr.io/cedar2025/xboard:new
+    # image: ghcr.io/cedar2025/xboard:new
+    build: .
     volumes:
       - ./:/www/
-      - redis-socket:/run/redis-socket
     environment:
       - docker=true
     depends_on:
@@ -15,19 +15,17 @@ services:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
-      - redis-socket:/run/redis-socket
     restart: on-failure
     network_mode: host
     command: php artisan horizon
     depends_on:
       - redis
   redis:
-    image: redis:7-alpine 
+    image: redis:7-alpine
     command: redis-server --appendonly yes --appendfsync everysec
     restart: unless-stopped
     volumes:
       - ./.docker/.data/redis:/data
-      - redis-socket:/run/redis-socket
     sysctls:
       net.core.somaxconn: 1024
     ulimits:
@@ -35,5 +33,3 @@ services:
       nofile:
         soft: 20000
         hard: 40000
-volumes:
-  redis-socket:
