@@ -76,14 +76,13 @@ class BTCPay
         //NOT BTCPay-Sig
         //API doc is WRONG!
         $headerName = 'Btcpay-Sig';
-        $signraturHeader = isset($headers[$headerName]) ? $headers[$headerName] : '';
+        $signatureHeader = isset($headers[$headerName]) ? $headers[$headerName] : '';
         $json_param = json_decode($payload, true);
 
         $computedSignature = "sha256=" . \hash_hmac('sha256', $payload, $this->config['btcpay_webhook_key']);
 
-        if (!self::hashEqual($signraturHeader, $computedSignature)) {
+        if (!self::hashEqual($signatureHeader, $computedSignature)) {
             throw new ApiException('HMAC signature does not match', 400);
-            return false;
         }
 
         //get order id store in metadata

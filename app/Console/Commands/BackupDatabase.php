@@ -26,9 +26,10 @@ class BackupDatabase extends Command
         }
 
         // 数据库备份逻辑
+        $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_' . config('database.connections.mysql.database') . '_database_backup.sql');
+        $compressedBackupPath = $databaseBackupPath . '.gz';
         try{
             if (config('database.default') === 'mysql'){
-                $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_' . config('database.connections.mysql.database') . '_database_backup.sql');
                 $this->info("1️⃣：开始备份Mysql");
                 \Spatie\DbDumper\Databases\MySql::create()
                     ->setHost(config('database.connections.mysql.host'))
@@ -83,7 +84,7 @@ class BackupDatabase extends Command
                 $bucket->upload(fopen($compressedBackupPath, 'r'), [
                     'name' => $objectName,
                 ]);
-        
+
                 // 输出文件链接
                 \Log::channel('backup')->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
                 $this->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
