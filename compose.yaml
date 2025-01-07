@@ -5,7 +5,6 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
-      - redis-socket:/run/redis-socket
     environment:
       - docker=true
     depends_on:
@@ -21,7 +20,6 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
-      - redis-socket:/run/redis-socket
     restart: on-failure
     # network_mode: host
     command: php artisan horizon
@@ -33,7 +31,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./.docker/.data/redis:/data
-      - redis-socket:/run/redis-socket
     sysctls:
       net.core.somaxconn: 1024
     ulimits:
@@ -41,5 +38,3 @@ services:
       nofile:
         soft: 20000
         hard: 40000
-volumes:
-  redis-socket:
