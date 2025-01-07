@@ -1,7 +1,6 @@
 services:
   web:
-    # image: ghcr.io/cedar2025/xboard:new
-    build: .
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
     environment:
