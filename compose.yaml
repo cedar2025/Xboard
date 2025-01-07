@@ -1,0 +1,41 @@
+services:
+  web:
+    build: .
+    volumes:
+      - ./.env:/www/
+      - redis-socket:/run/redis-socket
+    environment:
+      - docker=true
+    depends_on:
+      - redis
+    # network_mode: host
+    command: php artisan octane:start --server="swoole" --port=7001
+    restart: on-failure
+    ports:
+     - 7001:7001
+  horizon:
+    build: .
+    volumes:
+      - ./.env:/www/
+      - redis-socket:/run/redis-socket
+    restart: on-failure
+    # network_mode: host
+    command: php artisan horizon
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine 
+    command: redis-server --appendonly yes --appendfsync everysec
+    restart: unless-stopped
+    volumes:
+      - ./.docker/.data/redis:/data
+      - redis-socket:/run/redis-socket
+    sysctls:
+      net.core.somaxconn: 1024
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+volumes:
+  redis-socket:
