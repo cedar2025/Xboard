@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
       - redis-socket:/run/redis-socket
@@ -12,7 +12,7 @@ services:
     command: php artisan octane:start --server="swoole" --port=7001
     restart: on-failure
   horizon:
-    build: .
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
       - redis-socket:/run/redis-socket
