@@ -2,7 +2,9 @@ services:
   web:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.env:/www/
+      - type: bind
+        source: ${PWD}/.env
+        target: /www/.env
       - redis-socket:/run/redis-socket
     environment:
       - docker=true
@@ -16,7 +18,9 @@ services:
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.env:/www/
+      - type: bind
+        source: ${PWD}/.env
+        target: /www/.env
       - redis-socket:/run/redis-socket
     restart: on-failure
     # network_mode: host
