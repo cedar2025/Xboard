@@ -19,11 +19,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Docker layer caching
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Setup build environment
         uses: docker/setup-qemu-action@v3
@@ -55,9 +59,16 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:new
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.4.0
