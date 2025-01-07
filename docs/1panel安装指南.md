@@ -83,7 +83,8 @@
 3. 在站点目录中执行以下命令从 Github 克隆到当前目录：
 
     ```
-    git clone -b  docker-compose --depth 1 https://github.com/cedar2025/Xboard ./
+    git clone https://github.com/cedar2025/Xboard ./
+    cp docker-compose.sample.yaml docker-compose.yaml
     ```
 
 4. 执行以下命令安装 Xboard：
