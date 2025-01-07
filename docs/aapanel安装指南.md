@@ -92,21 +92,14 @@ location ~ .*\.(js|css)?$
    - 脚本内容：`php /www/wwwroot/站点目录/artisan schedule:run`
 
 ### 4. 开启 Octane（可选）
-
-1. 配置 PHP：
-```bash
-cp /www/server/php/81/etc/php.ini cli-php.ini
-sed -i 's/^disable_functions[[:space:]]*=[[:space:]]*.*/disable_functions=header,header_remove,headers_sent,http_response_code,setcookie,session_create_id,session_id,session_name,session_save_path,session_status,session_start,session_write_close,session_regenerate_id,set_time_limit/g' cli-php.ini
-```
-
-2. 添加 Octane 守护进程：
+1. 添加 Octane 守护进程：
    - 名称：Octane
    - 运行用户：www
    - 运行目录：站点目录
    - 启动命令：`/www/server/php/81/bin/php artisan octane:start --port 7010`
    - 进程数：1
 
-3. 更新伪静态规则：
+2. 更新伪静态规则：
 ```nginx
 location ~* \.(jpg|jpeg|png|gif|js|css|svg|woff2|woff|ttf|eot|wasm|json|ico)$ {
 }
