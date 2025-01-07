@@ -9,7 +9,7 @@ services:
     depends_on:
       - redis
     network_mode: host
-    command: php artisan octane:start --server="swoole" --port=8000
+    command: php artisan octane:start --server="swoole" --port=7001
     restart: on-failure
   horizon:
     build: .
@@ -22,11 +22,18 @@ services:
     depends_on:
       - redis
   redis:
-    build:
-      context: .docker/services/redis
-    restart: on-failure
+    image: redis:7-alpine 
+    command: redis-server --appendonly yes --appendfsync everysec
+    restart: unless-stopped
     volumes:
-      - ./.docker/.data/redis:/data/ # 挂载redis持久化数据
+      - ./.docker/.data/redis:/data
       - redis-socket:/run/redis-socket
+    sysctls:
+      net.core.somaxconn: 1024
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
 volumes:
   redis-socket:
