@@ -7,7 +7,7 @@ use App\Plugins\Telegram\Telegram;
 
 class GetLatestUrl extends Telegram {
     public $command = '/getlatesturl';
-    public $description = '将Telegram账号绑定到网站';
+    public $description = '获取网站最新网址';
 
     public function handle($message, $match = []) {
         $telegramService = $this->telegramService;

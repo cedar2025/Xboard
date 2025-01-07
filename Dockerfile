@@ -11,7 +11,8 @@ COPY .docker /
 COPY . /www
 RUN composer install --optimize-autoloader --no-cache --no-dev \
 && php artisan storage:link \
+&& cp /www/.env.example /www/.env \
 && chown -R www:www /www \
 && chmod -R 775 /www
 
-CMD  /usr/bin/supervisord --nodaemon -c /etc/supervisor/supervisord.conf
+CMD ["/usr/bin/supervisord", "--nodaemon", "-c", "/etc/supervisor/supervisord.conf"]
