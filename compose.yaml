@@ -5,6 +5,7 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
+      - ./.docker/.data/:/www/.data
     environment:
       - docker=true
     depends_on:
@@ -20,6 +21,7 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
+      - ./.docker/.data/:/www/.data
     restart: on-failure
     # network_mode: host
     command: php artisan horizon
