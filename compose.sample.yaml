@@ -3,6 +3,7 @@ services:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
+      - redis-socket:/run/redis-socket
     environment:
       - docker=true
     depends_on:
@@ -14,6 +15,7 @@ services:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./:/www/
+      - redis-socket:/run/redis-socket
     restart: on-failure
     network_mode: host
     command: php artisan horizon
@@ -21,14 +23,13 @@ services:
       - redis
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes --appendfsync everysec
+    command: redis-server --unixsocket /run/redis-socket/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
     restart: unless-stopped
     volumes:
       - ./.docker/.data/redis:/data
+      - redis-socket:/run/redis-socket
     sysctls:
       net.core.somaxconn: 1024
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 20000
-        hard: 40000
+volumes:
+  redis-socket: # 定义共享卷用于 socket 通信
+

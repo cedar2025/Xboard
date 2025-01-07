@@ -146,8 +146,8 @@ class XboardInstall extends Command
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
                 if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
-                    $envConfig['REDIS_HOST'] = 'redis';
-                    $envConfig['REDIS_PORT'] = 6379;
+                    $envConfig['REDIS_HOST'] = '/run/redis-socket/redis.sock';
+                    $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
                 } else {
                     $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
