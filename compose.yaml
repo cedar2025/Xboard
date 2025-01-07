@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./.env:/www/
       - redis-socket:/run/redis-socket
@@ -14,7 +14,7 @@ services:
     ports:
      - 7001:7001
   horizon:
-    build: .
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./.env:/www/
       - redis-socket:/run/redis-socket
