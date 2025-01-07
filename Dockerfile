@@ -14,4 +14,10 @@ RUN composer install --optimize-autoloader --no-cache --no-dev \
     && chown -R www:www /www \
     && chmod -R 775 /www
 
-CMD php artisan octane:start --server="swoole" --port=7010
+CMD php artisan octane:start \
+    --server="swoole" \
+    --host=0.0.0.0 \
+    --port=${OCTANE_PORT:-7001} \
+    --workers=${OCTANE_WORKERS:-auto} \
+    --task-workers=${OCTANE_TASK_WORKERS:-auto} \
+    --max-requests=${OCTANE_MAX_REQUESTS:-500} 

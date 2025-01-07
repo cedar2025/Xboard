@@ -17,6 +17,7 @@ class ServerSave extends FormRequest
         $protocolRules = [
             'type' => 'required|in:shadowsocks,vmess,trojan,hysteria,vless',
             'spectific_key' => 'nullable|string',
+            'code' => 'nullable|string',
             'show' => '',
             'name' => 'required|string',
             'group_ids' => 'nullable|array',

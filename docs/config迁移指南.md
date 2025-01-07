@@ -1,36 +1,54 @@
-#### config/v2board.php 迁移
-> xboard将配置储存到数据库了， 不再使用file进行储存，你需要对配置文件进行迁移。
-#### docker-compose 环境  
-1. 在xboard 目录下创建 config文件夹
-2. 复制旧项目的 v2board.php 到config目录
-3. 修改docker-compose.yaml 取消下面代码的注释（删除 "#"）
-```
-  # - ./config/v2board.php:/www/config/v2board.php
-```
-4. 执行下面的命令即可完成迁移
-```
-docker compose down
-docker compose run -it --rm xboard php artisan migrateFromV2b config 
-docker compose up -d
-```
-#### aapanel 环境
-1. 将旧的 ```config/v2board.php``` 文件复制到 xboard的 ```config/v2board.php``` 下
-2. 执行下面的命令，即可完成迁移
-```
-php artisan migrateFromV2b config 
-```
-### aapanel + docker 环境
-1. 将旧的 ```config/v2board.php``` 文件复制到 xboard的 ```config/v2board.php``` 下
-2. 执行下面的命令，即可完成迁移
-```
-docker compose down
-docker compose run -it --rm xboard php artisan migrateFromV2b config
-docker compose up -d
+## 配置迁移指南
+
+本指南介绍如何将 v2board 的配置文件迁移到 Xboard。Xboard 使用数据库存储配置，不再使用文件存储。
+
+### 1. Docker Compose 环境
+
+1. 准备配置文件：
+```bash
+# 创建配置目录
+mkdir config
+
+# 复制旧配置文件
+cp 旧项目路径/config/v2board.php config/
 ```
 
-## 注意
-> 修改后台路径需要重启才能生效
+2. 修改 `docker-compose.yaml`，取消以下行的注释：
+```yaml
+- ./config/v2board.php:/www/config/v2board.php
 ```
-docker compose restart
+
+3. 执行迁移：
+```bash
+docker compose run -it --rm web php artisan migrateFromV2b config
 ```
-> 如果是是aapanel安装则需要重启 webman守护进程
+
+### 2. aaPanel 环境
+
+1. 复制配置文件：
+```bash
+cp 旧项目路径/config/v2board.php config/v2board.php
+```
+
+2. 执行迁移：
+```bash
+php artisan migrateFromV2b config
+```
+
+### 3. aaPanel + Docker 环境
+
+1. 复制配置文件：
+```bash
+cp 旧项目路径/config/v2board.php config/v2board.php
+```
+
+2. 执行迁移：
+```bash
+docker compose run -it --rm web php artisan migrateFromV2b config
+```
+
+### 注意事项
+
+- 修改后台路径后需要重启服务：
+  - Docker 环境：`docker compose restart`
+  - aaPanel 环境：重启 Octane 守护进程

@@ -66,7 +66,7 @@ class BTCPay implements PaymentInterface
         ];
     }
 
-    public function notify(): array|bool
+    public function notify($params): array|bool
     {
         $payload = trim(get_request_content());
 
