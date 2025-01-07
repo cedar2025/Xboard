@@ -5,13 +5,13 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
-      - ./.docker/.data/:/www/.data
+      - ./.docker/.data/:/www/.docker/.data
     environment:
       - docker=true
     depends_on:
       - redis
     # network_mode: host
-    command: php artisan octane:start --server="swoole" --port=7001
+    command: php artisan octane:start --server="swoole" --port=7001 --host=0.0.0.0
     restart: on-failure
     ports:
      - 7001:7001
@@ -21,7 +21,7 @@ services:
       - type: bind
         source: ${PWD}/.env
         target: /www/.env
-      - ./.docker/.data/:/www/.data
+      - ./.docker/.data/:/www/.docker/.data
     restart: on-failure
     # network_mode: host
     command: php artisan horizon
@@ -32,7 +32,7 @@ services:
     command: redis-server --appendonly yes --appendfsync everysec
     restart: unless-stopped
     volumes:
-      - ./.docker/.data/redis:/data
+      - ./.docker/.data/:/www/.docker/.data
     sysctls:
       net.core.somaxconn: 1024
     ulimits:
