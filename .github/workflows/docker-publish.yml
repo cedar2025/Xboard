@@ -82,6 +82,4 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
-            cosign sign --yes "${tag}@${{ steps.build-and-push.outputs.digest }}"
-          done
+          echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes "{}@${{ steps.build-and-push.outputs.digest }}"
