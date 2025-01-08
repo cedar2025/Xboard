@@ -57,6 +57,7 @@ jobs:
         run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       - name: Build and push
+        id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -77,7 +78,10 @@ jobs:
           cosign-release: 'v2.2.2'
 
       - name: Sign image
+        if: steps.build-and-push.outputs.digest != ''
         env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            cosign sign --yes "${tag}@${{ steps.build-and-push.outputs.digest }}"
+          done
