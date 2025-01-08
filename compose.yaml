@@ -6,6 +6,7 @@ services:
         source: ${PWD}/.env
         target: /www/.env
       - ./.docker/.data/:/www/.docker/.data
+      - ./public/theme/:/www/public/theme/
     environment:
       - docker=true
     depends_on:
