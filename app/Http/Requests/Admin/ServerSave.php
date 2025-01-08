@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Server;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ServerSave extends FormRequest
@@ -15,7 +16,7 @@ class ServerSave extends FormRequest
     {
         $type = $this->input('type');
         $protocolRules = [
-            'type' => 'required|in:shadowsocks,vmess,trojan,hysteria,vless',
+            'type' => 'required|in:' . implode(',', Server::VALID_TYPES),
             'spectific_key' => 'nullable|string',
             'code' => 'nullable|string',
             'show' => '',
@@ -61,8 +62,8 @@ class ServerSave extends FormRequest
                 'obfs.password' => 'string|nullable',
                 'tls.server_name' => 'nullable|string',
                 'tls.allow_insecure' => 'nullable|boolean',
-                'bandwidth.up' => 'nullable|numeric',
-                'bandwidth.down' => 'nullable|numeric',
+                'bandwidth.up' => 'nullable|integer',
+                'bandwidth.down' => 'nullable|integer',
             ],
             'vless' => [
                 'tls' => 'required|integer',
@@ -73,7 +74,7 @@ class ServerSave extends FormRequest
                 'tls_settings.allow_insecure' => 'nullable|boolean',
                 'reality_settings.allow_insecure' => 'nullable|boolean',
                 'reality_settings.server_name' => 'nullable|string',
-                'reality_settings.server_port' => 'nullable|string',
+                'reality_settings.server_port' => 'nullable|integer',
                 'reality_settings.public_key' => 'nullable|string',
                 'reality_settings.private_key' => 'nullable|string',
                 'reality_settings.short_id' => 'nullable|string',
