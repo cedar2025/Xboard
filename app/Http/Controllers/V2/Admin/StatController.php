@@ -69,8 +69,6 @@ class StatController extends Controller
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
             'type' => 'nullable|in:paid_total,paid_count,commission_total,commission_count',
-            'page' => 'nullable|integer|min:1',
-            'page_size' => 'nullable|integer|min:1|max:100'
         ]);
 
         $query = Stat::where('record_type', 'd');
@@ -83,15 +81,7 @@ class StatController extends Controller
             $query->where('record_at', '<=', strtotime($request->input('end_date') . ' 23:59:59'));
         }
 
-        // Get total count for pagination
-        $total = $query->count();
-
-        // Apply pagination
-        $pageSize = $request->input('page_size', 31);
-        $page = $request->input('page', 1);
-
         $statistics = $query->orderBy('record_at', 'DESC')
-            ->forPage($page, $pageSize)
             ->get()
             ->toArray();
 
@@ -157,12 +147,6 @@ class StatController extends Controller
             'data' => [
                 'list' => array_reverse($dailyStats),
                 'summary' => $summary,
-                'pagination' => [
-                    'total' => $total,
-                    'current_page' => $page,
-                    'page_size' => $pageSize,
-                    'total_pages' => ceil($total / $pageSize)
-                ]
             ]
         ];
     }

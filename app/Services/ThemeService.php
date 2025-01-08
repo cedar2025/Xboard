@@ -129,7 +129,7 @@ class ThemeService
      */
     public function delete(string $theme): bool
     {
-        if ($theme === admin_setting('current_theme')) {
+        if ($theme === admin_setting('current_theme') || in_array($theme, ['Xboard', 'v2board'])) {
             throw new Exception('Cannot delete active theme');
         }
 

@@ -70,7 +70,9 @@ class UserController extends Controller
         $this->applyFiltersAndSorts($request, $userModel);
         $users = $userModel->orderBy('id', 'desc')->paginate($pageSize, ['*'], 'page', $current);
         $users->getCollection()->transform(function ($user) {
-            $user->subscribe_url = Helper::getSubscribeUrl( $user->token);
+            $user->subscribe_url = Helper::getSubscribeUrl($user->token);
+            $user->balance = $user->balance / 100;
+            $user->commission_balance = $user->commission_balance / 100;
             return $user;
         });
         return response([
@@ -127,7 +129,13 @@ class UserController extends Controller
 
         if (isset($params['banned']) && (int) $params['banned'] === 1) {
             $authService = new AuthService($user);
-            $authService->removeAllSession();
+            $authService->removeSession();
+        }
+        if (isset($params['balance'])) {
+            $params['balance'] = $params['balance'] * 100;
+        }
+        if (isset($params['commission_balance'])) {
+            $params['commission_balance'] = $params['commission_balance'] * 100;
         }
 
         try {

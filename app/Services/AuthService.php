@@ -42,7 +42,7 @@ class AuthService
         return $this->user->tokens()->get()->toArray();
     }
 
-    public function removeSession(string $sessionId): bool
+    public function removeSession(): bool
     {
         $this->user->tokens()->delete();
         return true;
