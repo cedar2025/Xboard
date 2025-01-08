@@ -88,7 +88,14 @@ class Server extends Model
             'flow' => null,
             'network' => null,
             'network_settings' => null,
-            'reality_settings' => null
+            'reality_settings' => [
+                'allow_insecure' => false,
+                'server_port' => null,
+                'server_name' => null,
+                'public_key' => null,
+                'private_key' => null,
+                'short_id' => null
+            ]
         ],
         self::TYPE_SHADOWSOCKS => [
             'cipher' => null,
@@ -165,6 +172,8 @@ class Server extends Model
         if (strpos($this->port, '-') !== false) {
             $this->ports = $this->port;
             $this->port = Helper::randomPort($this->port);
+        } else {
+            $this->port = (int) $this->port;
         }
     }
 

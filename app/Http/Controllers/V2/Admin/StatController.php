@@ -57,41 +57,131 @@ class StatController extends Controller
         ];
     }
 
+    /**
+     * Get order statistics with filtering and pagination
+     *
+     * @param Request $request
+     * @return array
+     */
     public function getOrder(Request $request)
     {
-        $statistics = Stat::where('record_type', 'd')
-            ->limit(31)
-            ->orderBy('record_at', 'DESC')
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+            'type' => 'nullable|in:paid_total,paid_count,commission_total,commission_count',
+            'page' => 'nullable|integer|min:1',
+            'page_size' => 'nullable|integer|min:1|max:100'
+        ]);
+
+        $query = Stat::where('record_type', 'd');
+
+        // Apply date filters
+        if ($request->input('start_date')) {
+            $query->where('record_at', '>=', strtotime($request->input('start_date')));
+        }
+        if ($request->input('end_date')) {
+            $query->where('record_at', '<=', strtotime($request->input('end_date') . ' 23:59:59'));
+        }
+
+        // Get total count for pagination
+        $total = $query->count();
+
+        // Apply pagination
+        $pageSize = $request->input('page_size', 31);
+        $page = $request->input('page', 1);
+
+        $statistics = $query->orderBy('record_at', 'DESC')
+            ->forPage($page, $pageSize)
             ->get()
             ->toArray();
-        $result = [];
-        foreach ($statistics as $statistic) {
-            $date = date('m-d', $statistic['record_at']);
-            $result[] = [
-                'type' => '收款金额',
-                'date' => $date,
-                'value' => $statistic['paid_total'] / 100
-            ];
-            $result[] = [
-                'type' => '收款笔数',
-                'date' => $date,
-                'value' => $statistic['paid_count']
-            ];
-            $result[] = [
-                'type' => '佣金金额(已发放)',
-                'date' => $date,
-                'value' => $statistic['commission_total'] / 100
-            ];
-            $result[] = [
-                'type' => '佣金笔数(已发放)',
-                'date' => $date,
-                'value' => $statistic['commission_count']
-            ];
-        }
-        $result = array_reverse($result);
-        return [
-            'data' => $result
+
+        $summary = [
+            'paid_total' => 0,
+            'paid_count' => 0,
+            'commission_total' => 0,
+            'commission_count' => 0,
+            'start_date' => $request->input('start_date', date('Y-m-d', strtotime('-30 days'))),
+            'end_date' => $request->input('end_date', date('Y-m-d')),
+            'avg_paid_amount' => 0,
+            'avg_commission_amount' => 0
         ];
+
+        $dailyStats = [];
+        foreach ($statistics as $statistic) {
+            $date = date('Y-m-d', $statistic['record_at']);
+
+            // Update summary
+            $summary['paid_total'] += $statistic['paid_total'];
+            $summary['paid_count'] += $statistic['paid_count'];
+            $summary['commission_total'] += $statistic['commission_total'];
+            $summary['commission_count'] += $statistic['commission_count'];
+
+            // Calculate daily stats
+            $dailyData = [
+                'date' => $date,
+                'paid_total' => $statistic['paid_total'],
+                'paid_count' => $statistic['paid_count'],
+                'commission_total' => $statistic['commission_total'],
+                'commission_count' => $statistic['commission_count'],
+                'avg_order_amount' => $statistic['paid_count'] > 0 ? round($statistic['paid_total'] / $statistic['paid_count'], 2) : 0,
+                'avg_commission_amount' => $statistic['commission_count'] > 0 ? round($statistic['commission_total'] / $statistic['commission_count'], 2) : 0
+            ];
+
+            if ($request->input('type')) {
+                $dailyStats[] = [
+                    'date' => $date,
+                    'value' => $statistic[$request->input('type')],
+                    'type' => $this->getTypeLabel($request->input('type'))
+                ];
+            } else {
+                $dailyStats[] = $dailyData;
+            }
+        }
+
+        // Calculate averages for summary
+        if ($summary['paid_count'] > 0) {
+            $summary['avg_paid_amount'] = round($summary['paid_total'] / $summary['paid_count'], 2);
+        }
+        if ($summary['commission_count'] > 0) {
+            $summary['avg_commission_amount'] = round($summary['commission_total'] / $summary['commission_count'], 2);
+        }
+
+        // Add percentage calculations to summary
+        $summary['commission_rate'] = $summary['paid_total'] > 0
+            ? round(($summary['commission_total'] / $summary['paid_total']) * 100, 2)
+            : 0;
+
+        return [
+            'code' => 0,
+            'message' => 'success',
+            'data' => [
+                'list' => array_reverse($dailyStats),
+                'summary' => $summary,
+                'pagination' => [
+                    'total' => $total,
+                    'current_page' => $page,
+                    'page_size' => $pageSize,
+                    'total_pages' => ceil($total / $pageSize)
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Get human readable label for statistic type
+     *
+     * @param string $type
+     * @return string
+     */
+    private function getTypeLabel(string $type): string
+    {
+        return match ($type) {
+            'paid_total' => '收款金额',
+            'paid_count' => '收款笔数',
+            'commission_total' => '佣金金额(已发放)',
+            'commission_count' => '佣金笔数(已发放)',
+            default => $type
+        };
     }
 
     // 获取当日实时流量排行
@@ -281,8 +371,8 @@ class StatController extends Controller
             $result[] = [
                 'id' => (string) $data->id,
                 'name' => $name,
-                'value' => round($data->value / (1024 * 1024 * 1024), 2), // Convert to GB
-                'previousValue' => round($previousValue / (1024 * 1024 * 1024), 2), // Convert to GB
+                'value' => $data->value, // Convert to GB
+                'previousValue' => $previousValue, // Convert to GB
                 'change' => $change,
                 'timestamp' => date('c', $endDate)
             ];

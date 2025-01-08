@@ -107,6 +107,7 @@ class ConfigController extends Controller
                 'show_protocol_to_server_enable' => (bool) admin_setting('show_protocol_to_server_enable', 0),
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
+                'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
 
             ],
             'frontend' => [

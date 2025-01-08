@@ -88,7 +88,10 @@ class UniProxyController extends Controller
                 'network_settings' => $protocolSettings['network_settings'],
                 'tls' => $protocolSettings['tls'],
                 'flow' => $protocolSettings['flow'],
-                'tls_settings' => $protocolSettings['tls_settings']
+                'tls_settings' => match ((int) $protocolSettings['tls']) {
+                        1 => $protocolSettings['tls_settings'],
+                        2 => $protocolSettings['reality_settings']
+                    }
             ],
             'hysteria' => [
                 'version' => $protocolSettings['version'],

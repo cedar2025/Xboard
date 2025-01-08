@@ -127,7 +127,7 @@ class SingBox implements ProtocolInterface
             'transport' => [],
             'tls' => $protocol_settings['tls'] ? [
                 'enabled' => true,
-                'insecure' => data_get($protocol_settings, 'tls_settings.allow_insecure'),
+                'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
                 'server_name' => data_get($protocol_settings, 'tls_settings.server_name')
             ] : null
         ];
@@ -166,14 +166,14 @@ class SingBox implements ProtocolInterface
             "server" => $server['host'],
             "server_port" => $server['port'],
             "uuid" => $password,
-            "packet_encoding" => "xudp"
+            "packet_encoding" => "xudp",
+            'flow' => data_get($protocol_settings, 'flow', ''),
         ];
 
         if ($protocol_settings['tls']) {
             $tlsConfig = [
                 'enabled' => true,
-                'flow' => data_get($protocol_settings, 'flow', ''),
-                'insecure' => data_get($protocol_settings, 'tls_settings.allow_insecure'),
+                'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
                 'server_name' => data_get($protocol_settings, 'tls_settings.server_name'),
                 'utls' => [
                     'enabled' => true,
@@ -233,7 +233,7 @@ class SingBox implements ProtocolInterface
             'password' => $password,
             'tls' => [
                 'enabled' => true,
-                'insecure' => data_get($protocol_settings, 'allow_insecure', false),
+                'insecure' => (bool) data_get($protocol_settings, 'allow_insecure', false),
                 'server_name' => data_get($protocol_settings, 'server_name')
             ]
         ];
@@ -255,7 +255,7 @@ class SingBox implements ProtocolInterface
         return $array;
     }
 
-    protected function buildHysteria($password, $server, $user): array
+    protected function buildHysteria($password, $server): array
     {
         $protocol_settings = $server['protocol_settings'];
         $baseConfig = [
@@ -264,7 +264,7 @@ class SingBox implements ProtocolInterface
             'tag' => $server['name'],
             'tls' => [
                 'enabled' => true,
-                'insecure' => $protocol_settings['tls']['allow_insecure'],
+                'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
                 'server_name' => $protocol_settings['tls']['server_name']
             ]
         ];
@@ -272,7 +272,7 @@ class SingBox implements ProtocolInterface
             'up_mbps' => $protocol_settings['bandwidth']['up'],
             'down_mbps' => $protocol_settings['bandwidth']['down'],
         ];
-        $versionConfig = match ($server['version'] ?? 1) {
+        $versionConfig = match (data_get($protocol_settings, 'version', 1)) {
             2 => [
                 'type' => 'hysteria2',
                 'password' => $password,

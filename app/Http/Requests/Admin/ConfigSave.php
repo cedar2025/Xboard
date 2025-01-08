@@ -44,6 +44,7 @@ class ConfigSave extends FormRequest
         'change_order_event_id' => '',
         'show_info_to_server_enable' => '',
         'show_protocol_to_server_enable' => '',
+        'remind_mail_enable' => '',
         // server
         'server_token' => 'nullable|min:16',
         'server_pull_interval' => 'integer',
@@ -91,8 +92,8 @@ class ConfigSave extends FormRequest
         'password_limit_enable' => 'boolean',
         'password_limit_count' => 'integer',
         'password_limit_expire' => 'integer',
-        'default_remind_expire' => 'integer|boolean',
-        'default_remind_traffic' => 'integer|boolean'
+        'default_remind_expire' => 'boolean',
+        'default_remind_traffic' => 'boolean'
     ];
     /**
      * Get the validation rules that apply to the request.

@@ -59,8 +59,14 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => (extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')
-            ]) : []) + [ \PDO::ATTR_PERSISTENT => true ],
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => false,
+            ]) : []),
+            'pool' => [
+                'min_connections' => 1,
+                'max_connections' => 10,
+                'idle_timeout' => 60,
+            ],
         ],
 
         'pgsql' => [

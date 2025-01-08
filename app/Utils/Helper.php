@@ -119,9 +119,9 @@ class Helper
         return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
     }
 
-    public static function randomPort($range) {
+    public static function randomPort($range): int {
         $portRange = explode('-', $range);
-        return rand($portRange[0], $portRange[1]);
+        return random_int($portRange[0], $portRange[1]);
     }
 
     public static function base64EncodeUrlSafe($data)

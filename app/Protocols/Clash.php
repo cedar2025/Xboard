@@ -152,7 +152,7 @@ class Clash implements ProtocolInterface
 
         if (data_get($protocol_settings, 'tls')) {
             $array['tls'] = true;
-            $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure');
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
 
@@ -192,7 +192,7 @@ class Clash implements ProtocolInterface
         $array['password'] = $password;
         $array['udp'] = true;
         $array['sni'] = data_get($protocol_settings, 'server_name');
-        $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure');
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':

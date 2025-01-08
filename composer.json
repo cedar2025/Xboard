@@ -29,7 +29,8 @@
         "stripe/stripe-php": "^7.36.1",
         "symfony/http-client": "^6.4",
         "symfony/mailgun-mailer": "^6.4",
-        "symfony/yaml": "*"
+        "symfony/yaml": "*",
+        "zoujingli/ip2region": "^2.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.9",

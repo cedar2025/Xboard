@@ -114,6 +114,7 @@ class ManageController extends Controller
     {
         $server = Server::find($request->input('id'));
         $server->show = 0;
+        $server->code = null;
         if (!$server) {
             return $this->fail([400202, '服务器不存在']);
         }

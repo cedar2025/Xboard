@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->integer('rate')->comment('Traffic Rate');
             $table->json('tags')->nullable()->comment('Server Tags');
             $table->string('host')->comment('Server Host');
-            $table->integer('port')->comment('Client Port');
+            $table->string('port')->comment('Client Port');
             $table->integer('server_port')->comment('Server Port');
             $table->json('protocol_settings')->nullable();
             $table->boolean('show')->default(false)->comment('Show in List');
@@ -45,7 +45,7 @@ return new class extends Migration {
                 'rate' => (int) $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
-                'port' => (int) $server->port,
+                'port' => $server->port,
                 'server_port' => $server->server_port,
                 'protocol_settings' => json_encode([
                     'allow_insecure' => $server->allow_insecure,
@@ -73,7 +73,7 @@ return new class extends Migration {
                 'rate' => (int) $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
-                'port' => (int) $server->port,
+                'port' => $server->port,
                 'server_port' => $server->server_port,
                 'protocol_settings' => json_encode([
                     'tls' => $server->tls,
@@ -103,7 +103,7 @@ return new class extends Migration {
                 'rate' => (int) $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
-                'port' => (int) $server->port,
+                'port' => $server->port,
                 'server_port' => $server->server_port,
                 'protocol_settings' => json_encode([
                     'tls' => $server->tls,
@@ -114,7 +114,8 @@ return new class extends Migration {
                     'reality_settings' => ($tlsSettings && $tlsSettings->public_key && $tlsSettings->short_id && $tlsSettings->server_name) ? [
                         'public_key' => $tlsSettings->public_key,
                         'short_id' => $tlsSettings->short_id,
-                        'dest' => $tlsSettings->server_name . ($tlsSettings->server_port ? ':' . $tlsSettings->server_port : ''),
+                        'server_name' => $tlsSettings->server_name,
+                        'server_port' => $tlsSettings->server_port,
                         'private_key' => $tlsSettings->private_key,
                     ] : null
                 ]),
@@ -138,7 +139,7 @@ return new class extends Migration {
                 'rate' => (int) $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
-                'port' => (int) $server->port,
+                'port' => $server->port,
                 'server_port' => $server->server_port,
                 'protocol_settings' => json_encode([
                     'cipher' => $server->cipher,
@@ -153,7 +154,7 @@ return new class extends Migration {
         }
 
         // Migrate Hysteria servers
-        $hysteriaServers = DB::table('v2_server_hysteria')->get();
+        $hysteriaServers = DB::table(table: 'v2_server_hysteria')->get();
         foreach ($hysteriaServers as $server) {
             DB::table('v2_server')->insert([
                 'type' => 'hysteria',
@@ -312,7 +313,7 @@ return new class extends Migration {
             $table->string('rate', 11);
             $table->boolean('show')->default(false);
             $table->integer('sort')->nullable();
-            $table->tinyInteger('version',false,true)->default(1)->comment('hysteria版本,Version:1\2');
+            $table->tinyInteger('version', false, true)->default(1)->comment('hysteria版本,Version:1\2');
             $table->boolean('is_obfs')->default(true)->comment('是否开启obfs');
             $table->string('alpn')->nullable();
             $table->integer('up_mbps');
@@ -445,8 +446,8 @@ return new class extends Migration {
                         'rate' => (string) $server->rate,
                         'show' => $server->show,
                         'sort' => $server->sort,
-                        'up' => $settings['bandwidth']['up'],
-                        'down' => $settings['bandwidth']['down'],
+                        'up_mbps' => $settings['bandwidth']['up'],
+                        'down_mbps' => $settings['bandwidth']['down'],
                         'server_name' => $settings['tls']['server_name'],
                         'insecure' => $settings['tls']['allow_insecure'],
                         'created_at' => $timestamp,

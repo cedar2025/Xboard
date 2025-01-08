@@ -151,7 +151,7 @@ class ClashMeta implements ProtocolInterface
 
         if (data_get($protocol_settings, 'tls')) {
             $array['tls'] = true;
-            $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
 
@@ -195,18 +195,18 @@ class ClashMeta implements ProtocolInterface
             'alterId' => 0,
             'cipher' => 'auto',
             'udp' => true,
-            'flow' => data_get($server, 'flow')
+            'flow' => data_get($protocol_settings, 'flow')
         ];
 
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
                 $array['tls'] = true;
-                $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
                 $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
                 break;
             case 2:
                 $array['tls'] = true;
-                $array['skip-cert-verify'] = data_get($protocol_settings, 'reality_settings.allow_insecure', false);
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
                 $array['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
                 $array['reality-opts'] = [
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
@@ -257,7 +257,7 @@ class ClashMeta implements ProtocolInterface
             'password' => $password,
             'udp' => true,
             'sni' => data_get($settings, 'server_name'),
-            'skip-cert-verify' => data_get($settings, 'allow_insecure', false)
+            'skip-cert-verify' => (bool) data_get($settings, 'allow_insecure', false)
         ];
 
         switch (data_get($settings, 'network')) {
@@ -291,7 +291,7 @@ class ClashMeta implements ProtocolInterface
             'sni' => data_get($protocol_settings, 'tls.server_name'),
             'up' => data_get($protocol_settings, 'bandwidth.up'),
             'down' => data_get($protocol_settings, 'bandwidth.down'),
-            'skip-cert-verify' => data_get($protocol_settings, 'tls.allow_insecure', false),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
         ];
         if (isset($server['ports'])) {
             $array['ports'] = $server['ports'];
