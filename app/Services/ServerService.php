@@ -99,6 +99,7 @@ class ServerService
                 $query->where('code', $serverId)
                     ->orWhere('id', $serverId);
             })
+            ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$serverId])
             ->first();
     }
 }
