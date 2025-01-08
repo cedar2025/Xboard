@@ -11,13 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
-    CONST STR_TO_TIME = [
-        'month_price' => 1,
-        'quarter_price' => 3,
-        'half_year_price' => 6,
-        'year_price' => 12,
-        'two_year_price' => 24,
-        'three_year_price' => 36
+    const STR_TO_TIME = [
+        Plan::PERIOD_MONTHLY => 1,
+        Plan::PERIOD_QUARTERLY => 3,
+        Plan::PERIOD_HALF_YEARLY => 6,
+        Plan::PERIOD_YEARLY => 12,
+        Plan::PERIOD_TWO_YEARLY => 24,
+        Plan::PERIOD_THREE_YEARLY => 36
     ];
     public $order;
     public $user;
@@ -36,14 +36,14 @@ class OrderService
         if ($order->refund_amount) {
             $this->user->balance = $this->user->balance + $order->refund_amount;
         }
-        try{
+        try {
             DB::beginTransaction();
             if ($order->surplus_order_ids) {
                 Order::whereIn('id', $order->surplus_order_ids)->update([
                     'status' => Order::STATUS_DISCOUNTED
                 ]);
             }
-            switch ((string)$order->period) {
+            switch ((string) $order->period) {
                 case 'onetime_price':
                     $this->buyByOneTime($plan);
                     break;
@@ -54,7 +54,7 @@ class OrderService
                     $this->buyByPeriod($order, $plan);
             }
 
-            switch ((int)$order->type) {
+            switch ((int) $order->type) {
                 case Order::STATUS_PROCESSING:
                     $this->openEvent(admin_setting('new_order_event_id', 0));
                     break;
@@ -76,7 +76,7 @@ class OrderService
                 throw new \Exception('订单信息保存失败');
             }
             DB::commit();
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
             \Log::error($e);
             throw new ApiException('开通失败');
@@ -90,9 +90,11 @@ class OrderService
         if ($order->period === 'reset_price') {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
-            if (!(int)admin_setting('plan_change_enable', 1)) throw new ApiException('目前不允许更改订阅，请联系客服或提交工单操作');
+            if (!(int) admin_setting('plan_change_enable', 1))
+                throw new ApiException('目前不允许更改订阅，请联系客服或提交工单操作');
             $order->type = Order::TYPE_UPGRADE;
-            if ((int)admin_setting('surplus_enable', 1)) $this->getSurplusValue($user, $order);
+            if ((int) admin_setting('surplus_enable', 1))
+                $this->getSurplusValue($user, $order);
             if ($order->surplus_amount >= $order->total_amount) {
                 $order->refund_amount = $order->surplus_amount - $order->total_amount;
                 $order->total_amount = 0;
@@ -115,17 +117,19 @@ class OrderService
         $order->total_amount = $order->total_amount - $order->discount_amount;
     }
 
-    public function setInvite(User $user):void
+    public function setInvite(User $user): void
     {
         $order = $this->order;
-        if ($user->invite_user_id && ($order->total_amount <= 0)) return;
+        if ($user->invite_user_id && ($order->total_amount <= 0))
+            return;
         $order->invite_user_id = $user->invite_user_id;
         $inviter = User::find($user->invite_user_id);
-        if (!$inviter) return;
+        if (!$inviter)
+            return;
         $isCommission = false;
-        switch ((int)$inviter->commission_type) {
+        switch ((int) $inviter->commission_type) {
             case 0:
-                $commissionFirstTime = (int)admin_setting('commission_first_time_enable', 1);
+                $commissionFirstTime = (int) admin_setting('commission_first_time_enable', 1);
                 $isCommission = (!$commissionFirstTime || ($commissionFirstTime && !$this->haveValidOrder($user)));
                 break;
             case 1:
@@ -136,7 +140,8 @@ class OrderService
                 break;
         }
 
-        if (!$isCommission) return;
+        if (!$isCommission)
+            return;
         if ($inviter && $inviter->commission_rate) {
             $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
         } else {
@@ -168,11 +173,14 @@ class OrderService
             ->where('status', Order::STATUS_COMPLETED)
             ->orderBy('id', 'DESC')
             ->first();
-        if (!$lastOneTimeOrder) return;
+        if (!$lastOneTimeOrder)
+            return;
         $nowUserTraffic = $user->transfer_enable / 1073741824;
-        if (!$nowUserTraffic) return;
+        if (!$nowUserTraffic)
+            return;
         $paidTotalAmount = ($lastOneTimeOrder->total_amount + $lastOneTimeOrder->balance_amount);
-        if (!$paidTotalAmount) return;
+        if (!$paidTotalAmount)
+            return;
         $trafficUnitPrice = $paidTotalAmount / $nowUserTraffic;
         $notUsedTraffic = $nowUserTraffic - (($user->u + $user->d) / 1073741824);
         $result = $trafficUnitPrice * $notUsedTraffic;
@@ -188,25 +196,30 @@ class OrderService
             ->where('status', Order::STATUS_COMPLETED)
             ->get()
             ->toArray();
-        if (!$orders) return;
+        if (!$orders)
+            return;
         $orderAmountSum = 0;
         $orderMonthSum = 0;
         $lastValidateAt = 0;
         foreach ($orders as $item) {
-            $period = self::STR_TO_TIME[$item['period']];
-            if (strtotime("+{$period} month", $item['created_at']) < time()) continue;
+            $period = self::STR_TO_TIME[PlanService::getPeriodKey($item['period'])];
+            if (strtotime("+{$period} month", $item['created_at']) < time())
+                continue;
             $lastValidateAt = $item['created_at'];
             $orderMonthSum = $period + $orderMonthSum;
             $orderAmountSum = $orderAmountSum + ($item['total_amount'] + $item['balance_amount'] + $item['surplus_amount'] - $item['refund_amount']);
         }
-        if (!$lastValidateAt) return;
+        if (!$lastValidateAt)
+            return;
         $expiredAtByOrder = strtotime("+{$orderMonthSum} month", $lastValidateAt);
-        if ($expiredAtByOrder < time()) return;
+        if ($expiredAtByOrder < time())
+            return;
         $orderSurplusSecond = $expiredAtByOrder - time();
         $orderRangeSecond = $expiredAtByOrder - $lastValidateAt;
         $avgPrice = $orderAmountSum / $orderRangeSecond;
         $orderSurplusAmount = $avgPrice * $orderSurplusSecond;
-        if (!$orderSurplusSecond || !$orderSurplusAmount) return;
+        if (!$orderSurplusSecond || !$orderSurplusAmount)
+            return;
         $order->surplus_amount = $orderSurplusAmount > 0 ? $orderSurplusAmount : 0;
         $order->surplus_order_ids = array_column($orders, 'id');
     }
@@ -214,11 +227,13 @@ class OrderService
     public function paid(string $callbackNo)
     {
         $order = $this->order;
-        if ($order->status !== Order::STATUS_PENDING) return true;
+        if ($order->status !== Order::STATUS_PENDING)
+            return true;
         $order->status = Order::STATUS_PROCESSING;
         $order->paid_at = time();
         $order->callback_no = $callbackNo;
-        if (!$order->save()) return false;
+        if (!$order->save())
+            return false;
         try {
             OrderHandleJob::dispatchSync($order->trade_no);
         } catch (\Exception $e) {
@@ -228,7 +243,7 @@ class OrderService
         return true;
     }
 
-    public function cancel():bool
+    public function cancel(): bool
     {
         $order = $this->order;
         try {
@@ -245,7 +260,7 @@ class OrderService
             }
             DB::commit();
             return true;
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
             \Log::error($e);
             return false;
@@ -266,14 +281,16 @@ class OrderService
     private function buyByPeriod(Order $order, Plan $plan)
     {
         // change plan process
-        if ((int)$order->type === Order::TYPE_UPGRADE) {
+        if ((int) $order->type === Order::TYPE_UPGRADE) {
             $this->user->expired_at = time();
         }
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         // 从一次性转换到循环
-        if ($this->user->expired_at === NULL) $this->buyByResetTraffic();
+        if ($this->user->expired_at === NULL)
+            $this->buyByResetTraffic();
         // 新购
-        if ($order->type === Order::TYPE_NEW_PURCHASE) $this->buyByResetTraffic();
+        if ($order->type === Order::TYPE_NEW_PURCHASE)
+            $this->buyByResetTraffic();
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
@@ -293,18 +310,19 @@ class OrderService
         if ($timestamp < time()) {
             $timestamp = time();
         }
+        $str = PlanService::getPeriodKey($str);
         switch ($str) {
-            case 'month_price':
+            case Plan::PERIOD_MONTHLY:
                 return strtotime('+1 month', $timestamp);
-            case 'quarter_price':
+            case Plan::PERIOD_QUARTERLY:
                 return strtotime('+3 month', $timestamp);
-            case 'half_year_price':
+            case Plan::PERIOD_HALF_YEARLY:
                 return strtotime('+6 month', $timestamp);
-            case 'year_price':
+            case Plan::PERIOD_YEARLY:
                 return strtotime('+12 month', $timestamp);
-            case 'two_year_price':
+            case Plan::PERIOD_TWO_YEARLY:
                 return strtotime('+24 month', $timestamp);
-            case 'three_year_price':
+            case Plan::PERIOD_THREE_YEARLY:
                 return strtotime('+36 month', $timestamp);
         }
     }
