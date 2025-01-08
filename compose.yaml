@@ -30,7 +30,7 @@ services:
       - redis
   redis:
     image: redis:7-alpine 
-    command: redis-server --appendonly yes --appendfsync everysec
+    command: redis-server --save 900 1 --save 300 10 --save 60 10000
     restart: unless-stopped
     volumes:
       - ./.docker/.data/:/www/.docker/.data
