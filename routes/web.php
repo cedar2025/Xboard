@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('/s/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])->middleware('client')->name('client.subscribe');
 
 Route::get('/', function (Request $request) {
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
@@ -53,3 +52,7 @@ Route::get('/' . admin_setting('secure_path', admin_setting('frontend_admin_path
         'secure_path' => admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))))
     ]);
 });
+
+Route::get('/' . (admin_setting('subscribe_path', 's')) . '/{token}', [\App\Http\Controllers\V1\Client\ClientController::class, 'subscribe'])
+    ->middleware('client')
+    ->name('client.subscribe');

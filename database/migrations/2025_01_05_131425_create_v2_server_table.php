@@ -166,7 +166,7 @@ return new class extends Migration {
                 'rate' => (int) $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
-                'port' => (int) $server->port,
+                'port' => $server->port,
                 'server_port' => $server->server_port,
                 'protocol_settings' => json_encode([
                     'version' => $server->version,

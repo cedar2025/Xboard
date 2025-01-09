@@ -108,6 +108,7 @@ class ConfigController extends Controller
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
                 'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
+                'subscribe_path' => admin_setting('subscribe_path', 's'),
 
             ],
             'frontend' => [

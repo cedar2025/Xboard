@@ -87,51 +87,6 @@ class AdminRoute
                 $router->post('/sort', [ManageController::class, 'sort']);
             });
 
-            $router->group([
-                'prefix' => 'server/trojan'
-            ], function ($router) {
-                $router->post('save', [TrojanController::class, 'save']);
-                $router->post('drop', [TrojanController::class, 'drop']);
-                $router->post('update', [TrojanController::class, 'update']);
-                $router->post('copy', [TrojanController::class, 'copy']);
-            });
-
-            $router->group([
-                'prefix' => 'server/vmess'
-            ], function ($router) {
-                $router->post('save', [VmessController::class, 'save']);
-                $router->post('drop', [VmessController::class, 'drop']);
-                $router->post('update', [VmessController::class, 'update']);
-                $router->post('copy', [VmessController::class, 'copy']);
-            });
-
-            $router->group([
-                'prefix' => 'server/shadowsocks'
-            ], function ($router) {
-                $router->post('save', [ShadowsocksController::class, 'save']);
-                $router->post('drop', [ShadowsocksController::class, 'drop']);
-                $router->post('update', [ShadowsocksController::class, 'update']);
-                $router->post('copy', [ShadowsocksController::class, 'copy']);
-            });
-
-            $router->group([
-                'prefix' => 'server/hysteria'
-            ], function ($router) {
-                $router->post('save', [HysteriaController::class, 'save']);
-                $router->post('drop', [HysteriaController::class, 'drop']);
-                $router->post('update', [HysteriaController::class, 'update']);
-                $router->post('copy', [HysteriaController::class, 'copy']);
-            });
-
-            $router->group([
-                'prefix' => 'server/vless'
-            ], function ($router) {
-                $router->post('save', [VlessController::class, 'save']);
-                $router->post('drop', [VlessController::class, 'drop']);
-                $router->post('update', [VlessController::class, 'update']);
-                $router->post('copy', [VlessController::class, 'copy']);
-            });
-
             // Order
             $router->group([
                 'prefix' => 'order'

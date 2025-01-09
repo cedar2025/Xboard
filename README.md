@@ -28,7 +28,7 @@ Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构�
 使用以下命令快速部署并体验 Xboard（基于 Docker + SQLite）：
 
 ```bash
-git clone -b docker-compose --depth 1 https://github.com/cedar2025/Xboard && \
+git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
     -e enable_sqlite=true \

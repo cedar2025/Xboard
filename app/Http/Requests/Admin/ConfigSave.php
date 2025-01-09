@@ -45,6 +45,7 @@ class ConfigSave extends FormRequest
         'show_info_to_server_enable' => '',
         'show_protocol_to_server_enable' => '',
         'remind_mail_enable' => '',
+        'subscribe_path' => '',
         // server
         'server_token' => 'nullable|min:16',
         'server_pull_interval' => 'integer',

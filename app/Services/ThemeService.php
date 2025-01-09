@@ -13,6 +13,7 @@ class ThemeService
     private const THEME_DIR = 'theme/';
     private const CONFIG_FILE = 'config.json';
     private const SETTING_PREFIX = 'theme_';
+    private const CANNOT_DELETE_THEMES = ['Xboard', 'v2board'];
 
     /**
      * 获取所有可用主题列表
@@ -24,6 +25,7 @@ class ThemeService
             ->mapWithKeys(function ($dir) {
                 $name = basename($dir);
                 $config = $this->readConfigFile($name);
+                $config['can_delete'] = !in_array($name, self::CANNOT_DELETE_THEMES) && $name != admin_setting('current_theme');
                 return $config ? [$name => $config] : [];
             })->toArray();
     }
@@ -129,7 +131,7 @@ class ThemeService
      */
     public function delete(string $theme): bool
     {
-        if ($theme === admin_setting('current_theme') || in_array($theme, ['Xboard', 'v2board'])) {
+        if ($theme === admin_setting('current_theme') || in_array($theme, self::CANNOT_DELETE_THEMES)) {
             throw new Exception('Cannot delete active theme');
         }
 

@@ -62,7 +62,7 @@ apt update && apt install -y git
 yum update && yum install -y git
 
 # 克隆代码
-git clone -b docker-compose --depth 1 https://github.com/cedar2025/Xboard ./
+git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard ./
 
 # 安装依赖并初始化
 docker compose run -it --rm web php artisan xboard:install
