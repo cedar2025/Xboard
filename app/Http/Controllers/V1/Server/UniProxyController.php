@@ -82,7 +82,7 @@ class UniProxyController extends Controller
         $baseConfig = [
             'server_port' => $serverPort,
             'network' => $protocolSettings['network'] ?? null,
-            'network_settings' => $protocolSettings['network_settings'] ?? null,
+            'networkSettings' => $protocolSettings['network_settings'] ?? null,
         ];
 
         $response = match ($nodeType) {

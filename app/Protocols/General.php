@@ -93,7 +93,7 @@ class General implements ProtocolInterface
                 break;
             case 'grpc':
                 $config['type'] = 'grpc';
-                $config['service_name'] = data_get($protocol_settings, 'network_settings.serviceName');
+                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
                 break;
             default:
                 break;
