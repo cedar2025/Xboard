@@ -185,11 +185,12 @@ class Server extends Model
 
         $this->password = $user->uuid;
 
-        if (!isset($this->cipher) || !isset(self::CIPHER_CONFIGURATIONS[$this->cipher])) {
+        $cipher = data_get($this, 'protocol_settings.cipher');
+        if (!$cipher || !isset(self::CIPHER_CONFIGURATIONS[$cipher])) {
             return;
         }
 
-        $config = self::CIPHER_CONFIGURATIONS[$this->cipher];
+        $config = self::CIPHER_CONFIGURATIONS[$cipher];
         $serverKey = Helper::getServerKey($this->created_at, $config['serverKeySize']);
         $userKey = Helper::uuidToBase64($user->uuid, $config['userKeySize']);
         $this->password = "{$serverKey}:{$userKey}";

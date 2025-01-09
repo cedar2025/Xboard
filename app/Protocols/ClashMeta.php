@@ -130,7 +130,7 @@ class ClashMeta implements ProtocolInterface
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['cipher'] = data_get($server['protocol_settings'], 'cipher');
-        $array['password'] = $password;
+        $array['password'] = data_get($server, 'password', $password);
         $array['udp'] = true;
         return $array;
     }

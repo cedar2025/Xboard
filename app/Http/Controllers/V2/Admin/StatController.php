@@ -89,8 +89,8 @@ class StatController extends Controller
             'paid_count' => 0,
             'commission_total' => 0,
             'commission_count' => 0,
-            'start_date' => $request->input('start_date', date('Y-m-d', $statistics->last()->record_at)),
-            'end_date' => $request->input('end_date', date('Y-m-d', $statistics->first()->record_at)),
+            'start_date' => $request->input('start_date', date('Y-m-d', $statistics->last()?->record_at)),
+            'end_date' => $request->input('end_date', date('Y-m-d', $statistics->first()?->record_at)),
             'avg_paid_amount' => 0,
             'avg_commission_amount' => 0
         ];

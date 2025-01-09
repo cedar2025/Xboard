@@ -60,6 +60,7 @@ class Shadowrocket implements ProtocolInterface
     {
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
+        $password = data_get($server, 'password', $password);
         $str = str_replace(
             ['+', '/', '='],
             ['-', '_', ''],

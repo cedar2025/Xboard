@@ -40,13 +40,19 @@ class ServerService
                 $server->loadParentCreatedAt();
                 $server->handlePortAllocation();
                 $server->loadServerStatus();
-                $server->server_key = Helper::getServerKey($server->created_at, 16);
+                if ($server->type === 'shadowsocks') {
+                    $server->server_key = Helper::getServerKey($server->created_at, 16);
+                }
                 $server->generateShadowsocksPassword($user);
 
                 return $server;
             })
             ->toArray();
     }
+
+    /** 
+     * 加
+     */
 
     /**
      * 根据权限组获取可用的用户列表

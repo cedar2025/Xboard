@@ -44,6 +44,7 @@ class QuantumultX implements ProtocolInterface
     public static function buildShadowsocks($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
+        $password = data_get($server, 'password', $password);
         $config = [
             "shadowsocks={$server['host']}:{$server['port']}",
             "method={$protocol_settings['cipher']}",

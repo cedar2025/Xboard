@@ -107,7 +107,7 @@ class SingBox implements ProtocolInterface
         $array['server'] = $server['host'];
         $array['server_port'] = $server['port'];
         $array['method'] = data_get($server, 'protocol_settings.cipher');
-        $array['password'] = $password;
+        $array['password'] = data_get($server, 'password', $password);
 
         return $array;
     }
