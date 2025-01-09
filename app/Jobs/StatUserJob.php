@@ -47,19 +47,30 @@ class StatUserJob implements ShouldQueue
             : strtotime(date('Y-m-d'));
 
         foreach ($this->data as $uid => $v) {
-            StatUser::updateOrCreate(
-                [
-                    'user_id' => $uid,
-                    'server_rate' => $this->server['rate'],
-                    'record_at' => $recordAt,
-                    'record_type' => $this->recordType,
-                ],
-                [
-                    'u' => DB::raw('COALESCE(u, 0) + ' . ($v[0] * $this->server['rate'])),
-                    'd' => DB::raw('COALESCE(d, 0) + ' . ($v[1] * $this->server['rate'])),
-                    't' => time(),
-                ]
-            );
+            DB::transaction(function () use ($uid, $v, $recordAt) {
+                $stat = StatUser::lockForUpdate()
+                    ->where('user_id', $uid)
+                    ->where('server_rate', $this->server['rate'])
+                    ->where('record_at', $recordAt)
+                    ->where('record_type', $this->recordType)
+                    ->first();
+                if ($stat) {
+                    $stat->u += ($v[0] * $this->server['rate']);
+                    $stat->d += ($v[1] * $this->server['rate']);
+                    $stat->t = time();
+                    $stat->save();
+                } else {
+                    StatUser::create([
+                        'user_id' => $uid,
+                        'server_rate' => $this->server['rate'],
+                        'record_at' => $recordAt,
+                        'record_type' => $this->recordType,
+                        'u' => ($v[0] * $this->server['rate']),
+                        'd' => ($v[1] * $this->server['rate']),
+                        't' => time(),
+                    ]);
+                }
+            });
         }
     }
 }

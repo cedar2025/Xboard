@@ -52,21 +52,28 @@ class StatServerJob implements ShouldQueue
             $u += $traffic[0];
             $d += $traffic[1];
         }
-
-        // Update or create traffic stats
         DB::transaction(function () use ($u, $d, $recordAt) {
-            StatServer::updateOrCreate(
-                [
+            $stat = StatServer::lockForUpdate()
+                ->where('record_at', $recordAt)
+                ->where('server_id', $this->server['id'])
+                ->where('server_type', $this->protocol)
+                ->where('record_type', $this->recordType)
+                ->first();
+
+            if ($stat) {
+                $stat->u += $u;
+                $stat->d += $d;
+                $stat->save();
+            } else {
+                StatServer::create([
                     'record_at' => $recordAt,
                     'server_id' => $this->server['id'],
                     'server_type' => $this->protocol,
                     'record_type' => $this->recordType,
-                ],
-                [
-                    'u' => DB::raw("COALESCE(u, 0) + $u"),
-                    'd' => DB::raw("COALESCE(d, 0) + $d"),
-                ]
-            );
+                    'u' => $u,
+                    'd' => $d,
+                ]);
+            }
         });
     }
 }
