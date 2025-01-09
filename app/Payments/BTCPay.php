@@ -68,7 +68,7 @@ class BTCPay implements PaymentInterface
 
     public function notify($params): array|bool
     {
-        $payload = trim(get_request_content());
+        $payload = trim(request()->getContent());
 
         $headers = getallheaders();
 

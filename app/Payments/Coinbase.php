@@ -68,7 +68,7 @@ class Coinbase implements PaymentInterface
     public function notify($params): array
     {
 
-        $payload = trim(get_request_content());
+        $payload = trim(request()->getContent());
         $json_param = json_decode($payload, true);
 
 
