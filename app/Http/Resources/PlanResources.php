@@ -27,9 +27,9 @@ class PlanResources extends JsonResource
             'capacity_limit' => $this->formatCapacityLimit(),
             'transfer_enable' => $this['transfer_enable'],
             'speed_limit' => $this['speed_limit'],
-            'show' => (bool)$this['show'],
-            'sell' => (bool)$this['sell'],
-            'renew' => (bool)$this['renew'],
+            'show' => (bool) $this['show'],
+            'sell' => (bool) $this['sell'],
+            'renew' => (bool) $this['renew'],
             'reset_traffic_method' => $this['reset_traffic_method'],
             'sort' => $this['sort'],
             'created_at' => $this['created_at'],
@@ -46,7 +46,7 @@ class PlanResources extends JsonResource
     {
         $prices = [];
         foreach (Plan::LEGACY_PERIOD_MAPPING as $legacyPeriod => $newPeriod) {
-            $prices[$legacyPeriod] = optional($this['prices'])[$newPeriod] ? (int)$this['prices'][$newPeriod] * 100 : null;
+            $prices[$legacyPeriod] = optional($this['prices'])[$newPeriod] ? (float) $this['prices'][$newPeriod] * 100 : null;
         }
         return $prices;
     }
@@ -66,6 +66,6 @@ class PlanResources extends JsonResource
             return __('Sold out');
         }
 
-        return (int)$this['capacity_limit'];
+        return (int) $this['capacity_limit'];
     }
 }

@@ -13,6 +13,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Utils\Helper;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,57 +29,126 @@ class UserController extends Controller
         return $this->success($user->save());
     }
 
-    private function applyFiltersAndSorts(Request $request, $builder)
+    /**
+     * Apply filters and sorts to the query builder
+     *
+     * @param Request $request
+     * @param Builder $builder
+     * @return void
+     */
+    private function applyFiltersAndSorts(Request $request, Builder $builder): void
     {
-        if ($request->has('filter')) {
-            collect($request->input('filter'))->each(function ($filter) use ($builder) {
-                $key = $filter['id'];
-                $value = $filter['value'];
-                $builder->where(function ($query) use ($key, $value) {
-                    if (is_array($value)) {
-                        if ($key === 'group_ids') {
-                            $query->where(function ($subQuery) use ($value) {
-                                $subQuery->whereIn('group_id', $value);
-                            });
-                        } else {
-                            $query->whereIn($key, $value);
-                        }
-                    } else {
-                        $query->where($key, 'like', "%{$value}%");
-                    }
-                });
-            });
-        }
-
-        if ($request->has('sort')) {
-            collect($request->input('sort'))->each(function ($sort) use ($builder) {
-                $key = $sort['id'];
-                $value = $sort['desc'] ? 'DESC' : 'ASC';
-                $builder->orderBy($key, $value);
-            });
-        }
+        $this->applyFilters($request, $builder);
+        $this->applySorting($request, $builder);
     }
 
+    /**
+     * Apply filters to the query builder
+     *
+     * @param Request $request
+     * @param Builder $builder
+     * @return void
+     */
+    private function applyFilters(Request $request, Builder $builder): void
+    {
+        if (!$request->has('filter')) {
+            return;
+        }
+
+        collect($request->input('filter'))->each(function ($filter) use ($builder) {
+            $field = $filter['id'];
+            $value = $filter['value'];
+
+            $builder->where(function ($query) use ($field, $value) {
+                $this->buildFilterQuery($query, $field, $value);
+            });
+        });
+    }
+
+    /**
+     * Build the filter query based on field and value
+     *
+     * @param Builder $query
+     * @param string $field
+     * @param mixed $value
+     * @return void
+     */
+    private function buildFilterQuery(Builder $query, string $field, mixed $value): void
+    {
+        if (!is_array($value)) {
+            $query->where($field, 'like', "%{$value}%");
+            return;
+        }
+
+        if ($field === 'group_ids') {
+            $query->whereIn('group_id', $value);
+            return;
+        }
+
+        $query->whereIn($field, $value);
+    }
+
+    /**
+     * Apply sorting to the query builder
+     *
+     * @param Request $request
+     * @param Builder $builder
+     * @return void
+     */
+    private function applySorting(Request $request, Builder $builder): void
+    {
+        if (!$request->has('sort')) {
+            return;
+        }
+
+        collect($request->input('sort'))->each(function ($sort) use ($builder) {
+            $field = $sort['id'];
+            $direction = $sort['desc'] ? 'DESC' : 'ASC';
+            $builder->orderBy($field, $direction);
+        });
+    }
+
+    /**
+     * Fetch paginated user list with filters and sorting
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
     public function fetch(Request $request)
     {
         $current = $request->input('current', 1);
         $pageSize = $request->input('pageSize', 10);
-        $userModel = User::with(['plan:id,name', 'invite_user:id,email', 'group:id,name'])->select(
-            DB::raw('*'),
-            DB::raw('(u+d) as total_used')
-        );
+        
+        $userModel = User::with(['plan:id,name', 'invite_user:id,email', 'group:id,name'])
+            ->select(DB::raw('*, (u+d) as total_used'));
+
         $this->applyFiltersAndSorts($request, $userModel);
-        $users = $userModel->orderBy('id', 'desc')->paginate($pageSize, ['*'], 'page', $current);
+        
+        $users = $userModel->orderBy('id', 'desc')
+            ->paginate($pageSize, ['*'], 'page', $current);
+
         $users->getCollection()->transform(function ($user) {
-            $user->subscribe_url = Helper::getSubscribeUrl($user->token);
-            $user->balance = $user->balance / 100;
-            $user->commission_balance = $user->commission_balance / 100;
-            return $user;
+            return $this->transformUserData($user);
         });
+
         return response([
             'data' => $users->items(),
             'total' => $users->total()
         ]);
+    }
+
+    /**
+     * Transform user data for response
+     *
+     * @param User $user
+     * @return User
+     */
+    private function transformUserData(User $user): User
+    {
+        $user->subscribe_url = Helper::getSubscribeUrl($user->token);
+        $user->balance = $user->balance / 100;
+        $user->commission_balance = $user->commission_balance / 100;
+        return $user;
     }
 
     public function getUserInfoById(Request $request)

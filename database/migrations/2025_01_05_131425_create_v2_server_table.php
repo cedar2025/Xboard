@@ -191,12 +191,65 @@ return new class extends Migration {
             ]);
         }
 
+        // Update parent_id for all servers
+        $this->updateParentIds();
+
         // Drop old tables
         Schema::dropIfExists('v2_server_trojan');
         Schema::dropIfExists('v2_server_vmess');
         Schema::dropIfExists('v2_server_vless');
         Schema::dropIfExists('v2_server_shadowsocks');
         Schema::dropIfExists('v2_server_hysteria');
+    }
+
+    /**
+     * Update parent_id references for all servers
+     */
+    private function updateParentIds(): void
+    {
+        // Get all servers that have a parent_id
+        $servers = DB::table('v2_server')
+            ->whereNotNull('parent_id')
+            ->get();
+
+        // Update each server's parent_id to reference the new table's id
+        foreach ($servers as $server) {
+            $parentId = DB::table('v2_server')
+                ->where('type', $server->type)
+                ->where('code', $server->parent_id)
+                ->value('id');
+
+            if ($parentId) {
+                DB::table('v2_server')
+                    ->where('id', $server->id)
+                    ->update(['parent_id' => $parentId]);
+            }
+        }
+    }
+
+    /**
+     * Restore parent_id references when rolling back
+     */
+    private function restoreParentIds(string $type, string $table): void
+    {
+        // Get all servers of the specified type that have a parent_id
+        $servers = DB::table($table)
+            ->whereNotNull('parent_id')
+            ->get();
+
+        // Update each server's parent_id to reference back to the original id
+        foreach ($servers as $server) {
+            $originalParentId = DB::table('v2_server')
+                ->where('type', $type)
+                ->where('id', $server->parent_id)
+                ->value('code');
+
+            if ($originalParentId) {
+                DB::table($table)
+                    ->where('id', $server->id)
+                    ->update(['parent_id' => $originalParentId]);
+            }
+        }
     }
 
     /**
@@ -456,6 +509,13 @@ return new class extends Migration {
                     break;
             }
         }
+
+        // Restore parent_id references for each server type
+        $this->restoreParentIds('trojan', 'v2_server_trojan');
+        $this->restoreParentIds('vmess', 'v2_server_vmess');
+        $this->restoreParentIds('vless', 'v2_server_vless');
+        $this->restoreParentIds('shadowsocks', 'v2_server_shadowsocks');
+        $this->restoreParentIds('hysteria', 'v2_server_hysteria');
 
         // Drop new table
         Schema::dropIfExists('v2_server');

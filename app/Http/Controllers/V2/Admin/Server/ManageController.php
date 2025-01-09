@@ -17,6 +17,7 @@ class ManageController extends Controller
     {
         $servers = collect(ServerService::getAllServers())->map(function ($item) {
             $item['groups'] = ServerGroup::whereIn('id', $item['group_ids'])->get(['name', 'id']);
+            $item['parent'] = $item->parent;
             return $item;
         });
         return $this->success($servers);

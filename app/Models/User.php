@@ -47,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Ticket::class, 'user_id', 'id');
     }
+
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_id', 'id');
+    }
 }
