@@ -4,7 +4,7 @@ namespace App\Http\Controllers\V1\User;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PlanResources;
+use App\Http\Resources\PlanResource;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\PlanService;
@@ -29,10 +29,10 @@ class PlanController extends Controller
             if (!$this->planService->isPlanAvailableForUser($plan, $user)) {
                 return $this->fail([400, __('Subscription plan does not exist')]);
             }
-            return $this->success(PlanResources::make($plan));
+            return $this->success(PlanResource::make($plan));
         }
 
         $plans = $this->planService->getAvailablePlans();
-        return $this->success(PlanResources::collection($plans));
+        return $this->success(PlanResource::collection($plans));
     }
 }

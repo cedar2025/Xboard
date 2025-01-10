@@ -6,7 +6,7 @@ use App\Services\PlanService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class OrderResources extends JsonResource
+class OrderResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,7 +18,7 @@ class OrderResources extends JsonResource
         return [
             ...parent::toArray($request),
             'period' => PlanService::getLegacyPeriod($this->period),
-            'plan' => PlanResources::make($this->plan),
+            'plan' => PlanResource::make($this->plan),
         ];
     }
 }

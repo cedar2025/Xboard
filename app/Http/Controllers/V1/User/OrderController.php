@@ -5,7 +5,7 @@ namespace App\Http\Controllers\V1\User;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\OrderSave;
-use App\Http\Resources\OrderResources;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
@@ -34,7 +34,7 @@ class OrderController extends Controller
             ->orderBy('created_at', 'DESC')
             ->get();
 
-        return $this->success(OrderResources::collection($orders));
+        return $this->success(OrderResource::collection($orders));
     }
 
     public function detail(Request $request)
@@ -57,7 +57,7 @@ class OrderController extends Controller
         if ($order->surplus_order_ids) {
             $order['surplus_orders'] = Order::whereIn('id', $order->surplus_order_ids)->get();
         }
-        return $this->success(OrderResources::make($order));
+        return $this->success(OrderResource::make($order));
     }
 
     public function save(OrderSave $request)

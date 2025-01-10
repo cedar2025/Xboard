@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\V1\Guest;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PlanResources;
+use App\Http\Resources\PlanResource;
 use App\Models\Plan;
 use App\Services\PlanService;
 use Auth;
@@ -20,6 +20,6 @@ class PlanController extends Controller
     public function fetch(Request $request)
     {
         $plan = $this->planService->getAvailablePlans();
-        return $this->success(PlanResources::collection($plan));
+        return $this->success(PlanResource::collection($plan));
     }
 }
