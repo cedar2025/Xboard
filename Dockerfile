@@ -2,7 +2,7 @@ FROM phpswoole/swoole:php8.2-alpine
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pcntl bcmath \ 
-    && apk --no-cache add shadow sqlite mysql-client git patch supervisor redis \
+    && apk --no-cache add shadow sqlite mysql-client mysql-client mysql-dev mariadb-connector-c git patch supervisor redis \
     && addgroup -S -g 1000 www && adduser -S -G www -u 1000 www \
     && (getent group redis || addgroup -S redis) \
     && (getent passwd redis || adduser -S -G redis -H -h /data redis)
