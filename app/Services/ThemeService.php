@@ -159,7 +159,7 @@ class ThemeService
                 throw new Exception('主题已存在');
             }
 
-            File::moveDirectory($sourcePath, $targetPath);
+            File::copyDirectory($sourcePath, $targetPath);
             $this->initConfig($config['name']);
 
             return true;
