@@ -7,6 +7,7 @@ services:
       - ./.docker/.data/:/www/.docker/.data
       - ./public/theme/:/www/public/theme/
       - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
     environment:
       - docker=true
     depends_on:
