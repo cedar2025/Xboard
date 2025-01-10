@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->json('group_ids')->nullable()->comment('Group ID');
             $table->json('route_ids')->nullable()->comment('Route ID');
             $table->string('name')->comment('Server Name');
-            $table->integer('rate')->comment('Traffic Rate');
+            $table->decimal('rate', 8, 2)->comment('Traffic Rate');
             $table->json('tags')->nullable()->comment('Server Tags');
             $table->string('host')->comment('Server Host');
             $table->string('port')->comment('Client Port');
@@ -42,7 +42,7 @@ return new class extends Migration {
                 'group_ids' => $server->group_id ?: "[]",
                 'route_ids' => $server->route_id ?: "[]",
                 'name' => $server->name,
-                'rate' => (int) $server->rate,
+                'rate' => $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
                 'port' => $server->port,
@@ -70,7 +70,7 @@ return new class extends Migration {
                 'group_ids' => $server->group_id ?: "[]",
                 'route_ids' => $server->route_id ?: "[]",
                 'name' => $server->name,
-                'rate' => (int) $server->rate,
+                'rate' => $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
                 'port' => $server->port,
@@ -100,7 +100,7 @@ return new class extends Migration {
                 'group_ids' => $server->group_id ?: "[]",
                 'route_ids' => $server->route_id ?: "[]",
                 'name' => $server->name,
-                'rate' => (int) $server->rate,
+                'rate' => $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
                 'port' => $server->port,
@@ -136,7 +136,7 @@ return new class extends Migration {
                 'group_ids' => $server->group_id ?: "[]",
                 'route_ids' => $server->route_id ?: "[]",
                 'name' => $server->name,
-                'rate' => (int) $server->rate,
+                'rate' => $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
                 'port' => $server->port,
@@ -163,7 +163,7 @@ return new class extends Migration {
                 'group_ids' => $server->group_id ?: "[]",
                 'route_ids' => $server->route_id ?: "[]",
                 'name' => $server->name,
-                'rate' => (int) $server->rate,
+                'rate' => $server->rate,
                 'tags' => $server->tags ?: "[]",
                 'host' => $server->host,
                 'port' => $server->port,
@@ -449,7 +449,7 @@ return new class extends Migration {
                         'name' => $server->name,
                         'parent_id' => $server->parent_id,
                         'host' => $server->host,
-                        'port' => (int) $server->port,
+                        'port' => $server->port,
                         'server_port' => $server->server_port,
                         'tls' => $settings['tls'],
                         'tls_settings' => json_encode($tlsSettings),
