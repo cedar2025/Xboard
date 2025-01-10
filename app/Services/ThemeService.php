@@ -271,7 +271,7 @@ class ThemeService
     /**
      * 获取主题路径
      */
-    private function getThemePath(string $theme): ?string
+    public function getThemePath(string $theme): ?string
     {
         $systemPath = base_path(self::SYSTEM_THEME_DIR . $theme);
         if (File::exists($systemPath)) {

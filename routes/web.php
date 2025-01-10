@@ -3,6 +3,7 @@
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,16 @@ Route::get('/', function (Request $request) {
         // 检查主题视图文件是否存在
         if (!$themeService->getThemeViewPath($theme)) {
             throw new Exception('主题视图文件不存在');
+        }
+
+        // 检查主题是否已复制到public目录
+        $publicThemePath = public_path('theme/' . $theme);
+        if (!File::exists($publicThemePath)) {
+            $themePath = $themeService->getThemePath($theme);
+            if (!$themePath || !File::copyDirectory($themePath, $publicThemePath)) {
+                throw new Exception('主题初始化失败');
+            }
+            Log::info('Theme initialized in public directory', ['theme' => $theme]);
         }
 
         $renderParams = [
