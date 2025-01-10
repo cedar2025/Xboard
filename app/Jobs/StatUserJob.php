@@ -57,7 +57,6 @@ class StatUserJob implements ShouldQueue
                 if ($stat) {
                     $stat->u += ($v[0] * $this->server['rate']);
                     $stat->d += ($v[1] * $this->server['rate']);
-                    $stat->t = time();
                     $stat->save();
                 } else {
                     StatUser::create([
