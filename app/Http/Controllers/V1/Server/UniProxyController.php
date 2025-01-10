@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
@@ -144,7 +142,7 @@ class UniProxyController extends Controller
         }
 
         $eTag = sha1(json_encode($response));
-        if (strpos($request->header('If-None-Match') ?? '', $eTag) !== false) {
+        if (strpos($request->header('If-None-Match', '') ?? '', $eTag) !== false) {
             return response(null, 304);
         }
         return response($response)->header('ETag', "\"{$eTag}\"");
