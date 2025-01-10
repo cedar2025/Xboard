@@ -6,6 +6,7 @@ Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构�
 
 # Xboard New 特点 
 基于Xboard 二次开发，增加了以下特性
+- 升级Laravel11
 - 增加Octane支持
 - 使用React + Shadcn UI + TailwindCSS重构后台管理
 - 使用Vue3 + TypeScript + NaiveUI + Unocss + Pinia重构用户前端
@@ -16,7 +17,7 @@ Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构�
 - 优化系统架构，提升可维护性
 # **系统架构**
 
-- PHP8.1+
+- PHP8.2+
 - Composer
 - MySQL5.7+
 - Redis

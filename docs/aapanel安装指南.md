@@ -18,7 +18,7 @@ bash install_6.0_en.sh aapanel
 1. 在 aaPanel 中安装 LNMP：
    - Nginx（任意版本）
    - MySQL 5.7
-   - PHP 8.1
+   - PHP 8.2
 
 2. 安装 PHP 扩展：
    - redis

@@ -1,4 +1,4 @@
-FROM phpswoole/swoole:php8.1-alpine
+FROM phpswoole/swoole:php8.2-alpine
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pcntl bcmath \ 
