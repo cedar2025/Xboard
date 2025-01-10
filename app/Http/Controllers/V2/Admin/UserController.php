@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\V2\Admin;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\UserFetch;
 use App\Http\Requests\Admin\UserGenerate;
 use App\Http\Requests\Admin\UserSendMail;
 use App\Http\Requests\Admin\UserUpdate;
@@ -75,17 +73,50 @@ class UserController extends Controller
      */
     private function buildFilterQuery(Builder $query, string $field, mixed $value): void
     {
-        if (!is_array($value)) {
+        // Handle array values for 'in' operations
+        if (is_array($value)) {
+            $query->whereIn($field === 'group_ids' ? 'group_id' : $field, $value);
+            return;
+        }
+
+        // Handle operator-based filtering
+        if (!is_string($value) || !str_contains($value, ':')) {
             $query->where($field, 'like', "%{$value}%");
             return;
         }
 
-        if ($field === 'group_ids') {
-            $query->whereIn('group_id', $value);
-            return;
+        [$operator, $filterValue] = explode(':', $value, 2);
+        
+        // Convert numeric strings to appropriate type
+        if (is_numeric($filterValue)) {
+            $filterValue = strpos($filterValue, '.') !== false 
+                ? (float) $filterValue 
+                : (int) $filterValue;
         }
 
-        $query->whereIn($field, $value);
+        // Handle computed fields
+        $queryField = match ($field) {
+            'total_used' => DB::raw('(u + d)'),
+            default => $field
+        };
+
+        // Apply operator
+        $query->where($queryField, match (strtolower($operator)) {
+            'eq' => '=',
+            'gt' => '>',
+            'gte' => '>=',
+            'lt' => '<',
+            'lte' => '<=',
+            'like' => 'like',
+            'notlike' => 'not like',
+            'null' => static fn($q) => $q->whereNull($queryField),
+            'notnull' => static fn($q) => $q->whereNotNull($queryField),
+            default => 'like'
+        }, match (strtolower($operator)) {
+            'like', 'notlike' => "%{$filterValue}%",
+            'null', 'notnull' => null,
+            default => $filterValue
+        });
     }
 
     /**

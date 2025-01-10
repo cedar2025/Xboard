@@ -213,6 +213,26 @@ class StatController extends Controller
         $currentMonthStart = strtotime(date('Y-m-01'));
         $lastMonthStart = strtotime('-1 month', $currentMonthStart);
         $twoMonthsAgoStart = strtotime('-2 month', $currentMonthStart);
+        
+        // Today's start timestamp
+        $todayStart = strtotime('today');
+        $yesterdayStart = strtotime('-1 day', $todayStart);
+
+        // Today's income
+        $todayIncome = Order::where('created_at', '>=', $todayStart)
+            ->where('created_at', '<', time())
+            ->whereNotIn('status', [0, 2])
+            ->sum('total_amount');
+
+        // Yesterday's income for day growth calculation
+        $yesterdayIncome = Order::where('created_at', '>=', $yesterdayStart)
+            ->where('created_at', '<', $todayStart)
+            ->whereNotIn('status', [0, 2])
+            ->sum('total_amount');
+
+        // Online users (active in last 10 minutes)
+        $onlineUsers = User::where('t', '>=', time() - 600)
+            ->count();
 
         // Current month income
         $currentMonthIncome = Order::where('created_at', '>=', $currentMonthStart)
@@ -266,9 +286,13 @@ class StatController extends Controller
         $lastMonthIncomeGrowth = $twoMonthsAgoIncome > 0 ? round(($lastMonthIncome - $twoMonthsAgoIncome) / $twoMonthsAgoIncome * 100, 1) : 0;
         $commissionGrowth = $twoMonthsAgoCommission > 0 ? round(($lastMonthCommissionPayout - $twoMonthsAgoCommission) / $twoMonthsAgoCommission * 100, 1) : 0;
         $userGrowth = $lastMonthNewUsers > 0 ? round(($currentMonthNewUsers - $lastMonthNewUsers) / $lastMonthNewUsers * 100, 1) : 0;
+        $dayIncomeGrowth = $yesterdayIncome > 0 ? round(($todayIncome - $yesterdayIncome) / $yesterdayIncome * 100, 1) : 0;
 
         return [
             'data' => [
+                'todayIncome' => $todayIncome,
+                'onlineUsers' => $onlineUsers,
+                'dayIncomeGrowth' => $dayIncomeGrowth,
                 'currentMonthIncome' => $currentMonthIncome,
                 'lastMonthIncome' => $lastMonthIncome,
                 'lastMonthCommissionPayout' => $lastMonthCommissionPayout,

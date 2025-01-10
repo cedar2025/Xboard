@@ -50,6 +50,7 @@ class ConfigSave extends FormRequest
         'server_token' => 'nullable|min:16',
         'server_pull_interval' => 'integer',
         'server_push_interval' => 'integer',
+        'device_limit_mode' => 'integer',
         // frontend
         'frontend_theme' => '',
         'frontend_theme_sidebar' => 'nullable|in:dark,light',

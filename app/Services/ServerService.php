@@ -72,7 +72,8 @@ class ServerService
             ->select([
                 'id',
                 'uuid',
-                'speed_limit'
+                'speed_limit',
+                'device_limit'
             ])
             ->get();
     }

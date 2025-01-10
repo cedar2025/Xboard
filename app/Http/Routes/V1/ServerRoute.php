@@ -22,6 +22,7 @@ class ServerRoute
                 $route->get('user', [UniProxyController::class, 'user']);
                 $route->post('push', [UniProxyController::class, 'push']);
                 $route->post('alive', [UniProxyController::class, 'alive']);
+                $route->get('alivelist', [UniProxyController::class, 'alivelist']);
             });
         });
     }

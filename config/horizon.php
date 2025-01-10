@@ -179,6 +179,7 @@ return [
                     'send_email',
                     'send_email_mass',
                     'send_telegram',
+                    'online_sync'
                 ],
                 'balance' => 'auto',
                 'minProcesses' => 1,

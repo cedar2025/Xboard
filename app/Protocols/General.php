@@ -142,6 +142,20 @@ class General implements ProtocolInterface
             case 'grpc':
                 $config['serviceName'] = data_get($protocol_settings, 'network_settings.serviceName');
                 break;
+            case 'kcp':
+                $config['path'] = data_get($protocol_settings, 'network_settings.seed');
+                $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                break;
+            case 'httpupgrade':
+                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                break;
+            case 'xhttp':
+                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                $config['mode'] = data_get($protocol_settings, 'network_settings.mode', 'auto');
+                $config['extra'] = data_get($protocol_settings, 'network_settings.extra') ? Helper::encodeURIComponent(data_get($protocol_settings, 'network_settings.extra')) : null;
+                break;
         }
 
         $user = $uuid . '@' . $host . ':' . $port;

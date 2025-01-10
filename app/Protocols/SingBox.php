@@ -68,7 +68,7 @@ class SingBox implements ProtocolInterface
                 $proxies[] = $vlessConfig;
             }
             if ($item['type'] === 'hysteria') {
-                $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item, $this->user);
+                $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item);
                 $proxies[] = $hysteriaConfig;
             }
         }
@@ -211,6 +211,12 @@ class SingBox implements ProtocolInterface
                 'type' => 'http',
                 'host' => data_get($protocol_settings, 'network_settings.host') ? [data_get($protocol_settings, 'network_settings.host')] : null,
                 'path' => data_get($protocol_settings, 'network_settings.path')
+            ],
+            'httpupgrade' => [
+                'type' => 'httpupgrade',
+                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'host' => data_get($protocol_settings, 'network_settings.headers.Host'),
+                'headers' => data_get($protocol_settings, 'network_settings.headers')
             ],
             default => null
         };

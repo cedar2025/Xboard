@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
@@ -9,10 +11,16 @@ use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
+use App\Services\UserOnlineService;
+use Illuminate\Http\JsonResponse;
 
 class UniProxyController extends Controller
 {
+    public function __construct(
+        private readonly UserOnlineService $userOnlineService
+    ) {
+    }
+
     // 后端获取用户
     public function user(Request $request)
     {
@@ -142,9 +150,27 @@ class UniProxyController extends Controller
         return response($response)->header('ETag', "\"{$eTag}\"");
     }
 
-    // 后端提交在线数据
-    public function alive(Request $request)
+    // 获取在线用户数据（wyx2685
+    public function alivelist(Request $request): JsonResponse
     {
-        return $this->success(true);
+        $node = $request->input('node_info');
+        $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
+            ->where('device_limit', '>', 0);
+        $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
+        return response()->json(['alive' => (object) $alive]);
+    }
+
+    // 后端提交在线数据
+    public function alive(Request $request): JsonResponse
+    {
+        $node = $request->input('node_info');
+        $data = json_decode(request()->getContent(), true);
+        if ($data === null) {
+            return response()->json([
+                'error' => 'Invalid online data'
+            ], 400);
+        }
+        $this->userOnlineService->updateAliveData($data, $node->type, $node->id);
+        return response()->json(['data' => true]);
     }
 }

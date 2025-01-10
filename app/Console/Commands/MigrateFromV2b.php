@@ -167,14 +167,14 @@ class MigrateFromV2b extends Command
             
             // 如果记录不存在，则插入
             if ($existingSetting) {
-                $this->warn("配置 ${k} 在数据库已经存在， 忽略");
+                $this->warn("配置 {$k} 在数据库已经存在， 忽略");
                 continue;
             }
             Setting::create([
                 'name' => $k,
                 'value' => is_array($v)? json_encode($v) : $v,
             ]);
-            $this->info("配置 ${k} 迁移成功");
+            $this->info("配置 {$k} 迁移成功");
         }
         \Artisan::call('config:cache');
 

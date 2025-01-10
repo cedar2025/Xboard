@@ -65,8 +65,8 @@ class ThemeController extends Controller
 
             // 检查文件名安全性
             $originalName = $file->getClientOriginalName();
-            if (!preg_match('/^[a-zA-Z0-9\-\_]+\.zip$/', $originalName)) {
-                throw new ApiException('主题包文件名只能包含字母、数字、下划线和中划线');
+            if (!preg_match('/^[a-zA-Z0-9\-\_\.]+\.zip$/', $originalName)) {
+                throw new ApiException('主题包文件名只能包含字母、数字、下划线、中划线和点');
             }
 
             $this->themeService->upload($file);
@@ -117,7 +117,7 @@ class ThemeController extends Controller
         $payload = $request->validate([
             'name' => 'required'
         ]);
-        $this->themeService->switchTheme($payload['name']);
+        $this->themeService->switch($payload['name']);
         return $this->success(true);
     }
 

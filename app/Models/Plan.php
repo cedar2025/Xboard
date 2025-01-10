@@ -60,7 +60,8 @@ class Plan extends Model
         'prices',
         'reset_traffic_method',
         'capacity_limit',
-        'sell'
+        'sell',
+        'device_limit'
     ];
 
     protected $casts = [

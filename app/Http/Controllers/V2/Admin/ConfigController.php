@@ -122,6 +122,7 @@ class ConfigController extends Controller
                 'server_token' => admin_setting('server_token'),
                 'server_pull_interval' => admin_setting('server_pull_interval', 60),
                 'server_push_interval' => admin_setting('server_push_interval', 60),
+                'device_limit_mode' => (int) admin_setting('device_limit_mode', 0),
             ],
             'email' => [
                 'email_template' => admin_setting('email_template', 'default'),
@@ -178,7 +179,8 @@ class ConfigController extends Controller
         $data = $request->validated();
         foreach ($data as $k => $v) {
             if ($k == 'frontend_theme') {
-                ThemeService::switchTheme($v);
+                $themeService = new ThemeService();
+                $themeService->switch($v);
             }
             admin_setting([$k => $v]);
         }

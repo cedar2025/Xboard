@@ -2,6 +2,7 @@
 
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,22 +22,42 @@ Route::get('/', function (Request $request) {
             abort(403);
         }
     }
-    $renderParams = [
-        'title' => admin_setting('app_name', 'Xboard'),
-        'theme' => admin_setting('frontend_theme', 'Xboard'),
-        'version' => config('app.version'),
-        'description' => admin_setting('app_description', 'Xboard is best'),
-        'logo' => admin_setting('logo')
-    ];
 
     $theme = admin_setting('frontend_theme', 'Xboard');
+    $themeService = new ThemeService();
 
-    if (!admin_setting("theme_{$theme}")) {
-        ThemeService::switchTheme($theme);
+    try {
+        // 检查主题是否存在，不存在则尝试切换到默认主题
+        if (!$themeService->exists($theme)) {
+            if ($theme !== 'Xboard') {
+                Log::warning('Theme not found, switching to default theme', ['theme' => $theme]);
+                $theme = 'Xboard';
+                admin_setting(['frontend_theme' => $theme]);
+            }
+            $themeService->switch($theme);
+        }
+
+        // 检查主题视图文件是否存在
+        if (!$themeService->getThemeViewPath($theme)) {
+            throw new Exception('主题视图文件不存在');
+        }
+
+        $renderParams = [
+            'title' => admin_setting('app_name', 'Xboard'),
+            'theme' => $theme,
+            'version' => config('app.version'),
+            'description' => admin_setting('app_description', 'Xboard is best'),
+            'logo' => admin_setting('logo'),
+            'theme_config' => $themeService->getConfig($theme)
+        ];
+        return view('theme::' . $theme . '.dashboard', $renderParams);
+    } catch (Exception $e) {
+        Log::error('Theme rendering failed', [
+            'theme' => $theme,
+            'error' => $e->getMessage()
+        ]);
+        abort(500, '主题加载失败');
     }
-
-    $renderParams['theme_config'] = (new ThemeService())->getConfig($theme);
-    return view('theme::' . $theme . '.dashboard', $renderParams);
 });
 
 //TODO:: 兼容

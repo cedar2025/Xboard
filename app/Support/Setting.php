@@ -25,6 +25,7 @@ class Setting
      */
     public function get($key, $default = null)
     {
+        $key = strtolower($key);
         return Arr::get($this->fromDatabase(), $key, $default);
     }
 
@@ -39,6 +40,7 @@ class Setting
         if (is_array($value)) {
             $value = json_encode($value);
         }
+        $key = strtolower($key);
         SettingModel::updateOrCreate(['name' => $key], ['value' => $value]);
         $this->cache->forget(self::CACHE_KEY);
         return true;
@@ -81,11 +83,10 @@ class Setting
     {
         try {
             return $this->cache->rememberForever(self::CACHE_KEY, function (): array {
-                return SettingModel::pluck('value', 'name')->toArray();
+                return array_change_key_case(SettingModel::pluck('value', 'name')->toArray(), CASE_LOWER);
             });
         } catch (\Throwable $th) {
             return [];
         }
-
     }
 }
