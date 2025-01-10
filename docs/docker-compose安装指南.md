@@ -21,16 +21,18 @@ git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard
 cd Xboard
 ```
 
-2. 安装数据库：
-```bash
-# 快速安装（推荐新手使用）
-docker compose run -it --rm \
-    -e enable_sqlite=true \
-    -e enable_redis=true \
-    -e admin_account=admin@demo.com \
-    web php artisan xboard:install
+2. 安装数据库：  
 
-# 自定义配置安装（高级用户）
+- 快速安装（推荐新手使用）
+```bash
+docker compose run -it --rm \
+    -e ENABLE_SQLITE=true \
+    -e ENABLE_REDIS=true \
+    -e ADMIN_ACCOUNT=admin@demo.com \
+    web php artisan xboard:install && \
+```
+- 自定义配置安装（高级用户）
+```bash
 docker compose run -it --rm web php artisan xboard:install
 ```
 > 安装完成后请保存返回的后台地址和管理员账号密码

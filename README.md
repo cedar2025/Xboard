@@ -31,14 +31,13 @@ Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构�
 git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
-    -e enable_sqlite=true \
-    -e enable_redis=true \
-    -e admin_account=admin@demo.com \
+    -e ENABLE_SQLITE=true \
+    -e ENABLE_REDIS=true \
+    -e ADMIN_ACCOUNT=admin@demo.com \
     web php artisan xboard:install && \
 docker compose up -d
-
-# 安装完成后访问 http://服务器IP:7001
 ```
+安装完成后访问 http://服务器IP:7001
 
 > 提示：安装过程中会显示管理员账号密码，请务必保存。
 

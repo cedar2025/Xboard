@@ -45,10 +45,10 @@ class XboardInstall extends Command
     public function handle()
     {
         try {
-            $isDocker = env('docker', false);
-            $enableSqlite = env('enable_sqlite', false);
-            $enableRedis = env('enable_redis', false);
-            $adminAccount = env('admin_account', '');
+            $isDocker = file_exists('/.dockerenv');
+            $enableSqlite = env('ENABLE_SQLITE', false);
+            $enableRedis = env('ENABLE_REDIS', false);
+            $adminAccount = env('ADMIN_ACCOUNT', '');
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
@@ -146,7 +146,7 @@ class XboardInstall extends Command
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
                 if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
-                    $envConfig['REDIS_HOST'] = '/run/redis-socket/redis.sock';
+                    $envConfig['REDIS_HOST'] = '/data/redis.sock';
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
                 } else {
@@ -171,6 +171,7 @@ class XboardInstall extends Command
                     // 连接失败，输出错误消息
                     $this->error("redis连接失败：" . $e->getMessage());
                     $this->info("请重新输入REDIS配置");
+                    sleep(1);
                 }
             }
 

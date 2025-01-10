@@ -2,19 +2,19 @@ services:
   web:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/run/redis-socket
+      - ./.docker/.data/redis/:/data/
       - ./:/www/
     environment:
       - docker=true
     depends_on:
       - redis
     network_mode: host
-    command: php artisan octane:start --server="swoole" --port=7001 --host=0.0.0.0
+    command: php artisan octane:start --port=7001 --host=0.0.0.0
     restart: on-failure
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/run/redis-socket
+      - ./.docker/.data/redis/:/data/
       - ./:/www/
     restart: on-failure
     network_mode: host
