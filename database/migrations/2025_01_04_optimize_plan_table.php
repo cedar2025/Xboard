@@ -22,14 +22,14 @@ return new class extends Migration {
         DB::table('v2_plan')->orderBy('id')->chunk(100, function ($plans) {
             foreach ($plans as $plan) {
                 $prices = array_filter([
-                    'monthly' => $plan->month_price / 100,
-                    'quarterly' => $plan->quarter_price / 100,
-                    'half_yearly' => $plan->half_year_price / 100,
-                    'yearly' => $plan->year_price / 100,
-                    'two_yearly' => $plan->two_year_price / 100,
-                    'three_yearly' => $plan->three_year_price / 100,
-                    'onetime' => $plan->onetime_price / 100,
-                    'reset_traffic' => $plan->reset_price / 100
+                    'monthly' => $plan->month_price !== null ? $plan->month_price / 100 : null,
+                    'quarterly' => $plan->quarter_price !== null ? $plan->quarter_price / 100 : null,
+                    'half_yearly' => $plan->half_year_price !== null ? $plan->half_year_price / 100 : null,
+                    'yearly' => $plan->year_price !== null ? $plan->year_price / 100 : null,
+                    'two_yearly' => $plan->two_year_price !== null ? $plan->two_year_price / 100 : null,
+                    'three_yearly' => $plan->three_year_price !== null ? $plan->three_year_price / 100 : null,
+                    'onetime' => $plan->onetime_price !== null ? $plan->onetime_price / 100 : null,
+                    'reset_traffic' => $plan->reset_price !== null ? $plan->reset_price / 100 : null
                 ], function ($price) {
                     return $price !== null;
                 });
@@ -96,7 +96,7 @@ return new class extends Migration {
                 DB::table('v2_plan')
                     ->where('id', $plan->id)
                     ->update([
-                        'month_price' => $prices['monthly'] * 100   ?? null,
+                        'month_price' => $prices['monthly'] * 100 ?? null,
                         'quarter_price' => $prices['quarterly'] * 100 ?? null,
                         'half_year_price' => $prices['half_yearly'] * 100 ?? null,
                         'year_price' => $prices['yearly'] * 100 ?? null,
