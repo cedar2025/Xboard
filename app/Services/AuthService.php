@@ -3,11 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Utils\CacheKey;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Laravel\Sanctum\NewAccessToken;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
@@ -46,5 +43,14 @@ class AuthService
     {
         $this->user->tokens()->delete();
         return true;
+    }
+
+    public static function findUserByBearerToken(string $bearerToken): ?User
+    {
+        $token = str_replace('Bearer ', '', $bearerToken);
+        
+        $accessToken = PersonalAccessToken::findToken($token);
+        
+        return $accessToken?->tokenable;
     }
 }

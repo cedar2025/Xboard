@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Admin;
 
 use App\Models\Server;
@@ -7,15 +9,56 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ServerSave extends FormRequest
 {
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules()
+    private const PROTOCOL_RULES = [
+        'shadowsocks' => [
+            'cipher' => 'required|string',
+            'obfs' => 'nullable|string',
+            'obfs_settings.path' => 'nullable|string',
+            'obfs_settings.host' => 'nullable|string',
+        ],
+        'vmess' => [
+            'tls' => 'required|integer',
+            'network' => 'required|string',
+            'network_settings' => 'nullable|array',
+            'tls_settings.server_name' => 'nullable|string',
+            'tls_settings.allow_insecure' => 'nullable|boolean',
+        ],
+        'trojan' => [
+            'network' => 'required|string',
+            'network_settings' => 'nullable|array',
+            'server_name' => 'nullable|string',
+            'allow_insecure' => 'nullable|boolean',
+        ],
+        'hysteria' => [
+            'version' => 'required|integer',
+            'alpn' => 'nullable|string',
+            'obfs.open' => 'nullable|boolean',
+            'obfs.type' => 'string|nullable',
+            'obfs.password' => 'string|nullable',
+            'tls.server_name' => 'nullable|string',
+            'tls.allow_insecure' => 'nullable|boolean',
+            'bandwidth.up' => 'nullable|integer',
+            'bandwidth.down' => 'nullable|integer',
+        ],
+        'vless' => [
+            'tls' => 'required|integer',
+            'network' => 'required|string',
+            'network_settings' => 'nullable|array',
+            'flow' => 'nullable|string',
+            'tls_settings.server_name' => 'nullable|string',
+            'tls_settings.allow_insecure' => 'nullable|boolean',
+            'reality_settings.allow_insecure' => 'nullable|boolean',
+            'reality_settings.server_name' => 'nullable|string',
+            'reality_settings.server_port' => 'nullable|integer',
+            'reality_settings.public_key' => 'nullable|string',
+            'reality_settings.private_key' => 'nullable|string',
+            'reality_settings.short_id' => 'nullable|string',
+        ]
+    ];
+
+    private function getBaseRules(): array
     {
-        $type = $this->input('type');
-        $protocolRules = [
+        return [
             'type' => 'required|in:' . implode(',', Server::VALID_TYPES),
             'spectific_key' => 'nullable|string',
             'code' => 'nullable|string',
@@ -33,56 +76,14 @@ class ServerSave extends FormRequest
             'rate' => 'required|numeric',
             'protocol_settings' => 'array',
         ];
+    }
 
-        $protocolSpecificRules = [
-            'shadowsocks' => [
-                'cipher' => 'required|string',
-                'obfs' => 'nullable|string',
-                'obfs_settings.path' => 'nullable|string',
-                'obfs_settings.host' => 'nullable|string',
-            ],
-            'vmess' => [
-                'tls' => 'required|integer',
-                'network' => 'required|string',
-                'network_settings' => 'nullable|array',
-                'tls_settings.server_name' => 'nullable|string',
-                'tls_settings.allow_insecure' => 'nullable|boolean',
-            ],
-            'trojan' => [
-                'network' => 'required|string',
-                'network_settings' => 'nullable|array',
-                'server_name' => 'nullable|string',
-                'allow_insecure' => 'nullable|boolean',
-            ],
-            'hysteria' => [
-                'version' => 'required|integer',
-                'alpn' => 'nullable|string',
-                'obfs.open' => 'nullable|boolean',
-                'obfs.type' => 'string|nullable',
-                'obfs.password' => 'string|nullable',
-                'tls.server_name' => 'nullable|string',
-                'tls.allow_insecure' => 'nullable|boolean',
-                'bandwidth.up' => 'nullable|integer',
-                'bandwidth.down' => 'nullable|integer',
-            ],
-            'vless' => [
-                'tls' => 'required|integer',
-                'network' => 'required|string',
-                'network_settings' => 'nullable|array',
-                'flow' => 'nullable|string',
-                'tls_settings.server_name' => 'nullable|string',
-                'tls_settings.allow_insecure' => 'nullable|boolean',
-                'reality_settings.allow_insecure' => 'nullable|boolean',
-                'reality_settings.server_name' => 'nullable|string',
-                'reality_settings.server_port' => 'nullable|integer',
-                'reality_settings.public_key' => 'nullable|string',
-                'reality_settings.private_key' => 'nullable|string',
-                'reality_settings.short_id' => 'nullable|string',
-            ]
-        ];
-
-        $rules = $protocolRules;
-        foreach ($protocolSpecificRules[$type] as $field => $rule) {
+    public function rules(): array
+    {
+        $type = $this->input('type');
+        $rules = $this->getBaseRules();
+        
+        foreach (self::PROTOCOL_RULES[$type] ?? [] as $field => $rule) {
             $rules['protocol_settings.' . $field] = $rule;
         }
 

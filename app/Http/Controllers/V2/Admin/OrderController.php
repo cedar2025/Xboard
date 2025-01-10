@@ -35,47 +35,47 @@ class OrderController extends Controller
         $current = $request->input('current', 1);
         $pageSize = $request->input('pageSize', 10);
         $orderModel = Order::with('plan:id,name');
-        if ($request->input('is_commission')) {
+
+        if ($request->boolean('is_commission')) {
             $orderModel->whereNotNull('invite_user_id')
                 ->whereNotIn('status', [0, 2])
                 ->where('commission_balance', '>', 0);
         }
+
         $this->applyFiltersAndSorts($request, $orderModel);
-        $orders = $orderModel
-            ->orderBy('created_at', 'desc')
-            ->paginate($pageSize, ['*'], 'page', $current);
-        return response([
-            'data' => $orders->transform(function ($order) {
-                $order['period'] = PlanService::getLegacyPeriod($order->period);
-                return $order;
-            }),
-            'total' => $orders->total()
-        ]);
+
+        return response()->json(
+            $orderModel
+                ->latest('created_at')
+                ->paginate(
+                    perPage: $pageSize,
+                    page: $current
+                )->through(fn($order) => [
+                    ...$order->toArray(),
+                    'period' => PlanService::getLegacyPeriod($order->period)
+                ]),
+        );
     }
 
     private function applyFiltersAndSorts(Request $request, $builder)
     {
-        if ($request->has('filter')) {
-            collect($request->input('filter'))->each(callback: function ($filter) use ($builder) {
-                $key = $filter['id'];
-                $value = $filter['value'];
-                $builder->where(function ($query) use ($key, $value) {
-                    if (is_array($value)) {
-                        $query->whereIn($key, $value);
-                    } else {
-                        $query->where($key, 'like', "%{$value}%");
-                    }
-                });
-            });
-        }
+        $request->collect('filter')->each(function ($filter) use ($builder) {
+            $key = $filter['id'];
+            $value = $filter['value'];
 
-        if ($request->has('sort')) {
-            collect($request->input('sort'))->each(function ($sort) use ($builder) {
-                $key = $sort['id'];
-                $value = $sort['desc'] ? 'DESC' : 'ASC';
-                $builder->orderBy($key, $value);
+            $builder->where(function ($query) use ($key, $value) {
+                is_array($value)
+                    ? $query->whereIn($key, $value)
+                    : $query->where($key, 'like', "%{$value}%");
             });
-        }
+        });
+
+        $request->collect('sort')->each(function ($sort) use ($builder) {
+            $builder->orderBy(
+                $sort['id'],
+                $sort['desc'] ? 'DESC' : 'ASC'
+            );
+        });
     }
 
     public function paid(Request $request)

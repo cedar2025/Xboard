@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\V2\Admin;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
-use App\Models\TicketMessage;
-use App\Models\User;
 use App\Services\TicketService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -54,15 +51,15 @@ class TicketController extends Controller
     private function fetchTicketById(Request $request)
     {
         $ticket = Ticket::with('messages', 'user')->find($request->input('id'));
-    
+
         if (!$ticket) {
             return $this->fail([400202, '工单不存在']);
         }
-    
+
         $ticket->messages->each(function ($message) use ($ticket) {
             $message->is_me = $message->user_id !== $ticket->user_id;
         });
-    
+
         return $this->success($ticket);
     }
 
@@ -73,35 +70,27 @@ class TicketController extends Controller
      */
     private function fetchTickets(Request $request)
     {
-        $current = $request->input('current') ?? 1;
-        $pageSize = $request->input('pageSize') >= 10 ? $request->input('pageSize') : 10;
+        $ticketModel = Ticket::query()
+            ->when($request->has('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($request->has('reply_status'), function ($query) use ($request) {
+                $query->whereIn('reply_status', $request->input('reply_status'));
+            })
+            ->when($request->has('email'), function ($query) use ($request) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('email', $request->input('email'));
+                });
+            });
 
-        $ticketModel = Ticket::query();
         $this->applyFiltersAndSorts($request, $ticketModel);
-        $ticketModel->orderBy('updated_at', 'DESC');
 
-        if ($request->has('status')) {
-            $ticketModel->where('status', $request->input('status'));
-        }
-
-        if ($request->has('reply_status')) {
-            $ticketModel->whereIn('reply_status', $request->input('reply_status'));
-        }
-
-        if ($request->has('email')) {
-            $user = User::where('email', $request->input('email'))->first();
-            if ($user) {
-                $ticketModel->where('user_id', $user->id);
-            }
-        }
-
-        $total = $ticketModel->count();
-        $res = $ticketModel->forPage($current, $pageSize)->get();
-
-        return response([
-            'data' => $res,
-            'total' => $total
-        ]);
+        return response()->json($ticketModel
+            ->latest('updated_at')
+            ->paginate(
+                perPage: $request->integer('pageSize', 10),
+                page: $request->integer('current', 1)
+            ));
     }
 
     public function reply(Request $request)
