@@ -49,8 +49,10 @@
             "auto_route": true,
             "domain_strategy": "prefer_ipv4",
             "endpoint_independent_nat": true,
-            "inet4_address": "172.19.0.1/30",
-            "inet6_address": "2001:0470:f9da:fdfa::1/64",
+            "address": [
+                "172.19.0.1/30",
+                "2001:0470:f9da:fdfa::1/64"
+            ],
             "mtu": 9000,
             "sniff": true,
             "sniff_override_destination": true,
