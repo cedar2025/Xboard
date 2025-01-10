@@ -6,7 +6,7 @@ services:
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./public/theme/:/www/public/theme/
-      - ./public/storage:/www/public/storage
+      - ./storage/logs:/www/storage/logs
     environment:
       - docker=true
     depends_on:
@@ -22,7 +22,7 @@ services:
       - ./.docker/.data/redis/:/data/
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
-      - ./public/storage:/www/public/storage
+      - ./storage/logs:/www/storage/logs
     restart: on-failure
     # network_mode: host
     command: php artisan horizon
