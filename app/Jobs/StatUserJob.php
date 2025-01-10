@@ -67,7 +67,6 @@ class StatUserJob implements ShouldQueue
                         'record_type' => $this->recordType,
                         'u' => ($v[0] * $this->server['rate']),
                         'd' => ($v[1] * $this->server['rate']),
-                        't' => time(),
                     ]);
                 }
             });
