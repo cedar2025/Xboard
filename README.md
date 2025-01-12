@@ -1,3 +1,4 @@
+Chinese l [English](/READMEen.md)
 # 关于Xboard
 Xboard是基于V2board二次开发，在性能上和功能上都有大部分增强的**面板
 
