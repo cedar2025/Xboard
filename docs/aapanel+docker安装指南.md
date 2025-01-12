@@ -94,7 +94,7 @@ docker compose run -it --rm xboard sh update.sh
 ```
 2. 重启Xboard
 ```
-docker compose up -d
+docker compose restart
 ```
 🎉： 在此你已完成Xboard的更新
 
