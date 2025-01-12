@@ -159,10 +159,12 @@ class Clash implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts'] = [
-                    'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                    'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
-                ];
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $array['http-opts'] = [
+                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                        'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                    ];
+                }
                 break;
             case 'ws':
                 $array['network'] = 'ws';
