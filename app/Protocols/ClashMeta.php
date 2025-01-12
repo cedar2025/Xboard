@@ -167,7 +167,7 @@ class ClashMeta implements ProtocolInterface
                 $array['network'] = 'ws';
                 $array['ws-opts'] = [
                     'path' => data_get($protocol_settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
+                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host', $server['host'])]
                 ];
                 break;
             case 'grpc':
@@ -221,10 +221,10 @@ class ClashMeta implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts'] = [
-                    'path' => data_get($protocol_settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
-                ];
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';
@@ -248,7 +248,7 @@ class ClashMeta implements ProtocolInterface
 
     public static function buildTrojan($password, $server)
     {
-        $settings = data_get($server, 'protocol_settings', []);
+        $protocol_settings = data_get($server, 'protocol_settings', []);
         $array = [
             'name' => $server['name'],
             'type' => 'trojan',
@@ -256,23 +256,23 @@ class ClashMeta implements ProtocolInterface
             'port' => $server['port'],
             'password' => $password,
             'udp' => true,
-            'sni' => data_get($settings, 'server_name'),
-            'skip-cert-verify' => (bool) data_get($settings, 'allow_insecure', false)
+            'sni' => data_get($protocol_settings, 'server_name'),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'allow_insecure', false)
         ];
 
-        switch (data_get($settings, 'network')) {
+        switch (data_get($protocol_settings, 'network')) {
             case 'grpc':
                 $array['network'] = 'grpc';
                 $array['grpc-opts'] = [
-                    'grpc-service-name' => data_get($settings, 'network_settings.serviceName')
+                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
                 ];
                 break;
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts'] = [
-                    'path' => data_get($settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($settings, 'network_settings.headers.Host')]
-                ];
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             default:
                 break;

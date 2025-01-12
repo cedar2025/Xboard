@@ -14,6 +14,7 @@ use App\Services\UserService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrderController extends Controller
 {
@@ -57,24 +58,80 @@ class OrderController extends Controller
         );
     }
 
-    private function applyFiltersAndSorts(Request $request, $builder)
+    private function applyFiltersAndSorts(Request $request, Builder $builder): void
     {
-        $request->collect('filter')->each(function ($filter) use ($builder) {
-            $key = $filter['id'];
+        $this->applyFilters($request, $builder);
+        $this->applySorting($request, $builder);
+    }
+
+    private function applyFilters(Request $request, Builder $builder): void
+    {
+        if (!$request->has('filter')) {
+            return;
+        }
+
+        collect($request->input('filter'))->each(function ($filter) use ($builder) {
+            $field = $filter['id'];
             $value = $filter['value'];
 
-            $builder->where(function ($query) use ($key, $value) {
-                is_array($value)
-                    ? $query->whereIn($key, $value)
-                    : $query->where($key, 'like', "%{$value}%");
+            $builder->where(function ($query) use ($field, $value) {
+                $this->buildFilterQuery($query, $field, $value);
             });
         });
+    }
 
-        $request->collect('sort')->each(function ($sort) use ($builder) {
-            $builder->orderBy(
-                $sort['id'],
-                $sort['desc'] ? 'DESC' : 'ASC'
-            );
+    private function buildFilterQuery(Builder $query, string $field, mixed $value): void
+    {
+        // Handle array values for 'in' operations
+        if (is_array($value)) {
+            $query->whereIn($field, $value);
+            return;
+        }
+
+        // Handle operator-based filtering
+        if (!is_string($value) || !str_contains($value, ':')) {
+            $query->where($field, 'like', "%{$value}%");
+            return;
+        }
+
+        [$operator, $filterValue] = explode(':', $value, 2);
+        
+        // Convert numeric strings to appropriate type
+        if (is_numeric($filterValue)) {
+            $filterValue = strpos($filterValue, '.') !== false 
+                ? (float) $filterValue 
+                : (int) $filterValue;
+        }
+
+        // Apply operator
+        $query->where($field, match (strtolower($operator)) {
+            'eq' => '=',
+            'gt' => '>',
+            'gte' => '>=',
+            'lt' => '<',
+            'lte' => '<=',
+            'like' => 'like',
+            'notlike' => 'not like',
+            'null' => static fn($q) => $q->whereNull($queryField),
+            'notnull' => static fn($q) => $q->whereNotNull($queryField),
+            default => 'like'
+        }, match (strtolower($operator)) {
+            'like', 'notlike' => "%{$filterValue}%",
+            'null', 'notnull' => null,
+            default => $filterValue
+        });
+    }
+
+    private function applySorting(Request $request, Builder $builder): void
+    {
+        if (!$request->has('sort')) {
+            return;
+        }
+
+        collect($request->input('sort'))->each(function ($sort) use ($builder) {
+            $field = $sort['id'];
+            $direction = $sort['desc'] ? 'DESC' : 'ASC';
+            $builder->orderBy($field, $direction);
         });
     }
 

@@ -152,7 +152,9 @@ class Stash implements ProtocolInterface
             case 'ws':
                 $array['network'] = 'ws';
                 $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
-                $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';
@@ -205,7 +207,9 @@ class Stash implements ProtocolInterface
             case 'ws':
                 $array['network'] = 'ws';
                 $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
-                $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';

@@ -83,13 +83,15 @@ class General implements ProtocolInterface
         switch ($protocol_settings['network']) {
             case 'tcp':
                 $config['type'] = 'http';
-                $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', []));
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host')) : null;
+                $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host'),['/']) : null;
                 break;
             case 'ws':
                 $config['type'] = 'ws';
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host')) : null;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['host'] = $host;
+                }
                 break;
             case 'grpc':
                 $config['type'] = 'grpc';
@@ -137,7 +139,9 @@ class General implements ProtocolInterface
         switch ($server['protocol_settings']['network']) {
             case 'ws':
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['host'] = $host;
+                }
                 break;
             case 'grpc':
                 $config['serviceName'] = data_get($protocol_settings, 'network_settings.serviceName');
@@ -148,11 +152,11 @@ class General implements ProtocolInterface
                 break;
             case 'httpupgrade':
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host', $server['host']);
                 break;
             case 'xhttp':
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host', $server['host']);
                 $config['mode'] = data_get($protocol_settings, 'network_settings.mode', 'auto');
                 $config['extra'] = data_get($protocol_settings, 'network_settings.extra') ? Helper::encodeURIComponent(data_get($protocol_settings, 'network_settings.extra')) : null;
                 break;

@@ -166,10 +166,10 @@ class Clash implements ProtocolInterface
                 break;
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts'] = [
-                    'path' => data_get($protocol_settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
-                ];
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';
@@ -200,10 +200,10 @@ class Clash implements ProtocolInterface
                 break;
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts'] = [
-                    'path' => data_get($protocol_settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')]
-                ];
+                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';

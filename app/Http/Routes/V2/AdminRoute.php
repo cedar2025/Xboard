@@ -139,6 +139,7 @@ class AdminRoute
                 $router->post('/update', [NoticeController::class, 'update']);
                 $router->post('/drop', [NoticeController::class, 'drop']);
                 $router->post('/show', [NoticeController::class, 'show']);
+                $router->post('/sort', [NoticeController::class, 'sort']);
             });
 
             // Ticket

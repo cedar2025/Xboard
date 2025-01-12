@@ -7,12 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\NoticeSave;
 use App\Models\Notice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class NoticeController extends Controller
 {
     public function fetch(Request $request)
     {
-        return $this->success(Notice::orderBy('id', 'DESC')->get());
+        return $this->success(
+            Notice::orderBy('sort', 'ASC')
+                ->orderBy('id', 'DESC')
+                ->get()
+        );
     }
 
     public function save(NoticeSave $request)
@@ -71,5 +76,26 @@ class NoticeController extends Controller
             return $this->fail([500, '删除失败']);
         }
         return $this->success(true);
+    }
+
+    public function sort(Request $request)
+    {
+        $params = $request->validate([
+            'ids' => 'required|array'
+        ]);
+
+        try {
+            DB::beginTransaction();
+            foreach ($params['ids'] as $k => $v) {
+                $notice = Notice::findOrFail($v);
+                $notice->update(['sort' => $k + 1]);
+            }
+            DB::commit();
+            return $this->success(true);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error($e);
+            return $this->fail([500, '排序保存失败']);
+        }
     }
 }

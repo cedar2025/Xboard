@@ -102,7 +102,9 @@ class Shadowrocket implements ProtocolInterface
             case 'ws':
                 $config['obfs'] = "websocket";
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['obfsParam'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['obfsParam'] = $host;
+                }
                 break;
             case 'grpc':
                 $config['obfs'] = "grpc";
@@ -159,12 +161,14 @@ class Shadowrocket implements ProtocolInterface
             case 'tcp':
                 $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
                 $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['']));
+                $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['/']));
                 break;
             case 'ws':
                 $config['obfs'] = "websocket";
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['obfsParam'] = data_get($protocol_settings, 'network_settings.headers.Host');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['obfsParam'] = $host;
+                }
                 break;
             case 'grpc':
                 $config['obfs'] = "grpc";

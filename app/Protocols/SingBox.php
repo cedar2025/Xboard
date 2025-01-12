@@ -135,12 +135,12 @@ class SingBox implements ProtocolInterface
         $transport = match ($protocol_settings['network']) {
             'tcp' => [
                 'type' => 'http',
-                'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', []))
+                'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
             ],
             'ws' => [
                 'type' => 'ws',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
-                'headers' => data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null,
+                'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
                 'max_early_data' => 2048,
                 'early_data_header_name' => 'Sec-WebSocket-Protocol'
             ],
@@ -196,13 +196,13 @@ class SingBox implements ProtocolInterface
                 'type' => 'http',
                 'path' => data_get($protocol_settings, 'network_settings.header.request.path')
             ] : null,
-            'ws' => [
+            'ws' => array_filter([
                 'type' => 'ws',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
-                'headers' => data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => [data_get($protocol_settings, 'network_settings.headers.Host')]] : null,
+                'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
                 'max_early_data' => 2048,
                 'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ],
+            ], fn($value) => !is_null($value)),
             'grpc' => [
                 'type' => 'grpc',
                 'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
@@ -215,7 +215,7 @@ class SingBox implements ProtocolInterface
             'httpupgrade' => [
                 'type' => 'httpupgrade',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
-                'host' => data_get($protocol_settings, 'network_settings.headers.Host'),
+                'host' => data_get($protocol_settings, 'network_settings.headers.Host', $server['host']),
                 'headers' => data_get($protocol_settings, 'network_settings.headers')
             ],
             default => null

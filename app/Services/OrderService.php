@@ -67,6 +67,7 @@ class OrderService
             }
 
             $this->setSpeedLimit($plan->speed_limit);
+            $this->setDeviceLimit($plan->device_limit);
 
             if (!$this->user->save()) {
                 throw new \Exception('用户信息保存失败');
@@ -270,6 +271,11 @@ class OrderService
     private function setSpeedLimit($speedLimit)
     {
         $this->user->speed_limit = $speedLimit;
+    }
+    
+    private function setDeviceLimit($deviceLimit)
+    {
+        $this->user->device_limit = $deviceLimit;
     }
 
     private function buyByResetTraffic()
