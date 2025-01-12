@@ -158,10 +158,12 @@ class ClashMeta implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
-                $array['http-opts'] = [
-                    'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                    'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']), 1)
-                ];
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $array['http-opts'] = [
+                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                        'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                    ];
+                }
                 break;
             case 'ws':
                 $array['network'] = 'ws';
