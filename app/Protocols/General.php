@@ -82,9 +82,11 @@ class General implements ProtocolInterface
 
         switch ($protocol_settings['network']) {
             case 'tcp':
-                $config['type'] = 'http';
-                $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host'),['/']) : null;
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
+                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host'), ['/']) : null;
+                }
                 break;
             case 'ws':
                 $config['type'] = 'ws';
