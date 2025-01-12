@@ -9,7 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class ClashMeta implements ProtocolInterface
 {
-    public $flags = ['meta', 'verge'];
+    public $flags = ['meta', 'verge', 'flclash'];
     private $servers;
     private $user;
 

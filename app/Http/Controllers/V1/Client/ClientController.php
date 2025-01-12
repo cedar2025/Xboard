@@ -41,7 +41,8 @@ class ClientController extends Controller
         'loon' => '637',
         'v2rayng' => '1.9.5',
         'v2rayN' => '6.31',
-        'surge' => '2398'
+        'surge' => '2398',
+        'flclash' => '0.8.0'
     ];
 
     private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
@@ -127,12 +128,13 @@ class ClientController extends Controller
 
     private function checkHy2Support(string $flag, string $version): bool
     {
+        $result = false;
         foreach (self::CLIENT_VERSIONS as $client => $minVersion) {
             if (stripos($flag, $client) !== false) {
-                return version_compare($version, $minVersion, '>=');
+                $result = $result || version_compare($version, $minVersion, '>=');
             }
         }
-        return true;
+        return $result || !count(self::CLIENT_VERSIONS);
     }
 
     private function filterServers(array $servers, array $types, ?array $filters, bool $supportHy2): array
