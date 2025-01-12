@@ -115,7 +115,6 @@ docker compose up -d
     ```
     docker compose down xboard
     docker compose pull 
-    docker compose run -it --rm web php artisan xboard:update
     docker compose up -d
     ```
 
