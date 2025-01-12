@@ -145,7 +145,7 @@ class Loon implements ProtocolInterface
             'fast-open=false',
             'udp=true'
         ];
-        if (!empty($server['allow_insecure'])) {
+        if (!empty($protocol_settings['allow_insecure'])) {
             array_push($config, data_get($protocol_settings, 'tls_settings')['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
