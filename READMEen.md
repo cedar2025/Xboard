@@ -1,3 +1,4 @@
+English l [Chinese](/README.md)
 ## Docker-Compose Deployment Guide
 
 This guide teaches you how to quickly deploy **Xboard** using `docker-compose` and SQLite via the command line.  
