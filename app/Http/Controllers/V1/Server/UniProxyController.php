@@ -86,7 +86,7 @@ class UniProxyController extends Controller
         $host = $node->host;
 
         $baseConfig = [
-            'server_port' => $serverPort,
+            'server_port' => (int) $serverPort,
             'network' => $protocolSettings['network'] ?? null,
             'networkSettings' => $protocolSettings['network_settings'] ?? null,
         ];
@@ -105,7 +105,7 @@ class UniProxyController extends Controller
             ],
             'vmess' => [
                 ...$baseConfig,
-                'tls' => $protocolSettings['tls']
+                'tls' => (int) $protocolSettings['tls']
             ],
             'trojan' => [
                 ...$baseConfig,
@@ -114,20 +114,26 @@ class UniProxyController extends Controller
             ],
             'vless' => [
                 ...$baseConfig,
-                'tls' => $protocolSettings['tls'],
+                'tls' => (int) $protocolSettings['tls'],
                 'flow' => $protocolSettings['flow'],
                 'tls_settings' => (int) $protocolSettings['tls'] === 1
                     ? $protocolSettings['tls_settings']
                     : $protocolSettings['reality_settings']
             ],
             'hysteria' => [
-                'version' => $protocolSettings['version'],
+                'version' => (int) $protocolSettings['version'],
                 'host' => $host,
-                'server_port' => $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
-                'up_mbps' => $protocolSettings['bandwidth']['up'],
-                'down_mbps' => $protocolSettings['bandwidth']['down'],
-                'obfs' => $protocolSettings['obfs']['open'] ? $protocolSettings['obfs']['password'] : null
+                'up_mbps' => (int) $protocolSettings['bandwidth']['up'],
+                'down_mbps' => (int) $protocolSettings['bandwidth']['down'],
+                ...match ((int) $protocolSettings['version']) {
+                        1 => ['obfs' => $protocolSettings['obfs']['password'] ?? null],
+                        2 => [
+                            'obfs' => $protocolSettings['obfs']['open'] ? $protocolSettings['obfs']['type'] : null,
+                            'obfs-password' => $protocolSettings['obfs']['password'] ?? null
+                        ],
+                        default => []
+                    }
             ],
             default => []
         };
