@@ -107,7 +107,7 @@ class ClientController extends Controller
 
     private function getFilterArray(?string $filter): ?array
     {
-        return mb_strlen($filter ?? '') > 20 ? null :
+        return mb_strlen((string) $filter) > 20 ? null :
             explode('|', str_replace(['|', '｜', ','], '|', $filter));
     }
 

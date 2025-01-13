@@ -284,7 +284,10 @@ class Stash implements ProtocolInterface
 
     private function isRegex($exp)
     {
-        return @preg_match($exp, null) !== false;
+        if (empty($exp)) {
+            return false;
+        }
+        return @preg_match($exp, '') !== false;
     }
 
     private function isMatch($exp, $str)
