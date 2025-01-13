@@ -59,7 +59,7 @@ class PlanService
     {
         // 如果是续费
         if ($user->plan_id === $plan->id) {
-            return $plan->sell && $plan->renew;
+            return $plan->renew;
         }
 
         // 如果是新购
