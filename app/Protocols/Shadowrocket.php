@@ -96,8 +96,11 @@ class Shadowrocket implements ProtocolInterface
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                $config['path'] = \Arr::ra(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
+                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                }
                 break;
             case 'ws':
                 $config['obfs'] = "websocket";
@@ -161,13 +164,18 @@ class Shadowrocket implements ProtocolInterface
         }
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['/']));
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
+                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                }
                 break;
             case 'ws':
                 $config['obfs'] = "websocket";
-                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                if (data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                }
+
                 if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
                     $config['obfsParam'] = $host;
                 }
