@@ -44,10 +44,10 @@ class OrderService
                 ]);
             }
             switch ((string) $order->period) {
-                case 'onetime_price':
+                case Plan::PERIOD_ONETIME:
                     $this->buyByOneTime($plan);
                     break;
-                case 'reset_price':
+                case Plan::PERIOD_RESET_TRAFFIC:
                     $this->buyByResetTraffic();
                     break;
                 default:
@@ -88,7 +88,7 @@ class OrderService
     public function setOrderType(User $user)
     {
         $order = $this->order;
-        if ($order->period === 'reset_price') {
+        if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
             if (!(int) admin_setting('plan_change_enable', 1))
@@ -170,7 +170,7 @@ class OrderService
     private function getSurplusValueByOneTime(User $user, Order $order)
     {
         $lastOneTimeOrder = Order::where('user_id', $user->id)
-            ->where('period', 'onetime_price')
+            ->where('period', Plan::PERIOD_ONETIME)
             ->where('status', Order::STATUS_COMPLETED)
             ->orderBy('id', 'DESC')
             ->first();
@@ -185,7 +185,7 @@ class OrderService
         $trafficUnitPrice = $paidTotalAmount / $nowUserTraffic;
         $notUsedTraffic = $nowUserTraffic - (($user->u + $user->d) / 1073741824);
         $result = $trafficUnitPrice * $notUsedTraffic;
-        $orderModel = Order::where('user_id', $user->id)->where('period', '!=', 'reset_price')->where('status', Order::STATUS_COMPLETED);
+        $orderModel = Order::where('user_id', $user->id)->where('period', '!=', Plan::PERIOD_RESET_TRAFFIC)->where('status', Order::STATUS_COMPLETED);
         $order->surplus_amount = $result > 0 ? $result : 0;
         $order->surplus_order_ids = array_column($orderModel->get()->toArray(), 'id');
     }
@@ -193,7 +193,7 @@ class OrderService
     private function getSurplusValueByPeriod(User $user, Order $order)
     {
         $orders = Order::where('user_id', $user->id)
-            ->whereNotIn('period', ['reset_price', 'onetime_price'])
+            ->whereNotIn('period', [Plan::PERIOD_RESET_TRAFFIC, Plan::PERIOD_ONETIME])
             ->where('status', Order::STATUS_COMPLETED)
             ->get()
             ->toArray();
@@ -272,7 +272,7 @@ class OrderService
     {
         $this->user->speed_limit = $speedLimit;
     }
-    
+
     private function setDeviceLimit($deviceLimit)
     {
         $this->user->device_limit = $deviceLimit;

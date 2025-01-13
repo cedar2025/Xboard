@@ -121,6 +121,7 @@ class UniProxyController extends Controller
                     : $protocolSettings['reality_settings']
             ],
             'hysteria' => [
+                'server_port' => (int) $serverPort,
                 'version' => (int) $protocolSettings['version'],
                 'host' => $host,
                 'server_name' => $protocolSettings['tls']['server_name'],
