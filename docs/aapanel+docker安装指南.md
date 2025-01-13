@@ -82,7 +82,7 @@ location ^~ / {
 ### 4. 版本更新
 
 ```bash
-docker compose pull && docker compose up -d
+docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
 ```
 
 ### 注意事项

@@ -77,8 +77,10 @@ class General implements ProtocolInterface
             "host" => "",
             "path" => "",
             "tls" => $protocol_settings['tls'] ? "tls" : "",
-            "sni" => data_get($protocol_settings, 'tls_settings.server_name'),
         ];
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $config['sni'] = $serverName;
+        }
 
         switch ($protocol_settings['network']) {
             case 'tcp':
@@ -123,7 +125,9 @@ class General implements ProtocolInterface
         switch ($server['protocol_settings']['tls']) {
             case 1:
                 $config['security'] = "tls";
-                $config['sni'] = data_get($protocol_settings, 'tls_settings.server_name');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $config['sni'] = $serverName;
+                }
                 break;
             case 2: //reality
                 $config['security'] = "reality";
@@ -175,11 +179,13 @@ class General implements ProtocolInterface
     {
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $query = http_build_query([
-            'allowInsecure' => $protocol_settings['allow_insecure'],
-            'peer' => $protocol_settings['server_name'],
-            'sni' => $protocol_settings['server_name']
-        ]);
+        $array = [];    
+        $array['allowInsecure'] = $protocol_settings['allow_insecure'];
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $array['peer'] = $serverName;
+            $array['sni'] = $serverName;
+        }
+        $query = http_build_query($array);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
@@ -194,8 +200,8 @@ class General implements ProtocolInterface
             return '';
         }
 
-        if (data_get($protocol_settings, 'tls.server_name')) {
-            $params['sni'] = data_get($protocol_settings, 'tls.server_name');
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $params['sni'] = $serverName;
             $params['security'] = 'tls';
         }
 

@@ -142,7 +142,9 @@ class Stash implements ProtocolInterface
 
         $array['tls'] = data_get($protocol_settings, 'tls');
         $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
-        $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $array['servername'] = $serverName;
+        }
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
@@ -186,7 +188,9 @@ class Stash implements ProtocolInterface
             case 1:
                 $array['tls'] = true;
                 $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
-                $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $array['servername'] = $serverName;
+                }
                 break;
             case 2:
                 $array['tls'] = true;
@@ -241,7 +245,9 @@ class Stash implements ProtocolInterface
                 $array['ws-opts']['headers'] = data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => data_get($protocol_settings, 'network_settings.headers.Host')] : null;
                 break;
         }
-        $array['sni'] = data_get($protocol_settings, 'server_name');
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $array['sni'] = $serverName;
+        }
         $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
         return $array;
     }
@@ -255,7 +261,9 @@ class Stash implements ProtocolInterface
         $array['up-speed'] = data_get($protocol_settings, 'bandwidth.up');
         $array['down-speed'] = data_get($protocol_settings, 'bandwidth.down');
         $array['skip-cert-verify'] = data_get($protocol_settings, 'tls.allow_insecure');
-        $array['sni'] = data_get($protocol_settings, 'tls.server_name') ?? '';
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $array['type'] = 'hysteria';
@@ -276,7 +284,10 @@ class Stash implements ProtocolInterface
 
     private function isRegex($exp)
     {
-        return @preg_match($exp, null) !== false;
+        if (empty($exp)) {
+            return false;
+        }
+        return @preg_match($exp, '') !== false;
     }
 
     private function isMatch($exp, $str)

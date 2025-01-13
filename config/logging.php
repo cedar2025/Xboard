@@ -100,6 +100,13 @@ return [
             'driver' => 'errorlog',
             'level' => 'debug',
         ],
+
+        'deprecations' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/deprecations.log'),
+            'level' => 'debug',
+            'days' => 14,
+        ],
     ],
 
 ];

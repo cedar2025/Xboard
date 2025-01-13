@@ -145,7 +145,9 @@ class Shadowrocket implements ProtocolInterface
             case 1:
                 $config['tls'] = 1;
                 $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
-                $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $config['peer'] = $serverName;
+                }
                 break;
             case 2:
                 $config['tls'] = 1;
@@ -187,10 +189,10 @@ class Shadowrocket implements ProtocolInterface
     {
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $params = [
-            'allowInsecure' => data_get($protocol_settings, 'tls.allow_insecure'),
-            'peer' => data_get($protocol_settings, 'tls.server_name')
-        ];
+        $params['allowInsecure'] = data_get($protocol_settings, 'tls.allow_insecure');
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $params['peer'] = $serverName;
+        }
         switch (data_get($protocol_settings, 'network')) {
             case 'grpc':
                 $params['obfs'] = 'grpc';
@@ -218,9 +220,11 @@ class Shadowrocket implements ProtocolInterface
                     "upmbps" => data_get($protocol_settings, 'bandwidth.up'),
                     "downmbps" => data_get($protocol_settings, 'bandwidth.down'),
                     "protocol" => 'udp',
-                    "peer" => data_get($protocol_settings, 'tls.server_name'),
                     "fastopen" => 1,
                 ];
+                if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+                    $params['peer'] = $serverName;
+                }
                 if (data_get($protocol_settings, 'obfs.open')) {
                     $params["obfs"] = "xplus";
                     $params["obfsParam"] = data_get($protocol_settings, 'obfs_settings.password');
@@ -234,10 +238,12 @@ class Shadowrocket implements ProtocolInterface
                 break;
             case 2:
                 $params = [
-                    "peer" => data_get($protocol_settings, 'tls.server_name'),
                     "obfs" => 'none',
                     "fastopen" => 1
                 ];
+                if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+                    $params['peer'] = $serverName;
+                }
                 if (data_get($protocol_settings, 'obfs.open')) {
                     $params['obfs'] = data_get($protocol_settings, 'obfs.type');
                     $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');

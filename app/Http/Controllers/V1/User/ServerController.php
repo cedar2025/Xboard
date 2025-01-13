@@ -20,7 +20,7 @@ class ServerController extends Controller
             $servers = ServerService::getAvailableServers($user);
         }
         $eTag = sha1(json_encode(array_column($servers, 'cache_key')));
-        if (strpos($request->header('If-None-Match'), $eTag) !== false ) {
+        if (strpos($request->header('If-None-Match', ''), $eTag) !== false ) {
             return response(null,304);
         }
         $data = NodeResource::collection($servers);

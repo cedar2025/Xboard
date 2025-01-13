@@ -29,7 +29,7 @@ class PlanController extends Controller
             'id' => 'nullable|integer',
             'name' => 'required|string',
             'content' => 'nullable|string',
-            'period_reset_method' => 'integer|required_if:type,0',
+            'reset_traffic_method' => 'integer|nullable',
             'transfer_enable' => 'integer|required',
             'prices' => 'array|nullable',
             'group_id' => 'integer|nullable',

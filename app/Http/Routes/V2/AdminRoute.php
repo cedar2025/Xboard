@@ -6,11 +6,6 @@ use App\Http\Controllers\V2\Admin\PlanController;
 use App\Http\Controllers\V2\Admin\Server\GroupController;
 use App\Http\Controllers\V2\Admin\Server\RouteController;
 use App\Http\Controllers\V2\Admin\Server\ManageController;
-use App\Http\Controllers\V2\Admin\Server\TrojanController;
-use App\Http\Controllers\V2\Admin\Server\VmessController;
-use App\Http\Controllers\V2\Admin\Server\ShadowsocksController;
-use App\Http\Controllers\V2\Admin\Server\HysteriaController;
-use App\Http\Controllers\V2\Admin\Server\VlessController;
 use App\Http\Controllers\V2\Admin\OrderController;
 use App\Http\Controllers\V2\Admin\UserController;
 use App\Http\Controllers\V2\Admin\StatController;
@@ -118,15 +113,14 @@ class AdminRoute
             $router->group([
                 'prefix' => 'stat'
             ], function ($router) {
-                $router->get('/getStat', [StatController::class, 'getStat']);
                 $router->get('/getOverride', [StatController::class, 'getOverride']);
+                $router->get('/getStats', [StatController::class, 'getStats']);
                 $router->get('/getServerLastRank', [StatController::class, 'getServerLastRank']);
                 $router->get('/getServerYesterdayRank', [StatController::class, 'getServerYesterdayRank']);
                 $router->get('/getOrder', [StatController::class, 'getOrder']);
                 $router->any('/getStatUser', [StatController::class, 'getStatUser']);
                 $router->get('/getRanking', [StatController::class, 'getRanking']);
                 $router->get('/getStatRecord', [StatController::class, 'getStatRecord']);
-                $router->get('/getStats', [StatController::class, 'getStats']);
                 $router->get('/getTrafficRank', [StatController::class, 'getTrafficRank']);
             });
 

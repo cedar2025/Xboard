@@ -128,9 +128,11 @@ class SingBox implements ProtocolInterface
             'tls' => $protocol_settings['tls'] ? [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
-                'server_name' => data_get($protocol_settings, 'tls_settings.server_name')
             ] : null
         ];
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $array['tls']['server_name'] = $serverName;
+        }
 
         $transport = match ($protocol_settings['network']) {
             'tcp' => [
@@ -174,12 +176,14 @@ class SingBox implements ProtocolInterface
             $tlsConfig = [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
-                'server_name' => data_get($protocol_settings, 'tls_settings.server_name'),
                 'utls' => [
                     'enabled' => true,
                     'fingerprint' => Helper::getRandFingerprint()
                 ]
             ];
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $tlsConfig['server_name'] = $serverName;
+            }
             if ($protocol_settings['tls'] == 2) {
                 $tlsConfig['reality'] = [
                     'enabled' => true,
@@ -194,7 +198,7 @@ class SingBox implements ProtocolInterface
         $transport = match ($protocol_settings['network']) {
             'tcp' => data_get($protocol_settings, 'network_settings.header.type') == 'http' ? [
                 'type' => 'http',
-                'path' => data_get($protocol_settings, 'network_settings.header.request.path')
+                'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
             ] : null,
             'ws' => array_filter([
                 'type' => 'ws',
@@ -240,9 +244,11 @@ class SingBox implements ProtocolInterface
             'tls' => [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'allow_insecure', false),
-                'server_name' => data_get($protocol_settings, 'server_name')
             ]
         ];
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $array['tls']['server_name'] = $serverName;
+        }
         $transport = match (data_get($protocol_settings, 'network')) {
             'grpc' => [
                 'type' => 'grpc',
@@ -271,9 +277,11 @@ class SingBox implements ProtocolInterface
             'tls' => [
                 'enabled' => true,
                 'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
-                'server_name' => $protocol_settings['tls']['server_name']
             ]
         ];
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $baseConfig['tls']['server_name'] = $serverName;
+        }   
         $speedConfig = [
             'up_mbps' => $protocol_settings['bandwidth']['up'],
             'down_mbps' => $protocol_settings['bandwidth']['down'],

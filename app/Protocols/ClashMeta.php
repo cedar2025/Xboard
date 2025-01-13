@@ -204,7 +204,9 @@ class ClashMeta implements ProtocolInterface
             case 1:
                 $array['tls'] = true;
                 $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
-                $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $array['servername'] = $serverName;
+                }
                 break;
             case 2:
                 $array['tls'] = true;
@@ -258,9 +260,11 @@ class ClashMeta implements ProtocolInterface
             'port' => $server['port'],
             'password' => $password,
             'udp' => true,
-            'sni' => data_get($protocol_settings, 'server_name'),
             'skip-cert-verify' => (bool) data_get($protocol_settings, 'allow_insecure', false)
         ];
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $array['sni'] = $serverName;
+        }
 
         switch (data_get($protocol_settings, 'network')) {
             case 'grpc':
@@ -329,6 +333,9 @@ class ClashMeta implements ProtocolInterface
 
     private function isRegex($exp)
     {
-        return @preg_match($exp, null) !== false;
+        if (empty($exp)) {
+            return false;
+        }
+        return @preg_match($exp, '') !== false;
     }
 }

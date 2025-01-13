@@ -32,7 +32,7 @@ class UniProxyController extends Controller
         $response['users'] = $users;
 
         $eTag = sha1(json_encode($response));
-        if (strpos($request->header('If-None-Match'), $eTag) !== false) {
+        if (strpos($request->header('If-None-Match', ''), $eTag) !== false) {
             return response(null, 304);
         }
 
@@ -121,6 +121,7 @@ class UniProxyController extends Controller
                     : $protocolSettings['reality_settings']
             ],
             'hysteria' => [
+                'server_port' => (int) $serverPort,
                 'version' => (int) $protocolSettings['version'],
                 'host' => $host,
                 'server_name' => $protocolSettings['tls']['server_name'],

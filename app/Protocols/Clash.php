@@ -153,7 +153,9 @@ class Clash implements ProtocolInterface
         if (data_get($protocol_settings, 'tls')) {
             $array['tls'] = true;
             $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure');
-            $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['servername'] = $serverName;
+            }
         }
 
         switch (data_get($protocol_settings, 'network')) {
@@ -193,7 +195,9 @@ class Clash implements ProtocolInterface
         $array['port'] = $server['port'];
         $array['password'] = $password;
         $array['udp'] = true;
-        $array['sni'] = data_get($protocol_settings, 'server_name');
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $array['sni'] = $serverName;
+        }
         $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure');
 
         switch (data_get($protocol_settings, 'network')) {
@@ -227,6 +231,9 @@ class Clash implements ProtocolInterface
 
     private function isRegex($exp)
     {
-        return @preg_match($exp, null) !== false;
+        if (empty($exp)) {
+            return false;
+        }
+        return @preg_match((string)$exp, '') !== false;
     }
 }

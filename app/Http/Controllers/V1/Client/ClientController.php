@@ -47,6 +47,60 @@ class ClientController extends Controller
 
     private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
 
+    /**
+     * 处理浏览器访问订阅的情况
+     */
+    private function handleBrowserSubscribe($user, UserService $userService)
+    {
+        $useTraffic = $user['u'] + $user['d'];
+        $totalTraffic = $user['transfer_enable'];
+        $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
+        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : __('Unlimited');
+        $resetDay = $userService->getResetDay($user);
+
+        // 获取通用订阅地址
+        $subscriptionUrl = Helper::getSubscribeUrl($user->token);
+
+        // 生成二维码
+        $writer = new \BaconQrCode\Writer(
+            new \BaconQrCode\Renderer\ImageRenderer(
+                new \BaconQrCode\Renderer\RendererStyle\RendererStyle(200),
+                new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+            )
+        );
+        $qrCode = base64_encode($writer->writeString($subscriptionUrl));
+
+        $data = [
+            'username' => $user->email,
+            'status' => $userService->isAvailable($user) ? 'active' : 'inactive',
+            'data_limit' => $totalTraffic ? Helper::trafficConvert($totalTraffic) : '∞',
+            'data_used' => Helper::trafficConvert($useTraffic),
+            'expired_date' => $expiredDate,
+            'reset_day' => $resetDay,
+            'subscription_url' => $subscriptionUrl,
+            'qr_code' => $qrCode
+        ];
+
+        // 只有当 device_limit 不为 null 时才添加到返回数据中
+        if ($user->device_limit !== null) {
+            $data['device_limit'] = $user->device_limit;
+        }
+
+        return response()->view('client.subscribe', $data);
+    }
+
+    /**
+     * 检查是否是浏览器访问
+     */
+    private function isBrowserAccess(Request $request): bool
+    {
+        $userAgent = strtolower($request->header('User-Agent'));
+        return str_contains($userAgent, 'mozilla')
+            || str_contains($userAgent, 'chrome')
+            || str_contains($userAgent, 'safari')
+            || str_contains($userAgent, 'edge');
+    }
+
     public function subscribe(Request $request)
     {
         $request->validate([
@@ -60,6 +114,11 @@ class ClientController extends Controller
 
         if (!$userService->isAvailable($user)) {
             return response()->json(['message' => 'Account unavailable'], 403);
+        }
+
+        // 检测是否是浏览器访问
+        if ($this->isBrowserAccess($request)) {
+            return $this->handleBrowserSubscribe($user, $userService);
         }
 
         $types = $this->getFilteredTypes($request->input('types', 'all'));
@@ -107,7 +166,7 @@ class ClientController extends Controller
 
     private function getFilterArray(?string $filter): ?array
     {
-        return mb_strlen($filter ?? '') > 20 ? null :
+        return mb_strlen((string) $filter) > 20 ? null :
             explode('|', str_replace(['|', '｜', ','], '|', $filter));
     }
 
@@ -178,7 +237,7 @@ class ClientController extends Controller
         $useTraffic = $user['u'] + $user['d'];
         $totalTraffic = $user['transfer_enable'];
         $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
-        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : '长期有效';
+        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : __('长期有效');
         $userService = new UserService();
         $resetDay = $userService->getResetDay($user);
         array_unshift($servers, array_merge($servers[0], [

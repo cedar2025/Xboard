@@ -23,6 +23,35 @@ class StatController extends Controller
     }
     public function getOverride(Request $request)
     {
+        // 获取在线节点数
+        $onlineNodes = Server::all()->filter(function ($server) {
+            $server->loadServerStatus();
+            return $server->is_online;
+        })->count();
+        // 获取在线设备数和在线用户数
+        $onlineDevices = User::where('t', '>=', time() - 600)
+            ->sum('online_count');
+        $onlineUsers = User::where('t', '>=', time() - 600)
+            ->count();
+
+        // 获取今日流量统计
+        $todayStart = strtotime('today');
+        $todayTraffic = StatServer::where('record_at', '>=', $todayStart)
+            ->where('record_at', '<', time())
+            ->selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
+
+        // 获取本月流量统计
+        $monthStart = strtotime(date('Y-m-1'));
+        $monthTraffic = StatServer::where('record_at', '>=', $monthStart)
+            ->where('record_at', '<', time())
+            ->selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
+
+        // 获取总流量统计
+        $totalTraffic = StatServer::selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
+
         return [
             'data' => [
                 'month_income' => Order::where('created_at', '>=', strtotime(date('Y-m-1')))
@@ -53,6 +82,25 @@ class StatController extends Controller
                 'commission_last_month_payout' => CommissionLog::where('created_at', '>=', strtotime('-1 month', strtotime(date('Y-m-1'))))
                     ->where('created_at', '<', strtotime(date('Y-m-1')))
                     ->sum('get_amount'),
+                // 新增统计数据
+                'online_nodes' => $onlineNodes,
+                'online_devices' => $onlineDevices,
+                'online_users' => $onlineUsers,
+                'today_traffic' => [
+                    'upload' => $todayTraffic->upload ?? 0,
+                    'download' => $todayTraffic->download ?? 0,
+                    'total' => $todayTraffic->total ?? 0
+                ],
+                'month_traffic' => [
+                    'upload' => $monthTraffic->upload ?? 0,
+                    'download' => $monthTraffic->download ?? 0,
+                    'total' => $monthTraffic->total ?? 0
+                ],
+                'total_traffic' => [
+                    'upload' => $totalTraffic->upload ?? 0,
+                    'download' => $totalTraffic->download ?? 0,
+                    'total' => $totalTraffic->total ?? 0
+                ]
             ]
         ];
     }
@@ -213,10 +261,38 @@ class StatController extends Controller
         $currentMonthStart = strtotime(date('Y-m-01'));
         $lastMonthStart = strtotime('-1 month', $currentMonthStart);
         $twoMonthsAgoStart = strtotime('-2 month', $currentMonthStart);
-        
+
         // Today's start timestamp
         $todayStart = strtotime('today');
         $yesterdayStart = strtotime('-1 day', $todayStart);
+
+        // 获取在线节点数
+        $onlineNodes = Server::all()->filter(function ($server) {
+            $server->loadServerStatus();
+            return $server->is_online;
+        })->count();
+
+        // 获取在线设备数和在线用户数
+        $onlineDevices = User::where('t', '>=', time() - 600)
+            ->sum('online_count');
+        $onlineUsers = User::where('t', '>=', time() - 600)
+            ->count();
+
+        // 获取今日流量统计
+        $todayTraffic = StatServer::where('record_at', '>=', $todayStart)
+            ->where('record_at', '<', time())
+            ->selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
+
+        // 获取本月流量统计
+        $monthTraffic = StatServer::where('record_at', '>=', $currentMonthStart)
+            ->where('record_at', '<', time())
+            ->selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
+
+        // 获取总流量统计
+        $totalTraffic = StatServer::selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
+            ->first();
 
         // Today's income
         $todayIncome = Order::where('created_at', '>=', $todayStart)
@@ -229,10 +305,6 @@ class StatController extends Controller
             ->where('created_at', '<', $todayStart)
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
-
-        // Online users (active in last 10 minutes)
-        $onlineUsers = User::where('t', '>=', time() - 600)
-            ->count();
 
         // Current month income
         $currentMonthIncome = Order::where('created_at', '>=', $currentMonthStart)
@@ -249,6 +321,11 @@ class StatController extends Controller
         // Last month commission payout
         $lastMonthCommissionPayout = CommissionLog::where('created_at', '>=', $lastMonthStart)
             ->where('created_at', '<', $currentMonthStart)
+            ->sum('get_amount');
+
+        // Current month commission payout
+        $currentMonthCommissionPayout = CommissionLog::where('created_at', '>=', $currentMonthStart)
+            ->where('created_at', '<', time())
             ->sum('get_amount');
 
         // Current month new users
@@ -288,21 +365,60 @@ class StatController extends Controller
         $userGrowth = $lastMonthNewUsers > 0 ? round(($currentMonthNewUsers - $lastMonthNewUsers) / $lastMonthNewUsers * 100, 1) : 0;
         $dayIncomeGrowth = $yesterdayIncome > 0 ? round(($todayIncome - $yesterdayIncome) / $yesterdayIncome * 100, 1) : 0;
 
+        // 获取待处理工单和佣金数据
+        $ticketPendingTotal = Ticket::where('status', 0)->count();
+        $commissionPendingTotal = Order::where('commission_status', 0)
+            ->where('invite_user_id', '!=', NULL)
+            ->whereIn('status', [Order::STATUS_COMPLETED])
+            ->where('commission_balance', '>', 0)
+            ->count();
+
         return [
             'data' => [
+                // 收入相关
                 'todayIncome' => $todayIncome,
-                'onlineUsers' => $onlineUsers,
                 'dayIncomeGrowth' => $dayIncomeGrowth,
                 'currentMonthIncome' => $currentMonthIncome,
                 'lastMonthIncome' => $lastMonthIncome,
+                'monthIncomeGrowth' => $monthIncomeGrowth,
+                'lastMonthIncomeGrowth' => $lastMonthIncomeGrowth,
+
+                // 佣金相关
+                'currentMonthCommissionPayout' => $currentMonthCommissionPayout,
                 'lastMonthCommissionPayout' => $lastMonthCommissionPayout,
+                'commissionGrowth' => $commissionGrowth,
+                'commissionPendingTotal' => $commissionPendingTotal,
+
+                // 用户相关
                 'currentMonthNewUsers' => $currentMonthNewUsers,
                 'totalUsers' => $totalUsers,
                 'activeUsers' => $activeUsers,
-                'monthIncomeGrowth' => $monthIncomeGrowth,
-                'lastMonthIncomeGrowth' => $lastMonthIncomeGrowth,
-                'commissionGrowth' => $commissionGrowth,
-                'userGrowth' => $userGrowth
+                'userGrowth' => $userGrowth,
+                'onlineUsers' => $onlineUsers,
+                'onlineDevices' => $onlineDevices,
+
+                // 工单相关
+                'ticketPendingTotal' => $ticketPendingTotal,
+
+                // 节点相关
+                'onlineNodes' => $onlineNodes,
+
+                // 流量统计
+                'todayTraffic' => [
+                    'upload' => $todayTraffic->upload ?? 0,
+                    'download' => $todayTraffic->download ?? 0,
+                    'total' => $todayTraffic->total ?? 0
+                ],
+                'monthTraffic' => [
+                    'upload' => $monthTraffic->upload ?? 0,
+                    'download' => $monthTraffic->download ?? 0,
+                    'total' => $monthTraffic->total ?? 0
+                ],
+                'totalTraffic' => [
+                    'upload' => $totalTraffic->upload ?? 0,
+                    'download' => $totalTraffic->download ?? 0,
+                    'total' => $totalTraffic->total ?? 0
+                ]
             ]
         ];
     }

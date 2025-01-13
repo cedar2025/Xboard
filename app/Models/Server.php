@@ -68,71 +68,123 @@ class Server extends Model
         'updated_at' => 'timestamp'
     ];
 
-    private const DEFAULT_PROTOCOL_SETTINGS = [
+    private const PROTOCOL_CONFIGURATIONS = [
         self::TYPE_TROJAN => [
-            'allow_insecure' => false,
-            'server_name' => null,
-            'network' => null,
-            'network_settings' => null
+            'allow_insecure' => ['type' => 'boolean', 'default' => false],
+            'server_name' => ['type' => 'string', 'default' => null],
+            'network' => ['type' => 'string', 'default' => null],
+            'network_settings' => ['type' => 'array', 'default' => null]
         ],
         self::TYPE_VMESS => [
-            'tls' => 0,
-            'network' => null,
-            'rules' => null,
-            'network_settings' => null,
-            'tls_settings' => null
+            'tls' => ['type' => 'integer', 'default' => 0],
+            'network' => ['type' => 'string', 'default' => null],
+            'rules' => ['type' => 'array', 'default' => null],
+            'network_settings' => ['type' => 'array', 'default' => null],
+            'tls_settings' => ['type' => 'array', 'default' => null]
         ],
         self::TYPE_VLESS => [
-            'tls' => false,
-            'tls_settings' => null,
-            'flow' => null,
-            'network' => null,
-            'network_settings' => null,
+            'tls' => ['type' => 'integer', 'default' => 0],
+            'tls_settings' => ['type' => 'array', 'default' => null],
+            'flow' => ['type' => 'string', 'default' => null],
+            'network' => ['type' => 'string', 'default' => null],
+            'network_settings' => ['type' => 'array', 'default' => null],
             'reality_settings' => [
-                'allow_insecure' => false,
-                'server_port' => null,
-                'server_name' => null,
-                'public_key' => null,
-                'private_key' => null,
-                'short_id' => null
+                'type' => 'object',
+                'fields' => [
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false],
+                    'server_port' => ['type' => 'integer', 'default' => null],
+                    'server_name' => ['type' => 'string', 'default' => null],
+                    'public_key' => ['type' => 'string', 'default' => null],
+                    'private_key' => ['type' => 'string', 'default' => null],
+                    'short_id' => ['type' => 'string', 'default' => null]
+                ]
             ]
         ],
         self::TYPE_SHADOWSOCKS => [
-            'cipher' => null,
-            'obfs' => null,
-            'obfs_settings' => null
+            'cipher' => ['type' => 'string', 'default' => null],
+            'obfs' => ['type' => 'string', 'default' => null],
+            'obfs_settings' => ['type' => 'array', 'default' => null]
         ],
         self::TYPE_HYSTERIA => [
-            'version' => 2,
+            'version' => ['type' => 'integer', 'default' => 2],
             'bandwidth' => [
-                'up' => null,
-                'down' => null
+                'type' => 'object',
+                'fields' => [
+                    'up' => ['type' => 'integer', 'default' => null],
+                    'down' => ['type' => 'integer', 'default' => null]
+                ]
             ],
             'obfs' => [
-                'open' => false,
-                'type' => 'salamander',
-                'password' => null
+                'type' => 'object',
+                'fields' => [
+                    'open' => ['type' => 'boolean', 'default' => false],
+                    'type' => ['type' => 'string', 'default' => 'salamander'],
+                    'password' => ['type' => 'string', 'default' => null]
+                ]
             ],
             'tls' => [
-                'server_name' => null,
-                'allow_insecure' => false
+                'type' => 'object',
+                'fields' => [
+                    'server_name' => ['type' => 'string', 'default' => null],
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                ]
             ]
         ],
         self::TYPE_TUIC => [
-            'congestion_control' => 'cubic',
-            'alpn' => ['h3'],
-            'udp_relay_mode' => 'native',
-            'allow_insecure' => false,
-            'tls_settings' => null
+            'congestion_control' => ['type' => 'string', 'default' => 'cubic'],
+            'alpn' => ['type' => 'array', 'default' => ['h3']],
+            'udp_relay_mode' => ['type' => 'string', 'default' => 'native'],
+            'allow_insecure' => ['type' => 'boolean', 'default' => false],
+            'tls_settings' => ['type' => 'array', 'default' => null]
         ]
     ];
+
+    private function castValueWithConfig($value, array $config)
+    {
+        if ($value === null) {
+            return $config['default'];
+        }
+
+        return match($config['type']) {
+            'integer' => (int) $value,
+            'boolean' => (bool) $value,
+            'string' => (string) $value,
+            'array' => (array) $value,
+            'object' => is_array($value) ? 
+                $this->castSettingsWithConfig($value, $config['fields']) : 
+                $config['default'],
+            default => $value
+        };
+    }
+
+    private function castSettingsWithConfig(array $settings, array $configs): array
+    {
+        $result = [];
+        foreach ($configs as $key => $config) {
+            $value = $settings[$key] ?? null;
+            $result[$key] = $this->castValueWithConfig($value, $config);
+        }
+        return $result;
+    }
+
+    private function getDefaultSettings(array $configs): array
+    {
+        $defaults = [];
+        foreach ($configs as $key => $config) {
+            if ($config['type'] === 'object') {
+                $defaults[$key] = $this->getDefaultSettings($config['fields']);
+            } else {
+                $defaults[$key] = $config['default'];
+            }
+        }
+        return $defaults;
+    }
 
     public function getProtocolSettingsAttribute($value)
     {
         $settings = json_decode($value, true) ?? [];
-        $defaultSettings = self::DEFAULT_PROTOCOL_SETTINGS[$this->type] ?? [];
-
-        return array_replace_recursive($defaultSettings, $settings);
+        $configs = self::PROTOCOL_CONFIGURATIONS[$this->type] ?? [];
+        return $this->castSettingsWithConfig($settings, $configs);
     }
 
     public function setProtocolSettingsAttribute($value)
@@ -141,10 +193,10 @@ class Server extends Model
             $value = json_decode($value, true);
         }
 
-        $defaultSettings = self::DEFAULT_PROTOCOL_SETTINGS[$this->type] ?? [];
-        $mergedSettings = array_replace_recursive($defaultSettings, $value ?? []);
-
-        $this->attributes['protocol_settings'] = json_encode($mergedSettings);
+        $configs = self::PROTOCOL_CONFIGURATIONS[$this->type] ?? [];
+        $castedSettings = $this->castSettingsWithConfig($value ?? [], $configs);
+        
+        $this->attributes['protocol_settings'] = json_encode($castedSettings);
     }
 
     public function loadParentCreatedAt(): void
