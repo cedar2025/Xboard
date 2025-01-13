@@ -97,7 +97,7 @@ class Shadowrocket implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                $config['path'] = \Arr::ra(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
                 break;
             case 'ws':
                 $config['obfs'] = "websocket";
