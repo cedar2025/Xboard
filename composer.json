@@ -12,6 +12,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "^2.0",
         "doctrine/dbal": "^3.7",
         "google/cloud-storage": "^1.35",
         "google/recaptcha": "^1.2",
