@@ -1,10 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use App\Models\Plan;
 
 return new class extends Migration {
     /**
@@ -39,7 +37,7 @@ return new class extends Migration {
             ->count();
 
         if ($unconvertedCount > 0) {
-            \Log::warning("Found {$unconvertedCount} orders with unconverted period values");
+            Log::warning("Found {$unconvertedCount} orders with unconverted period values");
         }
     }
 
@@ -55,4 +53,4 @@ return new class extends Migration {
                 ->update(['period' => $oldPeriod]);
         }
     }
-}; 
+};

@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Setting;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class MigrateFromV2b extends Command
 {
@@ -132,7 +134,7 @@ class MigrateFromV2b extends Command
             try {
                 foreach ($sqlCommands[$version] as $sqlCommand) {
                     // Execute SQL command
-                    \DB::statement($sqlCommand);
+                    DB::statement($sqlCommand);
                 }
                 
                 $this->info('1️⃣、数据库差异矫正成功');
@@ -158,7 +160,7 @@ class MigrateFromV2b extends Command
 
     public function MigrateV2ConfigToV2Settings()
     {
-        \Artisan::call('config:clear');
+        Artisan::call('config:clear');
         $configValue = config('v2board') ?? [];
 
         foreach ($configValue as $k => $v) {
@@ -176,7 +178,7 @@ class MigrateFromV2b extends Command
             ]);
             $this->info("配置 {$k} 迁移成功");
         }
-        \Artisan::call('config:cache');
+        Artisan::call('config:cache');
 
         $this->info('所有配置迁移完成');
     }
