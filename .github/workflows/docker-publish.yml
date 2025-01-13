@@ -56,6 +56,12 @@ jobs:
         id: get_version
         run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
+      - name: Update version in app.php
+        run: |
+          VERSION=$(date '+%Y%m%d')-$(git rev-parse --short HEAD)
+          sed -i "s/'version' => '.*'/'version' => '$VERSION'/g" config/app.php
+          echo "Updated version to: $VERSION"
+
       - name: Build and push
         id: build-and-push
         uses: docker/build-push-action@v5
