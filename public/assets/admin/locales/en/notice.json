@@ -1,0 +1,62 @@
+{
+  "title": "Notice Management",
+  "description": "Here you can configure notices, including adding, deleting, editing and other operations.",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "show": "Display Status",
+      "title": "Title",
+      "actions": "Actions"
+    },
+    "toolbar": {
+      "search": "Search notice title...",
+      "reset": "Reset",
+      "sort": {
+        "edit": "Edit Order",
+        "save": "Save Order"
+      }
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": {
+        "title": "Delete Confirmation",
+        "description": "Are you sure you want to delete this notice? This action cannot be undone.",
+        "success": "Successfully deleted"
+      }
+    }
+  },
+  "form": {
+    "add": {
+      "title": "Add Notice",
+      "button": "Add Notice"
+    },
+    "edit": {
+      "title": "Edit Notice"
+    },
+    "fields": {
+      "title": {
+        "label": "Title",
+        "placeholder": "Please enter notice title"
+      },
+      "content": {
+        "label": "Content"
+      },
+      "img_url": {
+        "label": "Background Image",
+        "placeholder": "Please enter notice background image URL"
+      },
+      "show": {
+        "label": "Display"
+      },
+      "tags": {
+        "label": "Tags",
+        "placeholder": "Press Enter to add tags"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "submit": "Submit",
+      "success": "Successfully submitted"
+    }
+  }
+} 

@@ -1,0 +1,9 @@
+{
+  "placeholder": "Search menus and functions...",
+  "title": "Menu Navigation",
+  "noResults": "No results found",
+  "shortcut": {
+    "label": "Search",
+    "key": "⌘K"
+  }
+} 

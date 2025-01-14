@@ -1,0 +1,9 @@
+{
+  "placeholder": "搜索菜单和功能...",
+  "title": "菜单导航",
+  "noResults": "未找到结果",
+  "shortcut": {
+    "label": "搜索",
+    "key": "⌘K"
+  }
+} 

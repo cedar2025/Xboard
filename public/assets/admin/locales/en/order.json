@@ -1,0 +1,90 @@
+{
+  "title": "Order Management",
+  "description": "Here you can view user orders, including assignment, viewing, deletion and other operations.",
+  "table": {
+    "columns": {
+      "tradeNo": "Order No.",
+      "type": "Type",
+      "plan": "Subscription Plan",
+      "period": "Period",
+      "amount": "Payment Amount",
+      "status": "Order Status",
+      "commission": "Commission Amount",
+      "commissionStatus": "Commission Status",
+      "createdAt": "Created At"
+    }
+  },
+  "type": {
+    "NEW": "New Purchase",
+    "RENEWAL": "Renewal",
+    "UPGRADE": "Upgrade",
+    "RESET_FLOW": "Reset Traffic"
+  },
+  "period": {
+    "month_price": "Monthly",
+    "quarter_price": "Quarterly",
+    "half_year_price": "Semi-annually",
+    "year_price": "Annually",
+    "two_year_price": "2 Years",
+    "three_year_price": "3 Years",
+    "onetime_price": "One-time",
+    "reset_price": "Reset Package"
+  },
+  "status": {
+    "PENDING": "Pending",
+    "PROCESSING": "Processing",
+    "CANCELLED": "Cancelled",
+    "COMPLETED": "Completed",
+    "DISCOUNTED": "Discounted",
+    "tooltip": "After marking as [Paid], the system will proceed with activation and completion"
+  },
+  "commission": {
+    "PENDING": "Pending",
+    "PROCESSING": "Processing",
+    "VALID": "Valid",
+    "INVALID": "Invalid"
+  },
+  "actions": {
+    "markAsPaid": "Mark as Paid",
+    "cancel": "Cancel Order",
+    "openMenu": "Open Menu",
+    "reset": "Reset"
+  },
+  "search": {
+    "placeholder": "Search orders..."
+  },
+  "dialog": {
+    "title": "Order Information",
+    "basicInfo": "Basic Information",
+    "amountInfo": "Amount Information",
+    "timeInfo": "Time Information",
+    "addOrder": "Add Order",
+    "assignOrder": "Assign Order",
+    "fields": {
+      "userEmail": "User Email",
+      "orderPeriod": "Order Period",
+      "subscriptionPlan": "Subscription Plan",
+      "callbackNo": "Callback No.",
+      "paymentAmount": "Payment Amount",
+      "balancePayment": "Balance Payment",
+      "discountAmount": "Discount Amount",
+      "refundAmount": "Refund Amount",
+      "deductionAmount": "Deduction Amount",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    },
+    "placeholders": {
+      "email": "Please enter user email",
+      "plan": "Please select subscription plan",
+      "period": "Please select subscription period",
+      "amount": "Please enter payment amount"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "messages": {
+      "addSuccess": "Added successfully"
+    }
+  }
+} 

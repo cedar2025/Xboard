@@ -107,7 +107,6 @@ class ConfigController extends Controller
                 'show_protocol_to_server_enable' => (bool) admin_setting('show_protocol_to_server_enable', 0),
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
-                'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
                 'subscribe_path' => admin_setting('subscribe_path', 's'),
 
             ],
@@ -131,7 +130,8 @@ class ConfigController extends Controller
                 'email_username' => admin_setting('email_username'),
                 'email_password' => admin_setting('email_password'),
                 'email_encryption' => admin_setting('email_encryption'),
-                'email_from_address' => admin_setting('email_from_address')
+                'email_from_address' => admin_setting('email_from_address'),
+                'remind_mail_enable' => (bool) admin_setting('remind_mail_enable', false),
             ],
             'telegram' => [
                 'telegram_bot_enable' => (bool) admin_setting('telegram_bot_enable', 0),

@@ -1,0 +1,182 @@
+{
+  "manage": {
+    "title": "用户管理",
+    "description": "在这里可以管理用户，包括增加、删除、编辑、查询等操作。"
+  },
+  "columns": {
+    "is_admin": "管理员",
+    "is_staff": "员工",
+    "id": "ID",
+    "email": "邮箱",
+    "online_count": "在线设备",
+    "status": "状态",
+    "subscription": "订阅",
+    "group": "权限组",
+    "used_traffic": "已用流量",
+    "total_traffic": "总流量",
+    "expire_time": "到期时间",
+    "balance": "余额",
+    "commission": "佣金",
+    "register_time": "注册时间",
+    "actions": "操作",
+    "device_limit": {
+      "unlimited": "无设备数限制",
+      "limited": "最多可同时在线 {{count}} 台设备"
+    },
+    "status_text": {
+      "normal": "正常",
+      "banned": "封禁"
+    },
+    "online_status": {
+      "online": "当前在线",
+      "never": "从未在线",
+      "last_online": "最后在线时间: {{time}}",
+      "offline_duration": {
+        "days": "离线时长: {{count}}天",
+        "hours": "离线时长: {{count}}小时",
+        "minutes": "离线时长: {{count}}分钟",
+        "seconds": "离线时长: {{count}}秒"
+      }
+    },
+    "expire_status": {
+      "permanent": "长期有效",
+      "expired": "已过期 {{days}} 天",
+      "remaining": "剩余 {{days}} 天"
+    },
+    "actions_menu": {
+      "edit": "编辑",
+      "assign_order": "分配订单",
+      "copy_url": "复制订阅URL",
+      "reset_secret": "重置UUID及订阅URL",
+      "orders": "TA的订单",
+      "invites": "TA的邀请",
+      "traffic_records": "TA的流量记录"
+    }
+  },
+  "filter": {
+    "selected": "已选择 {{count}} 项",
+    "no_results": "未找到结果",
+    "clear": "清除筛选",
+    "search_placeholder": "搜索...",
+    "email_search": "搜索用户邮箱...",
+    "advanced": "高级筛选",
+    "reset": "重置筛选",
+    "sheet": {
+      "title": "高级筛选",
+      "description": "添加一个或多个筛选条件来精确查找用户",
+      "conditions": "筛选条件",
+      "add": "添加条件",
+      "condition": "条件 {{number}}",
+      "field": "选择字段",
+      "operator": "选择操作符",
+      "value": "输入值",
+      "value_number": "输入数值({{unit}})",
+      "reset": "重置",
+      "apply": "应用筛选"
+    },
+    "fields": {
+      "email": "邮箱",
+      "id": "用户ID",
+      "plan_id": "订阅",
+      "transfer_enable": "流量",
+      "total_used": "已用流量",
+      "online_count": "在线设备",
+      "expired_at": "到期时间",
+      "uuid": "UUID",
+      "token": "Token",
+      "banned": "账号状态",
+      "remark": "备注",
+      "inviter_email": "邀请人邮箱",
+      "invite_user_id": "邀请人ID",
+      "is_admin": "管理员",
+      "is_staff": "员工"
+    },
+    "operators": {
+      "contains": "包含",
+      "eq": "等于",
+      "gt": "大于",
+      "lt": "小于"
+    },
+    "status": {
+      "normal": "正常",
+      "banned": "禁用"
+    },
+    "boolean": {
+      "true": "是",
+      "false": "否"
+    }
+  },
+  "generate": {
+    "button": "创建用户",
+    "title": "创建用户",
+    "form": {
+      "email": "邮箱",
+      "email_prefix": "帐号(批量生成请留空)",
+      "email_domain": "域",
+      "password": "密码",
+      "password_placeholder": "留空则密码与邮件相同",
+      "expire_time": "到期时间",
+      "expire_time_placeholder": "请选择用户到期日期，留空为长期有效",
+      "permanent": "长期有效",
+      "subscription": "订阅计划",
+      "subscription_none": "无",
+      "generate_count": "生成数量",
+      "generate_count_placeholder": "如果为批量生产请输入生成数量",
+      "cancel": "取消",
+      "submit": "生成",
+      "success": "生成成功"
+    }
+  },
+  "edit": {
+    "button": "编辑用户信息",
+    "title": "用户管理",
+    "form": {
+      "email": "邮箱",
+      "email_placeholder": "请输入邮箱",
+      "inviter_email": "邀请人邮箱",
+      "inviter_email_placeholder": "请输入邮箱",
+      "password": "密码",
+      "password_placeholder": "如需修改密码请输入",
+      "balance": "余额",
+      "balance_placeholder": "请输入余额",
+      "commission_balance": "佣金余额",
+      "commission_balance_placeholder": "请输入佣金余额",
+      "upload": "已用上行",
+      "upload_placeholder": "已用上行",
+      "download": "已用下行",
+      "download_placeholder": "已用下行",
+      "total_traffic": "流量",
+      "total_traffic_placeholder": "请输入流量",
+      "expire_time": "到期时间",
+      "expire_time_placeholder": "请选择用户到期日期，留空为长期有效",
+      "expire_time_specific": "具体时间",
+      "expire_time_today": "设为当天结束",
+      "expire_time_permanent": "长期有效",
+      "expire_time_1month": "一个月",
+      "expire_time_3months": "三个月",
+      "expire_time_confirm": "确定",
+      "subscription": "订阅计划",
+      "subscription_none": "无",
+      "account_status": "账户状态",
+      "commission_type": "佣金类型",
+      "commission_type_system": "跟随系统设置",
+      "commission_type_cycle": "循环返利",
+      "commission_type_onetime": "首次返利",
+      "commission_rate": "推荐返利比例",
+      "commission_rate_placeholder": "为空则跟随站点设置返利比例",
+      "discount": "专享折扣比例",
+      "discount_placeholder": "为空则不享受专享折扣",
+      "speed_limit": "限速",
+      "speed_limit_placeholder": "留空则不限速",
+      "device_limit": "设备限制",
+      "device_limit_placeholder": "留空则不限制",
+      "is_admin": "是否管理员",
+      "is_staff": "是否员工",
+      "remarks": "备注",
+      "remarks_placeholder": "请在这里记录",
+      "cancel": "取消",
+      "submit": "提交",
+      "success": "修改成功"
+    }
+  }
+} 

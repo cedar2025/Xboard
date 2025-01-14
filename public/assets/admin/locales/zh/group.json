@@ -1,0 +1,39 @@
+{
+  "title": "权限组管理",
+  "description": "管理所有权限组，包括添加、删除、编辑等操作。",
+  "columns": {
+    "id": "组ID",
+    "name": "组名称",
+    "usersCount": "用户数量",
+    "serverCount": "节点数量",
+    "actions": "操作"
+  },
+  "form": {
+    "add": "添加权限组",
+    "edit": "编辑权限组",
+    "create": "创建权限组",
+    "update": "更新",
+    "name": "组名称",
+    "namePlaceholder": "请输入权限组名称",
+    "nameDescription": "权限组名称用于标识不同的用户组，建议使用有意义的名称。",
+    "cancel": "取消",
+    "editDescription": "修改权限组信息，更新后会立即生效。",
+    "createDescription": "创建新的权限组，可以为不同的用户分配不同的权限。"
+  },
+  "toolbar": {
+    "searchPlaceholder": "搜索权限组...",
+    "reset": "重置"
+  },
+  "messages": {
+    "deleteConfirm": "确认删除",
+    "deleteDescription": "此操作将永久删除该权限组，删除后无法恢复。确定要继续吗？",
+    "deleteButton": "删除",
+    "createSuccess": "创建成功",
+    "updateSuccess": "更新成功",
+    "nameValidation": {
+      "min": "组名至少需要2个字符",
+      "max": "组名不能超过50个字符",
+      "pattern": "组名只能包含字母、数字、中文、下划线和连字符"
+    }
+  }
+} 

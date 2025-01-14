@@ -158,13 +158,13 @@ class General implements ProtocolInterface
                 break;
             case 'httpupgrade':
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host', $server['host']);
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
                 break;
             case 'xhttp':
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host', $server['host']);
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
                 $config['mode'] = data_get($protocol_settings, 'network_settings.mode', 'auto');
-                $config['extra'] = data_get($protocol_settings, 'network_settings.extra') ? Helper::encodeURIComponent(data_get($protocol_settings, 'network_settings.extra')) : null;
+                $config['extra'] = json_encode(data_get($protocol_settings, 'network_settings.extra'));
                 break;
         }
 

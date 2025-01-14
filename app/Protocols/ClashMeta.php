@@ -197,7 +197,8 @@ class ClashMeta implements ProtocolInterface
             'alterId' => 0,
             'cipher' => 'auto',
             'udp' => true,
-            'flow' => data_get($protocol_settings, 'flow')
+            'flow' => data_get($protocol_settings, 'flow'),
+            'tls' => false
         ];
 
         switch (data_get($protocol_settings, 'tls')) {

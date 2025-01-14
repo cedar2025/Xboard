@@ -9,8 +9,8 @@ class ConfigSave extends FormRequest
     const RULES = [
         // invite & commission
         'invite_force' => '',
-        'invite_commission' => 'integer',
-        'invite_gen_limit' => 'integer',
+        'invite_commission' => 'integer|nullable',
+        'invite_gen_limit' => 'integer|nullable',
         'invite_never_expire' => '',
         'commission_first_time_enable' => '',
         'commission_auto_check_enable' => '',
@@ -44,7 +44,6 @@ class ConfigSave extends FormRequest
         'change_order_event_id' => '',
         'show_info_to_server_enable' => '',
         'show_protocol_to_server_enable' => '',
-        'remind_mail_enable' => '',
         'subscribe_path' => '',
         // server
         'server_token' => 'nullable|min:16',
@@ -65,6 +64,7 @@ class ConfigSave extends FormRequest
         'email_password' => '',
         'email_encryption' => '',
         'email_from_address' => '',
+        'remind_mail_enable' => '',
         // telegram
         'telegram_bot_enable' => '',
         'telegram_bot_token' => '',

@@ -1,0 +1,62 @@
+{
+  "title": "公告管理",
+  "description": "在这里可以配置公告，包括添加、删除、编辑等操作。",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "show": "显示状态",
+      "title": "标题",
+      "actions": "操作"
+    },
+    "toolbar": {
+      "search": "搜索公告标题...",
+      "reset": "重置",
+      "sort": {
+        "edit": "编辑排序",
+        "save": "保存排序"
+      }
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": {
+        "title": "删除确认",
+        "description": "确定要删除该条公告吗？此操作无法撤销。",
+        "success": "删除成功"
+      }
+    }
+  },
+  "form": {
+    "add": {
+      "title": "添加公告",
+      "button": "添加公告"
+    },
+    "edit": {
+      "title": "编辑公告"
+    },
+    "fields": {
+      "title": {
+        "label": "标题",
+        "placeholder": "请输入公告标题"
+      },
+      "content": {
+        "label": "公告内容"
+      },
+      "img_url": {
+        "label": "公告背景",
+        "placeholder": "请输入公告背景图片URL"
+      },
+      "show": {
+        "label": "显示"
+      },
+      "tags": {
+        "label": "节点标签",
+        "placeholder": "输入后回车添加标签"
+      }
+    },
+    "buttons": {
+      "cancel": "取消",
+      "submit": "提交",
+      "success": "提交成功"
+    }
+  }
+} 

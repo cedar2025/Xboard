@@ -1,0 +1,276 @@
+{
+  "manage": {
+    "title": "节点管理",
+    "description": "管理所有节点，包括添加、删除、编辑等操作。"
+  },
+  "columns": {
+    "sort": "排序",
+    "nodeId": "节点ID",
+    "show": "显隐",
+    "node": "节点",
+    "address": "地址",
+    "onlineUsers": {
+      "title": "在线人数",
+      "tooltip": "在线人数根据服务端上报频率而定"
+    },
+    "rate": {
+      "title": "倍率",
+      "tooltip": "流量扣费倍率"
+    },
+    "groups": {
+      "title": "权限组",
+      "tooltip": "可订阅到该节点的权限组",
+      "empty": "--"
+    },
+    "type": "类型",
+    "actions": "操作",
+    "copyAddress": "复制连接地址",
+    "internalPort": "内部端口",
+    "status": {
+      "0": "未运行",
+      "1": "无人使用或异常",
+      "2": "运行正常"
+    },
+    "actions_dropdown": {
+      "edit": "编辑",
+      "copy": "复制",
+      "delete": {
+        "title": "确认删除",
+        "description": "此操作将永久删除该节点，删除后无法恢复。确定要继续吗？",
+        "confirm": "删除"
+      },
+      "copy_success": "复制成功",
+      "delete_success": "删除成功"
+    }
+  },
+  "toolbar": {
+    "search": "搜索节点...",
+    "type": "类型",
+    "reset": "重置",
+    "sort": {
+      "tip": "拖拽节点进行排序，完成后点击保存",
+      "edit": "编辑排序",
+      "save": "保存排序"
+    }
+  },
+  "form": {
+    "add_node": "添加节点",
+    "edit_node": "编辑节点",
+    "new_node": "新建节点",
+    "name": {
+      "label": "节点名称",
+      "placeholder": "请输入节点名称",
+      "error": "请输入有效的节点名称"
+    },
+    "rate": {
+      "label": "倍率",
+      "error": "请输入有效的倍率"
+    },
+    "code": {
+      "label": "自定义节点ID",
+      "optional": "(选填)",
+      "placeholder": "请输入自定义节点ID"
+    },
+    "tags": {
+      "label": "节点标签",
+      "placeholder": "输入后回车添加标签"
+    },
+    "groups": {
+      "label": "权限组",
+      "add": "添加权限组",
+      "placeholder": "请选择权限组",
+      "empty": "未找到结果"
+    },
+    "host": {
+      "label": "节点地址",
+      "placeholder": "请输入节点域名或者IP"
+    },
+    "port": {
+      "label": "连接端口",
+      "placeholder": "用户连接端口",
+      "tooltip": "用户实际连接使用的端口，这是客户端配置中需要填写的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
+      "sync": "同步到服务端口"
+    },
+    "server_port": {
+      "label": "服务端口",
+      "placeholder": "服务端开放端口",
+      "tooltip": "服务器实际监听的端口，这是在服务器上开放的真实端口。如果使用了中转或隧道，这个端口可能与用户连接端口不同。"
+    },
+    "parent": {
+      "label": "父节点",
+      "placeholder": "选择父节点",
+      "none": "无"
+    },
+    "route": {
+      "label": "路由组",
+      "placeholder": "选择路由组",
+      "empty": "未找到结果"
+    },
+    "submit": "提交",
+    "cancel": "取消",
+    "success": "提交成功"
+  },
+  "dynamic_form": {
+    "shadowsocks": {
+      "cipher": {
+        "label": "加密算法",
+        "placeholder": "选择加密算法"
+      },
+      "obfs": {
+        "label": "混淆",
+        "placeholder": "选择混淆方式",
+        "none": "无",
+        "http": "HTTP"
+      },
+      "obfs_settings": {
+        "path": "路径",
+        "host": "Host"
+      }
+    },
+    "vmess": {
+      "tls": {
+        "label": "TLS",
+        "placeholder": "请选择安全性",
+        "disabled": "不支持",
+        "enabled": "支持"
+      },
+      "tls_settings": {
+        "server_name": {
+          "label": "服务器名称指示(SNI)",
+          "placeholder": "不使用请留空"
+        },
+        "allow_insecure": "允许不安全?"
+      },
+      "network": {
+        "label": "传输协议",
+        "placeholder": "选择传输协议"
+      }
+    },
+    "trojan": {
+      "server_name": {
+        "label": "服务器名称指示(SNI)",
+        "placeholder": "当节点地址于证书不一致时用于证书验证"
+      },
+      "allow_insecure": "允许不安全?",
+      "network": {
+        "label": "传输协议",
+        "placeholder": "选择传输协议"
+      }
+    },
+    "hysteria": {
+      "version": {
+        "label": "协议版本",
+        "placeholder": "协议版本"
+      },
+      "alpn": {
+        "label": "ALPN",
+        "placeholder": "ALPN"
+      },
+      "obfs": {
+        "label": "混淆",
+        "type": {
+          "label": "混淆实现",
+          "placeholder": "选择混淆实现",
+          "salamander": "Salamander"
+        },
+        "password": {
+          "label": "混淆密码",
+          "placeholder": "请输入混淆密码",
+          "generate_success": "混淆密码生成成功"
+        }
+      },
+      "tls": {
+        "server_name": {
+          "label": "服务器名称指示(SNI)",
+          "placeholder": "当节点地址于证书不一致时用于证书验证"
+        },
+        "allow_insecure": "允许不安全?"
+      },
+      "bandwidth": {
+        "up": {
+          "label": "上行宽带",
+          "placeholder": "请输入上行宽带",
+          "suffix": "Mbps",
+          "bbr_tip": "，留空则使用BBR"
+        },
+        "down": {
+          "label": "下行宽带",
+          "placeholder": "请输入下行宽带",
+          "suffix": "Mbps",
+          "bbr_tip": "，留空则使用BBR"
+        }
+      }
+    },
+    "vless": {
+      "tls": {
+        "label": "安全性",
+        "placeholder": "请选择安全性",
+        "none": "无",
+        "tls": "TLS",
+        "reality": "Reality"
+      },
+      "tls_settings": {
+        "server_name": {
+          "label": "服务器名称指示(SNI)",
+          "placeholder": "不使用请留空"
+        },
+        "allow_insecure": "允许不安全?"
+      },
+      "reality_settings": {
+        "server_name": {
+          "label": "伪装站点(dest)",
+          "placeholder": "例如：example.com"
+        },
+        "server_port": {
+          "label": "端口(port)",
+          "placeholder": "例如：443"
+        },
+        "allow_insecure": "允许不安全?",
+        "private_key": {
+          "label": "私钥(Private key)"
+        },
+        "public_key": {
+          "label": "公钥(Public key)"
+        },
+        "short_id": {
+          "label": "Short ID",
+          "placeholder": "可留空，长度为2的倍数，最长16位",
+          "description": "客户端可用的 shortId 列表，可用于区分不同的客户端，使用0-f的十六进制字符",
+          "generate": "生成 Short ID",
+          "success": "Short ID 生成成功"
+        },
+        "key_pair": {
+          "generate": "生成密钥对",
+          "success": "密钥对生成成功",
+          "error": "生成密钥对失败"
+        }
+      },
+      "network": {
+        "label": "传输协议",
+        "placeholder": "选择传输协议"
+      },
+      "flow": {
+        "label": "流控",
+        "placeholder": "选择流控"
+      }
+    }
+  },
+  "network_settings": {
+    "edit_protocol": "编辑协议",
+    "edit_protocol_config": "编辑协议配置",
+    "use_template": "使用{{template}}模板",
+    "json_config_placeholder": "请输入JSON配置",
+    "json_config_placeholder_with_template": "请输入JSON配置或选择上方模板",
+    "validation": {
+      "must_be_object": "配置必须是一个JSON对象",
+      "invalid_json": "无效的JSON格式"
+    },
+    "errors": {
+      "save_failed": "保存时发生错误"
+    }
+  },
+  "common": {
+    "cancel": "取消",
+    "confirm": "确定"
+  }
+}

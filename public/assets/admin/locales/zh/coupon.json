@@ -1,0 +1,103 @@
+{
+  "title": "优惠券管理",
+  "description": "在这里可以查看优惠券，包括增加、查看、删除等操作。",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "show": "启用",
+      "name": "卷名称",
+      "type": "类型",
+      "code": "卷码",
+      "limitUse": "剩余次数",
+      "limitUseWithUser": "可用次数/用户",
+      "validity": "有效期",
+      "actions": "操作"
+    },
+    "validity": {
+      "expired": "已过期{{days}}天",
+      "notStarted": "{{days}}天后开始",
+      "remaining": "剩余{{days}}天",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "unlimited": "无限次",
+      "noLimit": "无限制"
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteConfirm": {
+        "title": "确认删除",
+        "description": "此操作将永久删除该优惠券，删除后无法恢复。确定要继续吗？",
+        "confirmText": "删除"
+      }
+    },
+    "toolbar": {
+      "search": "搜索优惠券...",
+      "type": "类型",
+      "reset": "重置",
+      "types": {
+        "1": "按金额优惠",
+        "2": "按比例优惠"
+      }
+    }
+  },
+  "form": {
+    "add": "添加优惠券",
+    "edit": "编辑优惠券",
+    "name": {
+      "label": "优惠券名称",
+      "placeholder": "请输入优惠券名称",
+      "required": "请输入优惠券名称"
+    },
+    "type": {
+      "label": "优惠券类型和值",
+      "placeholder": "优惠券类型"
+    },
+    "value": {
+      "placeholder": "请输入值"
+    },
+    "validity": {
+      "label": "优惠券有效期",
+      "to": "至",
+      "endTimeError": "结束时间必须晚于开始时间"
+    },
+    "limitUse": {
+      "label": "最大使用次数",
+      "placeholder": "限制最大使用次数，留空则不限制",
+      "description": "设置优惠券的总使用次数限制，留空表示不限制使用次数"
+    },
+    "limitUseWithUser": {
+      "label": "每个用户可使用次数",
+      "placeholder": "限制每个用户可使用次数，留空则不限制",
+      "description": "限制每个用户可使用该优惠券的次数，留空表示不限制单用户使用次数"
+    },
+    "limitPeriod": {
+      "label": "指定周期",
+      "placeholder": "限制指定周期可以使用优惠，留空则不限制",
+      "description": "选择可以使用优惠券的订阅周期，留空表示不限制使用周期",
+      "empty": "没有找到匹配的周期"
+    },
+    "limitPlan": {
+      "label": "指定订阅",
+      "placeholder": "限制指定订阅可以使用优惠，留空则不限制",
+      "empty": "没有找到匹配的订阅"
+    },
+    "code": {
+      "label": "自定义优惠码",
+      "placeholder": "自定义优惠码，留空则自动生成",
+      "description": "可以自定义优惠码，留空则系统自动生成"
+    },
+    "generateCount": {
+      "label": "批量生成数量",
+      "placeholder": "批量生成优惠码数量，留空则生成单个",
+      "description": "批量生成多个优惠码，留空则只生成单个优惠码"
+    },
+    "submit": {
+      "saving": "保存中...",
+      "save": "保存"
+    },
+    "error": {
+      "saveFailed": "保存优惠券失败"
+    }
+  }
+} 

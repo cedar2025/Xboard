@@ -1,0 +1,15 @@
+{
+  "trafficRecord": {
+    "title": "流量使用记录",
+    "time": "时间",
+    "upload": "上行流量",
+    "download": "下行流量",
+    "rate": "倍率",
+    "total": "总计",
+    "noRecords": "暂无记录",
+    "perPage": "每页显示",
+    "records": "条记录",
+    "page": "第 {{current}} / {{total}} 页",
+    "multiplier": "{{value}}x"
+  }
+} 

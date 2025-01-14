@@ -1,0 +1,22 @@
+{
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "view": "View",
+  "toggleNavigation": "Toggle Navigation",
+  "toggleSidebar": "Toggle Sidebar",
+  "search": "Search...",
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "user": "User",
+  "defaultEmail": "user@example.com",
+  "settings": "Settings",
+  "logout": "Logout"
+} 

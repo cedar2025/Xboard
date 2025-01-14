@@ -1,0 +1,39 @@
+{
+  "title": "Permission Groups",
+  "description": "Manage all permission groups, including adding, deleting, and editing operations.",
+  "columns": {
+    "id": "Group ID",
+    "name": "Group Name",
+    "usersCount": "Users Count",
+    "serverCount": "Nodes Count",
+    "actions": "Actions"
+  },
+  "form": {
+    "add": "Add Group",
+    "edit": "Edit Group",
+    "create": "Create Group",
+    "update": "Update",
+    "name": "Group Name",
+    "namePlaceholder": "Please enter group name",
+    "nameDescription": "Group name is used to identify different user groups, it's recommended to use meaningful names.",
+    "cancel": "Cancel",
+    "editDescription": "Modify group information, changes will take effect immediately.",
+    "createDescription": "Create a new permission group to assign different permissions to different users."
+  },
+  "toolbar": {
+    "searchPlaceholder": "Search groups...",
+    "reset": "Reset"
+  },
+  "messages": {
+    "deleteConfirm": "Confirm Delete",
+    "deleteDescription": "This action will permanently delete this permission group and cannot be recovered. Are you sure you want to continue?",
+    "deleteButton": "Delete",
+    "createSuccess": "Created Successfully",
+    "updateSuccess": "Updated Successfully",
+    "nameValidation": {
+      "min": "Group name must be at least 2 characters",
+      "max": "Group name cannot exceed 50 characters",
+      "pattern": "Group name can only contain letters, numbers, Chinese characters, underscores and hyphens"
+    }
+  }
+} 

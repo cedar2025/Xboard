@@ -1,0 +1,103 @@
+{
+  "title": "Coupon Management",
+  "description": "Here you can manage coupons, including adding, viewing, and deleting operations.",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "show": "Enable",
+      "name": "Coupon Name",
+      "type": "Type",
+      "code": "Code",
+      "limitUse": "Remaining Uses",
+      "limitUseWithUser": "Uses Per User",
+      "validity": "Validity Period",
+      "actions": "Actions"
+    },
+    "validity": {
+      "expired": "Expired {{days}} days ago",
+      "notStarted": "Starts in {{days}} days",
+      "remaining": "{{days}} days remaining",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "unlimited": "Unlimited",
+      "noLimit": "No Limit"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": {
+        "title": "Confirm Delete",
+        "description": "This action will permanently delete this coupon and cannot be undone. Are you sure you want to continue?",
+        "confirmText": "Delete"
+      }
+    },
+    "toolbar": {
+      "search": "Search coupons...",
+      "type": "Type",
+      "reset": "Reset",
+      "types": {
+        "1": "Fixed Amount",
+        "2": "Percentage"
+      }
+    }
+  },
+  "form": {
+    "add": "Add Coupon",
+    "edit": "Edit Coupon",
+    "name": {
+      "label": "Coupon Name",
+      "placeholder": "Enter coupon name",
+      "required": "Please enter coupon name"
+    },
+    "type": {
+      "label": "Coupon Type and Value",
+      "placeholder": "Select coupon type"
+    },
+    "value": {
+      "placeholder": "Enter value"
+    },
+    "validity": {
+      "label": "Validity Period",
+      "to": "to",
+      "endTimeError": "End time must be later than start time"
+    },
+    "limitUse": {
+      "label": "Maximum Uses",
+      "placeholder": "Set maximum uses, leave empty for unlimited",
+      "description": "Set the total number of times this coupon can be used, leave empty for unlimited uses"
+    },
+    "limitUseWithUser": {
+      "label": "Uses Per User",
+      "placeholder": "Set uses per user, leave empty for unlimited",
+      "description": "Limit how many times each user can use this coupon, leave empty for unlimited uses per user"
+    },
+    "limitPeriod": {
+      "label": "Subscription Periods",
+      "placeholder": "Limit to specific subscription periods, leave empty for no restrictions",
+      "description": "Select which subscription periods can use this coupon, leave empty for no period restrictions",
+      "empty": "No matching periods found"
+    },
+    "limitPlan": {
+      "label": "Subscription Plans",
+      "placeholder": "Limit to specific subscription plans, leave empty for no restrictions",
+      "empty": "No matching plans found"
+    },
+    "code": {
+      "label": "Custom Coupon Code",
+      "placeholder": "Enter custom code, leave empty for auto-generation",
+      "description": "Customize the coupon code, leave empty for auto-generation"
+    },
+    "generateCount": {
+      "label": "Batch Generation Count",
+      "placeholder": "Number of coupons to generate, leave empty for single coupon",
+      "description": "Generate multiple coupon codes at once, leave empty to generate a single code"
+    },
+    "submit": {
+      "saving": "Saving...",
+      "save": "Save"
+    },
+    "error": {
+      "saveFailed": "Failed to save coupon"
+    }
+  }
+} 

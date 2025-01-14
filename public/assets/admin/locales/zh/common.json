@@ -1,0 +1,22 @@
+{
+  "loading": "加载中...",
+  "error": "错误",
+  "success": "成功",
+  "save": "保存",
+  "cancel": "取消",
+  "delete": "删除",
+  "edit": "编辑",
+  "view": "查看",
+  "toggleNavigation": "切换导航",
+  "toggleSidebar": "切换侧边栏",
+  "search": "搜索...",
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "user": "用户",
+  "defaultEmail": "user@example.com",
+  "settings": "设置",
+  "logout": "退出登录"
+} 

@@ -92,7 +92,7 @@ class Server extends Model
                 'type' => 'object',
                 'fields' => [
                     'allow_insecure' => ['type' => 'boolean', 'default' => false],
-                    'server_port' => ['type' => 'integer', 'default' => null],
+                    'server_port' => ['type' => 'string', 'default' => null],
                     'server_name' => ['type' => 'string', 'default' => null],
                     'public_key' => ['type' => 'string', 'default' => null],
                     'private_key' => ['type' => 'string', 'default' => null],

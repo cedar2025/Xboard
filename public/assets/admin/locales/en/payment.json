@@ -1,0 +1,92 @@
+{
+  "title": "Payment Configuration",
+  "description": "Configure payment methods including Alipay, WeChat Pay, etc.",
+  
+  "table": {
+    "columns": {
+      "id": "ID",
+      "enable": "Enable",
+      "name": "Display Name",
+      "payment": "Payment Gateway",
+      "notify_url": "Notify URL",
+      "notify_url_tooltip": "The payment gateway will send notifications to this address. Please ensure it's accessible through your firewall.",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": {
+        "title": "Confirm Delete",
+        "description": "Are you sure you want to delete this payment method? This action cannot be undone.",
+        "success": "Successfully deleted"
+      }
+    },
+    "toolbar": {
+      "search": "Search payment methods...",
+      "reset": "Reset",
+      "sort": {
+        "hint": "Drag payment methods to sort, click save when finished",
+        "save": "Save Order",
+        "edit": "Edit Order"
+      }
+    }
+  },
+  
+  "form": {
+    "add": {
+      "button": "Add Payment Method",
+      "title": "Add Payment Method"
+    },
+    "edit": {
+      "title": "Edit Payment Method"
+    },
+    "fields": {
+      "name": {
+        "label": "Display Name",
+        "placeholder": "Enter payment name",
+        "description": "Used for frontend display"
+      },
+      "icon": {
+        "label": "Icon URL",
+        "placeholder": "https://example.com/icon.svg",
+        "description": "Icon URL for frontend display"
+      },
+      "notify_domain": {
+        "label": "Notify Domain",
+        "placeholder": "https://example.com",
+        "description": "Domain for gateway notifications"
+      },
+      "handling_fee_percent": {
+        "label": "Percentage Fee (%)",
+        "placeholder": "0-100"
+      },
+      "handling_fee_fixed": {
+        "label": "Fixed Fee",
+        "placeholder": "0"
+      },
+      "payment": {
+        "label": "Payment Gateway",
+        "placeholder": "Select payment gateway",
+        "description": "Choose the payment gateway to use"
+      }
+    },
+    "validation": {
+      "name": {
+        "min": "Name must be at least 2 characters",
+        "max": "Name cannot exceed 30 characters"
+      },
+      "notify_domain": {
+        "url": "Please enter a valid URL"
+      },
+      "payment": {
+        "required": "Please select a payment gateway"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "submit": "Submit"
+    },
+    "messages": {
+      "success": "Saved successfully"
+    }
+  }
+} 

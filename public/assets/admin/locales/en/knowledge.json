@@ -1,0 +1,46 @@
+{
+  "title": "Knowledge Base",
+  "description": "Here you can configure the knowledge base, including adding, deleting, and editing operations.",
+  "columns": {
+    "id": "ID",
+    "status": "Status",
+    "title": "Title",
+    "category": "Category",
+    "actions": "Actions"
+  },
+  "form": {
+    "add": "Add Knowledge",
+    "edit": "Edit Knowledge",
+    "title": "Title",
+    "titlePlaceholder": "Please enter knowledge title",
+    "category": "Category",
+    "categoryPlaceholder": "Please enter category, it will be automatically classified",
+    "language": "Language",
+    "languagePlaceholder": "Please select language",
+    "content": "Content",
+    "show": "Show",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "languages": {
+    "en-US": "English",
+    "ja-JP": "日本語",
+    "ko-KR": "한국어",
+    "vi-VN": "Tiếng Việt",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "messages": {
+    "deleteConfirm": "Confirm Delete",
+    "deleteDescription": "This action will permanently delete this knowledge base record and cannot be recovered. Are you sure you want to continue?",
+    "deleteButton": "Delete",
+    "operationSuccess": "Operation Successful"
+  },
+  "toolbar": {
+    "searchPlaceholder": "Search knowledge...",
+    "reset": "Reset",
+    "sortModeHint": "Drag knowledge items to sort, click save when done",
+    "editSort": "Edit Sort",
+    "saveSort": "Save Sort"
+  }
+} 

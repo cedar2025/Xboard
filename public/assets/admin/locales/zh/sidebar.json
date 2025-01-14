@@ -1,0 +1,18 @@
+{
+  "dashboard": "仪表盘",
+  "systemManagement": "系统管理",
+  "systemConfig": "系统配置",
+  "themeConfig": "主题配置",
+  "noticeManagement": "公告管理",
+  "paymentConfig": "支付配置",
+  "knowledgeManagement": "知识库管理",
+  "nodeManagement": "节点管理",
+  "permissionGroupManagement": "权限组管理",
+  "routeManagement": "路由管理",
+  "subscriptionManagement": "订阅管理",
+  "planManagement": "套餐管理",
+  "orderManagement": "订单管理",
+  "couponManagement": "优惠券管理",
+  "userManagement": "用户管理",
+  "ticketManagement": "工单管理"
+} 

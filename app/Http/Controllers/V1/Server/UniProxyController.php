@@ -87,8 +87,8 @@ class UniProxyController extends Controller
 
         $baseConfig = [
             'server_port' => (int) $serverPort,
-            'network' => $protocolSettings['network'] ?? null,
-            'networkSettings' => $protocolSettings['network_settings'] ?? null,
+            'network' => data_get($protocolSettings, 'network'),
+            'networkSettings' => data_get($protocolSettings, 'network_settings') ?: null,
         ];
 
         $response = match ($nodeType) {
@@ -116,9 +116,9 @@ class UniProxyController extends Controller
                 ...$baseConfig,
                 'tls' => (int) $protocolSettings['tls'],
                 'flow' => $protocolSettings['flow'],
-                'tls_settings' => (int) $protocolSettings['tls'] === 1
+                'tls_settings' => [...(int) $protocolSettings['tls'] === 1
                     ? $protocolSettings['tls_settings']
-                    : $protocolSettings['reality_settings']
+                    : $protocolSettings['reality_settings']]
             ],
             'hysteria' => [
                 'server_port' => (int) $serverPort,
