@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README_CN.md)
 
+[![Telegram 频道](https://img.shields.io/badge/Telegram-频道-blue)](https://t.me/XboardOfficial)
+
 # 关于Xboard
 Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构的面板，提升可维护性。
 

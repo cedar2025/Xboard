@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README_CN.md)
 
+[![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
+
 ## About Xboard
 Xboard New is a panel system based on Xboard's secondary development, featuring a rewritten admin interface and optimized system architecture to improve maintainability.
 
