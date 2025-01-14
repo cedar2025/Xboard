@@ -1,0 +1,46 @@
+networks:
+  1panel-network:
+    driver: bridge
+    external: true
+services:
+  web:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+    environment:
+      - docker=true
+    depends_on:
+      - redis
+    # network_mode: host
+    networks:
+      - 1panel-network
+    command: php artisan octane:start --host=0.0.0.0 --port=7001
+    restart: on-failure
+    ports:
+      - 7001:7001
+  horizon:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+    restart: on-failure
+    # network_mode: host
+    command: php artisan horizon
+    networks:
+      - 1panel-network
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
+    restart: unless-stopped
+    networks:
+      - 1panel-network
+    volumes:
+      - ./.docker/.data/redis:/data

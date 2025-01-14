@@ -62,11 +62,16 @@ apt update && apt install -y git
 yum update && yum install -y git
 
 # 克隆代码
-git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard ./
+git clone -b new --depth 1 https://github.com/cedar2025/Xboard ./
+
+# 复制配置文件
+cp .docker/onepanel/compose.sample.yaml compose.yaml
 
 # 安装依赖并初始化
 docker compose run -it --rm web php artisan xboard:install
 ```
+> ⚠️ Mysql的连接地址需要使用1panel中Mysql菜单中连接信息里的容器连接地址，而不是本地的localhost地址。
+![示例图](./images/1panel_mysql.png)
 > 安装时选择使用内置 Redis，并输入之前创建的数据库信息
 > 安装完成后请保存返回的后台地址和管理员账号密码
 
