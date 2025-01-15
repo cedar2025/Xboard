@@ -19,7 +19,7 @@ RUN composer install --optimize-autoloader --no-cache --no-dev \
     && mkdir -p /data \
     && chown redis:redis /data
     
-ENV ENABLE_WEB=false \
-    ENABLE_HORIZON=false \
-    ENABLE_REDIS=false 
+ENV ENABLE_WEB=true \
+    ENABLE_HORIZON=true \
+    ENABLE_REDIS=true 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
