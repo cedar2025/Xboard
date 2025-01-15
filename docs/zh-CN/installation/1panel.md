@@ -95,7 +95,7 @@ git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard ./
 ```yaml
 services:
   web:
-    image: ghcr.io/cedar2025/xboard:new
+    image: ghcr.io/cedar2025/xboard:latest
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./.env:/www/.env
@@ -114,7 +114,7 @@ services:
       - 1panel-network
 
   horizon:
-    image: ghcr.io/cedar2025/xboard:new
+    image: ghcr.io/cedar2025/xboard:latest
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./.env:/www/.env

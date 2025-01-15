@@ -51,7 +51,7 @@ chattr -i .user.ini
 rm -rf .htaccess 404.html 502.html index.html .user.ini
 
 # 克隆代码
-git clone -b new https://github.com/cedar2025/Xboard.git ./
+git clone https://github.com/cedar2025/Xboard.git ./
 
 # 安装依赖
 sh init.sh
