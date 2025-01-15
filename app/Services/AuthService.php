@@ -29,6 +29,7 @@ class AuthService
         $formattedToken = 'Bearer ' . ($tokenParts[1] ?? $tokenParts[0]);
 
         return [
+            'token' => $this->user->token,
             'auth_data' => $formattedToken,
             'is_admin' => $this->user->is_admin,
         ];
