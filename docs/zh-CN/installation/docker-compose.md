@@ -17,7 +17,7 @@ systemctl start docker
 
 1. 获取项目文件：
 ```bash
-git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard
+git clone -b compose --depth 1 https://github.com/cedar2025/Xboard
 cd Xboard
 ```
 

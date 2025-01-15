@@ -1,39 +1,32 @@
-# Xboard New
+# Xboard
 
-[English](README.md) | [中文](README_CN.md)
+<div align="center">
 
-[![Telegram 频道](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
+[![Telegram](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
+![PHP](https://img.shields.io/badge/PHP-8.2+-green.svg)
+![MySQL](https://img.shields.io/badge/MySQL-5.7+-blue.svg)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 关于 Xboard
-Xboard New 是基于 Xboard 二次开发的面板系统，重写了管理界面，优化了系统架构，提高了可维护性。
+[English](README.md) | 简体中文
 
-## 免责声明
-本项目为个人开发维护，不保证可用性，使用本软件造成的任何后果由使用者自行承担。
+</div>
 
-## 特性
-- 升级到 Laravel 11
-- 添加 Octane 支持
-- 使用 React + Shadcn UI + TailwindCSS 重构管理界面
-- 使用 Vue3 + TypeScript + NaiveUI + Unocss + Pinia 重构用户前端
-- 使用 Docker Compose 作为容器化部署工具
-- 使用 Docker 作为容器化工具
-- 重构主题管理，支持主题上传和主题暴露
-- 使用 Octane Cache 进行设置缓存
-- 优化系统架构，提高可维护性
+## 📖 简介
 
-## 系统要求
-- PHP 8.2+
-- Composer
-- MySQL 5.7+
-- Redis
-- Laravel
-- Octane
+Xboard 是一个基于 Laravel 11 开发的现代化面板系统，专注于提供简洁、高效的用户体验。
 
-## 快速开始
-使用以下命令快速部署并体验 Xboard（基于 Docker + SQLite）：
+## ✨ 特性
+
+- 🚀 基于 Laravel 11 + Octane，性能提升显著
+- 🎨 全新设计的管理界面 (React + Shadcn UI)
+- 📱 现代化的用户前端 (Vue3 + TypeScript)
+- 🐳 开箱即用的 Docker 部署方案
+- 🎯 优化的系统架构，提供更好的可维护性
+
+## 🚀 快速开始
 
 ```bash
-git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard && \
+git clone -b compose --depth 1 https://github.com/cedar2025/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
@@ -42,35 +35,49 @@ docker compose run -it --rm \
     web php artisan xboard:install && \
 docker compose up -d
 ```
-安装完成后访问 http://服务器IP:7001
 
-> 注意：管理员账号密码会在安装时显示，请务必保存。
+> 安装完成后访问：http://服务器IP:7001  
+> ⚠️ 请务必保存安装时显示的管理员账号密码
 
-## 预览
-![仪表盘预览](./docs/images/dashboard.png)
+## 📚 使用文档
 
-## 文档
-
-### 安装指南
-- [1Panel 部署教程](./docs/zh-CN/installation/1panel.md)
-- [Docker Compose 快速部署](./docs/zh-CN/installation/docker-compose.md)
-- [aapanel + Docker 部署（推荐）](./docs/zh-CN/installation/aapanel-docker.md)
-- [aapanel 部署教程](./docs/zh-CN/installation/aapanel.md)
+### 部署教程
+- [使用 1Panel 部署](./docs/zh-CN/installation/1panel.md)
+- [Docker Compose 部署](./docs/zh-CN/installation/docker-compose.md)
+- [使用 aaPanel 部署](./docs/zh-CN/installation/aapanel.md)
+- [aaPanel + Docker 部署](./docs/zh-CN/installation/aapanel-docker.md)（推荐）
 
 ### 迁移指南
-- [v2board dev 版本迁移](./docs/zh-CN/migration/v2board-dev.md)
-- [v2board 1.7.4 迁移](./docs/zh-CN/migration/v2board-1.7.4.md)
-- [v2board 1.7.3 迁移](./docs/zh-CN/migration/v2board-1.7.3.md)
-- [v2board wyx2685 迁移](./docs/zh-CN/migration/v2board-wyx2685.md)
-- [配置迁移指南](./docs/zh-CN/migration/config.md)
+- [从 v2board dev 迁移](./docs/zh-CN/migration/v2board-dev.md)
+- [从 v2board 1.7.4 迁移](./docs/zh-CN/migration/v2board-1.7.4.md)
+- [从 v2board 1.7.3 迁移](./docs/zh-CN/migration/v2board-1.7.3.md)
+- [从 v2board wyx2685 迁移](./docs/zh-CN/migration/v2board-wyx2685.md)
 
-### 开发文档
-- [在线设备限制设计](./docs/zh-CN/development/device-limit.md)
-- [性能对比报告](./docs/zh-CN/development/performance.md)
+## 🛠️ 技术栈
 
-## 注意事项
-> 修改后台路径需要重启才能生效：
+- 后端：Laravel 11 + Octane
+- 管理面板：React + Shadcn UI + TailwindCSS
+- 用户前端：Vue3 + TypeScript + NaiveUI
+- 部署方案：Docker + Docker Compose
+- 缓存系统：Redis + Octane Cache
+
+## 📷 界面预览
+
+![仪表盘预览](./docs/images/dashboard.png)
+
+## ⚠️ 免责声明
+
+本项目仅供学习交流使用，使用本项目造成的任何后果由使用者自行承担。
+
+## 🔔 注意事项
+
+1. 修改后台路径后需要重启：
 ```bash
 docker compose restart
 ```
-> 对于 aapanel 安装，需要重启 webman 守护进程 
+
+2. aaPanel 环境下需要重启 Octane 守护进程
+
+## 🤝 参与贡献
+
+欢迎提交 Issue 和 Pull Request 来帮助改进项目。 

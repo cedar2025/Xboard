@@ -62,7 +62,7 @@ apt update && apt install -y git
 yum update && yum install -y git
 
 # Clone repository
-git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard ./
+git clone -b compose --depth 1 https://github.com/cedar2025/Xboard ./
 
 # Configure Docker Compose
 ```

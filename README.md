@@ -1,39 +1,32 @@
-# Xboard New
+# Xboard
 
-[English](README.md) | [中文](README_CN.md)
+<div align="center">
 
-[![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
+[![Telegram](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
+![PHP](https://img.shields.io/badge/PHP-8.2+-green.svg)
+![MySQL](https://img.shields.io/badge/MySQL-5.7+-blue.svg)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## About Xboard
-Xboard New is a panel system based on Xboard's secondary development, featuring a rewritten admin interface and optimized system architecture to improve maintainability.
+English | [简体中文](README_CN.md)
 
-## Disclaimer
-This project is personally developed and maintained. I do not guarantee any availability or take responsibility for any consequences of using this software.
+</div>
 
-## Features
-- Upgraded to Laravel 11
-- Added Octane support
-- Rebuilt admin interface using React + Shadcn UI + TailwindCSS
-- Rebuilt user frontend using Vue3 + TypeScript + NaiveUI + Unocss + Pinia
-- Using Docker Compose as containerization deployment tool
-- Using Docker as containerization tool
-- Restructured theme management with theme upload support and active theme exposure
-- Using Octane Cache for settings caching
-- Optimized system architecture for better maintainability
+## 📖 Introduction
 
-## System Requirements
-- PHP 8.2+
-- Composer
-- MySQL 5.7+
-- Redis
-- Laravel
-- Octane
+Xboard is a modern panel system built on Laravel 11, focusing on providing a clean and efficient user experience.
 
-## Quick Start
-Deploy and experience Xboard quickly using the following commands (based on Docker + SQLite):
+## ✨ Features
+
+- 🚀 Built with Laravel 11 + Octane for significant performance gains
+- 🎨 Redesigned admin interface (React + Shadcn UI)
+- 📱 Modern user frontend (Vue3 + TypeScript)
+- 🐳 Ready-to-use Docker deployment solution
+- 🎯 Optimized system architecture for better maintainability
+
+## 🚀 Quick Start
 
 ```bash
-git clone -b compose-new --depth 1 https://github.com/cedar2025/Xboard && \
+git clone -b compose --depth 1 https://github.com/cedar2025/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
@@ -42,35 +35,49 @@ docker compose run -it --rm \
     web php artisan xboard:install && \
 docker compose up -d
 ```
-After installation, visit http://SERVER_IP:7001
 
-> Note: Admin credentials will be displayed during installation, make sure to save them.
+> After installation, visit: http://SERVER_IP:7001  
+> ⚠️ Make sure to save the admin credentials shown during installation
 
-## Preview
+## 📚 Documentation
+
+### Deployment Guides
+- [Deploy with 1Panel](./docs/zh-CN/installation/1panel.md)
+- [Deploy with Docker Compose](./docs/zh-CN/installation/docker-compose.md)
+- [Deploy with aaPanel](./docs/zh-CN/installation/aapanel.md)
+- [Deploy with aaPanel + Docker](./docs/zh-CN/installation/aapanel-docker.md) (Recommended)
+
+### Migration Guides
+- [Migrate from v2board dev](./docs/zh-CN/migration/v2board-dev.md)
+- [Migrate from v2board 1.7.4](./docs/zh-CN/migration/v2board-1.7.4.md)
+- [Migrate from v2board 1.7.3](./docs/zh-CN/migration/v2board-1.7.3.md)
+- [Migrate from v2board wyx2685](./docs/zh-CN/migration/v2board-wyx2685.md)
+
+## 🛠️ Tech Stack
+
+- Backend: Laravel 11 + Octane
+- Admin Panel: React + Shadcn UI + TailwindCSS
+- User Frontend: Vue3 + TypeScript + NaiveUI
+- Deployment: Docker + Docker Compose
+- Caching: Redis + Octane Cache
+
+## 📷 Preview
+
 ![Dashboard Preview](./docs/images/dashboard.png)
 
-## Documentation
+## ⚠️ Disclaimer
 
-### Installation
-- [1Panel Installation](./docs/zh-CN/installation/1panel.md)
-- [Docker Compose Installation](./docs/zh-CN/installation/docker-compose.md)
-- [aapanel + Docker Installation](./docs/zh-CN/installation/aapanel-docker.md)
-- [aapanel Installation](./docs/zh-CN/installation/aapanel.md)
+This project is for learning and communication purposes only. Users are responsible for any consequences of using this project.
 
-### Migration
-- [v2board dev Migration](./docs/zh-CN/migration/v2board-dev.md)
-- [v2board 1.7.4 Migration](./docs/zh-CN/migration/v2board-1.7.4.md)
-- [v2board 1.7.3 Migration](./docs/zh-CN/migration/v2board-1.7.3.md)
-- [v2board wyx2685 Migration](./docs/zh-CN/migration/v2board-wyx2685.md)
-- [Config Migration](./docs/zh-CN/migration/config.md)
+## 🔔 Important Notes
 
-### Development
-- [Device Limit Design](./docs/zh-CN/development/device-limit.md)
-- [Performance Comparison](./docs/zh-CN/development/performance.md)
-
-## Note
-> Modifying admin path requires restart to take effect:
+1. Restart required after modifying admin path:
 ```bash
 docker compose restart
 ```
-> For aapanel installations, restart the webman daemon process
+
+2. For aaPanel installations, restart the Octane daemon process
+
+## 🤝 Contributing
+
+Issues and Pull Requests are welcome to help improve the project.
