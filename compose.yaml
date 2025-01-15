@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/cedar2025/xboard:new
+    image: ghcr.io/cedar2025/xboard:latest
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./.env:/www/.env
@@ -17,7 +17,7 @@ services:
     ports:
       - 7001:7001
   horizon:
-    image: ghcr.io/cedar2025/xboard:new
+    image: ghcr.io/cedar2025/xboard:latest
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./.env:/www/.env
