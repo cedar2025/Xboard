@@ -2,7 +2,7 @@ name: Docker Build and Publish
 
 on:
   push:
-    branches: ["new"]
+    branches: ["master"]
   workflow_dispatch:
 
 env:
@@ -72,7 +72,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:new
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:master
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
