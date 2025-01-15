@@ -63,7 +63,9 @@ docker compose up -d
 
 ## 📷 界面预览
 
-![仪表盘预览](./docs/images/dashboard.png)
+![管理员后台](./docs/images/admin.png)
+
+![用户前端](./docs/images/user.png)
 
 ## ⚠️ 免责声明
 

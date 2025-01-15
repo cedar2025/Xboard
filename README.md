@@ -62,8 +62,9 @@ docker compose up -d
 - Caching: Redis + Octane Cache
 
 ## 📷 Preview
+![Admin Preview](./docs/images/admin.png)
 
-![Dashboard Preview](./docs/images/dashboard.png)
+![User Preview](./docs/images/user.png)
 
 ## ⚠️ Disclaimer
 
