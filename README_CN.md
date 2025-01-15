@@ -2,34 +2,34 @@
 
 [English](README.md) | [中文](README_CN.md)
 
-[![Telegram 频道](https://img.shields.io/badge/Telegram-频道-blue)](https://t.me/XboardOfficial)
+[![Telegram 频道](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
 
-# 关于Xboard
-Xboard New是基于Xboard二次开发，重写后台管理并优化系统架构的面板，提升可维护性。
+## 关于 Xboard
+Xboard New 是基于 Xboard 二次开发的面板系统，重写了管理界面，优化了系统架构，提高了可维护性。
 
-# 免责声明
-本项目只是本人个人学习开发并维护，本人不保证任何可用性，也不对使用本软件造成的任何后果负责。
+## 免责声明
+本项目为个人开发维护，不保证可用性，使用本软件造成的任何后果由使用者自行承担。
 
-# Xboard New 特点 
-- 升级Laravel11
-- 增加Octane支持
-- 使用React + Shadcn UI + TailwindCSS重构后台管理
-- 使用Vue3 + TypeScript + NaiveUI + Unocss + Pinia重构用户前端
-- 使用Docker Compose作为容器化部署工具
-- 使用Docker作为容器化部署工具
-- 重构主题管理，增加主题上传，并且只暴露激活主题
-- 使用Octane Cache作为设置的缓存
-- 优化系统架构，提升可维护性
+## 特性
+- 升级到 Laravel 11
+- 添加 Octane 支持
+- 使用 React + Shadcn UI + TailwindCSS 重构管理界面
+- 使用 Vue3 + TypeScript + NaiveUI + Unocss + Pinia 重构用户前端
+- 使用 Docker Compose 作为容器化部署工具
+- 使用 Docker 作为容器化工具
+- 重构主题管理，支持主题上传和主题暴露
+- 使用 Octane Cache 进行设置缓存
+- 优化系统架构，提高可维护性
 
-# 系统要求
-- PHP8.2+
+## 系统要求
+- PHP 8.2+
 - Composer
-- MySQL5.7+
+- MySQL 5.7+
 - Redis
 - Laravel
 - Octane
 
-## 快速体验
+## 快速开始
 使用以下命令快速部署并体验 Xboard（基于 Docker + SQLite）：
 
 ```bash
@@ -44,29 +44,33 @@ docker compose up -d
 ```
 安装完成后访问 http://服务器IP:7001
 
-> 提示：安装过程中会显示管理员账号密码，请务必保存。
+> 注意：管理员账号密码会在安装时显示，请务必保存。
 
-## 页面展示
-![示例图片](./docs/images/dashboard.png)
+## 预览
+![仪表盘预览](./docs/images/dashboard.png)
 
-## 安装 / 更新 / 回滚
-你可以点击查看下列方式的安装、更新步骤：
-- [1panel 部署](./docs/1panel安装指南.md)
-- [Docker Compose 纯命令行快速部署](./docs/docker-compose安装指南.md)
-- [aapanel + Docker Compose (推荐)](./docs/aapanel+docker安装指南.md)
-- [aapanel 部署](./docs/aapanel安装指南.md)
+## 文档
 
-### 从其他版本迁移
-#### 数据库迁移
-**根据你的版本查看对应的迁移指南进行迁移**
-- v2board dev 23/10/27的版本 [点击跳转迁移指南](./docs/v2b_dev迁移指南.md)
-- v2board 1.7.4 [点击跳转迁移指南](./docs/v2b_1.7.4迁移指南.md)
-- v2board 1.7.3 [点击跳转迁移指南](./docs/v2b_1.7.3迁移指南.md)
-- v2board wyx2685 [点击跳转迁移指南](./docs/v2b_wyx2685迁移指南.md)
+### 安装指南
+- [1Panel 部署教程](./docs/zh-CN/installation/1panel.md)
+- [Docker Compose 快速部署](./docs/zh-CN/installation/docker-compose.md)
+- [aapanel + Docker 部署（推荐）](./docs/zh-CN/installation/aapanel-docker.md)
+- [aapanel 部署教程](./docs/zh-CN/installation/aapanel.md)
 
-### 注意
+### 迁移指南
+- [v2board dev 版本迁移](./docs/zh-CN/migration/v2board-dev.md)
+- [v2board 1.7.4 迁移](./docs/zh-CN/migration/v2board-1.7.4.md)
+- [v2board 1.7.3 迁移](./docs/zh-CN/migration/v2board-1.7.3.md)
+- [v2board wyx2685 迁移](./docs/zh-CN/migration/v2board-wyx2685.md)
+- [配置迁移指南](./docs/zh-CN/migration/config.md)
+
+### 开发文档
+- [在线设备限制设计](./docs/zh-CN/development/device-limit.md)
+- [性能对比报告](./docs/zh-CN/development/performance.md)
+
+## 注意事项
 > 修改后台路径需要重启才能生效：
 ```bash
 docker compose restart
 ```
-> 如果是aapanel安装则需要重启 webman守护进程 
+> 对于 aapanel 安装，需要重启 webman 守护进程 

@@ -49,20 +49,24 @@ After installation, visit http://SERVER_IP:7001
 ## Preview
 ![Dashboard Preview](./docs/images/dashboard.png)
 
-## Installation / Update / Rollback
-Click to view installation and update steps for:
-- [1panel Deployment](./docs/1panel安装指南.md)
-- [Docker Compose Quick Deployment](./docs/docker-compose安装指南.md)
-- [aapanel + Docker Compose (Recommended)](./docs/aapanel+docker安装指南.md)
-- [aapanel Deployment](./docs/aapanel安装指南.md)
+## Documentation
 
-## Migration from Other Versions
-### Database Migration
-**Check the corresponding migration guide based on your version:**
-- v2board dev 23/10/27 version [Migration Guide](./docs/v2b_dev迁移指南.md)
-- v2board 1.7.4 [Migration Guide](./docs/v2b_1.7.4迁移指南.md)
-- v2board 1.7.3 [Migration Guide](./docs/v2b_1.7.3迁移指南.md)
-- v2board wyx2685 [Migration Guide](./docs/v2b_wyx2685迁移指南.md)
+### Installation
+- [1Panel Installation](./docs/zh-CN/installation/1panel.md)
+- [Docker Compose Installation](./docs/zh-CN/installation/docker-compose.md)
+- [aapanel + Docker Installation](./docs/zh-CN/installation/aapanel-docker.md)
+- [aapanel Installation](./docs/zh-CN/installation/aapanel.md)
+
+### Migration
+- [v2board dev Migration](./docs/zh-CN/migration/v2board-dev.md)
+- [v2board 1.7.4 Migration](./docs/zh-CN/migration/v2board-1.7.4.md)
+- [v2board 1.7.3 Migration](./docs/zh-CN/migration/v2board-1.7.3.md)
+- [v2board wyx2685 Migration](./docs/zh-CN/migration/v2board-wyx2685.md)
+- [Config Migration](./docs/zh-CN/migration/config.md)
+
+### Development
+- [Device Limit Design](./docs/zh-CN/development/device-limit.md)
+- [Performance Comparison](./docs/zh-CN/development/performance.md)
 
 ## Note
 > Modifying admin path requires restart to take effect:
