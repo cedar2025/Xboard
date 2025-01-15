@@ -209,6 +209,9 @@ class General implements ProtocolInterface
             $params['obfs'] = 'salamander';
             $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
         }
+        if(isset($server['ports'])){
+            $params['mport'] = $server['ports'];
+        }
 
         $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
 
