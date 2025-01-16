@@ -3,7 +3,7 @@ services:
   xboard:
     # build: 
     #   context: .
-    image: ghcr.io/cedar2025/xboard:latest
+    image: ghcr.io/cedar2025/xboard:legacy
     volumes:
       - ./:/www/
       # - ./.env:/www/.env

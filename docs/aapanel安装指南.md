@@ -48,7 +48,7 @@ rm -rf .htaccess 404.html 502.html index.html .user.ini
 ```
 > 执行命令从 Github 克隆到当前目录。
 ```
-git clone https://github.com/cedar2025/Xboard.git ./
+git clone -b legacy https://github.com/cedar2025/Xboard.git ./
 ```
 > 执行命令安装依赖包以及V2board
 ```
