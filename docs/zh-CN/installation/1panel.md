@@ -135,10 +135,6 @@ services:
       - 1panel-network
     volumes:
       - ./.docker/.data/redis:/data
-
-networks:
-  1panel-network:
-    driver: bridge
 ```
 
 #### 4.3 初始化安装
