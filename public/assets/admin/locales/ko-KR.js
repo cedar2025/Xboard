@@ -481,7 +481,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "delete": "삭제",
     "edit": "편집",
     "view": "보기",
-    "toggleNavigation": "내비게이션 전환",
+    "toggleNavigation": "네비게이션 전환",
     "toggleSidebar": "사이드바 전환",
     "search": "검색...",
     "theme": {
@@ -497,6 +497,19 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "success": "복사 성공",
       "error": "복사 실패",
       "errorLog": "클립보드에 복사하는 중 오류 발생"
+    },
+    "table": {
+      "noData": "데이터가 없습니다",
+      "pagination": {
+        "selected": "{{selected}}개 선택됨, 총 {{total}}개",
+        "itemsPerPage": "페이지당 표시",
+        "page": "페이지",
+        "pageOf": "/ {{total}} 페이지",
+        "firstPage": "첫 페이지로 이동",
+        "previousPage": "이전 페이지",
+        "nextPage": "다음 페이지",
+        "lastPage": "마지막 페이지로 이동"
+      }
     }
   },
   "dashboard": {

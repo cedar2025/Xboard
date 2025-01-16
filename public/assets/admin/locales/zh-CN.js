@@ -784,6 +784,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "success": "复制成功",
       "error": "复制失败",
       "errorLog": "复制到剪贴板时出错"
+    },
+    "table": {
+      "noData": "暂无数据",
+      "pagination": {
+        "selected": "已选择 {{selected}} 项，共 {{total}} 项",
+        "itemsPerPage": "每页显示",
+        "page": "第",
+        "pageOf": "页，共 {{total}} 页",
+        "firstPage": "跳转到第一页",
+        "previousPage": "上一页",
+        "nextPage": "下一页",
+        "lastPage": "跳转到最后一页"
+      }
     }
   },
   "dashboard": {

@@ -780,6 +780,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "success": "Copied successfully",
       "error": "Copy failed",
       "errorLog": "Error copying to clipboard"
+    },
+    "table": {
+      "noData": "No data available",
+      "pagination": {
+        "selected": "{{selected}} of {{total}} items selected",
+        "itemsPerPage": "Per page",
+        "page": "Page",
+        "pageOf": "of {{total}} pages",
+        "firstPage": "Go to first page",
+        "previousPage": "Previous page",
+        "nextPage": "Next page",
+        "lastPage": "Go to last page"
+      }
     }
   },
   "dashboard": {
