@@ -66,7 +66,7 @@ class StripeALLInOne {
                 'confirm' => true,
                 'payment_method' => $stripePaymentMethod->id,
                 'automatic_payment_methods' => ['enabled' => true],
-                'statement_descriptor' => 'sub-' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
+                'statement_descriptor_suffix' => 'sub-' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
                 'description' => $this->config['description'],
                 'metadata' => [
                     'user_id' => $order['user_id'],
