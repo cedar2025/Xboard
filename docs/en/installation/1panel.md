@@ -147,11 +147,20 @@ docker compose up -d
 
 ## 4. Version Update
 
+> 💡 Important Note: The update command varies depending on your installation version:
+> - If you installed recently (new version), use this command:
 ```bash
 docker compose pull && \
 docker compose run -it --rm web php artisan xboard:update && \
 docker compose up -d
 ```
+> - If you installed earlier (old version), replace `web` with `xboard`:
+```bash
+docker compose pull && \
+docker compose run -it --rm xboard php artisan xboard:update && \
+docker compose up -d
+```
+> 🤔 Not sure which to use? Try the new version command first, if it fails, use the old version command.
 
 ## Important Notes
 

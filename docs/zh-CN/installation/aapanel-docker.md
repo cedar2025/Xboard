@@ -1,10 +1,37 @@
-## aaPanel + Docker 快速部署指南
+# Xboard 在 aaPanel + Docker 环境下的部署指南
 
-本指南介绍如何使用 aaPanel + Docker Compose 部署 Xboard。
+## 目录
+1. [环境要求](#环境要求)
+2. [快速部署](#快速部署)
+3. [详细配置](#详细配置)
+4. [维护指南](#维护指南)
+5. [故障排查](#故障排查)
 
-### 1. 环境准备
+## 环境要求
 
-1. 安装 Docker：
+### 硬件配置
+- CPU: 1核心及以上
+- 内存: 2GB及以上
+- 硬盘: 10GB及以上可用空间
+
+### 软件要求
+- 操作系统: Ubuntu 20.04+ / CentOS 7+ / Debian 10+
+- aaPanel 最新版
+- Docker 和 Docker Compose
+- Nginx（任意版本）
+- MySQL 5.7+
+
+## 快速部署
+
+### 1. 安装 aaPanel
+```bash
+curl -sSL https://www.aapanel.com/script/install_6.0_en.sh -o install_6.0_en.sh && \
+bash install_6.0_en.sh aapanel
+```
+
+### 2. 基础环境配置
+
+#### 2.1 安装 Docker
 ```bash
 # 安装 Docker
 curl -sSL https://get.docker.com | bash
@@ -14,28 +41,22 @@ systemctl enable docker
 systemctl start docker
 ```
 
-2. 安装 aaPanel：
-```bash
-curl -sSL https://www.aapanel.com/script/install_6.0_en.sh -o install_6.0_en.sh && \
-bash install_6.0_en.sh aapanel
-```
-
-### 2. 环境配置
-
-在 aaPanel 中安装 LNMP：
+#### 2.2 安装必要组件
+在 aaPanel 面板中安装：
 - Nginx（任意版本）
 - MySQL 5.7
 - ⚠️ 无需安装 PHP 和 Redis
 
-### 3. 部署步骤
+### 3. 站点配置
 
-1. 添加站点：
-   - 进入 aaPanel > Website > Add site
-   - 域名：填写你的域名
+#### 3.1 创建站点
+1. 导航至：aaPanel > Website > Add site
+2. 填写信息：
+   - 域名：填写您的站点域名
    - 数据库：选择 MySQL
    - PHP 版本：选择纯静态
 
-2. 安装 Xboard：
+#### 3.2 部署 Xboard
 ```bash
 # 进入站点目录
 cd /www/wwwroot/你的域名
@@ -53,16 +74,17 @@ cp compose.sample.yaml compose.yaml
 # 安装依赖并初始化
 docker compose run -it --rm web sh init.sh
 ```
-> 安装完成后请保存返回的后台地址和管理员账号密码
+> ⚠️ 请妥善保存安装完成后返回的后台地址和管理员账号密码
 
-3. 启动服务：
+#### 3.3 启动服务
 ```bash
 docker compose up -d
 ```
 
-4. 配置反向代理：
+#### 3.4 配置反向代理
+在站点配置中添加以下内容：
 ```nginx
-location ^~ / {
+location / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
@@ -79,14 +101,28 @@ location ^~ / {
 }
 ```
 
-### 4. 版本更新
+## 维护指南
 
+### 版本更新
+
+> 💡 重要提示：根据您安装的版本不同，更新命令可能略有差异：
+> - 如果您是最近安装的新版本，使用下面的命令：
 ```bash
-docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+docker compose pull && \
+docker compose run -it --rm web php artisan xboard:update && \
+docker compose up -d
 ```
+> - 如果您是较早安装的旧版本，需要将命令中的 `web` 改为 `xboard`，即：
+```bash
+docker compose pull && \
+docker compose run -it --rm xboard php artisan xboard:update && \
+docker compose up -d
+```
+> 🤔 不确定用哪个？可以先尝试使用新版命令，如果报错再使用旧版命令。
 
-### 注意事项
+### 日常维护
+- 定期检查日志: `docker compose logs`
+- 监控系统资源使用情况
+- 定期备份数据库和配置文件
 
-- ⚠️ 请确保防火墙已开启，避免 7001 端口暴露到公网
-- 代码修改后需要重启服务才能生效
-- 建议配置 SSL 证书以确保安全访问
+## 故障排查
