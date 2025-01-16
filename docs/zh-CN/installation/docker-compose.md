@@ -48,13 +48,22 @@ docker compose up -d
 
 ### 3. 版本更新
 
+> 💡 重要提示：根据您安装的版本不同，更新命令可能略有差异：
+> - 如果您是最近安装的新版本，使用下面的命令：
 ```bash
 cd Xboard
-docker compose pull
-docker compose down
-docker compose run -it --rm web php artisan xboard:update
+docker compose pull && \
+docker compose run -it --rm web php artisan xboard:update && \
 docker compose up -d
 ```
+> - 如果您是较早安装的旧版本，需要将命令中的 `web` 改为 `xboard`，即：
+```bash
+cd Xboard
+docker compose pull && \
+docker compose run -it --rm xboard php artisan xboard:update && \
+docker compose up -d
+```
+> 🤔 不确定用哪个？可以先尝试使用新版命令，如果报错再使用旧版命令。
 
 ### 4. 版本回滚
 
