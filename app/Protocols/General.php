@@ -92,14 +92,15 @@ class General implements ProtocolInterface
                 break;
             case 'ws':
                 $config['type'] = 'ws';
-                $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
                     $config['host'] = $host;
-                }
                 break;
             case 'grpc':
                 $config['type'] = 'grpc';
-                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
+                if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config['path'] = $path;
                 break;
             default:
                 break;
@@ -144,20 +145,23 @@ class General implements ProtocolInterface
         // 处理传输协议
         switch ($server['protocol_settings']['network']) {
             case 'ws':
-                $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
                     $config['host'] = $host;
-                }
                 break;
             case 'grpc':
-                $config['serviceName'] = data_get($protocol_settings, 'network_settings.serviceName');
+                if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config['path'] = $path;
                 break;
             case 'kcp':
-                $config['path'] = data_get($protocol_settings, 'network_settings.seed');
+                if ($path = data_get($protocol_settings, 'network_settings.seed'))
+                    $config['path'] = $path;
                 $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'none');
                 break;
             case 'httpupgrade':
-                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
                 $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
                 break;
             case 'xhttp':
@@ -179,7 +183,7 @@ class General implements ProtocolInterface
     {
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $array = [];    
+        $array = [];
         $array['allowInsecure'] = $protocol_settings['allow_insecure'];
         if ($serverName = data_get($protocol_settings, 'server_name')) {
             $array['peer'] = $serverName;
@@ -209,7 +213,7 @@ class General implements ProtocolInterface
             $params['obfs'] = 'salamander';
             $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
         }
-        if(isset($server['ports'])){
+        if (isset($server['ports'])) {
             $params['mport'] = $server['ports'];
         }
 
