@@ -189,6 +189,23 @@ class General implements ProtocolInterface
             $array['peer'] = $serverName;
             $array['sni'] = $serverName;
         }
+        switch ($server['protocol_settings']['network']) {
+            case 'ws':
+                $array['type'] = 'ws';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $array['host'] = $host;
+                break;
+            case 'grpc':
+                // Follow V2rayN family standards
+                $array['type'] = 'grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['serviceName'] = $serviceName;
+                break;
+            default:
+                break;
+        }
         $query = http_build_query($array);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";

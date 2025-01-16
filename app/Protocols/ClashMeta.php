@@ -167,16 +167,15 @@ class ClashMeta implements ProtocolInterface
                 break;
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts'] = [
-                    'path' => data_get($protocol_settings, 'network_settings.path'),
-                    'headers' => ['Host' => data_get($protocol_settings, 'network_settings.headers.Host', $server['host'])]
-                ];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';
-                $array['grpc-opts'] = [
-                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
-                ];
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
             default:
                 break;
@@ -226,23 +225,15 @@ class ClashMeta implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
-                }
                 break;
             case 'grpc':
                 $array['network'] = 'grpc';
-                $array['grpc-opts'] = [
-                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
-                ];
-                break;
-            case 'h2':
-                $array['network'] = 'h2';
-                $array['h2-opts'] = [
-                    'path' => data_get($protocol_settings, 'network_settings.path', '/'),
-                    'host' => data_get($protocol_settings, 'network_settings.host')
-                ];
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
             default:
                 break;
@@ -268,20 +259,23 @@ class ClashMeta implements ProtocolInterface
         }
 
         switch (data_get($protocol_settings, 'network')) {
-            case 'grpc':
-                $array['network'] = 'grpc';
-                $array['grpc-opts'] = [
-                    'grpc-service-name' => data_get($protocol_settings, 'network_settings.serviceName')
-                ];
+            case 'tcp':
+                $array['network'] = 'tcp';
                 break;
             case 'ws':
                 $array['network'] = 'ws';
-                $array['ws-opts']['path'] = data_get($protocol_settings, 'network_settings.path', '/');
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
-                }
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
             default:
+                $array['network'] = 'tcp';
                 break;
         }
 
