@@ -21,5 +21,5 @@ RUN composer install --optimize-autoloader --no-cache --no-dev \
     
 ENV ENABLE_WEB=true \
     ENABLE_HORIZON=true \
-    ENABLE_REDIS=true 
+    ENABLE_REDIS=false 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
