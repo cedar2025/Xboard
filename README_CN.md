@@ -41,6 +41,9 @@ docker compose up -d
 
 ## 📚 使用文档
 
+### 🔄 升级提示
+> 🚨 **重要：** 此次版本跨度较大，请严格按照升级文档进行升级，必要时请备份数据库再进行升级。升级跟迁移不是一个东西，请不要混淆。
+
 ### 部署教程
 - [使用 1Panel 部署](./docs/zh-CN/installation/1panel.md)
 - [Docker Compose 部署](./docs/zh-CN/installation/docker-compose.md)

@@ -39,7 +39,10 @@ docker compose up -d
 > After installation, visit: http://SERVER_IP:7001  
 > ⚠️ Make sure to save the admin credentials shown during installation
 
-## 📚 Documentation
+## �� Documentation
+
+### 🔄 Upgrade Notice
+> 🚨 **Important:** This version involves significant changes. Please strictly follow the upgrade documentation and backup your database before upgrading. Note that upgrading and migration are different processes, do not confuse them.
 
 ### Deployment Guides
 - [Deploy with 1Panel](./docs/zh-CN/installation/1panel.md)
