@@ -175,6 +175,7 @@ class XboardInstall extends Command
                     // 连接失败，输出错误消息
                     $this->error("redis连接失败：" . $e->getMessage());
                     $this->info("请重新输入REDIS配置");
+                    $enableRedis = false;
                     sleep(1);
                 }
             }
