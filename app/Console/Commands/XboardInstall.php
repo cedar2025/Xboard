@@ -145,7 +145,6 @@ class XboardInstall extends Command
                 }
             }
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
-            $envConfig['INSTALLED'] = true;
             $isReidsValid = false;
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
@@ -212,6 +211,8 @@ class XboardInstall extends Command
 
             $defaultSecurePath = hash('crc32b', config('app.key'));
             $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
+            $envConfig['INSTALLED'] = true;
+            $this->saveToEnv($envConfig);
         } catch (\Exception $e) {
             $this->error($e);
         }
