@@ -114,7 +114,7 @@ services:
 
 networks:
   1panel-network:
-    driver: bridge
+    external: true
 ```
 
 5. Initialize Installation:
