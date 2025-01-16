@@ -149,7 +149,7 @@ class SingBox
                     $array['transport']['path'] = $wsSettings['path'];
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
                     $array['transport']['headers'] = ['Host' => array($wsSettings['headers']['Host'])];
-                $array['transport']['max_early_data'] = 2048;
+                $array['transport']['max_early_data'] = 2560;
                 $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
             }
         }
@@ -217,7 +217,7 @@ class SingBox
                     $array['transport']['path'] = $wsSettings['path'];
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
                     $array['transport']['headers'] = ['Host' => array($wsSettings['headers']['Host'])];
-                $array['transport']['max_early_data'] = 2048;
+                $array['transport']['max_early_data'] = 2560;
                 $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
             }
         }
@@ -272,7 +272,7 @@ class SingBox
                 if (isset($server['network_settings']['headers']['Host'])) {
                     $array['transport']['headers'] = ['Host' => array($server['network_settings']['headers']['Host'])];
                 }
-                $array['transport']['max_early_data'] = 2048;
+                $array['transport']['max_early_data'] = 2560;
                 $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
             }
         }
