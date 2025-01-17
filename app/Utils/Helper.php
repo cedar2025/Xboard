@@ -110,11 +110,20 @@ class Helper
 
     public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
+        $strs = 'QWERTYUIOPASDFGHJKLZXCVBNM1234567890qwertyuiopasdfghjklzxcvbnm';
+        $randstr = substr(str_shuffle($strs), 0, rand(4,8));
+        
         $path = route('client.subscribe', ['token' => $token], false);
         if(!$subscribeUrl){
             $subscribeUrls = explode(',', admin_setting('subscribe_url'));
             $subscribeUrl = \Arr::random($subscribeUrls);
             $subscribeUrl = self::replaceByPattern($subscribeUrl);
+            if (strpos($subscribeUrl, "*") !== false) {
+                $subscribeUrl = str_replace("*", $randstr, $subscribeUrl);
+            } elseif (strpos($subscribeUrl, '{uuid}') !== false) {
+                $user = User::where('token', $token)->first();
+                $subscribeUrl = str_replace('{uuid}', $user->uuid, $subscribeUrl);
+            }
         }
         return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
     }
