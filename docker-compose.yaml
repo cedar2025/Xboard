@@ -1,7 +1,7 @@
 version: '3'
 services:
   xboard:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: ghcr.io/cedar2025/xboard:legacy
     volumes:
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data/
