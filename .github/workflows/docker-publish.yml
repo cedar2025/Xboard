@@ -74,6 +74,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:legacy
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:dev
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:latest
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
