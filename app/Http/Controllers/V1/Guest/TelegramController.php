@@ -23,7 +23,7 @@ class TelegramController extends Controller
         if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
             throw new ApiException('access_token is error', 401);
         }
-        $data = json_decode(get_request_content(),true);
+        $data = json_decode(request()->getContent(),true);
         $this->formatMessage($data);
         $this->formatChatJoinRequest($data);
         $this->handle();

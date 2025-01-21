@@ -45,7 +45,7 @@ class ClearUser extends Command
             ->where('last_login_at', NULL);
         $count = $builder->count();
         if ($builder->delete()) {
-            $this->info("已删除${count}位没有任何数据的用户");
+            $this->info("已删除{$count}位没有任何数据的用户");
         }
     }
 }

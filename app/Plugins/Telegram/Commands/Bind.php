@@ -17,8 +17,19 @@ class Bind extends Telegram {
         }
         $subscribeUrl = $message->args[0];
         $subscribeUrl = parse_url($subscribeUrl);
-        parse_str($subscribeUrl['query'], $query);
-        $token = $query['token'];
+        
+        // 首先尝试从查询参数获取token
+        $token = null;
+        if (isset($subscribeUrl['query'])) {
+            parse_str($subscribeUrl['query'], $query);
+            $token = $query['token'] ?? null;
+        }
+        
+        if (!$token && isset($subscribeUrl['path'])) {
+            $pathParts = explode('/', trim($subscribeUrl['path'], '/'));
+            $token = end($pathParts);
+        }
+
         if (!$token) {
             throw new ApiException('订阅地址无效');
         }

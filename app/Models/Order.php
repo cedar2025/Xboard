@@ -40,4 +40,22 @@ class Order extends Model
         self::TYPE_RESET_TRAFFIC => '流量重置',
     ];
 
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class, 'payment_id', 'id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function commission_log()
+    {
+        return $this->hasMany(CommissionLog::class, 'trade_no', 'trade_no');
+    }
 }

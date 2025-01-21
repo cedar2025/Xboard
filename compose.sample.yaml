@@ -1,0 +1,31 @@
+services:
+  web:
+    image: ghcr.io/cedar2025/xboard:latest
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./:/www/
+    environment:
+      - docker=true
+    depends_on:
+      - redis
+    network_mode: host
+    command: php artisan octane:start --port=7001 --host=0.0.0.0
+    restart: on-failure
+  horizon:
+    image: ghcr.io/cedar2025/xboard:latest
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./:/www/
+    restart: on-failure
+    network_mode: host
+    command: php artisan horizon
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
+    restart: unless-stopped
+    volumes:
+      - ./.docker/.data/redis:/data
+    sysctls:
+      net.core.somaxconn: 1024

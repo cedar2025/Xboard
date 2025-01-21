@@ -17,11 +17,11 @@ class InviteController extends Controller
 {
     public function save(Request $request)
     {
-        if (InviteCode::where('user_id', $request->user['id'])->where('status', 0)->count() >= admin_setting('invite_gen_limit', 5)) {
+        if (InviteCode::where('user_id', $request->user()->id)->where('status', 0)->count() >= admin_setting('invite_gen_limit', 5)) {
             return $this->fail([400,__('The maximum number of creations has been reached')]);
         }
         $inviteCode = new InviteCode();
-        $inviteCode->user_id = $request->user['id'];
+        $inviteCode->user_id = $request->user()->id;
         $inviteCode->code = Helper::randomChar(8);
         return $this->success($inviteCode->save());
     }
@@ -30,7 +30,7 @@ class InviteController extends Controller
     {
         $current = $request->input('current') ? $request->input('current') : 1;
         $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
-        $builder = CommissionLog::where('invite_user_id', $request->user['id'])
+        $builder = CommissionLog::where('invite_user_id', $request->user()->id)
             ->where('get_amount', '>', 0)
             ->orderBy('created_at', 'DESC');
         $total = $builder->count();
@@ -45,7 +45,7 @@ class InviteController extends Controller
     public function fetch(Request $request)
     {
         $commission_rate = admin_setting('invite_commission', 10);
-        $user = User::find($request->user['id'])
+        $user = User::find($request->user()->id)
                 ->load(['codes' => fn($query) => $query->where('status', 0)]);
         if ($user->commission_rate) {
             $commission_rate = $user->commission_rate;

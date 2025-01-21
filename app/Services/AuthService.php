@@ -2,103 +2,56 @@
 
 namespace App\Services;
 
-use App\Utils\CacheKey;
-use App\Utils\Helper;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
-    private $user;
+    private User $user;
 
     public function __construct(User $user)
     {
         $this->user = $user;
     }
 
-    public function generateAuthData(Request $request)
+    public function generateAuthData(): array
     {
-        $guid = Helper::guid();
-        $authData = JWT::encode([
-            'id' => $this->user->id,
-            'session' => $guid,
-        ], config('app.key'), 'HS256');
-        self::addSession($this->user->id, $guid, [
-            'ip' => $request->ip(),
-            'login_at' => time(),
-            'ua' => $request->userAgent()
-        ]);
+        // Create a new Sanctum token with device info
+        $token = $this->user->createToken(
+            Str::random(20), // token name (device identifier)
+            ['*'], // abilities
+            now()->addYear() // expiration
+        );
+
+        // Format token: remove ID prefix and add Bearer
+        $tokenParts = explode('|', $token->plainTextToken);
+        $formattedToken = 'Bearer ' . ($tokenParts[1] ?? $tokenParts[0]);
+
         return [
             'token' => $this->user->token,
+            'auth_data' => $formattedToken,
             'is_admin' => $this->user->is_admin,
-            'auth_data' => $authData
         ];
     }
 
-    public static function decryptAuthData($jwt)
+    public function getSessions(): array
     {
-        try {
-            if (!Cache::has($jwt)) {
-                $data = (array)JWT::decode($jwt, new Key(config('app.key'), 'HS256'));
-                if (!self::checkSession($data['id'], $data['session'])) return false;
-                $user = User::select([
-                    'id',
-                    'email',
-                    'is_admin',
-                    'is_staff'
-                ])
-                    ->find($data['id']);
-                if (!$user) return false;
-                Cache::put($jwt, $user->toArray(), 3600);
-            }
-            return Cache::get($jwt);
-        } catch (\Exception $e) {
-            return false;
-        }
+        return $this->user->tokens()->get()->toArray();
     }
 
-    private static function checkSession($userId, $session)
+    public function removeSession(): bool
     {
-        $sessions = (array)Cache::get(CacheKey::get("USER_SESSIONS", $userId)) ?? [];
-        if (!in_array($session, array_keys($sessions))) return false;
+        $this->user->tokens()->delete();
         return true;
     }
 
-    private static function addSession($userId, $guid, $meta)
+    public static function findUserByBearerToken(string $bearerToken): ?User
     {
-        $cacheKey = CacheKey::get("USER_SESSIONS", $userId);
-        $sessions = (array)Cache::get($cacheKey, []);
-        $sessions[$guid] = $meta;
-        if (!Cache::put(
-            $cacheKey,
-            $sessions
-        )) return false;
-        return true;
-    }
-
-    public function getSessions()
-    {
-        return (array)Cache::get(CacheKey::get("USER_SESSIONS", $this->user->id), []);
-    }
-
-    public function removeSession($sessionId)
-    {
-        $cacheKey = CacheKey::get("USER_SESSIONS", $this->user->id);
-        $sessions = (array)Cache::get($cacheKey, []);
-        unset($sessions[$sessionId]);
-        if (!Cache::put(
-            $cacheKey,
-            $sessions
-        )) return false;
-        return true;
-    }
-
-    public function removeAllSession()
-    {
-        $cacheKey = CacheKey::get("USER_SESSIONS", $this->user->id);
-        return Cache::forget($cacheKey);
+        $token = str_replace('Bearer ', '', $bearerToken);
+        
+        $accessToken = PersonalAccessToken::findToken($token);
+        
+        return $accessToken?->tokenable;
     }
 }

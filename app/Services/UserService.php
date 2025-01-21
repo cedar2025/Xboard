@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
-use App\Jobs\BatchTrafficFetchJob;
+use App\Jobs\StatServerJob;
+use App\Jobs\StatUserJob;
+use App\Jobs\TrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
-use Illuminate\Support\Facades\Bus;
 
 class UserService
 {
@@ -169,26 +170,14 @@ class UserService
         return true;
     }
 
-    public function trafficFetch(array $server, string $protocol, array $data, string $nodeIp = null)
+    public function trafficFetch(array $server, string $protocol, array $data)
     {
 
         $timestamp = strtotime(date('Y-m-d'));
-        $statService = new StatisticalService();
-        $statService->setStartAt($timestamp);
-        // 获取子节点
-        $childServer = ($server['parent_id'] == null && $nodeIp) ? ServerService::getChildServer($server['id'], $protocol, $nodeIp) : null;
-        foreach ($data as $uid => $v) {
-            $u = $v[0];
-            $d = $v[1];
-            $targetServer = $childServer ?? $server;
-            $statService->statUser($targetServer['rate'], $uid, $u, $d); //如果存在子节点则使用子节点的倍率
-            if (!blank($childServer)) { //如果存在子节点，则给子节点计算流量
-                $statService->statServer($childServer['id'], $protocol, $u, $d);
-            }
-            $statService->statServer($server['id'], $protocol, $u, $d);
-        }
-        collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol, $childServer) {
-            BatchTrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp, $childServer);
+        collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol) {
+            TrafficFetchJob::dispatch($server, $chunk->toArray(), $protocol, $timestamp);
+            StatUserJob::dispatch($server, $chunk->toArray(), $protocol, 'd');
+            StatServerJob::dispatch($server, $chunk->toArray(), $protocol, 'd');
         });
     }
 }

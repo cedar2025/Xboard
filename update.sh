@@ -11,12 +11,12 @@ if ! command -v git &> /dev/null; then
 fi
 
 git config --global --add safe.directory $(pwd)
-git fetch --all && git reset --hard origin/dev && git pull origin dev
+git fetch --all && git reset --hard origin/master && git pull origin master
 rm -rf composer.lock composer.phar
 wget https://github.com/composer/composer/releases/latest/download/composer.phar -O composer.phar
 php composer.phar update -vvv
 php artisan xboard:update
 
-if [ -f "/etc/init.d/bt" ] || [ "$docker" ]; then
+if [ -f "/etc/init.d/bt" ] || [ -f "/.dockerenv" ]; then
   chown -R www:www $(pwd);
 fi

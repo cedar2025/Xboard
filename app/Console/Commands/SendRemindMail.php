@@ -39,11 +39,16 @@ class SendRemindMail extends Command
      */
     public function handle()
     {
+        if (!(bool) admin_setting('remind_mail_enable', false)) {
+            return;
+        }
         $users = User::all();
         $mailService = new MailService();
         foreach ($users as $user) {
-            if ($user->remind_expire) $mailService->remindExpire($user);
-            if ($user->remind_traffic) $mailService->remindTraffic($user);
+            if ($user->remind_expire)
+                $mailService->remindExpire($user);
+            if ($user->remind_traffic)
+                $mailService->remindTraffic($user);
         }
     }
 }
