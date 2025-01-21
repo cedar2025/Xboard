@@ -2,7 +2,7 @@ name: Docker Build and Publish
 
 on:
   push:
-    branches: ["legacy"]
+    branches: ["legacy", "dev"]
   workflow_dispatch:
 
 env:
@@ -73,6 +73,7 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:legacy
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:dev
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
