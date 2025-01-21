@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Google\Cloud\Storage\StorageClient;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Process\Process;
 
 class BackupDatabase extends Command
@@ -85,14 +87,14 @@ class BackupDatabase extends Command
                 ]);
         
                 // 输出文件链接
-                \Log::channel('backup')->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
+                Log::channel('backup')->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
                 $this->info("🎉：数据库备份已上传到 Google Cloud Storage: $objectName");
-                \File::delete($compressedBackupPath);
+                File::delete($compressedBackupPath);
             }
         }catch(\Exception $e){
-            \Log::channel('backup')->error("😔：数据库备份失败 \n" . $e);
+            Log::channel('backup')->error("😔：数据库备份失败 \n" . $e);
             $this->error("😔：数据库备份失败\n" . $e);
-            \File::delete($compressedBackupPath);
+            File::delete($compressedBackupPath);
         }
     }
 }

@@ -1,43 +1,39 @@
 ---
-name: Bug report  | 问题反馈
-about: Tell us what problems you have encountered
-title: "[BUG]"
-labels: ''
+name: 🐛 问题反馈 | Bug Report
+about: 提交使用过程中遇到的问题 | Report an issue
+title: "问题："
+labels: '🐛 bug'
 assignees: ''
-
 ---
 
-🙇‍♂️🙇‍♂️🙇‍♂️注意：XrayR等非XBoard问题请前往项目方提问
-🙇‍♂️🙇‍♂️🙇‍♂️Note: XrayR and other non-XBoard issues please go to the project side to ask questions
+<!-- 🔴 请注意：XrayR等非XBoard问题请前往相应项目提问 -->
+<!-- 🔴 Note: For XrayR and other non-XBoard issues, please report to their respective projects -->
+
+> ⚠️ 请务必按照模板填写完整信息，没有详细描述的issue可能会被忽略或关闭
+> ⚠️ Please follow the template to provide complete information, issues without detailed description may be ignored or closed
+
+**基本信息 | Basic Info**
+```yaml
+XBoard版本 | Version:
+部署方式 | Deployment: [Docker/手动部署]
+PHP版本 | Version:
+数据库 | Database:
+```
+
+**问题描述 | Description**
+<!-- 简要描述你遇到的问题 -->
 
 
-The XBoard version number you are using
-当前使用的XBoard版本号(git commit id)
---------
+**复现步骤 | Steps**
+<!-- 如何复现这个问题？ -->
+1. 
+2. 
 
-Would you like to deploy using Docker?
-你的部署方式（是否为Docker）
---------
+**相关截图 | Screenshots**
+<!-- 拖拽图片到这里（请注意隐藏敏感信息）-->
 
-
-Please briefly describe the issue you encountered (preferably with reproducible steps).
-简单描述你遇到的问题（最好带上复现步骤）
---------
-
-
-
-Screenshot of the reported error(Please do desensitization)
-报告错误的截图（请做脱敏处理）
---------
-
-
-
-Screenshot of the reported error(Please do desensitization)
-报告错误的截图（请做脱敏处理）
---------
-
-
-
-Run the php artisan log:export 7 command to export log files (where 7 represents logs for the last 7 days).
-运行`php artisan log:export 7` 命令导出的日志文件(其中7为最近7天的日志)。
---------
+**日志信息 | Logs**
+<!-- storage/logs 目录下的日志 -->
+```log
+// 粘贴日志内容到这里
+```

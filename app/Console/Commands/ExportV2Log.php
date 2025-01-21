@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ExportV2Log extends Command
 {
@@ -20,7 +21,7 @@ class ExportV2Log extends Command
         $days = $this->argument('days');
         $date = Carbon::now()->subDays($days)->startOfDay();
 
-        $logs = \DB::table('v2_log')
+        $logs = DB::table('v2_log')
                     ->where('created_at', '>=', $date->timestamp)
                     ->get();
 

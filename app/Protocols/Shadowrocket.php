@@ -4,10 +4,11 @@ namespace App\Protocols;
 
 use App\Models\ServerHysteria;
 use App\Utils\Helper;
+use App\Contracts\ProtocolInterface;
 
-class Shadowrocket
+class Shadowrocket implements ProtocolInterface
 {
-    public $flag = 'shadowrocket';
+    public $flags = ['shadowrocket'];
     private $servers;
     private $user;
 
@@ -17,6 +18,11 @@ class Shadowrocket
         $this->servers = $servers;
     }
 
+    public function getFlags(): array
+    {
+        return $this->flags;
+    }
+
     public function handle()
     {
         $servers = $this->servers;
@@ -24,9 +30,9 @@ class Shadowrocket
 
         $uri = '';
         //display remaining traffic and expire date
-        $upload = round($user['u'] / (1024*1024*1024), 2);
-        $download = round($user['d'] / (1024*1024*1024), 2);
-        $totalTraffic = round($user['transfer_enable'] / (1024*1024*1024), 2);
+        $upload = round($user['u'] / (1024 * 1024 * 1024), 2);
+        $download = round($user['d'] / (1024 * 1024 * 1024), 2);
+        $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
         $expiredDate = date('Y-m-d', $user['expired_at']);
         $uri .= "STATUS=🚀↑:{$upload}GB,↓:{$download}GB,TOT:{$totalTraffic}GB💡Expires:{$expiredDate}\r\n";
         foreach ($servers as $item) {
@@ -52,68 +58,62 @@ class Shadowrocket
 
     public static function buildShadowsocks($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
+        $password = data_get($server, 'password', $password);
         $str = str_replace(
             ['+', '/', '='],
             ['-', '_', ''],
-            base64_encode("{$server['cipher']}:{$password}")
+            base64_encode("{$protocol_settings['cipher']}:{$password}")
         );
         $uri = "ss://{$str}@{$server['host']}:{$server['port']}";
-        if ($server['obfs'] == 'http') {
-            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$server['obfs-host']};obfs-uri={$server['obfs-path']}";
+        if ($protocol_settings['obfs'] == 'http') {
+            $obfs_host = data_get($protocol_settings, 'obfs_settings.obfs-host');
+            $obfs_path = data_get($protocol_settings, 'obfs_settings.obfs-path');
+            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$obfs_host};obfs-uri={$obfs_path}";
         }
-        return $uri."#{$name}\r\n";
+        return $uri . "#{$name}\r\n";
     }
 
     public static function buildVmess($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $userinfo = base64_encode('auto:' . $uuid . '@' . $server['host'] . ':' . $server['port']);
         $config = [
             'tfo' => 1,
             'remark' => $server['name'],
             'alterId' => 0
         ];
-        if ($server['tls']) {
+        if ($protocol_settings['tls']) {
             $config['tls'] = 1;
-            if ($server['tlsSettings']) {
-                $tlsSettings = $server['tlsSettings'];
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                    $config['allowInsecure'] = (int)$tlsSettings['allowInsecure'];
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                    $config['peer'] = $tlsSettings['serverName'];
+            if (data_get($protocol_settings, 'tls_settings')) {
+                if (data_get($protocol_settings, 'tls_settings.allow_insecure') && !empty(data_get($protocol_settings, 'tls_settings.allow_insecure')))
+                    $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
+                if (data_get($protocol_settings, 'tls_settings.server_name') && !empty(data_get($protocol_settings, 'tls_settings.server_name')))
+                    $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
             }
         }
-        if ($server['network'] === 'tcp') {
-            if ($server['networkSettings']) {
-                $tcpSettings = $server['networkSettings'];
-                if (isset($tcpSettings['header']['type']) && !empty($tcpSettings['header']['type']))
-                    $config['obfs'] = $tcpSettings['header']['type'];
-                if (isset($tcpSettings['header']['request']['path'][0]) && !empty($tcpSettings['header']['request']['path'][0]))
-                    $config['path'] = $tcpSettings['header']['request']['path'][0];
-            }
-        }
-        if ($server['network'] === 'ws') {
-            $config['obfs'] = "websocket";
-            if ($server['networkSettings']) {
-                $wsSettings = $server['networkSettings'];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $config['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $config['obfsParam'] = $wsSettings['headers']['Host'];
-            }
-        }
-        if ($server['network'] === 'grpc') {
-            $config['obfs'] = "grpc";
-            if ($server['networkSettings']) {
-                $grpcSettings = $server['networkSettings'];
-                if (isset($grpcSettings['serviceName']) && !empty($grpcSettings['serviceName']))
-                    $config['path'] = $grpcSettings['serviceName'];
-            }
-            if (isset($tlsSettings)) {
-                $config['host'] = $tlsSettings['serverName'];
-            } else {
-                $config['host'] = $server['host'];
-            }
+
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
+                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                }
+                break;
+            case 'ws':
+                $config['obfs'] = "websocket";
+                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['obfsParam'] = $host;
+                }
+                break;
+            case 'grpc':
+                $config['obfs'] = "grpc";
+                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
+                $config['host'] = data_get($protocol_settings, 'tls_settings.server_name') ?? $server['host'];
+                break;
         }
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
         $uri = "vmess://{$userinfo}?{$query}";
@@ -123,6 +123,7 @@ class Shadowrocket
 
     public static function buildVless($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $userinfo = base64_encode('auto:' . $uuid . '@' . $server['host'] . ':' . $server['port']);
         $config = [
             'tfo' => 1,
@@ -131,82 +132,59 @@ class Shadowrocket
         ];
 
         // 判断是否开启xtls
-        if(isset($server['flow']) && !blank($server['flow'])){
+        if (data_get($protocol_settings, 'flow')) {
             $xtlsMap = [
                 'none' => 0,
                 'xtls-rprx-direct' => 1,
                 'xtls-rprx-vision' => 2
             ];
-            // 判断 flow 的值是否在 xtlsMap 中存在
-            if (array_key_exists($server['flow'], $xtlsMap)) {
+            if (array_key_exists(data_get($protocol_settings, 'flow'), $xtlsMap)) {
                 $config['tls'] = 1;
-                $config['xtls'] = $xtlsMap[$server['flow']];
+                $config['xtls'] = $xtlsMap[data_get($protocol_settings, 'flow')];
             }
         }
 
-        if ($server['tls']) {
-            switch($server['tls']){
-                case 1:
-                    $config['tls'] = 1;
-                    if ($server['tls_settings']) {
-                        $tlsSettings = $server['tls_settings'];
-                        if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                            $config['allowInsecure'] = (int)$tlsSettings['allowInsecure'];
-                        if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
-                            $config['peer'] = $tlsSettings['server_name'];
-                    }
-                    break;
-                case 2:
-                    $config['tls'] = 1;
-                    $tls_settings = $server['tls_settings'];
-                    if(($tls_settings['public_key'] ?? null)
-                    && ($tls_settings['short_id'] ?? null)
-                    && ($tls_settings['server_name'] ?? null)){
-                        $config['sni'] = $tls_settings['server_name'];
-                        $config['pbk'] = $tls_settings['public_key'];
-                        $config['sid'] = $tls_settings['short_id'];
-                        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq']; //随机客户端指纹
-                        $config['fp'] = $fingerprints[rand(0,count($fingerprints) - 1)];
-                    };
-                    break;
-            }
-
-        }
-        if ($server['network'] === 'tcp') {
-            if ($server['network_settings']) {
-                $tcpSettings = $server['network_settings'];
-                if (isset($tcpSettings['header']['type']) && !empty($tcpSettings['header']['type']))
-                    $config['obfs'] = $tcpSettings['header']['type'];
-                if (isset($tcpSettings['header']['request']['path'][0]) && !empty($tcpSettings['header']['request']['path'][0]))
-                    $config['path'] = $tcpSettings['header']['request']['path'][0];
-                if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
-                    $hosts = $tcpSettings['header']['request']['headers']['Host'];
-                    $config['obfsParam'] = $hosts[array_rand($hosts)];
+        switch (data_get($protocol_settings, 'tls')) {
+            case 1:
+                $config['tls'] = 1;
+                $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $config['peer'] = $serverName;
                 }
-            }
+                break;
+            case 2:
+                $config['tls'] = 1;
+                $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $config['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
+                $config['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
+                $config['fp'] = Helper::getRandFingerprint();
+                break;
+            default:
+                break;
         }
-        if ($server['network'] === 'ws') {
-            $config['obfs'] = "websocket";
-            if ($server['network_settings']) {
-                $wsSettings = $server['network_settings'];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $config['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $config['obfsParam'] = $wsSettings['headers']['Host'];
-            }
-        }
-        if ($server['network'] === 'grpc') {
-            $config['obfs'] = "grpc";
-            if ($server['network_settings']) {
-                $grpcSettings = $server['network_settings'];
-                if (isset($grpcSettings['serviceName']) && !empty($grpcSettings['serviceName']))
-                    $config['path'] = $grpcSettings['serviceName'];
-            }
-            if (isset($tlsSettings)) {
-                $config['host'] = $tlsSettings['server_name'];
-            } else {
-                $config['host'] = $server['host'];
-            }
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
+                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                }
+                break;
+            case 'ws':
+                $config['obfs'] = "websocket";
+                if (data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                }
+
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
+                    $config['obfsParam'] = $host;
+                }
+                break;
+            case 'grpc':
+                $config['obfs'] = "grpc";
+                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
+                $config['host'] = data_get($protocol_settings, 'tls_settings.server_name') ?? $server['host'];
+                break;
         }
 
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
@@ -217,31 +195,23 @@ class Shadowrocket
 
     public static function buildTrojan($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $params = [
-            'allowInsecure' => $server['allow_insecure'],
-            'peer' => $server['server_name']
-        ];
-        // trojan-go配置
-        if(in_array($server['network'], ["grpc", "ws"])){
-            // grpc配置
-            if($server['network'] === "grpc" && isset($server['networkSettings']['serviceName'])) {
+        $params['allowInsecure'] = data_get($protocol_settings, 'allow_insecure');
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $params['peer'] = $serverName;
+        }
+        switch (data_get($protocol_settings, 'network')) {
+            case 'grpc':
                 $params['obfs'] = 'grpc';
-                $params['path'] = $server['networkSettings']['serviceName'];
-            }
-            // ws配置
-            if($server['network'] === "ws") {
-                $path = '';
-                $host = '';
-                if(isset($server['networkSettings']['path'])) {
-                    $path = $server['networkSettings']['path'];
-                }
-                if(isset($server['networkSettings']['headers']['Host'])){
-                    $host = $server['networkSettings']['headers']['Host'];
-                }
+                $params['path'] = data_get($protocol_settings, 'network_settings.serviceName');
+                break;
+            case 'ws':
+                $host = data_get($protocol_settings, 'network_settings.headers.Host');
+                $path = data_get($protocol_settings, 'network_settings.path');
                 $params['plugin'] = "obfs-local;obfs=websocket;obfs-host={$host};obfs-uri={$path}";
-            }
-        };
+                break;
+        }
         $query = http_build_query($params);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}&tfo=1#{$name}";
         $uri .= "\r\n";
@@ -250,36 +220,45 @@ class Shadowrocket
 
     public static function buildHysteria($password, $server)
     {
-        switch($server['version']){
+        $protocol_settings = $server['protocol_settings'];
+        switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $params = [
                     "auth" => $password,
-                    "upmbps" => $server['up_mbps'],
-                    "downmbps" => $server['down_mbps'],
+                    "upmbps" => data_get($protocol_settings, 'bandwidth.up'),
+                    "downmbps" => data_get($protocol_settings, 'bandwidth.down'),
                     "protocol" => 'udp',
-                    "peer" => $server['server_name'],
                     "fastopen" => 1,
-                    "alpn" => ServerHysteria::$alpnMap[$server['alpn']]
                 ];
-                if($server['is_obfs']){
-                    $params["obfs"] = "xplus";
-                    $params["obfsParam"] =$server['server_key'];
+                if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+                    $params['peer'] = $serverName;
                 }
-                if($server['insecure']) $params['insecure'] = $server['insecure'];
-                if(isset($server['ports'])) $params['mport'] = $server['ports'];
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $params["obfs"] = "xplus";
+                    $params["obfsParam"] = data_get($protocol_settings, 'obfs_settings.password');
+                }
+                $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
+                if (isset($server['ports']))
+                    $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
                 $uri = "hysteria://{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";
                 break;
             case 2:
                 $params = [
-                    "peer" => $server['server_name'],
                     "obfs" => 'none',
                     "fastopen" => 1
                 ];
-                if($server['is_obfs']) $params['obfs-password'] = $server['server_key'];
-                if($server['insecure']) $params['insecure'] = $server['insecure'];
-                if(isset($server['ports'])) $params['mport'] = $server['ports'];
+                if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+                    $params['peer'] = $serverName;
+                }
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $params['obfs'] = data_get($protocol_settings, 'obfs.type');
+                    $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
+                }
+                $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
+                if (isset($server['ports']))
+                    $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
                 $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";

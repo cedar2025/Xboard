@@ -2,9 +2,10 @@
 
 namespace App\Payments;
 
+use App\Contracts\PaymentInterface;
 use App\Exceptions\ApiException;
 
-class Coinbase
+class Coinbase implements PaymentInterface
 {
     protected $config;
     public function __construct($config)
@@ -12,7 +13,7 @@ class Coinbase
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'coinbase_url' => [
@@ -33,7 +34,7 @@ class Coinbase
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
 
         $params = [
@@ -64,10 +65,10 @@ class Coinbase
         ];
     }
 
-    public function notify($params)
+    public function notify($params): array
     {
 
-        $payload = trim(get_request_content());
+        $payload = trim(request()->getContent());
         $json_param = json_decode($payload, true);
 
 

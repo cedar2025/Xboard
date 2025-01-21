@@ -3,10 +3,12 @@ namespace App\Services;
 
 use App\Models\CommissionLog;
 use App\Models\Order;
+use App\Models\Server;
 use App\Models\Stat;
 use App\Models\StatServer;
 use App\Models\StatUser;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -120,7 +122,7 @@ class StatisticalService
             $key = "{$rate}_{$uid}";
             $stats[$key] = $stats[$key] ?? [
                 'record_at' => $this->startAt,
-                'server_rate' => floatval($rate),
+                'server_rate' => number_format($rate, 2, '.', ''),
                 'u' => 0,
                 'd' => 0,
                 'user_id' => intval($userId),
@@ -238,6 +240,67 @@ class StatisticalService
                 return $this->buildInviteRank($limit);
             }
         }
+    }
+
+    /**
+     * 获取指定日期范围内的节点流量排行
+     * @param mixed ...$times 可选值：'today', 'tomorrow', 'last_week'，或指定日期范围，格式：timestamp
+     * @return array
+     */
+
+    public static function getServerRank(...$times)
+    {
+        $startAt = 0;
+        $endAt = Carbon::tomorrow()->endOfDay()->timestamp;
+
+        if (count($times) == 1) {
+            switch ($times[0]) {
+                case 'today':
+                    $startAt = Carbon::today()->startOfDay()->timestamp;
+                    $endAt = Carbon::today()->endOfDay()->timestamp;
+                    break;
+                case 'yesterday':
+                    $startAt = Carbon::yesterday()->startOfDay()->timestamp;
+                    $endAt = Carbon::yesterday()->endOfDay()->timestamp;
+                    break;
+                case 'last_week':
+                    $startAt = Carbon::now()->subWeek()->startOfWeek()->timestamp;
+                    $endAt = Carbon::now()->endOfDay()->timestamp;
+                    break;
+            }
+        } else if (count($times) == 2) {
+            $startAt = $times[0];
+            $endAt = $times[1];
+        }
+
+        $statistics = Server::whereHas(
+            'stats',
+            function ($query) use ($startAt, $endAt) {
+                $query->where('record_at', '>=', $startAt)
+                    ->where('record_at', '<', $endAt)
+                    ->where('record_type', 'd');
+            }
+        )
+            ->get()
+            ->each(function ($item) {
+                $item->u = (int) $item->stats()->sum('u');
+                $item->d = (int) $item->stats()->sum('d');
+                $item->total = (int) $item->u + $item->d;
+                $item->server_name = optional($item->parent)->name ?? $item->name;
+                $item->server_id = $item->id;
+                $item->server_type = $item->type;
+            })
+            ->sortByDesc('total')
+            ->select([
+                'server_name',
+                'server_id',
+                'server_type',
+                'u',
+                'd',
+                'total'
+            ])
+            ->values()->toArray();
+        return $statistics;
     }
 
     private function buildInviteRank($limit)

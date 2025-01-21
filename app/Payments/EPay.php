@@ -2,7 +2,9 @@
 
 namespace App\Payments;
 
-class EPay
+use App\Contracts\PaymentInterface;
+
+class EPay implements PaymentInterface
 {
     protected $config;
     public function __construct($config)
@@ -10,7 +12,7 @@ class EPay
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'url' => [
@@ -36,7 +38,7 @@ class EPay
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
         $params = [
             'money' => $order['total_amount'] / 100,
@@ -46,7 +48,7 @@ class EPay
             'out_trade_no' => $order['trade_no'],
             'pid' => $this->config['pid']
         ];
-        if(optional($this->config)['type']){
+        if (optional($this->config)['type']) {
             $params['type'] = $this->config['type'];
         }
         ksort($params);
@@ -60,7 +62,7 @@ class EPay
         ];
     }
 
-    public function notify($params)
+    public function notify($params): array|bool
     {
         $sign = $params['sign'];
         unset($params['sign']);

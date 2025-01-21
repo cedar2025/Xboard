@@ -15,8 +15,7 @@ class SettingServiceProvider extends ServiceProvider
      */
     public function register()
     {
-
-        $this->app->bind(Setting::class, function (Application $app) {
+        $this->app->scoped(Setting::class, function (Application $app) {
             return new Setting();
         });
 

@@ -2,9 +2,11 @@
 
 namespace App\Protocols;
 
-class Loon
+use App\Contracts\ProtocolInterface;
+
+class Loon implements ProtocolInterface
 {
-    public $flag = 'loon';
+    public $flags = ['loon'];
     private $servers;
     private $user;
 
@@ -12,6 +14,11 @@ class Loon
     {
         $this->user = $user;
         $this->servers = $servers;
+    }
+
+    public function getFlags(): array
+    {
+        return $this->flags;
     }
 
     public function handle()
@@ -22,8 +29,9 @@ class Loon
         $uri = '';
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
+            if (
+                $item['type'] === 'shadowsocks'
+                && in_array(data_get($item['protocol_settings'], 'cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
@@ -43,17 +51,18 @@ class Loon
             }
         }
         return response($uri, 200)
-                ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
+            ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
 
     public static function buildShadowsocks($password, $server)
     {
+        $cipher = data_get($server['protocol_settings'], 'cipher');
         $config = [
             "{$server['name']}=Shadowsocks",
             "{$server['host']}",
             "{$server['port']}",
-            "{$server['cipher']}",
+            "{$cipher}",
             "{$password}",
             'fast-open=false',
             'udp=true'
@@ -66,6 +75,7 @@ class Loon
 
     public static function buildVmess($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $config = [
             "{$server['name']}=vmess",
             "{$server['host']}",
@@ -77,43 +87,44 @@ class Loon
             "alterId=0"
         ];
 
-        if ($server['network'] === 'tcp') {
-            array_push($config, 'transport=tcp');
-            if ($server['networkSettings']) {
-                $tcpSettings = $server['networkSettings'];
-                if (isset($tcpSettings['header']['type']) && !empty($tcpSettings['header']['type']))
+        if (data_get($protocol_settings, 'tls')) {
+            if (data_get($protocol_settings, 'network') === 'tcp')
+                $config[] = 'over-tls=true';
+            if (data_get($protocol_settings, 'tls_settings')) {
+                $tls_settings = data_get($protocol_settings, 'tls_settings');
+                $config[] = 'skip-cert-verify=' . ($tls_settings['allow_insecure'] ? 'true' : 'false');
+                if (data_get($tls_settings, 'server_name'))
+                    $config[] = "tls-name={$tls_settings['server_name']}";
+            }
+        }
+
+        switch (data_get($server['protocol_settings'], 'network')) {
+            case 'tcp':
+                $config[] = 'transport=tcp';
+                $tcpSettings = data_get($protocol_settings, 'network_settings');
+                if (data_get($tcpSettings, 'header.type'))
                     $config = str_replace('transport=tcp', "transport={$tcpSettings['header']['type']}", $config);
-                if (isset($tcpSettings['header']['request']['path'][0]) && !empty($tcpSettings['header']['request']['path'][0]))
-                    $paths = $tcpSettings['header']['request']['path'];
-                    $path = array_rand(array_rand($paths));
-                    array_push($config, "path={$path}");
-                if (isset($tcpSettings['header']['request']['headers']['Host'][0])){
-                    $hosts = $tcpSettings['header']['request']['headers']['Host'];
-                    $host = $hosts[array_rand($hosts)];
-                    array_push($config, "host={$host}");
+                if (data_get($tcpSettings, key: 'header.request.path')) {
+                    $paths = data_get($tcpSettings, key: 'header.request.path');
+                    $path = $paths[array_rand($paths)];
+                    $config[] = "path={$path}";
                 }
-            }
-        }
-        if ($server['tls']) {
-            if ($server['network'] === 'tcp')
-                array_push($config, 'over-tls=true');
-            if ($server['tlsSettings']) {
-                $tlsSettings = $server['tlsSettings'];
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
-                    array_push($config, 'skip-cert-verify=' . ($tlsSettings['allowInsecure'] ? 'true' : 'false'));
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
-                    array_push($config, "tls-name={$tlsSettings['serverName']}");
-            }
-        }
-        if ($server['network'] === 'ws') {
-            array_push($config, 'transport=ws');
-            if ($server['networkSettings']) {
-                $wsSettings = $server['networkSettings'];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    array_push($config, "path={$wsSettings['path']}");
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    array_push($config, "host={$wsSettings['headers']['Host']}");
-            }
+                if (data_get($tcpSettings, key: 'header.request.headers.Host')) {
+                    $hosts = data_get($tcpSettings, key: 'header.request.headers.Host');
+                    $host = $hosts[array_rand($hosts)];
+                    $config[] = "host={$host}";
+                }
+                break;
+            case 'ws':
+                $config[] = 'transport=ws';
+                $wsSettings = data_get($protocol_settings, 'network_settings');
+                if (data_get($wsSettings, key: 'path'))
+                    $config[] = "path={$wsSettings['path']}";
+                if (data_get($wsSettings, key: 'headers.Host'))
+                    $config[] = "host={$wsSettings['headers']['Host']}";
+                break;
+
+
         }
 
         $uri = implode(',', $config);
@@ -123,17 +134,18 @@ class Loon
 
     public static function buildTrojan($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $config = [
             "{$server['name']}=trojan",
             "{$server['host']}",
             "{$server['port']}",
             "{$password}",
-            $server['server_name'] ? "tls-name={$server['server_name']}" : "",
+            data_get($protocol_settings, 'server_name') ? "tls-name={$protocol_settings['server_name']}" : "",
             'fast-open=false',
             'udp=true'
         ];
-        if (!empty($server['allow_insecure'])) {
-            array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (!empty($protocol_settings['allow_insecure'])) {
+            $config[] = data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
@@ -141,20 +153,75 @@ class Loon
         return $uri;
     }
 
+    public static function buildVless($uuid, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $config = [
+            "{$server['name']}=vless",
+            $server['host'],
+            $server['port'],
+            $uuid,
+            'fast-open=false',
+            'udp=true',
+            'alterId=0'
+        ];
+        switch ((int) data_get($protocol_settings, 'tls')) {
+            case 1:
+                $config[] = 'over-tls=true';
+                $tlsSettings = data_get($protocol_settings, 'tls_settings', []);
+                if ($tlsSettings) {
+                    $config[] = 'skip-cert-verify=' . (data_get($tlsSettings, 'allow_insecure') ? 'true' : 'false');
+                    if ($serverName = data_get($tlsSettings, 'server_name')) {
+                        $config[] = "tls-name={$serverName}";
+                    }
+                }
+                break;
+            case 2:
+                return '';
+        }
+        $network_settings = data_get($protocol_settings, 'network_settings', []);
+        switch ((string) data_get($network_settings, 'network')) {
+            case 'tcp':
+                $config[] = 'transport=tcp';
+                if ($headerType = data_get($network_settings, 'header.type')) {
+                    $config = collect($config)->map(function ($item) use ($headerType) {
+                        return $item === 'transport=tcp' ? "transport={$headerType}" : $item;
+                    })->toArray();
+                }
+                if ($paths = data_get($network_settings, 'header.request.path')) {
+                    $config[] = 'path=' . $paths[array_rand($paths)];
+                }
+                break;
+            case 'ws':
+                $config[] = 'transport=ws';
+                if ($path = data_get($network_settings, 'path')) {
+                    $config[] = "path={$path}";
+                }
+
+                if ($host = data_get($network_settings, 'headers.Host')) {
+                    $config[] = "host={$host}";
+                }
+                break;
+        }
+        return implode(',', $config) . "\r\n";
+    }
+
     public static function buildHysteria($password, $server, $user)
     {
-        if ($server['version'] !== 2){
-            return ;
+        $protocol_settings = $server['protocol_settings'];
+        if ($protocol_settings['version'] != 2) {
+            return;
         }
         $config = [
             "{$server['name']}=Hysteria2",
             $server['host'],
             $server['port'],
             $password,
-            $server['server_name'] ? "sni={$server['server_name']}" : "(null)"
+            $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "(null)"
         ];
-        if ($server['insecure'])  $config[] = "skip-cert-verify=true";
-        $config[] = "download-bandwidth=" . ($user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps']);
+        if (data_get($protocol_settings, 'tls.allow_insecure'))
+            $config[] = "skip-cert-verify=true";
+        $config[] = "download-bandwidth=" . data_get($protocol_settings, 'bandwidth.download_bandwidth');
         $config[] = "udp=true";
         $config = array_filter($config);
         $uri = implode(',', $config);

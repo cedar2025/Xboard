@@ -14,7 +14,7 @@ class AppController extends Controller
     public function getConfig(Request $request)
     {
         $servers = [];
-        $user = $request->user;
+        $user = $request->user();
         $userService = new UserService();
         if ($userService->isAvailable($user)) {
             $servers = ServerService::getAvailableServers($user);
@@ -30,8 +30,9 @@ class AppController extends Controller
         $proxies = [];
 
         foreach ($servers as $item) {
+            $protocol_settings = $item['protocol_settings'];
             if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
+                && in_array(data_get($protocol_settings, 'cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',

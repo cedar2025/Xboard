@@ -119,9 +119,9 @@ class Helper
         return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
     }
 
-    public static function randomPort($range) {
+    public static function randomPort($range): int {
         $portRange = explode('-', $range);
-        return rand($portRange[0], $portRange[1]);
+        return random_int($portRange[0], $portRange[1]);
     }
 
     public static function base64EncodeUrlSafe($data)
@@ -161,4 +161,15 @@ class Helper
     public static function getIpByDomainName($domain) {
         return gethostbynamel($domain) ?: [];
     }
+
+    public static function getRandFingerprint() {
+        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq'];
+        return \Arr::random($fingerprints);
+    }
+
+    public static function encodeURIComponent($str) {
+        $revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')');
+        return strtr(rawurlencode($str), $revert);
+    }
+    
 }

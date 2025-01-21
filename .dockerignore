@@ -23,3 +23,4 @@ docker-compose.yml
 storage/laravels.conf
 storage/laravels.pid
 storage/laravels-timer-process.pid
+/frontend

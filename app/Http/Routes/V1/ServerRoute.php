@@ -17,19 +17,12 @@ class ServerRoute
             $router->group([
                 'prefix' => 'UniProxy',
                 'middleware' => 'server'
-            ] ,function ($route) {
+            ], function ($route) {
                 $route->get('config', [UniProxyController::class, 'config']);
                 $route->get('user', [UniProxyController::class, 'user']);
                 $route->post('push', [UniProxyController::class, 'push']);
                 $route->post('alive', [UniProxyController::class, 'alive']);
-            });
-            $router->group([
-                'prefix' => 'Deepbwork',
-                'middleware' => 'server:vmess'
-            ], function ($route) {
-                $route->get('config', [DeepbworkController::class, 'config']);
-                $route->get('user', [DeepbworkController::class, 'user']);
-                $route->post('submit', [DeepbworkController::class, 'submit']);
+                $route->get('alivelist', [UniProxyController::class, 'alivelist']);
             });
             $router->group([
                 'prefix' => 'ShadowsocksTidalab',

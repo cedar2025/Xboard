@@ -21,7 +21,7 @@ class TicketController extends Controller
     {
         if ($request->input('id')) {
             $ticket = Ticket::where('id', $request->input('id'))
-                ->where('user_id', $request->user['id'])
+                ->where('user_id', $request->user()->id)
                 ->first()
                 ->load('message');
             if (!$ticket) {
@@ -33,7 +33,7 @@ class TicketController extends Controller
             });
             return $this->success(TicketResource::make($ticket)->additional(['message' => true]));
         }
-        $ticket = Ticket::where('user_id', $request->user['id'])
+        $ticket = Ticket::where('user_id', $request->user()->id)
             ->orderBy('created_at', 'DESC')
             ->get();
         return $this->success(TicketResource::collection($ticket));
@@ -43,20 +43,20 @@ class TicketController extends Controller
     {
         try{
             DB::beginTransaction();
-            if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
+            if ((int)Ticket::where('status', 0)->where('user_id', $request->user()->id)->lockForUpdate()->count()) {
                 throw new \Exception(__('There are other unresolved tickets'));
             }
             $ticket = Ticket::create(array_merge($request->only([
                 'subject',
                 'level'
             ]), [
-                'user_id' => $request->user['id']
+                'user_id' => $request->user()->id
             ]));
             if (!$ticket) {
                 throw new \Exception(__('There are other unresolved tickets'));
             }
             $ticketMessage = TicketMessage::create([
-                'user_id' => $request->user['id'],
+                'user_id' => $request->user()->id,
                 'ticket_id' => $ticket->id,
                 'message' => $request->input('message')
             ]);
@@ -64,7 +64,7 @@ class TicketController extends Controller
                 throw new \Exception(__('Failed to open ticket'));
             }
             DB::commit();
-            $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
+            $this->sendNotify($ticket, $request->input('message'), $request->user()->id);
             return $this->success(true);
         }catch(\Exception $e){
             DB::rollBack();
@@ -83,7 +83,7 @@ class TicketController extends Controller
             return $this->fail([400, __('Message cannot be empty')]);
         }
         $ticket = Ticket::where('id', $request->input('id'))
-            ->where('user_id', $request->user['id'])
+            ->where('user_id', $request->user()->id)
             ->first();
         if (!$ticket) {
             return $this->fail([400, __('Ticket does not exist')]);
@@ -91,18 +91,18 @@ class TicketController extends Controller
         if ($ticket->status) {
             return $this->fail([400, __('The ticket is closed and cannot be replied')]);
         }
-        if ($request->user['id'] == $this->getLastMessage($ticket->id)->user_id) {
+        if ($request->user()->id == $this->getLastMessage($ticket->id)->user_id) {
             return $this->fail([400, __('Please wait for the technical enginneer to reply')]);
         }
         $ticketService = new TicketService();
         if (!$ticketService->reply(
             $ticket,
             $request->input('message'),
-            $request->user['id']
+            $request->user()->id
         )) {
             return $this->fail([400, __('Ticket reply failed')]);
         }
-        $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
+        $this->sendNotify($ticket, $request->input('message'), $request->user()->id);
         return $this->success(true);
     }
 
@@ -113,7 +113,7 @@ class TicketController extends Controller
             return $this->fail([422, __('Invalid parameter')]);
         }
         $ticket = Ticket::where('id', $request->input('id'))
-            ->where('user_id', $request->user['id'])
+            ->where('user_id', $request->user()->id)
             ->first();
         if (!$ticket) {
             return $this->fail([400, __('Ticket does not exist')]);
@@ -143,7 +143,7 @@ class TicketController extends Controller
         )) {
             return $this->fail([422, __('Unsupported withdrawal method')]);
         }
-        $user = User::find($request->user['id']);
+        $user = User::find($request->user()->id);
         $limit = admin_setting('commission_withdraw_limit', 100);
         if ($limit > ($user->commission_balance / 100)) {
             return $this->fail([422, __('The current required minimum withdrawal commission is :limit', ['limit' => $limit])]);
@@ -154,7 +154,7 @@ class TicketController extends Controller
             $ticket = Ticket::create([
                 'subject' => $subject,
                 'level' => 2,
-                'user_id' => $request->user['id']
+                'user_id' => $request->user()->id
             ]);
             if (!$ticket) {
                 return $this->fail([400, __('Failed to open ticket')]);
@@ -164,7 +164,7 @@ class TicketController extends Controller
                 __('Withdrawal account') . "：" . $request->input('withdraw_account')
             );
             $ticketMessage = TicketMessage::create([
-                'user_id' => $request->user['id'],
+                'user_id' => $request->user()->id,
                 'ticket_id' => $ticket->id,
                 'message' => $message
             ]);
@@ -177,7 +177,7 @@ class TicketController extends Controller
             DB::rollBack();
             throw $e;
         }
-        $this->sendNotify($ticket, $message, $request->user['id']);
+        $this->sendNotify($ticket, $message, $request->user()->id);
         return $this->success(true);
     }
 

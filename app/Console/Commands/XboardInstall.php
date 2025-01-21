@@ -7,6 +7,10 @@ use Illuminate\Encryption\Encrypter;
 use App\Models\User;
 use App\Utils\Helper;
 use Illuminate\Support\Env;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\note;
@@ -45,17 +49,17 @@ class XboardInstall extends Command
     public function handle()
     {
         try {
-            $isDocker = env('docker', false);
-            $enableSqlite = env('enable_sqlite', false);
-            $enableRedis = env('enable_redis', false);
-            $adminAccount = env('admin_account', '');
+            $isDocker = file_exists('/.dockerenv');
+            $enableSqlite = env('ENABLE_SQLITE', false);
+            $enableRedis = env('ENABLE_REDIS', false);
+            $adminAccount = env('ADMIN_ACCOUNT', '');
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
             $this->info(" / /\ \ | |_) | (_) | (_| | | | (_| | ");
             $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
             if (
-                (\File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
+                (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
                 || (env('INSTALLED', false) && $isDocker)
             ) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
@@ -86,11 +90,11 @@ class XboardInstall extends Command
                     'DB_PASSWORD' => '',
                 ];
                 try {
-                    \Config::set("database.default", 'sqlite');
-                    \Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
-                    \DB::purge('sqlite');
-                    \DB::connection('sqlite')->getPdo();
-                    if (!blank(\DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
+                    Config::set("database.default", 'sqlite');
+                    Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
+                    DB::purge('sqlite');
+                    DB::connection('sqlite')->getPdo();
+                    if (!blank(DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
                         if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '退出安装')) {
                             $this->info('正在清空数据库请稍等');
                             $this->call('db:wipe', ['--force' => true]);
@@ -115,16 +119,16 @@ class XboardInstall extends Command
                         'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
                     ];
                     try {
-                        \Config::set("database.default", 'mysql');
-                        \Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
-                        \Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
-                        \Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
-                        \Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
-                        \Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
-                        \DB::purge('mysql');
-                        \DB::connection('mysql')->getPdo();
+                        Config::set("database.default", 'mysql');
+                        Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
+                        Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
+                        Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
+                        Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
+                        Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
+                        DB::purge('mysql');
+                        DB::connection('mysql')->getPdo();
                         $isMysqlValid = true;
-                        if (!blank(\DB::connection('mysql')->select('SHOW TABLES'))) {
+                        if (!blank(DB::connection('mysql')->select('SHOW TABLES'))) {
                             if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
                                 $this->info('正在清空数据库请稍等');
                                 $this->call('db:wipe', ['--force' => true]);
@@ -141,12 +145,11 @@ class XboardInstall extends Command
                 }
             }
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
-            $envConfig['INSTALLED'] = true;
             $isReidsValid = false;
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
                 if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
-                    $envConfig['REDIS_HOST'] = '/run/redis-socket/redis.sock';
+                    $envConfig['REDIS_HOST'] = '/data/redis.sock';
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
                 } else {
@@ -171,6 +174,8 @@ class XboardInstall extends Command
                     // 连接失败，输出错误消息
                     $this->error("redis连接失败：" . $e->getMessage());
                     $this->info("请重新输入REDIS配置");
+                    $enableRedis = false;
+                    sleep(1);
                 }
             }
 
@@ -191,10 +196,10 @@ class XboardInstall extends Command
             $this->saveToEnv($envConfig);
 
             $this->call('config:cache');
-            \Artisan::call('cache:clear');
+            Artisan::call('cache:clear');
             $this->info('正在导入数据库请稍等...');
-            \Artisan::call("migrate", ['--force' => true]);
-            $this->info(\Artisan::output());
+            Artisan::call("migrate", ['--force' => true]);
+            $this->info(Artisan::output());
             $this->info('数据库导入完成');
             $this->info('开始注册管理员账号');
             if (!$this->registerAdmin($email, $password)) {
@@ -206,6 +211,8 @@ class XboardInstall extends Command
 
             $defaultSecurePath = hash('crc32b', config('app.key'));
             $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
+            $envConfig['INSTALLED'] = true;
+            $this->saveToEnv($envConfig);
         } catch (\Exception $e) {
             $this->error($e);
         }

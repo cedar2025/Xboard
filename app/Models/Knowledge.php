@@ -10,7 +10,8 @@ class Knowledge extends Model
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
     protected $casts = [
+        'show' => 'boolean',
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
     ];
 }

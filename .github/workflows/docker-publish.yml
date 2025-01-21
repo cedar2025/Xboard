@@ -1,89 +1,93 @@
-name: Docker
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+name: Docker Build and Publish
 
 on:
   push:
-    branches: [ "dev" ]
-    # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
-  workflow_dispatch:  # Enable manual trigger
+    branches: ["master"]
+  workflow_dispatch:
 
 env:
-  # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
-
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        with:
+          platforms: 'arm64,amd64'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+          driver-opts: |
+            image=moby/buildkit:latest
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=long
+            type=raw,value=new
+
+      - name: Get version
+        id: get_version
+        run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+
+      - name: Update version in app.php
+        run: |
+          VERSION=$(date '+%Y%m%d')-$(git rev-parse --short HEAD)
+          sed -i "s/'version' => '.*'/'version' => '$VERSION'/g" config/app.php
+          echo "Updated version to: $VERSION"
+
+      - name: Build and push
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:master
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          provenance: false
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.4.0
         with:
           cosign-release: 'v2.2.2'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.2.0
-
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@v3.1.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5.5.1
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Get version
-        id: get_version
-        run: echo "version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@v5.3.0
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:latest,${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard,${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
-      # Sign the resulting Docker image digest except on PRs.
-      # This will only write to the public Rekor transparency log when the Docker
-      # repository is public to avoid leaking data.  If you would like to publish
-      # transparency data even for private images, pass --force to cosign below.
-      # https://github.com/sigstore/cosign
-      - name: Sign the published Docker image
+      - name: Sign image
+        if: steps.build-and-push.outputs.digest != ''
         env:
-          # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        # This step uses the identity token to provision an ephemeral certificate
-        # against the sigstore community Fulcio instance.
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes "{}@${{ steps.build-and-push.outputs.digest }}"

@@ -7,8 +7,9 @@ namespace App\Payments;
 
 use App\Exceptions\ApiException;
 use \Curl\Curl;
-
-class MGate {
+use App\Contracts\PaymentInterface;
+class MGate implements PaymentInterface
+{
     private $config;
 
     public function __construct($config)
@@ -16,7 +17,7 @@ class MGate {
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'mgate_url' => [
@@ -42,7 +43,7 @@ class MGate {
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
         $params = [
             'out_trade_no' => $order['trade_no'],
@@ -67,7 +68,7 @@ class MGate {
         }
         if ($curl->error) {
             if (isset($result->errors)) {
-                $errors = (array)$result->errors;
+                $errors = (array) $result->errors;
                 throw new ApiException($errors[array_keys($errors)[0]][0]);
             }
             if (isset($result->message)) {
@@ -85,7 +86,7 @@ class MGate {
         ];
     }
 
-    public function notify($params)
+    public function notify($params): array|bool
     {
         $sign = $params['sign'];
         unset($params['sign']);

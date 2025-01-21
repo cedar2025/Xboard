@@ -180,7 +180,7 @@ class AuthController extends Controller
 
         $authService = new AuthService($user);
 
-        $data = $authService->generateAuthData($request);
+        $data = $authService->generateAuthData();
         return $this->success($data);
     }
 
@@ -223,48 +223,70 @@ class AuthController extends Controller
         }
 
         $authService = new AuthService($user);
-        return $this->success($authService->generateAuthData($request));
+        return $this->success($authService->generateAuthData());
     }
 
     public function token2Login(Request $request)
     {
-        if ($request->input('token')) {
-            $redirect = '/#/login?verify=' . $request->input('token') . '&redirect=' . ($request->input('redirect') ? $request->input('redirect') : 'dashboard');
-            if (admin_setting('app_url')) {
-                $location = admin_setting('app_url') . $redirect;
-            } else {
-                $location = url($redirect);
-            }
-            return redirect()->to($location)->send();
+        if ($token = $request->input('token')) {
+            $redirect = '/#/login?verify=' . $token . '&redirect=' . ($request->input('redirect', 'dashboard'));
+            
+            return redirect()->to(
+                admin_setting('app_url')
+                    ? admin_setting('app_url') . $redirect
+                    : url($redirect)
+            );
         }
 
-        if ($request->input('verify')) {
-            $key =  CacheKey::get('TEMP_TOKEN', $request->input('verify'));
+        if ($verify = $request->input('verify')) {
+            $key = CacheKey::get('TEMP_TOKEN', $verify);
             $userId = Cache::get($key);
+            
             if (!$userId) {
-                return $this->fail([400,__('Token error')]);
+                return response()->json([
+                    'message' => __('Token error')
+                ], 400);
             }
-            $user = User::find($userId);
-            if (!$user) {
-                return $this->fail([400,__('The user does not ')]);
-            }
+            
+            $user = User::findOrFail($userId);
+            
             if ($user->banned) {
-                return $this->fail([400,__('Your account has been suspended')]);
+                return response()->json([
+                    'message' => __('Your account has been suspended')
+                ], 400);
             }
+            
             Cache::forget($key);
             $authService = new AuthService($user);
-            return $this->success($authService->generateAuthData($request));
+            
+            return response()->json([
+                'data' => $authService->generateAuthData()
+            ]);
         }
+        
+        return response()->json([
+            'message' => __('Invalid request')
+        ], 400);
     }
 
     public function getQuickLoginUrl(Request $request)
     {
         $authorization = $request->input('auth_data') ?? $request->header('authorization');
-        if (!$authorization) return $this->fail(ResponseEnum::CLIENT_HTTP_UNAUTHORIZED);
+        
+        if (!$authorization) {
+            return response()->json([
+                'message' => ResponseEnum::CLIENT_HTTP_UNAUTHORIZED
+            ], 401);
+        }
 
-        $user = AuthService::decryptAuthData($authorization);
-        if (!$user) return $this->fail(ResponseEnum::CLIENT_HTTP_UNAUTHORIZED_EXPIRED);
-
+        $user = AuthService::findUserByBearerToken($authorization);
+        
+        if (!$user) {
+            return response()->json([
+                'message' => ResponseEnum::CLIENT_HTTP_UNAUTHORIZED_EXPIRED
+            ], 401);
+        }
+        
         $code = Helper::guid();
         $key = CacheKey::get('TEMP_TOKEN', $code);
         Cache::put($key, $user['id'], 60);

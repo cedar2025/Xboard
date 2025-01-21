@@ -8,12 +8,27 @@ use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
+    /**
+     * Protocol prefix mapping for server names
+     */
+    private const PROTOCOL_PREFIXES = [
+        'hysteria' => [
+            1 => '[Hy]',
+            2 => '[Hy2]'
+        ],
+        'vless' => '[vless]',
+        'shadowsocks' => '[ss]',
+        'vmess' => '[vmess]',
+        'trojan' => '[trojan]',
+    ];
 
     // 支持hy2 的客户端版本列表
-    const SupportedHy2ClientVersions = [
+    private const CLIENT_VERSIONS = [
         'NekoBox' => '1.2.7',
         'sing-box' => '1.5.0',
         'stash' => '2.5.0',
@@ -26,120 +41,190 @@ class ClientController extends Controller
         'loon' => '637',
         'v2rayng' => '1.9.5',
         'v2rayN' => '6.31',
-        'surge' => '2398'
+        'surge' => '2398',
+        'flclash' => '0.8.0'
     ];
-    // allowed types
-    const AllowedTypes = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
+
+    private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
+
+    /**
+     * 处理浏览器访问订阅的情况
+     */
+    private function handleBrowserSubscribe($user, UserService $userService)
+    {
+        $useTraffic = $user['u'] + $user['d'];
+        $totalTraffic = $user['transfer_enable'];
+        $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
+        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : __('Unlimited');
+        $resetDay = $userService->getResetDay($user);
+
+        // 获取通用订阅地址
+        $subscriptionUrl = Helper::getSubscribeUrl($user->token);
+
+        // 生成二维码
+        $writer = new \BaconQrCode\Writer(
+            new \BaconQrCode\Renderer\ImageRenderer(
+                new \BaconQrCode\Renderer\RendererStyle\RendererStyle(200),
+                new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
+            )
+        );
+        $qrCode = base64_encode($writer->writeString($subscriptionUrl));
+
+        $data = [
+            'username' => $user->email,
+            'status' => $userService->isAvailable($user) ? 'active' : 'inactive',
+            'data_limit' => $totalTraffic ? Helper::trafficConvert($totalTraffic) : '∞',
+            'data_used' => Helper::trafficConvert($useTraffic),
+            'expired_date' => $expiredDate,
+            'reset_day' => $resetDay,
+            'subscription_url' => $subscriptionUrl,
+            'qr_code' => $qrCode
+        ];
+
+        // 只有当 device_limit 不为 null 时才添加到返回数据中
+        if ($user->device_limit !== null) {
+            $data['device_limit'] = $user->device_limit;
+        }
+
+        return response()->view('client.subscribe', $data);
+    }
+
+    /**
+     * 检查是否是浏览器访问
+     */
+    private function isBrowserAccess(Request $request): bool
+    {
+        $userAgent = strtolower($request->input('flag', $request->header('User-Agent')));
+        return str_contains($userAgent, 'mozilla')
+            || str_contains($userAgent, 'chrome')
+            || str_contains($userAgent, 'safari')
+            || str_contains($userAgent, 'edge');
+    }
 
     public function subscribe(Request $request)
     {
-        // filter types
-        $types = $request->input('types', 'all');
-        $typesArr = $types === 'all' ? self::AllowedTypes : array_values(array_intersect(explode('|', str_replace(['|', '｜', ','], "|", $types)), self::AllowedTypes));
-        // filter keyword
-        $filterArr = mb_strlen($filter = $request->input('filter')) > 20 ? null : explode("|", str_replace(['|', '｜', ','], "|", $filter));
-        $flag = strtolower($request->input('flag') ?? $request->header('User-Agent', ''));
-        $ip = $request->input('ip', $request->ip());
-        // get client version
-        $version = preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches) ? $matches[1] : null;
-        $supportHy2 = $version ? collect(self::SupportedHy2ClientVersions)
-                ->contains(fn($minVersion, $client) => stripos($flag, $client) !== false && $this->versionCompare($version, $minVersion)) : true;
-        $user = $request->user;
-        // account not expired and is not banned.
+        $request->validate([
+            'types' => ['nullable', 'string'],
+            'filter' => ['nullable', 'string'],
+            'flag' => ['nullable', 'string'],
+        ]);
+
+        $user = $request->user();
         $userService = new UserService();
-        if ($userService->isAvailable($user)) {
-            // get ip location
-            $ip2region = new \Ip2Region();
-            $region = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? ($ip2region->memorySearch($ip)['region'] ?? null) : null;
-            // get available servers
-            $servers = ServerService::getAvailableServers($user);
-            // filter servers
-            $serversFiltered = $this->serverFilter($servers, $typesArr, $filterArr, $region, $supportHy2);
-            $this->setSubscribeInfoToServers($serversFiltered, $user, count($servers) - count($serversFiltered));
-            $servers = $serversFiltered;
-            $this->addPrefixToServerName($servers);
-            if ($flag) {
-                foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
-                    $file = 'App\\Protocols\\' . basename($file, '.php');
-                    $class = new $file($user, $servers);
-                    $classFlags = explode(',', $class->flag);
-                    foreach ($classFlags as $classFlag) {
-                        if (stripos($flag, $classFlag) !== false) {
-                            return $class->handle();
-                        }
-                    }
-                }
-            }
-            $class = new General($user, $servers);
-            return $class->handle();
+
+        if (!$userService->isAvailable($user)) {
+            return response()->json(['message' => 'Account unavailable'], 403);
         }
+
+        // 检测是否是浏览器访问
+        if ($this->isBrowserAccess($request)) {
+            return $this->handleBrowserSubscribe($user, $userService);
+        }
+        $clientInfo = $this->getClientInfo($request);
+        $types = $this->getFilteredTypes($request->input('types'), $clientInfo['supportHy2']);
+        $filterArr = $this->getFilterArray($request->input('filter'));
+        // Get available servers and apply filters
+        $servers = ServerService::getAvailableServers($user);
+        $serversFiltered = $this->filterServers(
+            servers: $servers,
+            types: $types,
+            filters: $filterArr,
+        );
+
+        $this->setSubscribeInfoToServers($serversFiltered, $user, count($servers) - count($serversFiltered));
+        $serversFiltered = $this->addPrefixToServerName($serversFiltered);
+
+        // Handle protocol response
+        if ($clientInfo['flag']) {
+            foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
+                $className = 'App\\Protocols\\' . basename($file, '.php');
+                $protocol = new $className($user, $serversFiltered);
+                if (
+                    collect($protocol->getFlags())
+                        ->contains(fn($f) => stripos($clientInfo['flag'], $f) !== false)
+                ) {
+                    return $protocol->handle();
+                }
+            }
+        }
+
+        return (new General($user, $serversFiltered))->handle();
     }
-    /**
-     * Summary of serverFilter
-     * @param mixed $typesArr
-     * @param mixed $filterArr
-     * @param mixed $region
-     * @param mixed $supportHy2
-     * @return array
-     */
-    private function serverFilter($servers, $typesArr, $filterArr, $region, $supportHy2)
+
+    private function getFilteredTypes(string|null $types, bool $supportHy2): array
     {
-        return collect($servers)->reject(function ($server) use ($typesArr, $filterArr, $region, $supportHy2) {
-            if ($server['type'] == "hysteria" && $server['version'] == 2) {
-                if(!in_array('hysteria2', $typesArr)){
-                    return true;
-                }elseif(false == $supportHy2){
-                    return true;
-                }
-            }
+        if ($types === 'all') {
+            return self::ALLOWED_TYPES;
+        }
 
-            if ($filterArr) {
-                foreach ($filterArr as $filter) {
-                    if (stripos($server['name'], $filter) !== false || in_array($filter, $server['tags'] ?? [])) {
-                        return false;
-                    }
-                }
-                return true;
-            }
+        $allowedTypes = $supportHy2
+            ? self::ALLOWED_TYPES
+            : array_diff(self::ALLOWED_TYPES, ['hysteria2']);
+        if (!$types) {
+            return array_values($allowedTypes);
+        }
 
-            if (strpos($region, '中国') !== false) {
-                $excludes = $server['excludes'] ?? [];
-                if (empty($excludes)) {
-                    return false;
+        $userTypes = explode('|', str_replace(['|', '｜', ','], '|', $types));
+        return array_values(array_intersect($userTypes, $allowedTypes));
+    }
+
+    private function getFilterArray(?string $filter): ?array
+    {
+        if ($filter === null) {
+            return null;
+        }
+        return mb_strlen($filter) > 20 ? null :
+            explode('|', str_replace(['|', '｜', ','], '|', $filter));
+    }
+
+    private function getClientInfo(Request $request): array
+    {
+        $flag = strtolower($request->input('flag') ?? $request->header('User-Agent', ''));
+        preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches);
+        $version = $matches[1] ?? null;
+
+        $supportHy2 = $version ? $this->checkHy2Support($flag, $version) : true;
+
+        return [
+            'flag' => $flag,
+            'version' => $version,
+            'supportHy2' => $supportHy2
+        ];
+    }
+
+    private function checkHy2Support(string $flag, string $version): bool
+    {
+        $result = false;
+        foreach (self::CLIENT_VERSIONS as $client => $minVersion) {
+            if (stripos($flag, $client) !== false) {
+                $result = $result || version_compare($version, $minVersion, '>=');
+            }
+        }
+        return $result || !count(self::CLIENT_VERSIONS);
+    }
+
+    private function filterServers(array $servers, array $types, ?array $filters): array
+    {
+        return collect($servers)->reject(function ($server) use ($types, $filters) {
+            // Check Hysteria2 compatibility
+            if ($server['type'] === 'hysteria' && optional($server['protocol_settings'])['version'] === 2) {
+                if (!in_array('hysteria2', $types)) {
+                    return true;
                 }
-                foreach ($excludes as $v) {
-                    $excludeList = explode("|", str_replace(["｜", ",", " ", "，"], "|", $v));
-                    foreach ($excludeList as $needle) {
-                        if (stripos($region, $needle) !== false) {
-                            return true;
-                        }
-                    }
+            } else {
+                if (!in_array($server['type'], $types)) {
+                    return true;
                 }
             }
+            // Apply custom filters
+            if ($filters) {
+                return !collect($filters)->contains(function ($filter) use ($server) {
+                    return stripos($server['name'], $filter) !== false
+                        || in_array($filter, $server['tags'] ?? []);
+                });
+            }
+            return false;
         })->values()->all();
-    }
-    /*
-     * add prefix to server name
-     */
-    private function addPrefixToServerName(&$servers)
-    {
-        // 线路名称增加协议类型
-        if (admin_setting('show_protocol_to_server_enable')) {
-            $typePrefixes = [
-                'hysteria' => [1 => '[Hy]', 2 => '[Hy2]'],
-                'vless' => '[vless]',
-                'shadowsocks' => '[ss]',
-                'vmess' => '[vmess]',
-                'trojan' => '[trojan]',
-            ];
-            $servers = collect($servers)->map(function ($server) use ($typePrefixes) {
-                if (isset($typePrefixes[$server['type']])) {
-                    $prefix = is_array($typePrefixes[$server['type']]) ? $typePrefixes[$server['type']][$server['version']] : $typePrefixes[$server['type']];
-                    $server['name'] = $prefix . $server['name'];
-                }
-                return $server;
-            })->toArray();
-        }
     }
 
     /**
@@ -163,7 +248,7 @@ class ClientController extends Controller
         $useTraffic = $user['u'] + $user['d'];
         $totalTraffic = $user['transfer_enable'];
         $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
-        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : '长期有效';
+        $expiredDate = $user['expired_at'] ? date('Y-m-d', $user['expired_at']) : __('长期有效');
         $userService = new UserService();
         $resetDay = $userService->getResetDay($user);
         array_unshift($servers, array_merge($servers[0], [
@@ -179,33 +264,41 @@ class ClientController extends Controller
         ]));
     }
 
-
     /**
-     * 判断版本号
+     * Add protocol prefix to server names if enabled in admin settings
+     *
+     * @param array<int, array<string, mixed>> $servers
+     * @return array<int, array<string, mixed>>
      */
-
-    function versionCompare($version1, $version2)
+    private function addPrefixToServerName(array $servers): array
     {
-        if (!preg_match('/^\d+(\.\d+){0,2}/', $version1) || !preg_match('/^\d+(\.\d+){0,2}/', $version2)) {
-            return false;
-        }
-        $v1Parts = explode('.', $version1);
-        $v2Parts = explode('.', $version2);
-
-        $maxParts = max(count($v1Parts), count($v2Parts));
-
-        for ($i = 0; $i < $maxParts; $i++) {
-            $part1 = isset($v1Parts[$i]) ? (int) $v1Parts[$i] : 0;
-            $part2 = isset($v2Parts[$i]) ? (int) $v2Parts[$i] : 0;
-
-            if ($part1 < $part2) {
-                return false;
-            } elseif ($part1 > $part2) {
-                return true;
-            }
+        if (!admin_setting('show_protocol_to_server_enable', false)) {
+            return $servers;
         }
 
-        // 版本号相等
-        return true;
+        return collect($servers)
+            ->map(function (array $server): array {
+                $server['name'] = $this->getPrefixedServerName($server);
+                return $server;
+            })
+            ->all();
+    }
+    /**
+     * Get server name with protocol prefix
+     *
+     * @param array<string, mixed> $server
+     */
+    private function getPrefixedServerName(array $server): string
+    {
+        $type = $server['type'] ?? '';
+        if (!isset(self::PROTOCOL_PREFIXES[$type])) {
+            return $server['name'] ?? '';
+        }
+
+        $prefix = is_array(self::PROTOCOL_PREFIXES[$type])
+            ? self::PROTOCOL_PREFIXES[$type][$server['protocol_settings']['version'] ?? 1] ?? ''
+            : self::PROTOCOL_PREFIXES[$type];
+
+        return $prefix . ($server['name'] ?? '');
     }
 }

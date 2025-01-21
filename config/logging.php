@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => 'mysql',
+    'default' => 'daily',
 
     /*
     |--------------------------------------------------------------------------
@@ -99,6 +99,13 @@ return [
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => 'debug',
+        ],
+
+        'deprecations' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/deprecations.log'),
+            'level' => 'debug',
+            'days' => 14,
         ],
     ],
 

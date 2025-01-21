@@ -6,6 +6,7 @@ use App\Utils\CacheKey;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Cache;
+use App\Services\UserOnlineService;
 
 class Kernel extends ConsoleKernel
 {
@@ -44,6 +45,10 @@ class Kernel extends ConsoleKernel
         if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
             $schedule->command('backup:database', ['true'])->daily()->onOneServer();
         }
+        // 每分钟清理过期的在线状态
+        $schedule->call(function () {
+            app(UserOnlineService::class)->cleanExpiredOnlineStatus();
+        })->everyMinute();
     }
 
     /**

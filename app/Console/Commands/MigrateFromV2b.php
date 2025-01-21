@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Setting;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class MigrateFromV2b extends Command
 {
@@ -51,11 +53,12 @@ class MigrateFromV2b extends Command
             ],
             '1.7.3' => [
                 'ALTER TABLE `v2_stat_order` RENAME TO `v2_stat`;',
-                "ALTER TABLE `v2_stat` CHANGE COLUMN order_amount order_total INT COMMENT '订单合计';",
+                "ALTER TABLE `v2_stat` CHANGE COLUMN order_amount paid_total INT COMMENT '订单合计';",
+                "ALTER TABLE `v2_stat` CHANGE COLUMN order_count paid_count INT COMMENT '邀请佣金';",
                 "ALTER TABLE `v2_stat` CHANGE COLUMN commission_amount commission_total INT COMMENT '佣金合计';",
                 "ALTER TABLE `v2_stat`
-                    ADD COLUMN paid_count INT NULL,
-                    ADD COLUMN paid_total INT NULL,
+                    ADD COLUMN order_count INT NULL,
+                    ADD COLUMN order_total INT NULL,
                     ADD COLUMN register_count INT NULL,
                     ADD COLUMN invite_count INT NULL,
                     ADD COLUMN transfer_used_total VARCHAR(32) NULL;
@@ -132,7 +135,7 @@ class MigrateFromV2b extends Command
             try {
                 foreach ($sqlCommands[$version] as $sqlCommand) {
                     // Execute SQL command
-                    \DB::statement($sqlCommand);
+                    DB::statement($sqlCommand);
                 }
                 
                 $this->info('1️⃣、数据库差异矫正成功');
@@ -158,7 +161,7 @@ class MigrateFromV2b extends Command
 
     public function MigrateV2ConfigToV2Settings()
     {
-        \Artisan::call('config:clear');
+        Artisan::call('config:clear');
         $configValue = config('v2board') ?? [];
 
         foreach ($configValue as $k => $v) {
@@ -167,16 +170,16 @@ class MigrateFromV2b extends Command
             
             // 如果记录不存在，则插入
             if ($existingSetting) {
-                $this->warn("配置 ${k} 在数据库已经存在， 忽略");
+                $this->warn("配置 {$k} 在数据库已经存在， 忽略");
                 continue;
             }
             Setting::create([
                 'name' => $k,
                 'value' => is_array($v)? json_encode($v) : $v,
             ]);
-            $this->info("配置 ${k} 迁移成功");
+            $this->info("配置 {$k} 迁移成功");
         }
-        \Artisan::call('config:cache');
+        Artisan::call('config:cache');
 
         $this->info('所有配置迁移完成');
     }
