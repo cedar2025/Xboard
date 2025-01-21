@@ -21,6 +21,15 @@ class Ticket extends Model
         self::STATUS_CLOSED => '关闭'
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+    public function messages()
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id', 'id');
+    }
+    // 即将删除
     public function message()
     {
         return $this->hasMany(TicketMessage::class, 'ticket_id', 'id');

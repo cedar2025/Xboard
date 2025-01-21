@@ -23,9 +23,8 @@ class TrojanTidalabController extends Controller
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
-        $nodeId = $request->input('node_id');
-        $server = ServerTrojan::find($nodeId);
-        if (!$server) {
+        $server = $request->input('node_info');
+        if ($server->type !== 'trojan') {
             return $this->fail([400, '节点不存在']);
         }
         Cache::put(CacheKey::get('SERVER_TROJAN_LAST_CHECK_AT', $server->id), time(), 3600);
@@ -51,15 +50,11 @@ class TrojanTidalabController extends Controller
     // 后端提交数据
     public function submit(Request $request)
     {
-        $server = ServerTrojan::find($request->input('node_id'));
-        if (!$server) {
-            return response([
-                'ret' => 0,
-                'msg' => 'server is not found'
-            ]);
+        $server = $request->input('node_info');
+        if ($server->type !== 'trojan') {
+            return $this->fail([400, '节点不存在']);
         }
-        $data = get_request_content();
-        $data = json_decode($data, true);
+        $data = json_decode(request()->getContent(), true);
         Cache::put(CacheKey::get('SERVER_TROJAN_ONLINE_USER', $server->id), count($data), 3600);
         Cache::put(CacheKey::get('SERVER_TROJAN_LAST_PUSH_AT', $server->id), time(), 3600);
         $userService = new UserService();
@@ -78,6 +73,10 @@ class TrojanTidalabController extends Controller
     // 后端获取配置
     public function config(Request $request)
     {
+        $server = $request->input('node_info');
+        if ($server->type !== 'trojan') {
+            return $this->fail([400, '节点不存在']);
+        }
         $request->validate([
             'node_id' => 'required',
             'local_port' => 'required'
@@ -86,7 +85,7 @@ class TrojanTidalabController extends Controller
             'local_port.required' => '本地端口不能为空'
         ]);
         try {
-            $json = $this->getTrojanConfig($request->input('node_id'), $request->input('local_port'));
+            $json = $this->getTrojanConfig($server, $request->input('local_port'));
         } catch (\Exception $e) {
             \Log::error($e);
             return $this->fail([500, '配置获取失败']);
@@ -95,16 +94,12 @@ class TrojanTidalabController extends Controller
         return (json_encode($json, JSON_UNESCAPED_UNICODE));
     }
 
-    private function getTrojanConfig(int $nodeId, int $localPort)
+    private function getTrojanConfig($server, int $localPort)
     {
-        $server = ServerTrojan::find($nodeId);
-        if (!$server) {
-            return $this->fail([400, '节点不存在']);
-        }
-
+        $protocolSettings = $server->protocol_settings;
         $json = json_decode(self::TROJAN_CONFIG);
         $json->local_port = $server->server_port;
-        $json->ssl->sni = $server->server_name ? $server->server_name : $server->host;
+        $json->ssl->sni = data_get($protocolSettings, 'server_name', $server->host);
         $json->ssl->cert = "/root/.cert/server.crt";
         $json->ssl->key = "/root/.cert/server.key";
         $json->api->api_port = $localPort;

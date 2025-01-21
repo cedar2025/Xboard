@@ -3,8 +3,8 @@
 use Illuminate\Support\Str;
 use Linfo\Linfo;
 
-$lInfo = new Linfo();
-$parser = $lInfo->getParser();
+// $lInfo = new Linfo();
+// $parser = $lInfo->getParser();
 
 return [
 
@@ -175,14 +175,15 @@ return [
                 'queue' => [
                     'order_handle',
                     'traffic_fetch',
-                    'batch_traffic_fetch',
+                    'stat',
                     'send_email',
                     'send_email_mass',
                     'send_telegram',
+                    'online_sync'
                 ],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => (int)ceil($parser->getRam()['total'] / 1024 / 1024 / 1024 * 6),
+                'maxProcesses' => 20,
                 'tries' => 1,
                 'balanceCooldown' => 3,
             ],

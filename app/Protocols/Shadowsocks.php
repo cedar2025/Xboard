@@ -2,9 +2,11 @@
 
 namespace App\Protocols;
 
-class Shadowsocks
+use App\Contracts\ProtocolInterface;
+
+class Shadowsocks implements ProtocolInterface
 {
-    public $flag = 'shadowsocks';
+    public $flags = ['shadowsocks'];
     private $servers;
     private $user;
 
@@ -12,6 +14,11 @@ class Shadowsocks
     {
         $this->user = $user;
         $this->servers = $servers;
+    }
+
+    public function getFlags(): array
+    {
+        return $this->flags;
     }
 
     public function handle()
@@ -29,8 +36,9 @@ class Shadowsocks
         $bytesRemaining = $user['transfer_enable'] - $bytesUsed;
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], ['aes-128-gcm', 'aes-256-gcm', 'aes-192-gcm', 'chacha20-ietf-poly1305'])
+            if (
+                $item['type'] === 'shadowsocks'
+                && in_array(data_get($item, 'protocol_settings.cipher'), ['aes-128-gcm', 'aes-256-gcm', 'aes-192-gcm', 'chacha20-ietf-poly1305'])
             ) {
                 array_push($configs, self::SIP008($item, $user));
             }
@@ -41,7 +49,7 @@ class Shadowsocks
         $subs['bytes_remaining'] = $bytesRemaining;
         $subs['servers'] = array_merge($subs['servers'] ? $subs['servers'] : [], $configs);
 
-        return json_encode($subs, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
+        return json_encode($subs, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     public static function SIP008($server, $user)
@@ -52,7 +60,7 @@ class Shadowsocks
             "server" => $server['host'],
             "server_port" => $server['port'],
             "password" => $user['uuid'],
-            "method" => $server['cipher']
+            "method" => data_get($server, 'protocol_settings.cipher')
         ];
         return $config;
     }

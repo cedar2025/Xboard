@@ -3,10 +3,11 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
+use App\Contracts\ProtocolInterface;
 
-class Surfboard
+class Surfboard implements ProtocolInterface
 {
-    public $flag = 'surfboard';
+    public $flags = ['surfboard'];
     private $servers;
     private $user;
 
@@ -14,6 +15,11 @@ class Surfboard
     {
         $this->user = $user;
         $this->servers = $servers;
+    }
+
+    public function getFlags(): array
+    {
+        return $this->flags;
     }
 
     public function handle()
@@ -27,8 +33,9 @@ class Surfboard
         $proxyGroup = '';
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
+            if (
+                $item['type'] === 'shadowsocks'
+                && in_array(data_get($item, 'protocol_settings.cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
@@ -71,27 +78,28 @@ class Surfboard
         $config = str_replace('$proxies', $proxies, $config);
         $config = str_replace('$proxy_group', rtrim($proxyGroup, ', '), $config);
 
-        $upload = round($user['u'] / (1024*1024*1024), 2);
-        $download = round($user['d'] / (1024*1024*1024), 2);
+        $upload = round($user['u'] / (1024 * 1024 * 1024), 2);
+        $download = round($user['d'] / (1024 * 1024 * 1024), 2);
         $useTraffic = $upload + $download;
-        $totalTraffic = round($user['transfer_enable'] / (1024*1024*1024), 2);
+        $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
         $unusedTraffic = $totalTraffic - $useTraffic;
         $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
         $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量: { $unusedTraffic }GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
-                    ->header('content-disposition', "attachment;filename*=UTF-8''".rawurlencode($appName).".conf");
+            ->header('content-disposition', "attachment;filename*=UTF-8''" . rawurlencode($appName) . ".conf");
     }
 
 
     public static function buildShadowsocks($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $config = [
             "{$server['name']}=ss",
             "{$server['host']}",
             "{$server['port']}",
-            "encrypt-method={$server['cipher']}",
+            "encrypt-method={$protocol_settings['cipher']}",
             "password={$password}",
             'tfo=true',
             'udp-relay=true'
@@ -104,6 +112,7 @@ class Surfboard
 
     public static function buildVmess($uuid, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $config = [
             "{$server['name']}=vmess",
             "{$server['host']}",
@@ -114,20 +123,20 @@ class Surfboard
             'udp-relay=true'
         ];
 
-        if ($server['tls']) {
+        if (data_get($protocol_settings, 'tls')) {
             array_push($config, 'tls=true');
-            if ($server['tlsSettings']) {
-                $tlsSettings = $server['tlsSettings'];
+            if (data_get($protocol_settings, 'tls_settings')) {
+                $tlsSettings = data_get($protocol_settings, 'tls_settings');
                 if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
                     array_push($config, 'skip-cert-verify=' . ($tlsSettings['allowInsecure'] ? 'true' : 'false'));
                 if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
                     array_push($config, "sni={$tlsSettings['serverName']}");
             }
         }
-        if ($server['network'] === 'ws') {
+        if (data_get($protocol_settings, 'network_settings.network') === 'ws') {
             array_push($config, 'ws=true');
-            if ($server['networkSettings']) {
-                $wsSettings = $server['networkSettings'];
+            if (data_get($protocol_settings, 'network_settings')) {
+                $wsSettings = data_get($protocol_settings, 'network_settings');
                 if (isset($wsSettings['path']) && !empty($wsSettings['path']))
                     array_push($config, "ws-path={$wsSettings['path']}");
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
@@ -142,17 +151,18 @@ class Surfboard
 
     public static function buildTrojan($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $config = [
             "{$server['name']}=trojan",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            $server['server_name'] ? "sni={$server['server_name']}" : "",
+            $protocol_settings['server_name'] ? "sni={$protocol_settings['server_name']}" : "",
             'tfo=true',
             'udp-relay=true'
         ];
-        if (!empty($server['allow_insecure'])) {
-            array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (!empty($protocol_settings['allow_insecure'])) {
+            array_push($config, $protocol_settings['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

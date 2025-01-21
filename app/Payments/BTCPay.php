@@ -3,9 +3,9 @@
 namespace App\Payments;
 
 use App\Exceptions\ApiException;
+use App\Contracts\PaymentInterface;
 
-
-class BTCPay
+class BTCPay implements PaymentInterface
 {
     protected $config;
     public function __construct($config)
@@ -13,7 +13,7 @@ class BTCPay
         $this->config = $config;
     }
 
-    public function form()
+    public function form(): array
     {
         return [
             'btcpay_url' => [
@@ -39,7 +39,7 @@ class BTCPay
         ];
     }
 
-    public function pay($order)
+    public function pay($order): array
     {
 
         $params = [
@@ -66,9 +66,9 @@ class BTCPay
         ];
     }
 
-    public function notify($params)
+    public function notify($params): array|bool
     {
-        $payload = trim(get_request_content());
+        $payload = trim(request()->getContent());
 
         $headers = getallheaders();
 

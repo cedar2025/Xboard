@@ -20,7 +20,7 @@ class KnowledgeController extends Controller
                 ->first()
                 ->toArray();
             if (!$knowledge) return $this->fail([500, __('Article does not exist')]);
-            $user = User::find($request->user['id']);
+            $user = User::find($request->user()->id);
             $userService = new UserService();
             if (!$userService->isAvailable($user)) {
                 $this->formatAccessData($knowledge['body']);

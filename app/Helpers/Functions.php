@@ -1,15 +1,6 @@
 <?php
 use App\Support\Setting;
 
-
-if (! function_exists("get_request_content")){
-    function get_request_content(){
-
-        return request()->getContent() ?: json_encode($_POST);
-        
-    }
-}
-
 if (! function_exists('admin_setting')) {
     /**
      * 获取或保存配置参数.
