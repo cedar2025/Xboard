@@ -12,7 +12,7 @@ services:
     command: php artisan octane:start --port=7001 --host=0.0.0.0
     restart: on-failure
   horizon:
-    image: ghcr.io/cedar2025/xboard:latest
+    image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./:/www/

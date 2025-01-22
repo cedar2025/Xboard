@@ -7,8 +7,6 @@
 ![MySQL](https://img.shields.io/badge/MySQL-5.7+-blue.svg)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-English | [简体中文](README_CN.md)
-
 </div>
 
 ## 📖 Introduction
@@ -45,16 +43,16 @@ docker compose up -d
 > 🚨 **Important:** This version involves significant changes. Please strictly follow the upgrade documentation and backup your database before upgrading. Note that upgrading and migration are different processes, do not confuse them.
 
 ### Deployment Guides
-- [Deploy with 1Panel](./docs/zh-CN/installation/1panel.md)
-- [Deploy with Docker Compose](./docs/zh-CN/installation/docker-compose.md)
-- [Deploy with aaPanel](./docs/zh-CN/installation/aapanel.md)
-- [Deploy with aaPanel + Docker](./docs/zh-CN/installation/aapanel-docker.md) (Recommended)
+- [Deploy with 1Panel](./docs/en/installation/1panel.md)
+- [Deploy with Docker Compose](./docs/en/installation/docker-compose.md)
+- [Deploy with aaPanel](./docs/en/installation/aapanel.md)
+- [Deploy with aaPanel + Docker](./docs/en/installation/aapanel-docker.md) (Recommended)
 
 ### Migration Guides
-- [Migrate from v2board dev](./docs/zh-CN/migration/v2board-dev.md)
-- [Migrate from v2board 1.7.4](./docs/zh-CN/migration/v2board-1.7.4.md)
-- [Migrate from v2board 1.7.3](./docs/zh-CN/migration/v2board-1.7.3.md)
-- [Migrate from v2board wyx2685](./docs/zh-CN/migration/v2board-wyx2685.md)
+- [Migrate from v2board dev](./docs/en/migration/v2board-dev.md)
+- [Migrate from v2board 1.7.4](./docs/en/migration/v2board-1.7.4.md)
+- [Migrate from v2board 1.7.3](./docs/en/migration/v2board-1.7.3.md)
+- [Migrate from v2board wyx2685](./docs/en/migration/v2board-wyx2685.md)
 
 ## 🛠️ Tech Stack
 
@@ -72,6 +70,15 @@ docker compose up -d
 ## ⚠️ Disclaimer
 
 This project is for learning and communication purposes only. Users are responsible for any consequences of using this project.
+
+## 🌟 Maintenance Notice
+
+This project is currently under light maintenance. We will:
+- Fix critical bugs and security issues
+- Review and merge important pull requests
+- Provide necessary updates for compatibility
+
+However, new feature development may be limited.
 
 ## 🔔 Important Notes
 
