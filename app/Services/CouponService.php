@@ -21,7 +21,7 @@ class CouponService
             ->first();
     }
 
-    public function use(Order $order):bool
+    public function use(Order $order): bool
     {
         $this->setPlanId($order->plan_id);
         $this->setUserId($order->user_id);
@@ -39,7 +39,8 @@ class CouponService
             $order->discount_amount = $order->total_amount;
         }
         if ($this->coupon->limit_use !== NULL) {
-            if ($this->coupon->limit_use <= 0) return false;
+            if ($this->coupon->limit_use <= 0)
+                return false;
             $this->coupon->limit_use = $this->coupon->limit_use - 1;
             if (!$this->coupon->save()) {
                 return false;
@@ -70,16 +71,19 @@ class CouponService
 
     public function setPeriod($period)
     {
-        $this->period = $period;
+        if ($period) {
+            $this->period = PlanService::getPeriodKey($period);
+        }
     }
 
-    public function checkLimitUseWithUser():bool
+    public function checkLimitUseWithUser(): bool
     {
         $usedCount = Order::where('coupon_id', $this->coupon->id)
             ->where('user_id', $this->userId)
             ->whereNotIn('status', [0, 2])
             ->count();
-        if ($usedCount >= $this->coupon->limit_use_with_user) return false;
+        if ($usedCount >= $this->coupon->limit_use_with_user)
+            return false;
         return true;
     }
 

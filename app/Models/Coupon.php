@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PlanService;
 use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
@@ -15,4 +16,11 @@ class Coupon extends Model
         'limit_plan_ids' => 'array',
         'limit_period' => 'array'
     ];
+
+    public function getLimitPeriodAttribute($value)
+    {
+        return collect(json_decode($value, true))->map(function ($item) {
+            return PlanService::getPeriodKey($item);
+        })->toArray();
+    }
 }
