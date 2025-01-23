@@ -1219,6 +1219,16 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "error": {
         "saveFailed": "쿠폰 저장 실패"
       }
+    },
+    "period": {
+      "monthly": "월별",
+      "quarterly": "분기별",
+      "half_yearly": "반년별",
+      "yearly": "연간",
+      "two_yearly": "두 년",
+      "three_yearly": "세 년",
+      "onetime": "한 번",
+      "reset_traffic": "트래픽 재설정"
     }
   },
   "notice": {
