@@ -114,7 +114,8 @@ class PlanService
      */
     public static function convertToLegacyPeriod(string $period): string
     {
-        return Plan::LEGACY_PERIOD_MAPPING[$period] ?? $period;
+        $flippedMapping = array_flip(Plan::LEGACY_PERIOD_MAPPING);
+        return $flippedMapping[$period] ?? $period;
     }
 
     /**
