@@ -1211,6 +1211,16 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "error": {
         "saveFailed": "保存优惠券失败"
       }
+    },
+    "period": {
+      "monthly": "月",
+      "quarterly": "季度",
+      "half_yearly": "半年",
+      "yearly": "年",
+      "two_yearly": "两年",
+      "three_yearly": "三年",
+      "onetime": "一次性",
+      "reset_traffic": "重置流量"
     }
   },
   "notice": {

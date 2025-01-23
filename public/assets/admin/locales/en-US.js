@@ -1219,6 +1219,16 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "error": {
         "saveFailed": "Failed to save coupon"
       }
+    },
+    "period": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "half_yearly": "Half Yearly",
+      "yearly": "Yearly",
+      "two_yearly": "Two Yearly",
+      "three_yearly": "Three Yearly",
+      "onetime": "One Time",
+      "reset_traffic": "Reset Traffic"
     }
   },
   "notice": {
