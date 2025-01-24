@@ -84,7 +84,7 @@ docker compose up -d
 #### 3.4 Configure Reverse Proxy
 Add the following content to your site configuration:
 ```nginx
-location / {
+location ^~ / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
