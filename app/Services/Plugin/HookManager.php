@@ -80,11 +80,12 @@ class HookManager
      * 移除钩子监听器
      *
      * @param string $hook 钩子名称
+     * @param callable|null $callback 回调函数
      * @return void
      */
-    public static function remove(string $hook): void
+    public static function remove(string $hook, ?callable $callback = null): void
     {
-        Eventy::removeAction($hook);
-        Eventy::removeFilter($hook);
+        Eventy::removeAction($hook, $callback);
+        Eventy::removeFilter($hook, $callback);
     }
 }

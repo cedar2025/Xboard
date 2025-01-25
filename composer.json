@@ -31,6 +31,7 @@
         "symfony/http-client": "^6.4",
         "symfony/mailgun-mailer": "^6.4",
         "symfony/yaml": "*",
+        "tormjens/eventy": "^0.8.0",
         "zoujingli/ip2region": "^2.0"
     },
     "require-dev": {
