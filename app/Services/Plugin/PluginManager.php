@@ -5,6 +5,7 @@ namespace App\Services\Plugin;
 use App\Models\Plugin;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\View;
 
 class PluginManager
 {
@@ -89,6 +90,11 @@ class PluginManager
         if (File::exists($routesFile)) {
             require $routesFile;
         }
+        // 注册视图
+        $viewsPath = $this->pluginPath . '/' . $pluginCode . '/resources/views';
+        if (File::exists($viewsPath)) {
+            View::addNamespace($pluginCode, $viewsPath);
+        }
 
         // 初始化插件
         if (method_exists($plugin, 'boot')) {
@@ -150,7 +156,7 @@ class PluginManager
 
         require_once $pluginFile;
         $className = "Plugin\\{$pluginCode}\\Plugin";
-        return new $className();
+        return new $className($pluginCode);
     }
 
     /**
