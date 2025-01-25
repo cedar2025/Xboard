@@ -1340,54 +1340,60 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
   },
   "ticket": {
     "title": "티켓 관리",
-    "description": "여기에서 사용자 티켓을 확인할 수 있으며, 조회, 답변 및 종료 작업을 수행할 수 있습니다.",
+    "description": "사용자 티켓을 보고, 답변하고, 닫는 등의 작업을 관리합니다.",
     "columns": {
-      "id": "티켓 ID",
+      "id": "티켓 번호",
       "subject": "제목",
       "level": "우선순위",
       "status": "상태",
       "updated_at": "최근 업데이트",
-      "created_at": "생성 시간",
+      "created_at": "생성일",
       "actions": "작업"
     },
     "status": {
-      "closed": "종료됨",
-      "replied": "답변됨",
-      "pending": "대기 중",
-      "processing": "처리 중"
+      "closed": "닫힘",
+      "replied": "답변완료",
+      "pending": "대기중",
+      "processing": "처리중"
     },
     "level": {
-      "low": "낮음",
-      "medium": "중간",
-      "high": "높음"
+      "low": "낮은 우선순위",
+      "medium": "중간 우선순위",
+      "high": "높은 우선순위"
     },
     "filter": {
       "placeholder": "{field} 검색...",
-      "no_results": "검색 결과가 없습니다.",
+      "no_results": "결과를 찾을 수 없습니다",
       "selected": "{count}개 선택됨",
       "clear": "필터 초기화"
     },
     "actions": {
       "view_details": "상세 보기",
-      "close_ticket": "티켓 종료",
-      "close_confirm_title": "티켓 종료 확인",
-      "close_confirm_description": "종료 후에는 답변할 수 없습니다. 이 티켓을 종료하시겠습니까?",
-      "close_confirm_button": "티켓 종료",
-      "close_success": "티켓이 성공적으로 종료되었습니다",
+      "close_ticket": "티켓 닫기",
+      "close_confirm_title": "티켓 닫기 확인",
+      "close_confirm_description": "이 티켓을 닫으시겠습니까? 닫은 후에는 답변할 수 없습니다.",
+      "close_confirm_button": "닫기 확인",
+      "close_success": "티켓이 성공적으로 닫혔습니다",
       "view_ticket": "티켓 보기"
     },
     "detail": {
-      "no_messages": "메시지가 아직 없습니다",
-      "created_at": "생성 시간",
+      "no_messages": "메시지가 없습니다",
+      "created_at": "생성일",
       "user_info": "사용자 정보",
       "traffic_records": "트래픽 기록",
       "order_records": "주문 기록",
       "input": {
-        "closed_placeholder": "티켓이 종료되었습니다",
+        "closed_placeholder": "티켓이 닫혔습니다",
         "reply_placeholder": "답변을 입력하세요...",
-        "sending": "전송 중...",
+        "sending": "전송중...",
         "send": "전송"
       }
+    },
+    "list": {
+      "title": "티켓 목록",
+      "search_placeholder": "티켓 제목 또는 사용자 이메일 검색",
+      "no_tickets": "대기중인 티켓이 없습니다",
+      "no_search_results": "일치하는 티켓을 찾을 수 없습니다"
     }
   },
   "server": {

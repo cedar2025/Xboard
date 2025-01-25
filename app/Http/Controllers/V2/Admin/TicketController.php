@@ -70,7 +70,7 @@ class TicketController extends Controller
      */
     private function fetchTickets(Request $request)
     {
-        $ticketModel = Ticket::query()
+        $ticketModel = Ticket::with('user')
             ->when($request->has('status'), function ($query) use ($request) {
                 $query->where('status', $request->input('status'));
             })

@@ -1342,7 +1342,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
   },
   "ticket": {
     "title": "Ticket Management",
-    "description": "Here you can view user tickets, including viewing, replying, and closing operations.",
+    "description": "View and manage user tickets, including viewing, replying, and closing operations.",
     "columns": {
       "id": "Ticket ID",
       "subject": "Subject",
@@ -1359,13 +1359,13 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "processing": "Processing"
     },
     "level": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
+      "low": "Low Priority",
+      "medium": "Medium Priority",
+      "high": "High Priority"
     },
     "filter": {
       "placeholder": "Search {field}...",
-      "no_results": "No results found.",
+      "no_results": "No results found",
       "selected": "{count} selected",
       "clear": "Clear filters"
     },
@@ -1373,8 +1373,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "view_details": "View Details",
       "close_ticket": "Close Ticket",
       "close_confirm_title": "Confirm Close Ticket",
-      "close_confirm_description": "After closing, you will not be able to reply. Are you sure you want to close this ticket?",
-      "close_confirm_button": "Close Ticket",
+      "close_confirm_description": "Are you sure you want to close this ticket? You won't be able to reply after closing.",
+      "close_confirm_button": "Confirm Close",
       "close_success": "Ticket closed successfully",
       "view_ticket": "View Ticket"
     },
@@ -1390,6 +1390,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "sending": "Sending...",
         "send": "Send"
       }
+    },
+    "list": {
+      "title": "Ticket List",
+      "search_placeholder": "Search ticket subject or user email",
+      "no_tickets": "No pending tickets",
+      "no_search_results": "No matching tickets found"
     }
   },
   "server": {
