@@ -145,6 +145,31 @@ class PluginManager
     }
 
     /**
+     * 删除插件
+     *
+     * @param string $pluginCode
+     * @return bool
+     * @throws \Exception
+     */
+    public function delete(string $pluginCode): bool
+    {
+        // 先卸载插件
+        if (Plugin::where('code', $pluginCode)->exists()) {
+            $this->uninstall($pluginCode);
+        }
+
+        $pluginPath = $this->pluginPath . '/' . $pluginCode;
+        if (!File::exists($pluginPath)) {
+            throw new \Exception('插件不存在');
+        }
+
+        // 删除插件目录
+        File::deleteDirectory($pluginPath);
+
+        return true;
+    }
+
+    /**
      * 加载插件实例
      */
     protected function loadPlugin(string $pluginCode)
@@ -181,6 +206,61 @@ class PluginManager
                 // 实现版本比较逻辑
             }
         }
+        return true;
+    }
+
+    /**
+     * 上传插件
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return bool
+     * @throws \Exception
+     */
+    public function upload($file): bool
+    {
+        $tmpPath = storage_path('tmp/plugins');
+        if (!File::exists($tmpPath)) {
+            File::makeDirectory($tmpPath, 0755, true);
+        }
+
+        $extractPath = $tmpPath . '/' . uniqid();
+        $zip = new \ZipArchive();
+
+        if ($zip->open($file->path()) !== true) {
+            throw new \Exception('无法打开插件包文件');
+        }
+
+        $zip->extractTo($extractPath);
+        $zip->close();
+
+        $configFile = File::glob($extractPath . '/*/config.json');
+        if (empty($configFile)) {
+            $configFile = File::glob($extractPath . '/config.json');
+        }
+
+        if (empty($configFile)) {
+            File::deleteDirectory($extractPath);
+            throw new \Exception('插件包格式错误：缺少配置文件');
+        }
+
+        $pluginPath = dirname(reset($configFile));
+        $config = json_decode(File::get($pluginPath . '/config.json'), true);
+
+        if (!$this->validateConfig($config)) {
+            File::deleteDirectory($extractPath);
+            throw new \Exception('插件配置文件格式错误');
+        }
+
+        $targetPath = $this->pluginPath . '/' . $config['code'];
+        if (File::exists($targetPath)) {
+            File::deleteDirectory($extractPath);
+            throw new \Exception('插件已存在');
+        }
+
+        File::copyDirectory($pluginPath, $targetPath);
+        File::deleteDirectory($pluginPath);
+        File::deleteDirectory($extractPath);
+
         return true;
     }
 }

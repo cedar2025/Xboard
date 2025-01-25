@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ThemeController extends Controller
 {
@@ -75,7 +76,7 @@ class ThemeController extends Controller
         } catch (ApiException $e) {
             throw $e;
         } catch (\Exception $e) {
-            \Log::error('Theme upload failed', [
+            Log::error('Theme upload failed', [
                 'error' => $e->getMessage(),
                 'file' => $request->file('file')?->getClientOriginalName()
             ]);
