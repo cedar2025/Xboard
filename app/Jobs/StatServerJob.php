@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StatServerJob implements ShouldQueue
 {
@@ -22,6 +23,15 @@ class StatServerJob implements ShouldQueue
 
     public $tries = 3;
     public $timeout = 60;
+    public $maxExceptions = 3;
+
+    /**
+     * Calculate the number of seconds to wait before retrying the job.
+     */
+    public function backoff(): array
+    {
+        return [1, 5, 10];
+    }
 
     /**
      * Create a new job instance.
@@ -40,7 +50,6 @@ class StatServerJob implements ShouldQueue
      */
     public function handle(): void
     {
-        // Calculate record timestamp
         $recordAt = $this->recordType === 'm'
             ? strtotime(date('Y-m-01'))
             : strtotime(date('Y-m-d'));
@@ -51,28 +60,33 @@ class StatServerJob implements ShouldQueue
             $u += $traffic[0];
             $d += $traffic[1];
         }
-        DB::transaction(function () use ($u, $d, $recordAt) {
-            $stat = StatServer::lockForUpdate()
-                ->where('record_at', $recordAt)
-                ->where('server_id', $this->server['id'])
-                ->where('server_type', $this->protocol)
-                ->where('record_type', $this->recordType)
-                ->first();
 
-            if ($stat) {
-                $stat->u += $u;
-                $stat->d += $d;
-                $stat->save();
-            } else {
-                StatServer::create([
+        try {
+            DB::transaction(function () use ($u, $d, $recordAt) {
+                $affected = StatServer::where([
                     'record_at' => $recordAt,
                     'server_id' => $this->server['id'],
                     'server_type' => $this->protocol,
                     'record_type' => $this->recordType,
-                    'u' => $u,
-                    'd' => $d,
+                ])->update([
+                    'u' => DB::raw('u + ' . $u),
+                    'd' => DB::raw('d + ' . $d),
                 ]);
-            }
-        });
+
+                if (!$affected) {
+                    StatServer::create([
+                        'record_at' => $recordAt,
+                        'server_id' => $this->server['id'],
+                        'server_type' => $this->protocol,
+                        'record_type' => $this->recordType,
+                        'u' => $u,
+                        'd' => $d,
+                    ]);
+                }
+            }, 3);
+        } catch (\Exception $e) {
+            Log::error('StatServerJob failed for server ' . $this->server['id'] . ': ' . $e->getMessage());
+            throw $e;
+        }
     }
 }
