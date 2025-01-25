@@ -176,9 +176,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "other": "其他"
     },
     "tabs": {
-      "all": "全部插件",
+      "all": "所有插件",
       "installed": "已安装",
-      "available": "可用插件"
+      "available": "可用"
     },
     "status": {
       "enabled": "已启用",
@@ -188,11 +188,29 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "install": "安装",
       "config": "配置",
       "enable": "启用",
-      "disable": "禁用"
+      "disable": "禁用",
+      "uninstall": "卸载"
+    },
+    "upload": {
+      "button": "上传插件",
+      "title": "上传插件",
+      "description": "上传插件包 (.zip)",
+      "dragText": "拖拽插件包到此处，或",
+      "clickText": "浏览",
+      "supportText": "仅支持 .zip 格式文件",
+      "uploading": "上传中...",
+      "error": {
+        "format": "仅支持 .zip 格式文件"
+      }
+    },
+    "delete": {
+      "title": "删除插件",
+      "description": "确定要删除此插件吗？此操作无法撤销。",
+      "button": "删除"
     },
     "uninstall": {
       "title": "卸载插件",
-      "description": "确定要卸载该插件吗？卸载后插件数据将被清除。",
+      "description": "确定要卸载此插件吗？卸载后插件数据将被清除。",
       "button": "卸载"
     },
     "config": {
@@ -213,7 +231,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "disableError": "插件禁用失败",
       "configLoadError": "加载插件配置失败",
       "configSaveSuccess": "配置保存成功",
-      "configSaveError": "配置保存失败"
+      "configSaveError": "配置保存失败",
+      "uploadSuccess": "插件上传成功",
+      "uploadError": "插件上传失败",
+      "deleteSuccess": "插件删除成功",
+      "deleteError": "插件删除失败"
     }
   },
   "settings": {

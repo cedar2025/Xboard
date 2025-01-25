@@ -78,6 +78,7 @@ services:
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
     environment:
       - docker=true
     depends_on:
@@ -96,6 +97,7 @@ services:
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
+      - ./plugins:/www/plugins
     restart: on-failure
     command: php artisan horizon
     networks:

@@ -192,4 +192,56 @@ class PluginController extends Controller
             ], 400);
         }
     }
+
+    /**
+     * 上传插件
+     */
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:zip',
+                'max:10240', // 最大10MB
+            ]
+        ], [
+            'file.required' => '请选择插件包文件',
+            'file.file' => '无效的文件类型',
+            'file.mimes' => '插件包必须是zip格式',
+            'file.max' => '插件包大小不能超过10MB'
+        ]);
+
+        try {
+            $this->pluginManager->upload($request->file('file'));
+            return response()->json([
+                'message' => '插件上传成功'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '插件上传失败：' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * 删除插件
+     */
+    public function delete(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string'
+        ]);
+
+        try {
+            $this->pluginManager->delete($request->input('code'));
+            return response()->json([
+                'message' => '插件删除成功'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '插件删除失败：' . $e->getMessage()
+            ], 400);
+        }
+    }
 }

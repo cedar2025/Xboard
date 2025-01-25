@@ -210,6 +210,8 @@ class AdminRoute
                 'prefix' => 'plugin'
             ], function ($router) {
                 $router->get('/getPlugins', [\App\Http\Controllers\V2\Admin\PluginController::class, 'index']);
+                $router->post('/upload', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upload']);
+                $router->post('/delete', [\App\Http\Controllers\V2\Admin\PluginController::class, 'delete']);
                 $router->post('install', [\App\Http\Controllers\V2\Admin\PluginController::class, 'install']);
                 $router->post('uninstall', [\App\Http\Controllers\V2\Admin\PluginController::class, 'uninstall']);
                 $router->post('enable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'enable']);

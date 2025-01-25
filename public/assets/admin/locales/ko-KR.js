@@ -188,7 +188,25 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "install": "설치",
       "config": "설정",
       "enable": "활성화",
-      "disable": "비활성화"
+      "disable": "비활성화",
+      "uninstall": "제거"
+    },
+    "upload": {
+      "button": "플러그인 업로드",
+      "title": "플러그인 업로드",
+      "description": "플러그인 패키지 업로드 (.zip)",
+      "dragText": "플러그인 패키지를 여기에 끌어다 놓거나",
+      "clickText": "찾아보기",
+      "supportText": ".zip 파일만 지원됩니다",
+      "uploading": "업로드 중...",
+      "error": {
+        "format": ".zip 파일만 지원됩니다"
+      }
+    },
+    "delete": {
+      "title": "플러그인 삭제",
+      "description": "이 플러그인을 삭제하시겠습니까? 삭제 후 플러그인 데이터가 삭제됩니다.",
+      "button": "삭제"
     },
     "uninstall": {
       "title": "플러그인 제거",
@@ -213,7 +231,9 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "disableError": "플러그인 비활성화에 실패했습니다",
       "configLoadError": "플러그인 설정을 불러오는데 실패했습니다",
       "configSaveSuccess": "설정이 성공적으로 저장되었습니다",
-      "configSaveError": "설정 저장에 실패했습니다"
+      "configSaveError": "설정 저장에 실패했습니다",
+      "uploadSuccess": "플러그인이 성공적으로 업로드되었습니다",
+      "uploadError": "플러그인 업로드에 실패했습니다"
     }
   },
   "settings": {
