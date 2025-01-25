@@ -42,6 +42,16 @@ class User extends Authenticatable
         return $this->hasMany(InviteCode::class, 'user_id', 'id');
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id', 'id');
+    }
+
+    public function stat()
+    {
+        return $this->hasMany(StatUser::class, 'user_id', 'id');
+    }
+
     // 关联工单列表
     public function tickets()
     {
