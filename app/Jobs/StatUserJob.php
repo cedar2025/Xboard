@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StatUserJob implements ShouldQueue
 {
@@ -22,6 +23,15 @@ class StatUserJob implements ShouldQueue
 
     public $tries = 3;
     public $timeout = 60;
+    public $maxExceptions = 3;
+
+    /**
+     * Calculate the number of seconds to wait before retrying the job.
+     */
+    public function backoff(): array
+    {
+        return [1, 5, 10];
+    }
 
     /**
      * Create a new job instance.
@@ -40,34 +50,38 @@ class StatUserJob implements ShouldQueue
      */
     public function handle(): void
     {
-        // Calculate record timestamp
         $recordAt = $this->recordType === 'm'
             ? strtotime(date('Y-m-01'))
             : strtotime(date('Y-m-d'));
 
         foreach ($this->data as $uid => $v) {
-            DB::transaction(function () use ($uid, $v, $recordAt) {
-                $stat = StatUser::lockForUpdate()
-                    ->where('user_id', $uid)
-                    ->where('server_rate', $this->server['rate'])
-                    ->where('record_at', $recordAt)
-                    ->where('record_type', $this->recordType)
-                    ->first();
-                if ($stat) {
-                    $stat->u += ($v[0] * $this->server['rate']);
-                    $stat->d += ($v[1] * $this->server['rate']);
-                    $stat->save();
-                } else {
-                    StatUser::create([
+            try {
+                DB::transaction(function () use ($uid, $v, $recordAt) {
+                    $affected = StatUser::where([
                         'user_id' => $uid,
                         'server_rate' => $this->server['rate'],
                         'record_at' => $recordAt,
                         'record_type' => $this->recordType,
-                        'u' => ($v[0] * $this->server['rate']),
-                        'd' => ($v[1] * $this->server['rate']),
+                    ])->update([
+                        'u' => DB::raw('u + ' . ($v[0] * $this->server['rate'])),
+                        'd' => DB::raw('d + ' . ($v[1] * $this->server['rate'])),
                     ]);
-                }
-            });
+
+                    if (!$affected) {
+                        StatUser::create([
+                            'user_id' => $uid,
+                            'server_rate' => $this->server['rate'],
+                            'record_at' => $recordAt,
+                            'record_type' => $this->recordType,
+                            'u' => ($v[0] * $this->server['rate']),
+                            'd' => ($v[1] * $this->server['rate']),
+                        ]);
+                    }
+                }, 3);
+            } catch (\Exception $e) {
+                Log::error('StatUserJob failed for user ' . $uid . ': ' . $e->getMessage());
+                throw $e;
+            }
         }
     }
 }
