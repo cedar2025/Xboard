@@ -1351,9 +1351,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "processing": "处理中"
     },
     "level": {
-      "low": "低",
-      "medium": "中",
-      "high": "高"
+      "low": "低优先",
+      "medium": "中优先",
+      "high": "高优先"
     },
     "filter": {
       "placeholder": "搜索{field}...",
@@ -1365,8 +1365,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "view_details": "查看详情",
       "close_ticket": "关闭工单",
       "close_confirm_title": "确认关闭工单",
-      "close_confirm_description": "关闭后将无法继续回复，是否确认关闭该工单？",
-      "close_confirm_button": "关闭工单",
+      "close_confirm_description": "确定要关闭这个工单吗？关闭后将无法继续回复。",
+      "close_confirm_button": "确认关闭",
       "close_success": "工单已关闭",
       "view_ticket": "查看工单"
     },
@@ -1378,10 +1378,16 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "order_records": "订单记录",
       "input": {
         "closed_placeholder": "工单已关闭",
-        "reply_placeholder": "请输入回复内容...",
+        "reply_placeholder": "输入回复内容...",
         "sending": "发送中...",
         "send": "发送"
       }
+    },
+    "list": {
+      "title": "工单列表",
+      "search_placeholder": "搜索工单标题或用户邮箱",
+      "no_tickets": "暂无待处理工单",
+      "no_search_results": "未找到匹配的工单"
     }
   },
   "server": {
@@ -1931,12 +1937,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "device": {
           "label": "设备限制",
           "placeholder": "请输入设备限制",
-          "unit": "台设备"
+          "unit": "台"
         },
         "capacity": {
           "label": "容量限制",
           "placeholder": "请输入容量限制",
-          "unit": "个用户"
+          "unit": "人"
         },
         "reset_method": {
           "label": "流量重置方式",
