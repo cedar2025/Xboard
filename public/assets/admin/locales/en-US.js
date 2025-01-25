@@ -188,7 +188,25 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "install": "Install",
       "config": "Configure",
       "enable": "Enable",
-      "disable": "Disable"
+      "disable": "Disable",
+      "uninstall": "Uninstall"
+    },
+    "upload": {
+      "button": "Upload Plugin",
+      "title": "Upload Plugin",
+      "description": "Upload a plugin package (.zip)",
+      "dragText": "Drag and drop plugin package here, or",
+      "clickText": "browse",
+      "supportText": "Supports .zip files only",
+      "uploading": "Uploading...",
+      "error": {
+        "format": "Only .zip files are supported"
+      }
+    },
+    "delete": {
+      "title": "Delete Plugin",
+      "description": "Are you sure you want to delete this plugin? This action cannot be undone.",
+      "button": "Delete"
     },
     "uninstall": {
       "title": "Uninstall Plugin",
@@ -213,7 +231,11 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "disableError": "Failed to disable plugin",
       "configLoadError": "Failed to load plugin configuration",
       "configSaveSuccess": "Configuration saved successfully",
-      "configSaveError": "Failed to save configuration"
+      "configSaveError": "Failed to save configuration",
+      "uploadSuccess": "Plugin uploaded successfully",
+      "uploadError": "Failed to upload plugin",
+      "deleteSuccess": "Plugin deleted successfully",
+      "deleteError": "Failed to delete plugin"
     }
   },
   "settings": {
