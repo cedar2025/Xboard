@@ -19,22 +19,9 @@ class Coupon extends Model
 
     public function getLimitPeriodAttribute($value)
     {
-        return collect(json_decode($value, true))->map(function ($item) {
+        return collect(json_decode((string) $value, true))->map(function ($item) {
             return PlanService::getPeriodKey($item);
         })->toArray();
     }
 
-    public function getLimitPlanIdsAttribute($value)
-    {
-        $planIds = json_decode($value, true);
-        
-        if (blank($planIds)) {
-            return null;
-        }
-        
-        return collect($planIds)
-            ->map(fn($id) => (string) $id)
-            ->values()
-            ->all();
-    }
 }
