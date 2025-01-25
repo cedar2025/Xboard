@@ -90,7 +90,7 @@ class Helper
         return true;
     }
 
-    public static function trafficConvert(int $byte)
+    public static function trafficConvert(float $byte)
     {
         $kb = 1024;
         $mb = 1048576;

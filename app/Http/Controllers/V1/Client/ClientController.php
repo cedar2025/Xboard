@@ -94,7 +94,7 @@ class ClientController extends Controller
      */
     private function isBrowserAccess(Request $request): bool
     {
-        $userAgent = strtolower($request->input('flag', $request->header('User-Agent')));
+        $userAgent = strtolower($request->input('flag', $request->header('User-Agent', '')));
         return str_contains($userAgent, 'mozilla')
             || str_contains($userAgent, 'chrome')
             || str_contains($userAgent, 'safari')
