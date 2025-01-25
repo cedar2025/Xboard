@@ -1,27 +1,28 @@
 ---
-name: ✨ Feature Request
-about: Suggest an idea
-title: "Suggestion: "
+name: ✨ 功能请求 | Feature Request
+about: 提交新功能建议或改进意见 | Suggest an idea
+title: "建议："
 labels: '✨ enhancement'
 assignees: ''
 ---
 
+> ⚠️ 请务必按照模板详细描述你的需求，没有详细描述的issue可能会被忽略或关闭
 > ⚠️ Please follow the template to describe your request in detail, issues without detailed description may be ignored or closed
 
-**Description**
-<!-- Describe the feature or improvement you'd like to suggest -->
+**需求描述 | Description**
+<!-- 描述你希望添加的功能或改进建议 -->
 
 
-**Use Case**
-<!-- Describe the scenarios where this feature would be used and what problems it solves -->
+**使用场景 | Use Case**
+<!-- 描述这个功能会在什么场景下使用，解决什么问题 -->
 
 
-**Suggestion**
-<!-- How do you expect this feature to work? You can describe the specific implementation -->
+**功能建议 | Suggestion**
+<!-- 你期望这个功能是什么样的？可以描述一下具体实现方式 -->
 ```yaml
-Type: [New Feature/Feature Enhancement/UI Improvement]
-Expected:
+功能形式 | Type: [新功能/功能优化/界面改进]
+预期效果 | Expected:
 ```
 
-**Additional Information**
-<!-- Any additional information or reference examples -->
+**补充说明 | Additional**
+<!-- 其他补充说明或者参考示例 -->
