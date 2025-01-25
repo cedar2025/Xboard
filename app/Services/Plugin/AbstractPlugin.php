@@ -2,24 +2,22 @@
 
 namespace App\Services\Plugin;
 
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\HttpFoundation\Response;
+
 abstract class AbstractPlugin
 {
     protected array $config = [];
-    
-    /**
-     * 插件启动时调用
-     */
-    public function boot(): void
-    {
-        // 子类实现具体逻辑
-    }
+    protected string $basePath;
+    protected string $pluginCode;
 
-    /**
-     * 插件禁用时调用
-     */
-    public function cleanup(): void
+    public function __construct($pluginCode)
     {
-        // 子类实现具体逻辑
+        $this->pluginCode = $pluginCode;
+        $reflection = new \ReflectionClass($this);
+        $this->basePath = dirname($reflection->getFileName());
     }
 
     /**
@@ -39,11 +37,19 @@ abstract class AbstractPlugin
     }
 
     /**
-     * 注册事件监听器
+     * 注册动作钩子监听器
      */
-    protected function listen(string $hook, callable $callback): void
+    protected function listen(string $hook, callable $callback, int $priority = 20): void
     {
-        HookManager::register($hook, $callback);
+        HookManager::register($hook, $callback, $priority);
+    }
+
+    /**
+     * 注册过滤器钩子
+     */
+    protected function filter(string $hook, callable $callback, int $priority = 20): void
+    {
+        HookManager::registerFilter($hook, $callback, $priority);
     }
 
     /**
@@ -53,4 +59,15 @@ abstract class AbstractPlugin
     {
         HookManager::remove($hook);
     }
-} 
+
+    /**
+     * 中断当前请求并返回新的响应
+     *
+     * @param Response|string|array $response
+     * @return never
+     */
+    protected function intercept(Response|string|array $response): never
+    {
+        HookManager::intercept($response);
+    }
+}
