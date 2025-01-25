@@ -13,6 +13,7 @@ use App\Services\AuthService;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
@@ -86,11 +87,11 @@ class UserController extends Controller
         }
 
         [$operator, $filterValue] = explode(':', $value, 2);
-        
+
         // Convert numeric strings to appropriate type
         if (is_numeric($filterValue)) {
-            $filterValue = strpos($filterValue, '.') !== false 
-                ? (float) $filterValue 
+            $filterValue = strpos($filterValue, '.') !== false
+                ? (float) $filterValue
                 : (int) $filterValue;
         }
 
@@ -149,12 +150,12 @@ class UserController extends Controller
     {
         $current = $request->input('current', 1);
         $pageSize = $request->input('pageSize', 10);
-        
+
         $userModel = User::with(['plan:id,name', 'invite_user:id,email', 'group:id,name'])
             ->select(DB::raw('*, (u+d) as total_used'));
 
         $this->applyFiltersAndSorts($request, $userModel);
-        
+
         $users = $userModel->orderBy('id', 'desc')
             ->paginate($pageSize, ['*'], 'page', $current);
 
@@ -396,5 +397,36 @@ class UserController extends Controller
         }
 
         return $this->success(true);
+    }
+
+    /**
+     * 删除用户及其关联数据
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function destroy(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:App\Models\User,id'
+        ], [
+            'id.required' => '用户ID不能为空',
+            'id.exists' => '用户不存在'
+        ]);
+        $user = User::find($request->input('id'));
+        try {
+            DB::beginTransaction();
+            $user->orders()->delete();
+            $user->codes()->delete();
+            $user->stat()->delete();
+            $user->tickets()->delete();
+            $user->delete();
+            DB::commit();
+            return $this->success(true);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error($e);
+            return $this->fail([500, '删除失败']);
+        }
     }
 }
