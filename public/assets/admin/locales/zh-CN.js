@@ -820,7 +820,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "success": "成功",
     "save": "保存",
     "cancel": "取消",
-    "delete": "删除",
+    "confirm": "确认",
+    "delete": {
+      "success": "删除成功",
+      "failed": "删除失败"
+    },
     "edit": "编辑",
     "view": "查看",
     "toggleNavigation": "切换导航",
@@ -837,6 +841,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "logout": "退出登录",
     "copy": {
       "success": "复制成功",
+      "failed": "复制失败",
       "error": "复制失败",
       "errorLog": "复制到剪贴板时出错"
     },
@@ -1707,7 +1712,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "reset_secret": "重置UUID及订阅URL",
         "orders": "TA的订单",
         "invites": "TA的邀请",
-        "traffic_records": "TA的流量记录"
+        "traffic_records": "TA的流量记录",
+        "delete": "删除",
+        "delete_confirm_title": "确认删除用户",
+        "delete_confirm_description": "此操作将永久删除用户 {{email}} 及其所有相关数据，包括订单、优惠码、流量记录、工单记录等信息。删除后无法恢复，是否继续？"
       }
     },
     "filter": {

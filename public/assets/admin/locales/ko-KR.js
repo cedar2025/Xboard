@@ -815,7 +815,11 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "success": "성공",
     "save": "저장",
     "cancel": "취소",
-    "delete": "삭제",
+    "confirm": "확인",
+    "delete": {
+      "success": "삭제되었습니다",
+      "failed": "삭제에 실패했습니다"
+    },
     "edit": "편집",
     "view": "보기",
     "toggleNavigation": "네비게이션 전환",
@@ -831,9 +835,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "settings": "설정",
     "logout": "로그아웃",
     "copy": {
-      "success": "복사 성공",
-      "error": "복사 실패",
-      "errorLog": "클립보드에 복사하는 중 오류 발생"
+      "success": "복사되었습니다",
+      "failed": "복사에 실패했습니다"
     },
     "table": {
       "noData": "데이터가 없습니다",
@@ -1692,9 +1695,12 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "assign_order": "주문 할당",
         "copy_url": "구독 URL 복사",
         "reset_secret": "UUID 및 URL 재설정",
-        "orders": "주문",
-        "invites": "초대",
-        "traffic_records": "트래픽 기록"
+        "orders": "주문 내역",
+        "invites": "초대 내역",
+        "traffic_records": "트래픽 기록",
+        "delete": "삭제",
+        "delete_confirm_title": "사용자 삭제 확인",
+        "delete_confirm_description": "이 작업은 사용자 {{email}}와 관련된 모든 데이터(주문, 쿠폰, 트래픽 기록, 지원 티켓 등)를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다. 계속하시겠습니까?"
       }
     },
     "filter": {

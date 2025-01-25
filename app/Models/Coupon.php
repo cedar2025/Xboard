@@ -24,17 +24,4 @@ class Coupon extends Model
         })->toArray();
     }
 
-    public function getLimitPlanIdsAttribute($value)
-    {
-        $planIds = json_decode($value, true);
-        
-        if (blank($planIds)) {
-            return null;
-        }
-        
-        return collect($planIds)
-            ->map(fn($id) => (string) $id)
-            ->values()
-            ->all();
-    }
 }

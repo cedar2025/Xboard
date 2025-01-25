@@ -815,7 +815,11 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "success": "Success",
     "save": "Save",
     "cancel": "Cancel",
-    "delete": "Delete",
+    "confirm": "Confirm",
+    "delete": {
+      "success": "Deleted successfully",
+      "failed": "Failed to delete"
+    },
     "edit": "Edit",
     "view": "View",
     "toggleNavigation": "Toggle Navigation",
@@ -832,6 +836,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "logout": "Logout",
     "copy": {
       "success": "Copied successfully",
+      "failed": "Failed to copy",
       "error": "Copy failed",
       "errorLog": "Error copying to clipboard"
     },
@@ -1740,7 +1745,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "reset_secret": "Reset UUID & URL",
         "orders": "Orders",
         "invites": "Invites",
-        "traffic_records": "Traffic Records"
+        "traffic_records": "Traffic Records",
+        "delete": "Delete",
+        "delete_confirm_title": "Confirm Delete User",
+        "delete_confirm_description": "This action will permanently delete user {{email}} and all associated data, including orders, coupons, traffic records, and support tickets. This action cannot be undone. Do you want to continue?"
       }
     },
     "filter": {
