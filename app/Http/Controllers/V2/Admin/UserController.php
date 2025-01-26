@@ -160,7 +160,7 @@ class UserController extends Controller
             ->paginate($pageSize, ['*'], 'page', $current);
 
         $users->getCollection()->transform(function ($user) {
-            return $this->transformUserData($user);
+            return self::transformUserData($user);
         });
 
         return response([
@@ -175,7 +175,7 @@ class UserController extends Controller
      * @param User $user
      * @return User
      */
-    private function transformUserData(User $user): User
+    public static function transformUserData(User $user): User
     {
         $user->subscribe_url = Helper::getSubscribeUrl($user->token);
         $user->balance = $user->balance / 100;
