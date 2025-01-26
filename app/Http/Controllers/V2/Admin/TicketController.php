@@ -55,9 +55,10 @@ class TicketController extends Controller
         if (!$ticket) {
             return $this->fail([400202, '工单不存在']);
         }
-
+        $ticket->user = UserController::transformUserData($ticket->user);
         $ticket->messages->each(function ($message) use ($ticket) {
             $message->is_me = $message->user_id !== $ticket->user_id;
+
         });
 
         return $this->success($ticket);
@@ -84,13 +85,20 @@ class TicketController extends Controller
             });
 
         $this->applyFiltersAndSorts($request, $ticketModel);
-
-        return response()->json($ticketModel
+        $tickets = $ticketModel
             ->latest('updated_at')
             ->paginate(
                 perPage: $request->integer('pageSize', 10),
                 page: $request->integer('current', 1)
-            ));
+            );
+        $tickets->getCollection()->transform(function ($ticket) {
+            $ticket->user = UserController::transformUserData($ticket->user);
+            return $ticket;
+        });
+        return response([
+            'data' => $tickets->items(),
+            'total' => $tickets->total()
+        ]);
     }
 
     public function reply(Request $request)
