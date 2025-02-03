@@ -24,7 +24,7 @@ Xboard is a modern panel system built on Laravel 11, focusing on providing a cle
 ## 🚀 Quick Start
 
 ```bash
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard && \
+git clone -b compose --depth 1 https://github.com/socksprox/Xboard && \
 cd Xboard && \
 docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
