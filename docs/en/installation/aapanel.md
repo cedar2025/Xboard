@@ -120,7 +120,7 @@ location ~ .*\.(js|css)?$
 - Name: Octane
 - Run User: www
 - Running Directory: Site directory
-- Start Command: `/www/server/php/81/bin/php artisan octane:start --port 7010`
+- Start Command: `/www/server/php/82/bin/php artisan octane:start --port 7010`
 - Process Count: 1
 
 #### 3.2 Octane-specific Rewrite Rules
