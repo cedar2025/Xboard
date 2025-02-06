@@ -2,6 +2,9 @@
 
 namespace App\Utils;
 
+use App\Services\Plugin\HookManager;
+use Illuminate\Support\Arr;
+
 class Helper
 {
     public static function uuidToBase64($uuid, $length)
@@ -111,12 +114,14 @@ class Helper
     public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
         $path = route('client.subscribe', ['token' => $token], false);
-        if(!$subscribeUrl){
+        if (!$subscribeUrl) {
             $subscribeUrls = explode(',', admin_setting('subscribe_url'));
-            $subscribeUrl = \Arr::random($subscribeUrls);
+            $subscribeUrl = Arr::random($subscribeUrls);
             $subscribeUrl = self::replaceByPattern($subscribeUrl);
         }
-        return $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
+
+        $finalUrl = $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
+        return HookManager::filter('subscribe.url', [$finalUrl, $token]);
     }
 
     public static function randomPort($range): int {
