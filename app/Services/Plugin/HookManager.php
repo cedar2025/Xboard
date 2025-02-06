@@ -45,9 +45,9 @@ class HookManager
      * @param mixed ...$args 其他参数
      * @return mixed
      */
-    public static function filter(string $hook, mixed $value, mixed ...$args): mixed
+    public static function filter(string $hook, mixed $value): mixed
     {
-        return Eventy::filter($hook, $value, ...$args);
+        return Eventy::filter($hook, $value);
     }
 
     /**
