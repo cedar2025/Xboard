@@ -134,16 +134,11 @@ class PluginController extends Controller
             'code' => 'required|string'
         ]);
 
-        try {
-            $this->pluginManager->disable($request->input('code'));
-            return response()->json([
-                'message' => '插件禁用成功'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => '插件禁用失败：' . $e->getMessage()
-            ], 400);
-        }
+        $this->pluginManager->disable($request->input('code'));
+        return response()->json([
+            'message' => '插件禁用成功'
+        ]);
+
     }
 
     /**
