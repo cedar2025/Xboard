@@ -3,8 +3,8 @@ FROM phpswoole/swoole:php8.2-alpine
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 # Install PHP extensions one by one with lower optimization level for ARM64 compatibility
-RUN CFLAGS="-O1" install-php-extensions pcntl && \
-    CFLAGS="-O1" install-php-extensions bcmath && \
+RUN CFLAGS="-O0" install-php-extensions pcntl && \
+    CFLAGS="-O0 -g0" install-php-extensions bcmath && \
     install-php-extensions zip && \
     install-php-extensions redis && \
     apk --no-cache add shadow sqlite mysql-client mysql-dev mariadb-connector-c git patch supervisor redis && \
