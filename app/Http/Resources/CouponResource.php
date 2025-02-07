@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Coupon;
+use App\Services\CouponService;
+use App\Services\PlanService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,6 +29,13 @@ class CouponResource extends JsonResource
                 !empty($this->limit_plan_ids),
                 fn() => collect($this->limit_plan_ids)
                     ->map(fn(mixed $id): string => (string) $id)
+                    ->values()
+                    ->all()
+            ),
+            'limit_period' => $this->when(
+                !empty($this->limit_period),
+                fn() => collect($this->limit_period)
+                    ->map(fn(mixed $period): string => (string) PlanService::convertToLegacyPeriod($period))
                     ->values()
                     ->all()
             )
