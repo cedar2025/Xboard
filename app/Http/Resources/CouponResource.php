@@ -25,20 +25,14 @@ class CouponResource extends JsonResource
     {
         return [
             ...$this->resource->toArray(),
-            'limit_plan_ids' => $this->when(
-                !empty($this->limit_plan_ids),
-                fn() => collect($this->limit_plan_ids)
-                    ->map(fn(mixed $id): string => (string) $id)
-                    ->values()
-                    ->all()
-            ),
-            'limit_period' => $this->when(
-                !empty($this->limit_period),
-                fn() => collect($this->limit_period)
-                    ->map(fn(mixed $period): string => (string) PlanService::convertToLegacyPeriod($period))
-                    ->values()
-                    ->all()
-            )
+            'limit_plan_ids' => empty($this->limit_plan_ids) ? null : collect($this->limit_plan_ids)
+                ->map(fn(mixed $id): string => (string) $id)
+                ->values()
+                ->all(),
+            'limit_period' => empty($this->limit_period) ? null : collect($this->limit_period)
+                ->map(fn(mixed $period): string => (string) PlanService::convertToLegacyPeriod($period))
+                ->values()
+                ->all(),
         ];
     }
 }
