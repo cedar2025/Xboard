@@ -8,6 +8,7 @@ use App\Jobs\TrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Plugin\HookManager;
 
 class UserService
 {
@@ -172,6 +173,11 @@ class UserService
 
     public function trafficFetch(array $server, string $protocol, array $data)
     {
+        list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [
+            $server,
+            $protocol, 
+            $data
+        ]);
 
         $timestamp = strtotime(date('Y-m-d'));
         collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol) {
