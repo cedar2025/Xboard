@@ -121,7 +121,7 @@ class Helper
         }
 
         $finalUrl = $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
-        return HookManager::filter('subscribe.url', [$finalUrl, $token]);
+        return HookManager::filter('subscribe.url', $finalUrl);
     }
 
     public static function randomPort($range): int {
