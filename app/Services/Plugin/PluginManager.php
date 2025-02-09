@@ -413,7 +413,7 @@ class PluginManager
             throw new \Exception('插件配置文件格式错误');
         }
 
-        $targetPath = $this->pluginPath . '/' . $config['code'];
+        $targetPath = $this->pluginPath . '/' . Str::studly($config['code']);
         if (File::exists($targetPath)) {
             File::deleteDirectory($extractPath);
             throw new \Exception('插件已存在');
