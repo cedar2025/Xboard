@@ -21,7 +21,7 @@ RUN git clone --depth 2 ${REPO_URL} .
 
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN composer install --optimize-autoloader --no-cache --no-dev \
+RUN composer install --no-cache --no-dev \
     && php artisan storage:link \
     && chown -R www:www /www \
     && chmod -R 775 /www \
