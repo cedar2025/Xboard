@@ -288,7 +288,6 @@ class PluginManager
                 'is_enabled' => true,
                 'updated_at' => now(),
             ]);
-            
         // 初始化插件
         if (method_exists($plugin, 'boot')) {
             $plugin->boot();
@@ -351,7 +350,7 @@ class PluginManager
             $this->uninstall($pluginCode);
         }
 
-        $pluginPath = $this->pluginPath . '/' . $pluginCode;
+        $pluginPath = $this->getPluginPath($pluginCode);
         if (!File::exists($pluginPath)) {
             throw new \Exception('插件不存在');
         }
