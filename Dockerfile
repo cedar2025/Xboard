@@ -16,6 +16,8 @@ WORKDIR /www
 
 COPY .docker /
 
+# Add build argument for cache busting
+ARG CACHEBUST=1
 ARG REPO_URL=https://github.com/cedar2025/Xboard
 RUN git clone --depth 2 ${REPO_URL} .
 
