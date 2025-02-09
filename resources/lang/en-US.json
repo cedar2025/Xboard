@@ -113,5 +113,11 @@
     "QR Code": "QR Code",
     "Unlimited": "Unlimited",
     "Device Limit": "Device Limit",
-    "Devices": "Devices"
+    "Devices": "Devices",
+    "No Limit": "No Limit",
+    "First Day of Month": "First Day of Month",
+    "Monthly": "Monthly",
+    "Never": "Never",
+    "First Day of Year": "First Day of Year",
+    "Yearly": "Yearly"
 }

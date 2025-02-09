@@ -1904,6 +1904,45 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "submit": "Submit",
         "success": "Modified successfully"
       }
+    },
+    "actions": {
+      "title": "Actions",
+      "send_email": "Send Email",
+      "export_csv": "Export CSV",
+      "batch_ban": "Batch Ban",
+      "confirm_ban": {
+        "title": "Confirm Batch Ban",
+        "filtered_description": "This action will ban all users that match your current filters. This action cannot be undone.",
+        "all_description": "This action will ban all users in the system. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Confirm Ban",
+        "banning": "Banning..."
+      }
+    },
+    "messages": {
+      "success": "Success",
+      "error": "Error",
+      "export": {
+        "success": "Export successful",
+        "failed": "Export failed"
+      },
+      "batch_ban": {
+        "success": "Batch ban successful",
+        "failed": "Batch ban failed"
+      },
+      "send_mail": {
+        "success": "Email sent successfully",
+        "failed": "Failed to send email",
+        "required_fields": "Please fill in all required fields"
+      }
+    },
+    "send_mail": {
+      "title": "Send Email",
+      "description": "Send email to selected or filtered users",
+      "subject": "Subject",
+      "content": "Content",
+      "sending": "Sending...",
+      "send": "Send"
     }
   },
   "subscribe": {
@@ -2024,7 +2063,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "template": {
             "button": "Use Template",
             "tooltip": "Use default template",
-            "content": "## Plan Features\n\n- Traffic: {{transfer}} GB\n- Speed: {{speed}} Mbps\n- Devices: {{devices}}\n\n## Usage Notes\n\n1. The plan is valid for {{validity}} days\n2. Traffic resets {{reset_method}}\n3. Maximum {{capacity}} concurrent users"
+            "content": "## Plan Details\n\n- Data: {{transfer}} GB\n- Speed Limit: {{speed}} Mbps\n- Concurrent Devices: {{devices}}\n\n## Service Information\n\n1. Data {{reset_method}}\n2. Multi-platform Support\n3. 24/7 Technical Support"
           }
         },
         "force_update": {

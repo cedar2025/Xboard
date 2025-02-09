@@ -1854,6 +1854,45 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "submit": "제출",
         "success": "수정 완료"
       }
+    },
+    "actions": {
+      "title": "작업",
+      "send_email": "이메일 보내기",
+      "export_csv": "CSV 내보내기",
+      "batch_ban": "일괄 차단",
+      "confirm_ban": {
+        "title": "일괄 차단 확인",
+        "filtered_description": "이 작업은 현재 필터와 일치하는 모든 사용자를 차단합니다. 이 작업은 취소할 수 없습니다.",
+        "all_description": "이 작업은 시스템의 모든 사용자를 차단합니다. 이 작업은 취소할 수 없습니다.",
+        "cancel": "취소",
+        "confirm": "차단 확인",
+        "banning": "차단 중..."
+      }
+    },
+    "messages": {
+      "success": "성공",
+      "error": "오류",
+      "export": {
+        "success": "내보내기 성공",
+        "failed": "내보내기 실패"
+      },
+      "batch_ban": {
+        "success": "일괄 차단 성공",
+        "failed": "일괄 차단 실패"
+      },
+      "send_mail": {
+        "success": "이메일 전송 성공",
+        "failed": "이메일 전송 실패",
+        "required_fields": "모든 필수 항목을 입력해주세요"
+      }
+    },
+    "send_mail": {
+      "title": "이메일 보내기",
+      "description": "선택하거나 필터링된 사용자에게 이메일 보내기",
+      "subject": "제목",
+      "content": "내용",
+      "sending": "전송 중...",
+      "send": "보내기"
     }
   },
   "subscribe": {
@@ -1974,7 +2013,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           "template": {
             "button": "템플릿 사용",
             "tooltip": "기본 템플릿 사용",
-            "content": "## 플랜 특징\n\n- 트래픽: {{transfer}} GB\n- 속도: {{speed}} Mbps\n- 기기: {{devices}}대\n\n## 사용 안내\n\n1. 플랜 유효 기간: {{validity}}일\n2. 트래픽 초기화: {{reset_method}}\n3. 최대 동시 접속자: {{capacity}}명"
+            "content": "## 요금제 상세\n\n- 데이터: {{transfer}} GB\n- 속도 제한: {{speed}} Mbps\n- 동시접속 기기: {{devices}}대\n\n## 서비스 안내\n\n1. 데이터 {{reset_method}} 초기화\n2. 멀티플랫폼 지원\n3. 24시간 기술지원"
           }
         },
         "force_update": {
