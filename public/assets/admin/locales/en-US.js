@@ -874,6 +874,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "nextPage": "Next page",
         "lastPage": "Go to last page"
       }
+    },
+    "update": {
+      "title": "System Update",
+      "newVersion": "New Version Available",
+      "currentVersion": "Current Version",
+      "latestVersion": "Latest Version",
+      "updateLater": "Update Later",
+      "updateNow": "Update Now",
+      "updating": "Updating...",
+      "updateSuccess": "Update successful, system will restart shortly",
+      "updateFailed": "Update failed, please try again later"
     }
   },
   "dashboard": {

@@ -119,5 +119,15 @@
     "Monthly": "Monthly",
     "Never": "Never",
     "First Day of Year": "First Day of Year",
-    "Yearly": "Yearly"
+    "Yearly": "Yearly",
+    "update.local_newer": "Current version is newer than remote version, please commit your changes first",
+    "update.already_latest": "Already on the latest version",
+    "update.process_running": "Update process is already running",
+    "update.success": "Update successful, from :from to :to, system will restart automatically later",
+    "update.failed": "Update failed: :error",
+    "update.backup_failed": "Database backup failed: :error",
+    "update.code_update_failed": "Code update failed: :error",
+    "update.migration_failed": "Database migration failed: :error",
+    "update.cache_clear_failed": "Cache clearing failed: :error",
+    "update.flag_create_failed": "Failed to create update flag: :error"
 }

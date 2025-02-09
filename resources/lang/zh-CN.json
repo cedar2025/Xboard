@@ -119,5 +119,15 @@
     "Monthly": "按月",
     "Never": "不重置",
     "First Day of Year": "每年1月1日",
-    "Yearly": "按年"
+    "Yearly": "按年",
+    "update.local_newer": "当前版本比远程版本更新，请先提交您的更改",
+    "update.already_latest": "当前已经是最新版本",
+    "update.process_running": "更新进程正在运行中",
+    "update.success": "更新成功，从 :from 更新到 :to, 系统将在稍后自动重启",
+    "update.failed": "更新失败: :error",
+    "update.backup_failed": "数据库备份失败: :error",
+    "update.code_update_failed": "代码更新失败: :error",
+    "update.migration_failed": "数据库迁移失败: :error",
+    "update.cache_clear_failed": "缓存清理失败: :error",
+    "update.flag_create_failed": "创建更新标记失败: :error"
 }
