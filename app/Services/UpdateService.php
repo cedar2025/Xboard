@@ -254,6 +254,8 @@ class UpdateService
     protected function getCurrentCommit(): string
     {
         try {
+            // Ensure git configuration is correct
+            Process::run(sprintf('git config --global --add safe.directory %s', base_path()));
             $result = Process::run('git rev-parse HEAD');
             $fullHash = trim($result->output());
             return $fullHash ? $this->formatCommitHash($fullHash) : 'unknown';
