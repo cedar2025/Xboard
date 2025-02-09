@@ -113,5 +113,11 @@
     "QR Code": "二维码",
     "Unlimited": "长期有效",
     "Device Limit": "设备限制",
-    "Devices": "台设备"
+    "Devices": "台设备",
+    "No Limit": "不限制",
+    "First Day of Month": "每月1号",
+    "Monthly": "按月",
+    "Never": "不重置",
+    "First Day of Year": "每年1月1日",
+    "Yearly": "按年"
 }

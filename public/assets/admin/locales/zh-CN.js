@@ -1871,6 +1871,45 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "submit": "提交",
         "success": "修改成功"
       }
+    },
+    "actions": {
+      "title": "操作",
+      "send_email": "发送邮件",
+      "export_csv": "导出 CSV",
+      "batch_ban": "批量封禁",
+      "confirm_ban": {
+        "title": "确认批量封禁",
+        "filtered_description": "此操作将封禁所有符合当前筛选条件的用户。此操作无法撤销。",
+        "all_description": "此操作将封禁系统中的所有用户。此操作无法撤销。",
+        "cancel": "取消",
+        "confirm": "确认封禁",
+        "banning": "封禁中..."
+      }
+    },
+    "messages": {
+      "success": "成功",
+      "error": "错误",
+      "export": {
+        "success": "导出成功",
+        "failed": "导出失败"
+      },
+      "batch_ban": {
+        "success": "批量封禁成功",
+        "failed": "批量封禁失败"
+      },
+      "send_mail": {
+        "success": "邮件发送成功",
+        "failed": "邮件发送失败",
+        "required_fields": "请填写所有必填字段"
+      }
+    },
+    "send_mail": {
+      "title": "发送邮件",
+      "description": "向所选或已筛选的用户发送邮件",
+      "subject": "主题",
+      "content": "内容",
+      "sending": "发送中...",
+      "send": "发送"
     }
   },
   "subscribe": {
@@ -1991,7 +2030,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "template": {
             "button": "使用模板",
             "tooltip": "使用默认模板",
-            "content": "## 套餐特点\n\n- 流量：{{transfer}} GB\n- 速度：{{speed}} Mbps\n- 设备数：{{devices}}\n\n## 使用说明\n\n1. 套餐有效期 {{validity}} 天\n2. 流量{{reset_method}}重置\n3. 最多支持 {{capacity}} 个用户同时在线"
+            "content": "## 套餐详情\n\n- 流量：{{transfer}} GB\n- 速度限制：{{speed}} Mbps\n- 同时在线设备：{{devices}} 台\n\n## 服务说明\n\n1. 流量{{reset_method}}重置\n2. 支持多平台使用\n3. 7×24小时技术支持"
           }
         },
         "force_update": {

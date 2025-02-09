@@ -104,7 +104,7 @@ class AdminRoute
                 $router->get('/getUserInfoById', [UserController::class, 'getUserInfoById']);
                 $router->post('/generate', [UserController::class, 'generate']);
                 $router->post('/dumpCSV', [UserController::class, 'dumpCSV']);
-                $router->post('/user/sendMail', [UserController::class, 'sendMail']);
+                $router->post('/sendMail', [UserController::class, 'sendMail']);
                 $router->post('/ban', [UserController::class, 'ban']);
                 $router->post('/resetSecret', [UserController::class, 'resetSecret']);
                 $router->post('/setInviteUser', [UserController::class, 'setInviteUser']);
