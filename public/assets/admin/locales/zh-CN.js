@@ -879,6 +879,17 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "nextPage": "下一页",
         "lastPage": "跳转到最后一页"
       }
+    },
+    "update": {
+      "title": "系统更新",
+      "newVersion": "发现新版本",
+      "currentVersion": "当前版本",
+      "latestVersion": "最新版本",
+      "updateLater": "稍后更新",
+      "updateNow": "立即更新",
+      "updating": "更新中...",
+      "updateSuccess": "更新成功，系统将在稍后自动重启",
+      "updateFailed": "更新失败，请稍后重试"
     }
   },
   "dashboard": {

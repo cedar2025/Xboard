@@ -870,6 +870,17 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "nextPage": "다음 페이지",
         "lastPage": "마지막 페이지로 이동"
       }
+    },
+    "update": {
+      "title": "시스템 업데이트",
+      "newVersion": "새 버전 발견",
+      "currentVersion": "현재 버전",
+      "latestVersion": "최신 버전",
+      "updateLater": "나중에 업데이트",
+      "updateNow": "지금 업데이트",
+      "updating": "업데이트 중...",
+      "updateSuccess": "업데이트 성공, 시스템이 곧 재시작됩니다",
+      "updateFailed": "업데이트 실패, 나중에 다시 시도해주세요"
     }
   },
   "dashboard": {
