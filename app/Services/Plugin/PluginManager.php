@@ -288,6 +288,11 @@ class PluginManager
                 'is_enabled' => true,
                 'updated_at' => now(),
             ]);
+            
+        // 初始化插件
+        if (method_exists($plugin, 'boot')) {
+            $plugin->boot();
+        }
 
         return true;
     }
