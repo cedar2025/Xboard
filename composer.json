@@ -56,7 +56,8 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
-            "Library\\": "library/"
+            "Library\\": "library/",
+            "Plugin\\": "plugins/"
         },
         "classmap": [
             "database/seeders",

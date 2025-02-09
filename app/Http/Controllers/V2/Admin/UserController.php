@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -243,7 +244,7 @@ class UserController extends Controller
         try {
             $user->update($params);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);
@@ -251,8 +252,9 @@ class UserController extends Controller
 
     public function dumpCSV(Request $request)
     {
+        ini_set('memory_limit', -1);
         $userModel = User::orderBy('id', 'asc');
-        $this->filter($request, $userModel);
+        $this->applyFiltersAndSorts($request, $userModel);
         $res = $userModel->get();
         $plan = Plan::get();
         for ($i = 0; $i < count($res); $i++) {
@@ -341,7 +343,7 @@ class UserController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '生成失败']);
         }
         $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
@@ -357,11 +359,13 @@ class UserController extends Controller
 
     public function sendMail(UserSendMail $request)
     {
+        ini_set('memory_limit', '-1');
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $builder = User::orderBy($sort, $sortType);
-        $this->filter($request, $builder);
+        $this->applyFilters($request, $builder);
         $users = $builder->get();
+        return $this->success($users->count());
         foreach ($users as $user) {
             SendEmailJob::dispatch(
                 [
@@ -386,13 +390,13 @@ class UserController extends Controller
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $builder = User::orderBy($sort, $sortType);
-        $this->filter($request, $builder);
+        $this->applyFilters($request, $builder);
         try {
             $builder->update([
                 'banned' => 1
             ]);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '处理失败']);
         }
 
@@ -425,7 +429,7 @@ class UserController extends Controller
             return $this->success(true);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '删除失败']);
         }
     }

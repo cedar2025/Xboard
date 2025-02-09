@@ -16,6 +16,7 @@ use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
+use App\Http\Controllers\V2\Admin\UpdateController;
 use Illuminate\Contracts\Routing\Registrar;
 use Illuminate\Support\Facades\Route;
 
@@ -104,7 +105,7 @@ class AdminRoute
                 $router->get('/getUserInfoById', [UserController::class, 'getUserInfoById']);
                 $router->post('/generate', [UserController::class, 'generate']);
                 $router->post('/dumpCSV', [UserController::class, 'dumpCSV']);
-                $router->post('/user/sendMail', [UserController::class, 'sendMail']);
+                $router->post('/sendMail', [UserController::class, 'sendMail']);
                 $router->post('/ban', [UserController::class, 'ban']);
                 $router->post('/resetSecret', [UserController::class, 'resetSecret']);
                 $router->post('/setInviteUser', [UserController::class, 'setInviteUser']);
@@ -192,6 +193,14 @@ class AdminRoute
                 $router->get('/getQueueWorkload', [SystemController::class, 'getQueueWorkload']);
                 $router->get('/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');
                 $router->get('/getSystemLog', [SystemController::class, 'getSystemLog']);
+            });
+
+            // Update
+            $router->group([
+                'prefix' => 'update'
+            ], function ($router) {
+                $router->get('/check', [UpdateController::class, 'checkUpdate']);
+                $router->post('/execute', [UpdateController::class, 'executeUpdate']);
             });
 
             // Theme
