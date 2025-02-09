@@ -13,8 +13,12 @@ RUN CFLAGS="-O0" install-php-extensions pcntl && \
     (getent passwd redis || adduser -S -G redis -H -h /data redis)
 
 WORKDIR /www
+
 COPY .docker /
-COPY . /www
+
+ARG REPO_URL=https://github.com/cedar2025/Xboard
+RUN git clone --depth 2 ${REPO_URL} .
+
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN composer install --optimize-autoloader --no-cache --no-dev \
