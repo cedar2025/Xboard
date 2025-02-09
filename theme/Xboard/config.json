@@ -3,7 +3,7 @@
     "description": "Xboard",
     "version": "1.0.0",
     "images": [
-        "https://raw.githubusercontent.com/cedar2025/Xboard/new/docs/images/dashboard.png"
+        "https://raw.githubusercontent.com/cedar2025/Xboard/master/docs/images/user.png"
     ],
     "configs": [
         {

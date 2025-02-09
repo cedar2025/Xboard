@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PlanResource extends JsonResource
 {
     private const PRICE_MULTIPLIER = 100;
-    
+
     /**
      * Transform the resource into an array.
      *
@@ -23,7 +23,7 @@ class PlanResource extends JsonResource
             'id' => $this->resource['id'],
             'group_id' => $this->resource['group_id'],
             'name' => $this->resource['name'],
-            'content' => $this->resource['content'],
+            'content' => $this->formatContent(),
             ...$this->getPeriodPrices(),
             'capacity_limit' => $this->getFormattedCapacityLimit(),
             'transfer_enable' => $this->resource['transfer_enable'],
@@ -49,8 +49,8 @@ class PlanResource extends JsonResource
             ->mapWithKeys(function (string $newPeriod, string $legacyPeriod): array {
                 $price = $this->resource['prices'][$newPeriod] ?? null;
                 return [
-                    $legacyPeriod => $price !== null 
-                        ? (float) $price * self::PRICE_MULTIPLIER 
+                    $legacyPeriod => $price !== null
+                        ? (float) $price * self::PRICE_MULTIPLIER
                         : null
                 ];
             })
@@ -72,4 +72,49 @@ class PlanResource extends JsonResource
             default => (int) $limit,
         };
     }
-} 
+
+    /**
+     * Format content with template variables
+     *
+     * @return string
+     */
+    protected function formatContent(): string
+    {
+        $content = $this->resource['content'];
+        
+        $replacements = [
+            '{{transfer}}' => $this->resource['transfer_enable'],
+            '{{speed}}' => $this->resource['speed_limit'] === NULL ? __('No Limit') : $this->resource['speed_limit'],
+            '{{devices}}' => $this->resource['device_limit'] === NULL ? __('No Limit') : $this->resource['device_limit'],
+            '{{reset_method}}' => $this->getResetMethodText(),
+        ];
+
+        return str_replace(
+            array_keys($replacements),
+            array_values($replacements),
+            $content
+        );
+    }
+
+    /**
+     * Get reset method text
+     *
+     * @return string
+     */
+    protected function getResetMethodText(): string
+    {
+        $method = $this->resource['reset_traffic_method'];
+        
+        if ($method === Plan::RESET_TRAFFIC_FOLLOW_SYSTEM) {
+            $method = admin_setting('reset_traffic_method', Plan::RESET_TRAFFIC_MONTHLY);
+        }
+        return match ($method) {
+            Plan::RESET_TRAFFIC_FIRST_DAY_MONTH => __('First Day of Month'),
+            Plan::RESET_TRAFFIC_MONTHLY => __('Monthly'),
+            Plan::RESET_TRAFFIC_NEVER => __('Never'),
+            Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => __('First Day of Year'),
+            Plan::RESET_TRAFFIC_YEARLY => __('Yearly'),
+            default => __('Monthly')
+        };
+    }
+}

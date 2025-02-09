@@ -75,14 +75,15 @@ class PlanService
         // 转换周期格式为新版格式
         $periodKey = self::getPeriodKey($period);
 
+
+        // 检查价格时使用新版格式
+        if (!isset($this->plan->prices[$periodKey]) || $this->plan->prices[$periodKey] === NULL) {
+            throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
+        }
+
         if ($periodKey === Plan::PERIOD_RESET_TRAFFIC) {
             $this->validateResetTrafficPurchase($user);
             return;
-        }
-
-        // 检查价格时使用新版格式
-        if (!isset($this->plan->prices[$periodKey])) {
-            throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
         }
 
         if ($user->plan_id !== $this->plan->id && !$this->hasCapacity($this->plan)) {
