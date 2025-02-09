@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\File;
 
 class PluginConfigService
 {
+    protected $pluginManager;
+
+    public function __construct()
+    {
+        $this->pluginManager = app(PluginManager::class);
+    }
+
     /**
      * 获取插件配置
      *
@@ -73,7 +80,7 @@ class PluginConfigService
      */
     protected function getDefaultConfig(string $pluginCode): array
     {
-        $configFile = base_path("plugins/{$pluginCode}/config.json");
+        $configFile = $this->pluginManager->getPluginPath($pluginCode) . '/config.json';
         if (!File::exists($configFile)) {
             return [];
         }
@@ -88,7 +95,7 @@ class PluginConfigService
      * @param string $pluginCode
      * @return array
      */
-    protected function getDbConfig(string $pluginCode): array
+    public function getDbConfig(string $pluginCode): array
     {
         $plugin = Plugin::query()
             ->where('code', $pluginCode)
