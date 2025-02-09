@@ -62,7 +62,6 @@ class UpdateService
                 // If unable to get current commit, try to get the first commit
                 $currentCommit = $this->getFirstCommit();
             }
-
             // Get local git logs
             $localLogs = $this->getLocalGitLogs();
             if (empty($localLogs)) {
@@ -74,45 +73,60 @@ class UpdateService
             $response = Http::withHeaders([
                 'Accept' => 'application/vnd.github.v3+json',
                 'User-Agent' => 'XBoard-Update-Checker'
-            ])->get(self::GITHUB_API_URL . '?sha=master&per_page=50');
+            ])->get(self::GITHUB_API_URL . '?per_page=50');
 
             if ($response->successful()) {
                 $commits = $response->json();
-                $latestCommit = $this->formatCommitHash($commits[0]['sha']);
                 
-                // Find current version position in commit history
+                if (empty($commits) || !is_array($commits)) {
+                    Log::error('Invalid GitHub response format');
+                    return $this->getCachedUpdateInfo();
+                }
+                
+                $latestCommit = $this->formatCommitHash($commits[0]['sha']);
                 $currentIndex = -1;
                 $updateLogs = [];
-                $isLocalNewer = false;
-
-                // Check if local is newer than remote
-                foreach ($localLogs as $localCommit) {
-                    $localHash = $this->formatCommitHash($localCommit['hash']);
-                    if ($localHash === $latestCommit) {
+                
+                // First, find the current version position in remote commit history
+                foreach ($commits as $index => $commit) {
+                    $shortSha = $this->formatCommitHash($commit['sha']);
+                    if ($shortSha === $currentCommit) {
+                        $currentIndex = $index;
                         break;
                     }
-                    // If local commit not in remote, local version is newer
-                    $isLocalNewer = true;
-                    $updateLogs[] = [
-                        'version' => $localHash,
-                        'message' => $localCommit['message'],
-                        'author' => $localCommit['author'],
-                        'date' => $localCommit['date'],
-                        'is_local' => true
-                    ];
                 }
-
-                if (!$isLocalNewer) {
-                    // If local is not newer, check remote updates
-                    foreach ($commits as $index => $commit) {
-                        $shortSha = $this->formatCommitHash($commit['sha']);
-                        if ($shortSha === $currentCommit) {
-                            $currentIndex = $index;
+                
+                // Check local version status
+                $isLocalNewer = false;
+                if ($currentIndex === -1) {
+                    // Current version not found in remote history, check local commits
+                    foreach ($localLogs as $localCommit) {
+                        $localHash = $this->formatCommitHash($localCommit['hash']);
+                        // If latest remote commit found, local is not newer
+                        if ($localHash === $latestCommit) {
+                            $isLocalNewer = false;
                             break;
                         }
-                        // Collect update logs
+                        // Record additional local commits
                         $updateLogs[] = [
-                            'version' => $shortSha,
+                            'version' => $localHash,
+                            'message' => $localCommit['message'],
+                            'author' => $localCommit['author'],
+                            'date' => $localCommit['date'],
+                            'is_local' => true
+                        ];
+                        $isLocalNewer = true;
+                    }
+                }
+                
+                // If local is not newer, collect commits that need to be updated
+                if (!$isLocalNewer && $currentIndex > 0) {
+                    $updateLogs = [];
+                    // Collect all commits between current version and latest version
+                    for ($i = 0; $i < $currentIndex; $i++) {
+                        $commit = $commits[$i];
+                        $updateLogs[] = [
+                            'version' => $this->formatCommitHash($commit['sha']),
                             'message' => $commit['commit']['message'],
                             'author' => $commit['commit']['author']['name'],
                             'date' => $commit['commit']['author']['date'],
@@ -121,7 +135,7 @@ class UpdateService
                     }
                 }
 
-                $hasUpdate = !$isLocalNewer && $currentIndex !== 0 && $currentIndex !== -1;
+                $hasUpdate = !$isLocalNewer && $currentIndex > 0;
                 
                 $updateInfo = [
                     'has_update' => $hasUpdate,
