@@ -40,9 +40,10 @@ class PluginController extends Controller
                 $configFile = $directory . '/config.json';
                 if (File::exists($configFile)) {
                     $config = json_decode(File::get($configFile), true);
-                    $installed = isset($installedPlugins[$pluginName]);
+                    $code = $config['code'];
+                    $installed = isset($installedPlugins[$code]);
                     // 使用配置服务获取配置
-                    $pluginConfig = $installed ? $this->configService->getConfig($pluginName) : ($config['config'] ?? []);
+                    $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
                     $plugins[] = [
                         'code' => $config['code'],
                         'name' => $config['name'],
@@ -50,7 +51,7 @@ class PluginController extends Controller
                         'description' => $config['description'],
                         'author' => $config['author'],
                         'is_installed' => $installed,
-                        'is_enabled' => $installed ? $installedPlugins[$pluginName]['is_enabled'] : false,
+                        'is_enabled' => $installed ? $installedPlugins[$code]['is_enabled'] : false,
                         'config' => $pluginConfig,
                     ];
                 }

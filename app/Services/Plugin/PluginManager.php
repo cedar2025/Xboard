@@ -6,10 +6,15 @@ use App\Models\Plugin;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
+use Symfony\Component\Finder\Finder;
 
 class PluginManager
 {
     protected string $pluginPath;
+    protected array $loadedPlugins = [];
 
     public function __construct()
     {
@@ -17,43 +22,232 @@ class PluginManager
     }
 
     /**
+     * 获取插件的命名空间
+     */
+    public function getPluginNamespace(string $pluginCode): string
+    {
+        return 'Plugin\\' . Str::studly($pluginCode);
+    }
+
+    /**
+     * 获取插件的基础路径
+     */
+    public function getPluginPath(string $pluginCode): string
+    {
+        return $this->pluginPath . '/' .  Str::studly($pluginCode);
+    }
+
+    /**
+     * 加载插件类
+     */
+    protected function loadPlugin(string $pluginCode)
+    {
+        if (isset($this->loadedPlugins[$pluginCode])) {
+            return $this->loadedPlugins[$pluginCode];
+        }
+
+        $pluginClass = $this->getPluginNamespace($pluginCode) . '\\Plugin';
+
+        if (!class_exists($pluginClass)) {
+            $pluginFile = $this->getPluginPath($pluginCode) . '/Plugin.php';
+            if (!File::exists($pluginFile)) {
+                throw new \Exception("Plugin class file not found: {$pluginFile}");
+            }
+            require_once $pluginFile;
+        }
+
+        if (!class_exists($pluginClass)) {
+            throw new \Exception("Plugin class not found: {$pluginClass}");
+        }
+
+        $plugin = new $pluginClass($pluginCode);
+        $this->loadedPlugins[$pluginCode] = $plugin;
+
+        return $plugin;
+    }
+
+    /**
+     * 注册插件的服务提供者
+     */
+    protected function registerServiceProvider(string $pluginCode): void
+    {
+        $providerClass = $this->getPluginNamespace($pluginCode) . '\\Providers\\PluginServiceProvider';
+
+        if (class_exists($providerClass)) {
+            app()->register($providerClass);
+        }
+    }
+
+    /**
+     * 加载插件的路由
+     */
+    protected function loadRoutes(string $pluginCode): void
+    {
+        $routesPath = $this->getPluginPath($pluginCode) . '/routes';
+        if (File::exists($routesPath)) {
+            $files = ['web.php', 'api.php'];
+            foreach ($files as $file) {
+                $routeFile = $routesPath . '/' . $file;
+                if (File::exists($routeFile)) {
+                    Route::middleware('web')
+                        ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
+                        ->group(function () use ($routeFile) {
+                            require $routeFile;
+                        });
+                }
+            }
+        }
+    }
+
+    /**
+     * 加载插件的视图
+     */
+    protected function loadViews(string $pluginCode): void
+    {
+        $viewsPath = $this->getPluginPath($pluginCode) . '/resources/views';
+
+        if (File::exists($viewsPath)) {
+            View::addNamespace(Str::studly($pluginCode), $viewsPath);
+        }
+    }
+
+    /**
      * 安装插件
      */
     public function install(string $pluginCode): bool
     {
-        $configFile = $this->pluginPath . '/' . $pluginCode . '/config.json';
+        DB::beginTransaction();
+        try {
+            $configFile = $this->getPluginPath($pluginCode) . '/config.json';
 
-        if (!File::exists($configFile)) {
-            throw new \Exception('Plugin config file not found');
+            if (!File::exists($configFile)) {
+                throw new \Exception('Plugin config file not found');
+            }
+
+            $config = json_decode(File::get($configFile), true);
+            if (!$this->validateConfig($config)) {
+                throw new \Exception('Invalid plugin config');
+            }
+
+            // 检查插件是否已安装
+            if (Plugin::where('code', $pluginCode)->exists()) {
+                throw new \Exception('Plugin already installed');
+            }
+
+            // 检查依赖
+            if (!$this->checkDependencies($config['require'] ?? [])) {
+                throw new \Exception('Dependencies not satisfied');
+            }
+
+            // 运行数据库迁移
+            $this->runMigrations($pluginCode);
+
+            // 提取配置默认值
+            $defaultValues = $this->extractDefaultConfig($config);
+
+            // 创建插件实例
+            $plugin = $this->loadPlugin($pluginCode);
+
+            // 注册到数据库
+            $dbPlugin = Plugin::create([
+                'code' => $pluginCode,
+                'name' => $config['name'],
+                'version' => $config['version'],
+                'is_enabled' => false,
+                'config' => json_encode($defaultValues),
+                'installed_at' => now(),
+            ]);
+
+            // 运行插件安装方法
+            if (method_exists($plugin, 'install')) {
+                $plugin->install();
+            }
+
+            // 发布插件资源
+            $this->publishAssets($pluginCode);
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
         }
+    }
 
-        $config = json_decode(File::get($configFile), true);
-        if (!$this->validateConfig($config)) {
-            throw new \Exception('Invalid plugin config');
-        }
-
-        // 检查依赖
-        if (!$this->checkDependencies($config['require'] ?? [])) {
-            throw new \Exception('Dependencies not satisfied');
-        }
-
-        // 提取配置默认值
+    /**
+     * 提取插件默认配置
+     */
+    protected function extractDefaultConfig(array $config): array
+    {
         $defaultValues = [];
         if (isset($config['config']) && is_array($config['config'])) {
             foreach ($config['config'] as $key => $item) {
-                $defaultValues[$key] = $item['default'] ?? null;
+                if (is_array($item)) {
+                    $defaultValues[$key] = $item['default'] ?? null;
+                } else {
+                    $defaultValues[$key] = $item;
+                }
+            }
+        }
+        return $defaultValues;
+    }
+
+    /**
+     * 运行插件数据库迁移
+     */
+    protected function runMigrations(string $pluginCode): void
+    {
+        $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
+
+        if (File::exists($migrationsPath)) {
+            Artisan::call('migrate', [
+                '--path' => "plugins/{$pluginCode}/database/migrations",
+                '--force' => true
+            ]);
+        }
+    }
+
+    /**
+     * 发布插件资源
+     */
+    protected function publishAssets(string $pluginCode): void
+    {
+        $assetsPath = $this->getPluginPath($pluginCode) . '/resources/assets';
+        if (File::exists($assetsPath)) {
+            $publishPath = public_path('plugins/' . $pluginCode);
+            File::ensureDirectoryExists($publishPath);
+            File::copyDirectory($assetsPath, $publishPath);
+        }
+    }
+
+    /**
+     * 验证配置文件
+     */
+    protected function validateConfig(array $config): bool
+    {
+        $requiredFields = [
+            'name',
+            'code',
+            'version',
+            'description',
+            'author'
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($config[$field]) || empty($config[$field])) {
+                return false;
             }
         }
 
-        // 注册到数据库
-        Plugin::create([
-            'code' => $pluginCode,
-            'name' => $config['name'],
-            'version' => $config['version'],
-            'is_enabled' => false,
-            'config' => json_encode($defaultValues),
-            'installed_at' => now(),
-        ]);
+        // 验证插件代码格式
+        if (!preg_match('/^[a-z0-9_]+$/', $config['code'])) {
+            return false;
+        }
+
+        // 验证版本号格式
+        if (!preg_match('/^\d+\.\d+\.\d+$/', $config['version'])) {
+            return false;
+        }
 
         return true;
     }
@@ -64,8 +258,9 @@ class PluginManager
     public function enable(string $pluginCode): bool
     {
         $plugin = $this->loadPlugin($pluginCode);
+
         if (!$plugin) {
-            throw new \Exception('Plugin not found');
+            throw new \Exception('Plugin not found: ' . $pluginCode);
         }
 
         // 获取插件配置
@@ -77,6 +272,15 @@ class PluginManager
             $plugin->setConfig(json_decode($dbPlugin->config, true));
         }
 
+        // 注册服务提供者
+        $this->registerServiceProvider($pluginCode);
+
+        // 加载路由
+        $this->loadRoutes($pluginCode);
+
+        // 加载视图
+        $this->loadViews($pluginCode);
+
         // 更新数据库状态
         Plugin::query()
             ->where('code', $pluginCode)
@@ -84,22 +288,6 @@ class PluginManager
                 'is_enabled' => true,
                 'updated_at' => now(),
             ]);
-
-        // 加载路由
-        $routesFile = $this->pluginPath . '/' . $pluginCode . '/routes/web.php';
-        if (File::exists($routesFile)) {
-            require $routesFile;
-        }
-        // 注册视图
-        $viewsPath = $this->pluginPath . '/' . $pluginCode . '/resources/views';
-        if (File::exists($viewsPath)) {
-            View::addNamespace($pluginCode, $viewsPath);
-        }
-
-        // 初始化插件
-        if (method_exists($plugin, 'boot')) {
-            $plugin->boot();
-        }
 
         return true;
     }
@@ -167,32 +355,6 @@ class PluginManager
         File::deleteDirectory($pluginPath);
 
         return true;
-    }
-
-    /**
-     * 加载插件实例
-     */
-    protected function loadPlugin(string $pluginCode)
-    {
-        $pluginFile = $this->pluginPath . '/' . $pluginCode . '/Plugin.php';
-        if (!File::exists($pluginFile)) {
-            return null;
-        }
-
-        require_once $pluginFile;
-        $className = "Plugin\\{$pluginCode}\\Plugin";
-        return new $className($pluginCode);
-    }
-
-    /**
-     * 验证配置文件
-     */
-    protected function validateConfig(array $config): bool
-    {
-        return isset($config['code'])
-            && isset($config['version'])
-            && isset($config['description'])
-            && isset($config['author']);
     }
 
     /**
