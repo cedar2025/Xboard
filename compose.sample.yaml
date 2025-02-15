@@ -21,6 +21,7 @@ services:
     command: php artisan horizon
     depends_on:
       - redis
+      - web
   redis:
     image: redis:7-alpine
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
