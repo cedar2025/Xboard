@@ -29,16 +29,23 @@ class ClashMeta implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
-        $customClashConfig = base_path() . '/resources/rules/custom.clash.yaml';
-        $customConfig = base_path() . '/resources/rules/custom.clashmeta.yaml';
-        if (\File::exists($customConfig)) {
-            $config = Yaml::parseFile($customConfig);
-        } elseif (\File::exists($customClashConfig)) {
-            $config = Yaml::parseFile($customClashConfig);
-        } else {
-            $config = Yaml::parseFile($defaultConfig);
+        
+        // 优先从 admin_setting 获取模板
+        $template = admin_setting('subscribe_template_clashmeta');
+        if (empty($template)) {
+            $defaultConfig = base_path('resources/rules/default.clash.yaml');
+            $customClashConfig = base_path('resources/rules/custom.clash.yaml');
+            $customConfig = base_path('resources/rules/custom.clashmeta.yaml');
+            if (file_exists($customConfig)) {
+                $template = file_get_contents($customConfig);
+            } elseif (file_exists($customClashConfig)) {
+                $template = file_get_contents($customClashConfig);
+            } else {
+                $template = file_get_contents($defaultConfig);
+            }
         }
+        
+        $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
 

@@ -28,13 +28,20 @@ class Clash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
-        $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
-        if (\File::exists($customConfig)) {
-            $config = Yaml::parseFile($customConfig);
-        } else {
-            $config = Yaml::parseFile($defaultConfig);
+        
+        // 优先从 admin_setting 获取模板
+        $template = admin_setting('subscribe_template_clash');
+        if (empty($template)) {
+            $defaultConfig = base_path('resources/rules/default.clash.yaml');
+            $customConfig = base_path('resources/rules/custom.clash.yaml');
+            if (file_exists($customConfig)) {
+                $template = file_get_contents($customConfig);
+            } else {
+                $template = file_get_contents($defaultConfig);
+            }
         }
+        
+        $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
 

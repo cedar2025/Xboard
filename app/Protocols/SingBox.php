@@ -39,6 +39,12 @@ class SingBox implements ProtocolInterface
 
     protected function loadConfig()
     {
+        // 优先从 admin_setting 获取模板
+        $template = admin_setting('subscribe_template_singbox');
+        if (!empty($template)) {
+            return is_array($template) ? $template : json_decode($template, true);
+        }
+        
         $defaultConfig = base_path('resources/rules/default.sing-box.json');
         $customConfig = base_path('resources/rules/custom.sing-box.json');
         $jsonData = file_exists($customConfig) ? file_get_contents($customConfig) : file_get_contents($defaultConfig);
