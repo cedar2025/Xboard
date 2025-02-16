@@ -112,6 +112,7 @@ location ~ .*\.(js|css)?$
 ### 2. Configure Scheduled Tasks
 - Type: Shell Script
 - Task Name: v2board
+- Run User: www
 - Frequency: 1 minute
 - Script Content: `php /www/wwwroot/site-directory/artisan schedule:run`
 
