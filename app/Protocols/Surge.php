@@ -59,12 +59,16 @@ class Surge implements ProtocolInterface
             }
         }
 
-        $defaultConfig = base_path() . '/resources/rules/default.surge.conf';
-        $customConfig = base_path() . '/resources/rules/custom.surge.conf';
-        if (\File::exists($customConfig)) {
-            $config = file_get_contents("$customConfig");
-        } else {
-            $config = file_get_contents("$defaultConfig");
+        // 优先从 admin_setting 获取模板
+        $config = admin_setting('subscribe_template_surge');
+        if (empty($config)) {
+            $defaultConfig = base_path('resources/rules/default.surge.conf');
+            $customConfig = base_path('resources/rules/custom.surge.conf');
+            if (file_exists($customConfig)) {
+                $config = file_get_contents($customConfig);
+            } else {
+                $config = file_get_contents($defaultConfig);
+            }
         }
 
         // Subscription link
