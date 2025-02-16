@@ -10,6 +10,7 @@ use App\Services\TelegramService;
 use App\Services\ThemeService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class ConfigController extends Controller
 {
@@ -61,6 +62,12 @@ class ConfigController extends Controller
         $telegramService->getMe();
         $telegramService->setWebhook($hookUrl);
         return $this->success(true);
+    }
+
+    private function getTemplateContent(string $filename): string
+    {
+        $path = resource_path("rules/{$filename}");
+        return File::exists($path) ? File::get($path) : '';
     }
 
     public function fetch(Request $request)
@@ -162,6 +169,47 @@ class ConfigController extends Controller
                 'password_limit_enable' => (bool) admin_setting('password_limit_enable', 1),
                 'password_limit_count' => admin_setting('password_limit_count', 5),
                 'password_limit_expire' => admin_setting('password_limit_expire', 60)
+            ],
+            'subscribe_template' => [
+                'subscribe_template_singbox' => (function () {
+                    $template = admin_setting('subscribe_template_singbox');
+                    if (!empty($template)) {
+                        return is_array($template)
+                            ? json_encode($template, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                            : $template;
+                    }
+                    
+                    $content = file_exists(base_path('resources/rules/custom.sing-box.json'))
+                        ? file_get_contents(base_path('resources/rules/custom.sing-box.json'))
+                        : file_get_contents(base_path('resources/rules/default.sing-box.json'));
+                        
+                    // 确保返回格式化的 JSON 字符串
+                    return json_encode(json_decode($content), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                })(),
+                'subscribe_template_clash' => (string) (admin_setting('subscribe_template_clash') ?: (
+                    file_exists(base_path('resources/rules/custom.clash.yaml'))
+                        ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
+                        : file_get_contents(base_path('resources/rules/default.clash.yaml'))
+                )),
+                'subscribe_template_clashmeta' => (string) (admin_setting('subscribe_template_clashmeta') ?: (
+                    file_exists(base_path('resources/rules/custom.clashmeta.yaml'))
+                        ? file_get_contents(base_path('resources/rules/custom.clashmeta.yaml'))
+                        : (file_exists(base_path('resources/rules/custom.clash.yaml'))
+                            ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
+                            : file_get_contents(base_path('resources/rules/default.clash.yaml')))
+                )),
+                'subscribe_template_stash' => (string) (admin_setting('subscribe_template_stash') ?: (
+                    file_exists(base_path('resources/rules/custom.stash.yaml'))
+                        ? file_get_contents(base_path('resources/rules/custom.stash.yaml'))
+                        : (file_exists(base_path('resources/rules/custom.clash.yaml'))
+                            ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
+                            : file_get_contents(base_path('resources/rules/default.clash.yaml')))
+                )),
+                'subscribe_template_surge' => (string) (admin_setting('subscribe_template_surge') ?: (
+                    file_exists(base_path('resources/rules/custom.surge.conf'))
+                        ? file_get_contents(base_path('resources/rules/custom.surge.conf'))
+                        : file_get_contents(base_path('resources/rules/default.surge.conf'))
+                )),
             ]
         ];
         if ($key && isset($data[$key])) {
@@ -179,7 +227,7 @@ class ConfigController extends Controller
         $data = $request->validated();
         foreach ($data as $k => $v) {
             if ($k == 'frontend_theme') {
-                $themeService = new ThemeService();
+                $themeService = app(ThemeService::class);
                 $themeService->switch($v);
             }
             admin_setting([$k => $v]);

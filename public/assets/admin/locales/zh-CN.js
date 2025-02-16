@@ -780,6 +780,30 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "title": "节点管理",
         "description": "管理所有节点，包括添加、删除、编辑等操作。"
       }
+    },
+    "subscribe_template": {
+      "title": "订阅模板",
+      "description": "配置各个客户端的订阅模板",
+      "singbox": {
+        "title": "Sing-box 订阅模板",
+        "description": "配置 Sing-box 的订阅模板格式"
+      },
+      "clash": {
+        "title": "Clash 订阅模板",
+        "description": "配置 Clash 的订阅模板格式"
+      },
+      "clashmeta": {
+        "title": "Clash Meta 订阅模板",
+        "description": "配置 Clash Meta 的订阅模板格式"
+      },
+      "stash": {
+        "title": "Stash 订阅模板",
+        "description": "配置 Stash 的订阅模板格式"
+      },
+      "surge": {
+        "title": "Surge 配置模板",
+        "description": "配置 Surge 订阅模板，支持 Surge 配置文件格式"
+      }
     }
   },
   "group": {
@@ -1021,7 +1045,13 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "remarks": "备注",
       "action": "动作",
       "actions": "操作",
-      "matchRules": "匹配{{count}}条规则"
+      "matchRules": "匹配{{count}}条规则",
+      "action_value": {
+        "title": "动作值",
+        "dns": "DNS: {{value}}",
+        "block": "阻止访问",
+        "direct": "直接连接"
+      }
     },
     "actions": {
       "dns": "指定DNS服务器进行解析",

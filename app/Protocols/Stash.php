@@ -28,17 +28,23 @@ class Stash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        // 暂时使用clash配置文件，后续根据Stash更新情况更新
-        $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
-        $customClashConfig = base_path() . '/resources/rules/custom.clash.yaml';
-        $customStashConfig = base_path() . '/resources/rules/custom.stash.yaml';
-        if (\File::exists($customStashConfig)) {
-            $config = Yaml::parseFile($customStashConfig);
-        } elseif (\File::exists($customClashConfig)) {
-            $config = Yaml::parseFile($customClashConfig);
-        } else {
-            $config = Yaml::parseFile($defaultConfig);
+        
+        // 优先从 admin_setting 获取模板
+        $template = admin_setting('subscribe_template_stash');
+        if (empty($template)) {
+            $defaultConfig = base_path('resources/rules/default.clash.yaml');
+            $customClashConfig = base_path('resources/rules/custom.clash.yaml');
+            $customStashConfig = base_path('resources/rules/custom.stash.yaml');
+            if (file_exists($customStashConfig)) {
+                $template = file_get_contents($customStashConfig);
+            } elseif (file_exists($customClashConfig)) {
+                $template = file_get_contents($customClashConfig);
+            } else {
+                $template = file_get_contents($defaultConfig);
+            }
         }
+        
+        $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
 
@@ -153,8 +159,8 @@ class Stash implements ProtocolInterface
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
                 break;
             case 'ws':
                 $array['network'] = 'ws';

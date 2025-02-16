@@ -773,6 +773,30 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "save_success": "자동으로 저장됨",
       "placeholder": "입력해주세요",
       "autoSaved": "자동으로 저장됨"
+    },
+    "subscribe_template": {
+      "title": "구독 템플릿",
+      "description": "다양한 클라이언트의 구독 템플릿 설정",
+      "singbox": {
+        "title": "Sing-box 템플릿",
+        "description": "Sing-box의 구독 템플릿 형식 설정"
+      },
+      "clash": {
+        "title": "Clash 템플릿",
+        "description": "Clash의 구독 템플릿 형식 설정"
+      },
+      "clashmeta": {
+        "title": "Clash Meta 템플릿",
+        "description": "Clash Meta의 구독 템플릿 형식 설정"
+      },
+      "stash": {
+        "title": "Stash 템플릿",
+        "description": "Stash의 구독 템플릿 형식 설정"
+      },
+      "surge": {
+        "title": "Surge 템플릿",
+        "description": "Surge의 구독 템플릿 형식 설정"
+      }
     }
   },
   "group": {
@@ -1025,7 +1049,13 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "remarks": "비고",
       "action": "동작",
       "actions": "작업",
-      "matchRules": "{{count}}개 규칙 일치"
+      "matchRules": "{{count}}개 규칙 일치",
+      "action_value": {
+        "title": "작업 값",
+        "dns": "DNS: {{value}}",
+        "block": "접근 차단",
+        "direct": "직접 연결"
+      }
     },
     "actions": {
       "dns": "지정된 DNS 서버로 해석",

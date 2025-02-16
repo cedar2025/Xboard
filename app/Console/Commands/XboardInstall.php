@@ -202,7 +202,7 @@ class XboardInstall extends Command
             $this->info(Artisan::output());
             $this->info('数据库导入完成');
             $this->info('开始注册管理员账号');
-            if (!$this->registerAdmin($email, $password)) {
+            if (!self::registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
             }
             $this->info('🎉：一切就绪');
@@ -218,7 +218,7 @@ class XboardInstall extends Command
         }
     }
 
-    public function registerAdmin($email, $password)
+    public static function registerAdmin($email, $password)
     {
         $user = new User();
         $user->email = $email;

@@ -775,6 +775,30 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "save_success": "Saved automatically",
       "placeholder": "Please input",
       "autoSaved": "Saved automatically"
+    },
+    "subscribe_template": {
+      "title": "Subscribe Templates",
+      "description": "Configure subscription templates for different clients",
+      "singbox": {
+        "title": "Sing-box Template",
+        "description": "Configure subscription template format for Sing-box"
+      },
+      "clash": {
+        "title": "Clash Template",
+        "description": "Configure subscription template format for Clash"
+      },
+      "clashmeta": {
+        "title": "Clash Meta Template",
+        "description": "Configure subscription template format for Clash Meta"
+      },
+      "stash": {
+        "title": "Stash Template",
+        "description": "Configure subscription template format for Stash"
+      },
+      "surge": {
+        "title": "Surge Template",
+        "description": "Configure subscription template format for Surge"
+      }
     }
   },
   "group": {
@@ -1029,7 +1053,13 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "remarks": "Remarks",
       "action": "Action",
       "actions": "Actions",
-      "matchRules": "Match {{count}} rules"
+      "matchRules": "Match {{count}} rules",
+      "action_value": {
+        "title": "Action Value",
+        "dns": "DNS: {{value}}",
+        "block": "Block Access",
+        "direct": "Direct Connection"
+      }
     },
     "actions": {
       "dns": "Resolve using specified DNS server",
