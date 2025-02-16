@@ -10,13 +10,13 @@ services:
       - redis
     network_mode: host
     command: php artisan octane:start --port=7001 --host=0.0.0.0
-    restart: on-failure
+    restart: always
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
       - ./.docker/.data/redis/:/data/
       - ./:/www/
-    restart: on-failure
+    restart: always
     network_mode: host
     command: php artisan horizon
     depends_on:
