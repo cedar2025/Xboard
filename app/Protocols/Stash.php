@@ -159,7 +159,7 @@ class Stash implements ProtocolInterface
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
                 $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
                 break;
             case 'ws':
