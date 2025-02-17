@@ -14,7 +14,7 @@ class Setting
     private $cache;
     public function __construct()
     {
-        $this->cache = Cache::store('octane');
+        $this->cache = Cache::store('redis');
     }
     /**
      * 获取配置.
@@ -88,5 +88,15 @@ class Setting
         } catch (\Throwable $th) {
             return [];
         }
+    }
+
+    /**
+     * 将所有设置转换为数组
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return $this->fromDatabase();
     }
 }
