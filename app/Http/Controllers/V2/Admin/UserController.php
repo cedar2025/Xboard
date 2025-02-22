@@ -421,9 +421,8 @@ class UserController extends Controller
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $builder = User::orderBy($sort, $sortType);
-        $this->applyFilters($request, $builder);
+        $this->applyFiltersAndSorts($request, $builder);
         $users = $builder->get();
-        return $this->success($users->count());
         foreach ($users as $user) {
             SendEmailJob::dispatch(
                 [
