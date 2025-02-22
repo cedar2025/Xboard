@@ -48,7 +48,7 @@ class ClashMeta implements ProtocolInterface
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
-
+        
         foreach ($servers as $item) {
             $protocol_settings = $item['protocol_settings'];
             if ($item['type'] === 'shadowsocks') {
@@ -72,6 +72,10 @@ class ClashMeta implements ProtocolInterface
             }
             if ($item['type'] === 'hysteria') {
                 array_push($proxy, self::buildHysteria($user['uuid'], $item, $user));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'tuic') {
+                array_push($proxy, self::buildTuic($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
         }
@@ -328,6 +332,39 @@ class ClashMeta implements ProtocolInterface
                 }
                 break;
         }
+
+        return $array;
+    }
+
+    public static function buildTuic($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'tuic',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'udp' => true,
+        ];
+
+        if (data_get($protocol_settings, 'version') === 4) {
+            $array['token'] = $password;
+        } else {
+            $array['uuid'] = $password;
+            $array['password'] = $password;
+        }
+
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+
+        if ($alpn = data_get($protocol_settings, 'alpn')) {
+            $array['alpn'] = $alpn;
+        }
+
+        $array['congestion-controller'] = data_get($protocol_settings, 'congestion_control', 'cubic');
+        $array['udp-relay-mode'] = data_get($protocol_settings, 'udp_relay_mode', 'native');
 
         return $array;
     }
