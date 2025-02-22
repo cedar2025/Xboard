@@ -131,11 +131,17 @@ class Server extends Model
             ]
         ],
         self::TYPE_TUIC => [
+            'version' => ['type' => 'integer', 'default' => 5],
             'congestion_control' => ['type' => 'string', 'default' => 'cubic'],
             'alpn' => ['type' => 'array', 'default' => ['h3']],
             'udp_relay_mode' => ['type' => 'string', 'default' => 'native'],
-            'allow_insecure' => ['type' => 'boolean', 'default' => false],
-            'tls_settings' => ['type' => 'array', 'default' => null]
+            'tls' => [
+                'type' => 'object',
+                'fields' => [
+                    'server_name' => ['type' => 'string', 'default' => null],
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                ]
+            ]
         ]
     ];
 

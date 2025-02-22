@@ -138,6 +138,15 @@ class UniProxyController extends Controller
                         default => []
                     }
             ],
+            'tuic' => [
+                'version' => (int) $protocolSettings['version'],
+                'server_port' => (int) $serverPort,
+                'server_name' => $protocolSettings['tls']['server_name'],
+                'congestion_control' => $protocolSettings['congestion_control'],
+                'auth_timeout' => '3s',
+                'zero_rtt_handshake' => false,
+                'heartbeat' => "3s",
+            ],
             default => []
         };
 

@@ -1709,6 +1709,37 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "label": "포트"
           }
         }
+      },
+      "tuic": {
+        "version": {
+          "label": "프로토콜 버전",
+          "placeholder": "TUIC 버전 선택"
+        },
+        "password": {
+          "label": "비밀번호",
+          "placeholder": "비밀번호 입력",
+          "generate_success": "비밀번호가 생성되었습니다"
+        },
+        "congestion_control": {
+          "label": "혼잡 제어",
+          "placeholder": "혼잡 제어 알고리즘 선택"
+        },
+        "udp_relay_mode": {
+          "label": "UDP 릴레이 모드",
+          "placeholder": "UDP 릴레이 모드 선택"
+        },
+        "tls": {
+          "server_name": {
+            "label": "서버 이름 표시 (SNI)",
+            "placeholder": "노드 주소와 인증서가 다를 때 인증서 확인에 사용"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용?",
+          "alpn": {
+            "label": "ALPN",
+            "placeholder": "ALPN 프로토콜 선택",
+            "empty": "사용 가능한 ALPN 프로토콜이 없습니다"
+          }
+        }
       }
     }
   },

@@ -10,6 +10,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Traits\QueryOperators;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
+    use QueryOperators;
+
     public function resetSecret(Request $request)
     {
         $user = User::find($request->input('id'));
@@ -75,13 +78,29 @@ class UserController extends Controller
      */
     private function buildFilterQuery(Builder $query, string $field, mixed $value): void
     {
-        // Handle array values for 'in' operations
+        // 处理关联查询
+        if (str_contains($field, '.')) {
+            [$relation, $relationField] = explode('.', $field);
+            $query->whereHas($relation, function($q) use ($relationField, $value) {
+                if (is_array($value)) {
+                    $q->whereIn($relationField, $value);
+                } else if (is_string($value) && str_contains($value, ':')) {
+                    [$operator, $filterValue] = explode(':', $value, 2);
+                    $this->applyQueryCondition($q, $relationField, $operator, $filterValue);
+                } else {
+                    $q->where($relationField, 'like', "%{$value}%");
+                }
+            });
+            return;
+        }
+
+        // 处理数组值的 'in' 操作
         if (is_array($value)) {
             $query->whereIn($field === 'group_ids' ? 'group_id' : $field, $value);
             return;
         }
 
-        // Handle operator-based filtering
+        // 处理基于运算符的过滤
         if (!is_string($value) || !str_contains($value, ':')) {
             $query->where($field, 'like', "%{$value}%");
             return;
@@ -89,36 +108,20 @@ class UserController extends Controller
 
         [$operator, $filterValue] = explode(':', $value, 2);
 
-        // Convert numeric strings to appropriate type
+        // 转换数字字符串为适当的类型
         if (is_numeric($filterValue)) {
             $filterValue = strpos($filterValue, '.') !== false
                 ? (float) $filterValue
                 : (int) $filterValue;
         }
 
-        // Handle computed fields
+        // 处理计算字段
         $queryField = match ($field) {
             'total_used' => DB::raw('(u + d)'),
             default => $field
         };
 
-        // Apply operator
-        $query->where($queryField, match (strtolower($operator)) {
-            'eq' => '=',
-            'gt' => '>',
-            'gte' => '>=',
-            'lt' => '<',
-            'lte' => '<=',
-            'like' => 'like',
-            'notlike' => 'not like',
-            'null' => static fn($q) => $q->whereNull($queryField),
-            'notnull' => static fn($q) => $q->whereNotNull($queryField),
-            default => 'like'
-        }, match (strtolower($operator)) {
-            'like', 'notlike' => "%{$filterValue}%",
-            'null', 'notnull' => null,
-            default => $filterValue
-        });
+        $this->applyQueryCondition($query, $queryField, $operator, $filterValue);
     }
 
     /**
@@ -250,33 +253,88 @@ class UserController extends Controller
         return $this->success(true);
     }
 
+    /**
+     * 导出用户数据为CSV格式
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
     public function dumpCSV(Request $request)
     {
-        ini_set('memory_limit', -1);
-        $userModel = User::orderBy('id', 'asc');
-        $this->applyFiltersAndSorts($request, $userModel);
-        $res = $userModel->get();
-        $plan = Plan::get();
-        for ($i = 0; $i < count($res); $i++) {
-            for ($k = 0; $k < count($plan); $k++) {
-                if ($plan[$k]['id'] == $res[$i]['plan_id']) {
-                    $res[$i]['plan_name'] = $plan[$k]['name'];
+        ini_set('memory_limit', '-1');
+        gc_enable(); // 启用垃圾回收
+        
+        // 优化查询：使用with预加载plan关系，避免N+1问题
+        $query = User::with('plan:id,name')
+            ->orderBy('id', 'asc')
+            ->select([
+                'email',
+                'balance',
+                'commission_balance',
+                'transfer_enable',
+                'u',
+                'd',
+                'expired_at',
+                'token',
+                'plan_id'
+            ]);
+            
+        $this->applyFiltersAndSorts($request, $query);
+        
+        $filename = 'users_' . date('Y-m-d_His') . '.csv';
+        
+        return response()->streamDownload(function() use ($query) {
+            // 打开输出流
+            $output = fopen('php://output', 'w');
+            
+            // 添加BOM标记，确保Excel正确显示中文
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // 写入CSV头部
+            fputcsv($output, [
+                '邮箱',
+                '余额',
+                '推广佣金',
+                '总流量',
+                '剩余流量',
+                '套餐到期时间',
+                '订阅计划',
+                '订阅地址'
+            ]);
+            
+            // 分批处理数据以减少内存使用
+            $query->chunk(500, function($users) use ($output) {
+                foreach ($users as $user) {
+                    try {
+                        $row = [
+                            $user->email,
+                            number_format($user->balance / 100, 2),
+                            number_format($user->commission_balance / 100, 2),
+                            Helper::trafficConvert($user->transfer_enable),
+                            Helper::trafficConvert($user->transfer_enable - ($user->u + $user->d)),
+                            $user->expired_at ? date('Y-m-d H:i:s', $user->expired_at) : '长期有效',
+                            $user->plan ? $user->plan->name : '无订阅',
+                            Helper::getSubscribeUrl($user->token)
+                        ];
+                        fputcsv($output, $row);
+                    } catch (\Exception $e) {
+                        Log::error('CSV导出错误: ' . $e->getMessage(), [
+                            'user_id' => $user->id,
+                            'email' => $user->email
+                        ]);
+                        continue; // 继续处理下一条记录
+                    }
                 }
-            }
-        }
-
-        $data = "邮箱,余额,推广佣金,总流量,剩余流量,套餐到期时间,订阅计划,订阅地址\r\n";
-        foreach ($res as $user) {
-            $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-            $balance = $user['balance'] / 100;
-            $commissionBalance = $user['commission_balance'] / 100;
-            $transferEnable = $user['transfer_enable'] ? $user['transfer_enable'] / 1073741824 : 0;
-            $notUseFlow = (($user['transfer_enable'] - ($user['u'] + $user['d'])) / 1073741824) ?? 0;
-            $planName = $user['plan_name'] ?? '无订阅';
-            $subscribeUrl = Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']);
-            $data .= "{$user['email']},{$balance},{$commissionBalance},{$transferEnable},{$notUseFlow},{$expireDate},{$planName},{$subscribeUrl}\r\n";
-        }
-        echo "\xEF\xBB\xBF" . $data;
+                
+                // 清理内存
+                gc_collect_cycles();
+            });
+            
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+        ]);
     }
 
     public function generate(UserGenerate $request)

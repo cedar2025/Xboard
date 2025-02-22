@@ -1741,6 +1741,37 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "label": "Flow Control",
           "placeholder": "Select flow control"
         }
+      },
+      "tuic": {
+        "version": {
+          "label": "Protocol Version",
+          "placeholder": "Select TUIC Version"
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "Enter Password",
+          "generate_success": "Password Generated Successfully"
+        },
+        "congestion_control": {
+          "label": "Congestion Control",
+          "placeholder": "Select Congestion Control Algorithm"
+        },
+        "udp_relay_mode": {
+          "label": "UDP Relay Mode",
+          "placeholder": "Select UDP Relay Mode"
+        },
+        "tls": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure?",
+          "alpn": {
+            "label": "ALPN",
+            "placeholder": "Select ALPN Protocols",
+            "empty": "No ALPN Protocols Available"
+          }
+        }
       }
     },
     "network_settings": {

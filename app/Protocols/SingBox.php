@@ -80,6 +80,10 @@ class SingBox implements ProtocolInterface
                 $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item);
                 $proxies[] = $hysteriaConfig;
             }
+            if ($item['type'] === 'tuic') {
+                $tuicConfig = $this->buildTuic($this->user['uuid'], $item);
+                $proxies[] = $tuicConfig;
+            }
         }
         foreach ($outbounds as &$outbound) {
             if (in_array($outbound['type'], ['urltest', 'selector'])) {
@@ -323,5 +327,38 @@ class SingBox implements ProtocolInterface
             $speedConfig,
             $versionConfig
         );
+    }
+
+    protected function buildTuic($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'type' => 'tuic',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'congestion_control' => data_get($protocol_settings, 'congestion_control', 'cubic'),
+            'udp_relay_mode' => data_get($protocol_settings, 'udp_relay_mode', 'native'),
+            'zero_rtt_handshake' => true,
+            'heartbeat' => '10s',
+            'tls' => [
+                'enabled' => true,
+                'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
+                'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
+            ]
+        ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['tls']['server_name'] = $serverName;
+        }
+
+        if (data_get($protocol_settings, 'version') === 4) {
+            $array['token'] = $password;
+        } else {
+            $array['uuid'] = $password;
+            $array['password'] = $password;
+        }
+
+        return $array;
     }
 }
