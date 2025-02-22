@@ -119,13 +119,13 @@ class Clash implements ProtocolInterface
         if ($subsDomain) {
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
-        // Force the nodes ip to be a direct rule
-        collect($this->servers)->pluck('host')->map(function ($host) {
-            $host = trim($host);
-            return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
-        })->flatten()->unique()->each(function ($nodeIP) use (&$config) {
-            array_unshift($config['rules'], "IP-CIDR,{$nodeIP}/32,DIRECT,no-resolve");
-        });
+        // // Force the nodes ip to be a direct rule
+        // collect($this->servers)->pluck('host')->map(function ($host) {
+        //     $host = trim($host);
+        //     return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
+        // })->flatten()->unique()->each(function ($nodeIP) use (&$config) {
+        //     array_unshift($config['rules'], "IP-CIDR,{$nodeIP}/32,DIRECT,no-resolve");
+        // });
 
         return $config;
     }

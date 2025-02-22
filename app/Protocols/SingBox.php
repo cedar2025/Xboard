@@ -103,12 +103,12 @@ class SingBox implements ProtocolInterface
     {
         $rules = $this->config['route']['rules'];
         // Force the nodes ip to be a direct rule
-        array_unshift($rules, [
-            'ip_cidr' => collect($this->servers)->pluck('host')->map(function ($host) {
-                return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
-            })->flatten()->unique()->values(),
-            'outbound' => 'direct',
-        ]);
+        // array_unshift($rules, [
+        //     'ip_cidr' => collect($this->servers)->pluck('host')->map(function ($host) {
+        //         return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
+        //     })->flatten()->unique()->values(),
+        //     'outbound' => 'direct',
+        // ]);
         $this->config['route']['rules'] = $rules;
     }
 
