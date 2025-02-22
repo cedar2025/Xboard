@@ -43,7 +43,7 @@ In the aaPanel dashboard, install:
 Required PHP extensions:
 - redis
 - fileinfo
-- swoole4
+- swoole
 - readline
 - event
 
