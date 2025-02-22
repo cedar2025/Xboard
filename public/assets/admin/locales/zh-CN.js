@@ -1708,6 +1708,37 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "label": "流控",
           "placeholder": "选择流控"
         }
+      },
+      "tuic": {
+        "version": {
+          "label": "协议版本",
+          "placeholder": "选择TUIC版本"
+        },
+        "password": {
+          "label": "密码",
+          "placeholder": "请输入密码",
+          "generate_success": "密码生成成功"
+        },
+        "congestion_control": {
+          "label": "拥塞控制",
+          "placeholder": "选择拥塞控制算法"
+        },
+        "udp_relay_mode": {
+          "label": "UDP中继模式",
+          "placeholder": "选择UDP中继模式"
+        },
+        "tls": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全?",
+          "alpn": {
+            "label": "ALPN",
+            "placeholder": "选择ALPN协议",
+            "empty": "未找到可用的ALPN协议"
+          }
+        }
       }
     },
     "network_settings": {

@@ -26,6 +26,7 @@ class ClientController extends Controller
         'shadowsocks' => '[ss]',
         'vmess' => '[vmess]',
         'trojan' => '[trojan]',
+        'tuic' => '[tuic]',
     ];
 
     // 支持hy2 的客户端版本列表
@@ -46,7 +47,7 @@ class ClientController extends Controller
         'flclash' => '0.8.0'
     ];
 
-    private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2'];
+    private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2', 'tuic'];
 
 
     public function subscribe(Request $request)
