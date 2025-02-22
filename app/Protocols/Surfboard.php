@@ -133,7 +133,7 @@ class Surfboard implements ProtocolInterface
                     array_push($config, "sni={$tlsSettings['serverName']}");
             }
         }
-        if (data_get($protocol_settings, 'network_settings.network') === 'ws') {
+        if (data_get($protocol_settings, 'network') === 'ws') {
             array_push($config, 'ws=true');
             if (data_get($protocol_settings, 'network_settings')) {
                 $wsSettings = data_get($protocol_settings, 'network_settings');
