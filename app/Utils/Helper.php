@@ -115,7 +115,7 @@ class Helper
     {
         $path = route('client.subscribe', ['token' => $token], false);
         if (!$subscribeUrl) {
-            $subscribeUrls = explode(',', admin_setting('subscribe_url'));
+            $subscribeUrls = explode(',', (string)admin_setting('subscribe_url', ''));
             $subscribeUrl = Arr::random($subscribeUrls);
             $subscribeUrl = self::replaceByPattern($subscribeUrl);
         }
