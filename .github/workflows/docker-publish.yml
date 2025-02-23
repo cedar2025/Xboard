@@ -21,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1 
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -33,10 +33,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           driver-opts: |
-            image=moby/buildkit:master
+            image=moby/buildkit:v0.20.0
             network=host
 
-      # Add free disk space
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -87,8 +86,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-            BUILDKIT_MULTI_PLATFORM=1
-            DOCKER_BUILDKIT=1
+            BUILDKIT_MULTI_PLATFORM=1 
           provenance: false
           outputs: type=registry,push=true
           allow: |
@@ -101,7 +99,5 @@ jobs:
 
       - name: Sign image
         if: steps.build-and-push.outputs.digest != ''
-        env:
-          COSIGN_EXPERIMENTAL: 1
         run: |
           echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes "{}@${{ steps.build-and-push.outputs.digest }}"
