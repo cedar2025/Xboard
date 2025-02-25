@@ -52,6 +52,8 @@ class ServerSave extends FormRequest
             'reality_settings.public_key' => 'nullable|string',
             'reality_settings.private_key' => 'nullable|string',
             'reality_settings.short_id' => 'nullable|string',
+        ],
+        'socks' => [
         ]
     ];
 
@@ -81,7 +83,7 @@ class ServerSave extends FormRequest
     {
         $type = $this->input('type');
         $rules = $this->getBaseRules();
-        
+
         foreach (self::PROTOCOL_RULES[$type] ?? [] as $field => $rule) {
             $rules['protocol_settings.' . $field] = $rule;
         }

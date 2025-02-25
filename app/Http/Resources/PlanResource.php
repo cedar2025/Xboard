@@ -80,7 +80,7 @@ class PlanResource extends JsonResource
      */
     protected function formatContent(): string
     {
-        $content = $this->resource['content'];
+        $content = $this->resource['content'] ?? '';
         
         $replacements = [
             '{{transfer}}' => $this->resource['transfer_enable'],

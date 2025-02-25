@@ -147,6 +147,9 @@ class UniProxyController extends Controller
                 'zero_rtt_handshake' => false,
                 'heartbeat' => "3s",
             ],
+            'socks' => [
+                'server_port' => (int) $serverPort,
+            ],
             default => []
         };
 

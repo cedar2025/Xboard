@@ -27,6 +27,7 @@ class ClientController extends Controller
         'vmess' => '[vmess]',
         'trojan' => '[trojan]',
         'tuic' => '[tuic]',
+        'socks' => '[socks]',
     ];
 
     // 支持hy2 的客户端版本列表
