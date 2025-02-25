@@ -18,7 +18,7 @@ class Server extends Model
     public const TYPE_VMESS = 'vmess';
     public const TYPE_TUIC = 'tuic';
     public const TYPE_SHADOWSOCKS = 'shadowsocks';
-
+    public const TYPE_SOCKS = 'socks';
     public const STATUS_OFFLINE = 0;
     public const STATUS_ONLINE_NO_PUSH = 1;
     public const STATUS_ONLINE = 2;
@@ -52,6 +52,7 @@ class Server extends Model
         self::TYPE_VMESS,
         self::TYPE_TUIC,
         self::TYPE_SHADOWSOCKS,
+        self::TYPE_SOCKS,
     ];
 
     protected $table = 'v2_server';
