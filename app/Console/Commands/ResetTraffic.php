@@ -181,6 +181,12 @@ class ResetTraffic extends Command
         $usersToUpdate = [];
 
         foreach ($users as $user) {
+            $expireMonth = date('m', $user->expired_at);
+            $currentMonth = date('m');
+            if ($expireMonth == $currentMonth) {
+                continue;
+            }
+            
             $expireDay = date('d', $user->expired_at);
             if ($expireDay === $today || ($today === $lastDay && $expireDay >= $today)) {
                 $usersToUpdate[] = [
