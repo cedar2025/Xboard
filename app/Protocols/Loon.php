@@ -29,15 +29,7 @@ class Loon implements ProtocolInterface
         $uri = '';
 
         foreach ($servers as $item) {
-            if (
-                $item['type'] === 'shadowsocks'
-                && in_array(data_get($item['protocol_settings'], 'cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
-            ) {
+            if ($item['type'] === 'shadowsocks') {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {

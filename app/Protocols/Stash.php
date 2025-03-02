@@ -28,7 +28,7 @@ class Stash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        
+
         // 优先从 admin_setting 获取模板
         $template = admin_setting('subscribe_template_stash');
         if (empty($template)) {
@@ -43,21 +43,13 @@ class Stash implements ProtocolInterface
                 $template = file_get_contents($defaultConfig);
             }
         }
-        
+
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
 
         foreach ($servers as $item) {
-            if (
-                $item['type'] === 'shadowsocks'
-                && in_array(data_get($item, 'protocol_settings.cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
-            ) {
+            if ($item['type'] === 'shadowsocks') {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
