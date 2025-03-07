@@ -152,7 +152,7 @@ class General implements ProtocolInterface
                 break;
             case 'grpc':
                 if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
-                    $config['path'] = $path;
+                    $config['serviceName'] = $path;
                 break;
             case 'kcp':
                 if ($path = data_get($protocol_settings, 'network_settings.seed'))
