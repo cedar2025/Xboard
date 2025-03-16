@@ -66,7 +66,9 @@ class Shadowrocket implements ProtocolInterface
             ['-', '_', ''],
             base64_encode("{$protocol_settings['cipher']}:{$password}")
         );
-        $uri = "ss://{$str}@{$server['host']}:{$server['port']}";
+        $addr = Helper::wrapIPv6($server['host']);
+
+        $uri = "ss://{$str}@{$addr}:{$server['port']}";
         if ($protocol_settings['obfs'] == 'http') {
             $obfs_host = data_get($protocol_settings, 'obfs_settings.obfs-host');
             $obfs_path = data_get($protocol_settings, 'obfs_settings.obfs-path');
@@ -78,7 +80,7 @@ class Shadowrocket implements ProtocolInterface
     public static function buildVmess($uuid, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $userinfo = base64_encode('auto:' . $uuid . '@' . $server['host'] . ':' . $server['port']);
+        $userinfo = base64_encode('auto:' . $uuid . '@' . Helper::wrapIPv6($server['host']) . ':' . $server['port']);
         $config = [
             'tfo' => 1,
             'remark' => $server['name'],
@@ -124,7 +126,7 @@ class Shadowrocket implements ProtocolInterface
     public static function buildVless($uuid, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $userinfo = base64_encode('auto:' . $uuid . '@' . $server['host'] . ':' . $server['port']);
+        $userinfo = base64_encode('auto:' . $uuid . '@' . Helper::wrapIPv6($server['host']) . ':' . $server['port']);
         $config = [
             'tfo' => 1,
             'remark' => $server['name'],
@@ -213,7 +215,9 @@ class Shadowrocket implements ProtocolInterface
                 break;
         }
         $query = http_build_query($params);
-        $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}&tfo=1#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+
+        $uri = "trojan://{$password}@{$addr}:{$server['port']}?{$query}&tfo=1#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
@@ -241,7 +245,9 @@ class Shadowrocket implements ProtocolInterface
                 if (isset($server['ports']))
                     $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
-                $uri = "hysteria://{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
+                $addr = Helper::wrapIPv6($server['host']);
+
+                $uri = "hysteria://{$addr}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";
                 break;
             case 2:
@@ -260,7 +266,9 @@ class Shadowrocket implements ProtocolInterface
                 if (isset($server['ports']))
                     $params['mport'] = $server['ports'];
                 $query = http_build_query($params);
-                $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
+                $addr = Helper::wrapIPv6($server['host']);
+
+                $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$server['name']}";
                 $uri .= "\r\n";
                 break;
         }

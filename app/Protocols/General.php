@@ -59,7 +59,8 @@ class General implements ProtocolInterface
             ['-', '_', ''],
             base64_encode("{$protocol_settings['cipher']}:{$password}")
         );
-        return "ss://{$str}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $addr = Helper::wrapIPv6($server['host']);
+        return "ss://{$str}@{$addr}:{$server['port']}#{$name}\r\n";
     }
 
     public static function buildVmess($uuid, $server)
@@ -172,7 +173,7 @@ class General implements ProtocolInterface
                 break;
         }
 
-        $user = $uuid . '@' . $host . ':' . $port;
+        $user = $uuid . '@' . Helper::wrapIPv6($host) . ':' . $port;
         $query = http_build_query($config);
         $fragment = urlencode($name);
         $link = sprintf("vless://%s?%s#%s\r\n", $user, $query, $fragment);
@@ -207,7 +208,9 @@ class General implements ProtocolInterface
                 break;
         }
         $query = http_build_query($array);
-        $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+        
+        $uri = "trojan://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
@@ -238,8 +241,9 @@ class General implements ProtocolInterface
 
         $query = http_build_query($params);
         $name = rawurlencode($server['name']);
+        $addr = Helper::wrapIPv6($server['host']);
 
-        $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
 
         return $uri;
