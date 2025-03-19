@@ -72,6 +72,14 @@ class Helper
         return $str;
     }
 
+    public static function wrapIPv6($addr) {
+        if (filter_var($addr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return "[$addr]";
+        } else {
+            return $addr;
+        }
+    }
+
     public static function multiPasswordVerify($algo, $salt, $password, $hash)
     {
         switch($algo) {
