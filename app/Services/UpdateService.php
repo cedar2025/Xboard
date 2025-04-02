@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\File;
 class UpdateService
 {
     const UPDATE_CHECK_INTERVAL = 86400; // 24 hours
-    const GITHUB_API_URL = 'https://api.github.com/repos/cedar2025/xboard/commits';
+    const GITHUB_API_URL = 'https://api.github.com/repos/socksprox/xboard/commits';
     const CACHE_UPDATE_INFO = 'UPDATE_INFO';
     const CACHE_LAST_CHECK = 'LAST_UPDATE_CHECK';
     const CACHE_UPDATE_LOCK = 'UPDATE_LOCK';
     const CACHE_VERSION = 'CURRENT_VERSION';
     const CACHE_VERSION_DATE = 'CURRENT_VERSION_DATE';
-    
+
     /**
      * Get current version from cache or generate new one
      */
@@ -77,16 +77,16 @@ class UpdateService
 
             if ($response->successful()) {
                 $commits = $response->json();
-                
+
                 if (empty($commits) || !is_array($commits)) {
                     Log::error('Invalid GitHub response format');
                     return $this->getCachedUpdateInfo();
                 }
-                
+
                 $latestCommit = $this->formatCommitHash($commits[0]['sha']);
                 $currentIndex = -1;
                 $updateLogs = [];
-                
+
                 // First, find the current version position in remote commit history
                 foreach ($commits as $index => $commit) {
                     $shortSha = $this->formatCommitHash($commit['sha']);
@@ -95,7 +95,7 @@ class UpdateService
                         break;
                     }
                 }
-                
+
                 // Check local version status
                 $isLocalNewer = false;
                 if ($currentIndex === -1) {
@@ -118,7 +118,7 @@ class UpdateService
                         $isLocalNewer = true;
                     }
                 }
-                
+
                 // If local is not newer, collect commits that need to be updated
                 if (!$isLocalNewer && $currentIndex > 0) {
                     $updateLogs = [];
@@ -136,7 +136,7 @@ class UpdateService
                 }
 
                 $hasUpdate = !$isLocalNewer && $currentIndex > 0;
-                
+
                 $updateInfo = [
                     'has_update' => $hasUpdate,
                     'is_local_newer' => $isLocalNewer,
@@ -154,7 +154,7 @@ class UpdateService
 
                 return $updateInfo;
             }
-            
+
             return $this->getCachedUpdateInfo();
         } catch (\Exception $e) {
             Log::error('Update check failed: ' . $e->getMessage());
@@ -217,7 +217,7 @@ class UpdateService
 
             // Format update logs
             $logMessages = array_map(function($log) {
-                return sprintf("- %s (%s): %s", 
+                return sprintf("- %s (%s): %s",
                     $log['version'],
                     date('Y-m-d H:i', strtotime($log['date'])),
                     $log['message']
@@ -243,7 +243,7 @@ class UpdateService
         } catch (\Exception $e) {
             Log::error('Update execution failed: ' . $e->getMessage());
             Cache::forget(self::CACHE_UPDATE_LOCK);
-            
+
             return [
                 'success' => false,
                 'message' => __('update.failed', ['error' => $e->getMessage()])
@@ -289,7 +289,7 @@ class UpdateService
         try {
             // Use existing backup command
             Process::run('php artisan backup:database');
-            
+
             if (!Process::result()->successful()) {
                 throw new \Exception(__('update.backup_failed', ['error' => Process::result()->errorOutput()]));
             }
@@ -304,10 +304,10 @@ class UpdateService
         try {
             // Get current project root directory
             $basePath = base_path();
-            
+
             // Ensure git configuration is correct
             Process::run(sprintf('git config --global --add safe.directory %s', $basePath));
-            
+
             // Pull latest code
             Process::run('git fetch origin master');
             Process::run('git reset --hard origin/master');
@@ -452,4 +452,4 @@ class UpdateService
             return [];
         }
     }
-} 
+}
