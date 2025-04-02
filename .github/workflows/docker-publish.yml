@@ -47,9 +47,9 @@ jobs:
       - name: Login to registry
         uses: docker/login-action@v3
         with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.GHCR_USER }}
-        password: ${{ secrets.GHCR_PAT }}
+    registry: ${{ env.REGISTRY }}
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
