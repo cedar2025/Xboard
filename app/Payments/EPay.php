@@ -21,7 +21,7 @@ class EPay implements PaymentInterface
                 'type' => 'input',
             ],
             'pid' => [
-                'label' => 'PID',
+                'label' => 'PID (User Account ID',
                 'description' => '',
                 'type' => 'input',
             ],
