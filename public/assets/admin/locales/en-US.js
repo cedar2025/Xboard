@@ -540,14 +540,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "renew": "Renew",
           "renew_tooltip": "Whether existing users can renew when the subscription stops selling",
           "name": "Name",
-          "language": "Language",
           "stats": "Statistics",
           "group": "Permission Group",
           "price": "Price",
           "actions": "Actions",
           "edit": "Edit",
           "delete": "Delete",
-          "translations": "Translations",
           "delete_confirm": {
             "title": "Confirm Delete",
             "description": "This action will permanently delete this subscription and cannot be undone. Are you sure you want to continue?",
@@ -579,18 +577,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "name": {
             "label": "Plan Name",
             "placeholder": "Enter plan name"
-          },
-          "language": {
-            "label": "Language",
-            "placeholder": "Select language",
-            "options": {
-              "en-US": "English",
-              "ja-JP": "日本語",
-              "ko-KR": "한국어",
-              "vi-VN": "Tiếng Việt",
-              "zh-CN": "简体中文",
-              "zh-TW": "繁體中文"
-            }
           },
           "group": {
             "label": "Permission Group",
@@ -2047,14 +2033,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "renew": "Renew",
         "renew_tooltip": "Whether existing users can renew when the subscription stops selling",
         "name": "Name",
-        "language": "Language",
         "stats": "Statistics",
         "group": "Permission Group",
         "price": "Price",
         "actions": "Actions",
         "edit": "Edit",
         "delete": "Delete",
-        "translations": "Translations",
         "delete_confirm": {
           "title": "Confirm Delete",
           "description": "This action will permanently delete this subscription and cannot be undone. Are you sure you want to continue?",
@@ -2086,18 +2070,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "name": {
           "label": "Plan Name",
           "placeholder": "Enter plan name"
-        },
-        "language": {
-          "label": "Language",
-          "placeholder": "Select language",
-          "options": {
-            "en-US": "English",
-            "ja-JP": "日本語",
-            "ko-KR": "한국어",
-            "vi-VN": "Tiếng Việt",
-            "zh-CN": "简体中文",
-            "zh-TW": "繁體中文"
-          }
         },
         "group": {
           "label": "Server Group",

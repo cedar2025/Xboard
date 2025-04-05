@@ -19,8 +19,7 @@ class PlanController extends Controller
     }
     public function fetch(Request $request)
     {
-        $language = $request->input('language', Plan::DEFAULT_LANGUAGE);
-        $plans = $this->planService->getAvailablePlans($language);
-        return $this->success(PlanResource::collection($plans));
+        $plan = $this->planService->getAvailablePlans();
+        return $this->success(PlanResource::collection($plan));
     }
 }

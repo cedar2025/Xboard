@@ -28,7 +28,6 @@ class PlanController extends Controller
         $params = $request->validate([
             'id' => 'nullable|integer',
             'name' => 'required|string',
-            'language' => 'required|string|in:' . implode(',', array_keys(Plan::SUPPORTED_LANGUAGES)),
             'content' => 'nullable|string',
             'reset_traffic_method' => 'integer|nullable',
             'transfer_enable' => 'integer|required',
@@ -129,25 +128,5 @@ class PlanController extends Controller
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);
-    }
-    
-    /**
-     * 获取计划的所有翻译版本
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getTranslations(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|integer'
-        ], [
-            'id.required' => '计划ID不能为空'
-        ]);
-        
-        $planId = $request->input('id');
-        $translations = Plan::getPlanTranslations($planId);
-        
-        return $this->success($translations);
     }
 }

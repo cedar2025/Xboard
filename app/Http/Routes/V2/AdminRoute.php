@@ -49,7 +49,6 @@ class AdminRoute
                 $router->post('/drop', [PlanController::class, 'drop']);
                 $router->post('/update', [PlanController::class, 'update']);
                 $router->post('/sort', [PlanController::class, 'sort']);
-                $router->get('/translations', [PlanController::class, 'getTranslations']);
             });
 
             // Server

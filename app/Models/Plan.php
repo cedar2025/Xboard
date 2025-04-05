@@ -48,24 +48,10 @@ class Plan extends Model
         'reset_price' => self::PERIOD_RESET_TRAFFIC
     ];
 
-    // 定义支持的语言
-    public const SUPPORTED_LANGUAGES = [
-        'en-US' => 'English',
-        'ja-JP' => '日本語',
-        'ko-KR' => '한국어',
-        'vi-VN' => 'Tiếng Việt',
-        'zh-CN' => '简体中文',
-        'zh-TW' => '繁體中文'
-    ];
-
-    // 默认语言
-    public const DEFAULT_LANGUAGE = 'en-US';
-
     protected $fillable = [
         'group_id',
         'transfer_enable',
         'name',
-        'language',
         'speed_limit',
         'show',
         'sort',
@@ -397,58 +383,5 @@ class Plan extends Model
         $prices = $this->prices ?? [];
         $prices[self::PRICE_TYPE_RESET_TRAFFIC] = max(0, $price);
         $this->prices = $prices;
-    }
-
-    /**
-     * 获取指定语言的计划，如果不存在则返回默认语言的计划
-     *
-     * @param string $language 请求的语言
-     * @param bool $show 是否只显示启用的计划
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getTranslatedPlans(string $language, bool $show = true): \Illuminate\Database\Eloquent\Collection
-    {
-        // 获取指定语言的计划
-        $plans = self::where('language', $language);
-        
-        if ($show) {
-            $plans->where('show', true);
-        }
-        
-        $plans = $plans->orderBy('sort', 'ASC')->get();
-        
-        // 如果指定语言的计划为空，则获取默认语言的计划
-        if ($plans->isEmpty() && $language !== self::DEFAULT_LANGUAGE) {
-            $plans = self::where('language', self::DEFAULT_LANGUAGE);
-            
-            if ($show) {
-                $plans->where('show', true);
-            }
-            
-            $plans = $plans->orderBy('sort', 'ASC')->get();
-        }
-        
-        return $plans;
-    }
-
-    /**
-     * 获取计划的所有翻译版本
-     *
-     * @param int $planId 计划ID
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getPlanTranslations(int $planId): \Illuminate\Database\Eloquent\Collection
-    {
-        // 获取原始计划
-        $originalPlan = self::find($planId);
-        
-        if (!$originalPlan) {
-            return collect();
-        }
-        
-        // 获取所有具有相同名称的计划（不同语言版本）
-        return self::where('name', $originalPlan->name)
-            ->where('id', '!=', $planId)
-            ->get();
     }
 }

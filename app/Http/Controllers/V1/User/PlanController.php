@@ -21,8 +21,6 @@ class PlanController extends Controller
     public function fetch(Request $request)
     {
         $user = User::find($request->user()->id);
-        $language = $request->input('language', Plan::DEFAULT_LANGUAGE);
-        
         if ($request->input('id')) {
             $plan = Plan::where('id', $request->input('id'))->first();
             if (!$plan) {
@@ -34,7 +32,7 @@ class PlanController extends Controller
             return $this->success(PlanResource::make($plan));
         }
 
-        $plans = Plan::getTranslatedPlans($language);
+        $plans = $this->planService->getAvailablePlans();
         return $this->success(PlanResource::collection($plans));
     }
 }

@@ -23,7 +23,6 @@ class PlanResource extends JsonResource
             'id' => $this->resource['id'],
             'group_id' => $this->resource['group_id'],
             'name' => $this->resource['name'],
-            'language' => $this->resource['language'],
             'content' => $this->formatContent(),
             ...$this->getPeriodPrices(),
             'capacity_limit' => $this->getFormattedCapacityLimit(),
