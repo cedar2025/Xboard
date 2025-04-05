@@ -35,7 +35,8 @@ class AuthController extends Controller
             return $this->fail([429 ,__('Sending frequently, please try again later')]);
         }
 
-        $user = User::where('email', $params['email'])->first();
+        // Use case-insensitive email comparison
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($params['email'])])->first();
         if (!$user) {
             return $this->success(true);
         }
@@ -119,7 +120,10 @@ class AuthController extends Controller
         }
         $email = $request->input('email');
         $password = $request->input('password');
-        $exist = User::where('email', $email)->first();
+        // Convert email to lowercase for storage
+        $email = strtolower($email);
+        // Check for existing email case-insensitively
+        $exist = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
         if ($exist) {
             return $this->fail([400201,__('Email already exists')]);
         }
@@ -198,7 +202,8 @@ class AuthController extends Controller
             }
         }
 
-        $user = User::where('email', $email)->first();
+        // Use case-insensitive email comparison
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
         if (!$user) {
             return $this->fail([400, __('Incorrect email or password')]);
         }
@@ -308,7 +313,8 @@ class AuthController extends Controller
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
             return $this->fail([400,__('Incorrect email verification code')]);
         }
-        $user = User::where('email', $request->input('email'))->first();
+        // Use case-insensitive email comparison
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($request->input('email'))])->first();
         if (!$user) {
             return $this->fail([400,__('This email is not registered in the system')]);
         }
