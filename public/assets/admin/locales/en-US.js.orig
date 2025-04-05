@@ -1599,10 +1599,6 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "placeholder": "Enter node comment (e.g. expiration date)",
         "tooltip": "Add notes or descriptions about this node"
       },
-        "label": "Comment",
-        "placeholder": "Enter node comment (e.g. expiration date)",
-        "tooltip": "Add notes or descriptions about this node"
-      },
       "submit": "Submit",
       "cancel": "Cancel",
       "success": "Submitted successfully"

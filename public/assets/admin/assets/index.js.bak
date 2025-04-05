@@ -12841,8 +12841,7 @@ const ex = {},
         server_port: h.string().min(1, "form.server_port.error"),
         parent_id: h.string().default("0").nullable(),
         route_ids: h.array(h.string()).default([]),
-        protocol_settings: h.record(h.any()).default({}).nullable(),
-        comment: h.string().optional().nullable()
+        protocol_settings: h.record(h.any()).default({}).nullable()
     }),
     St = {
         id: null,
@@ -12858,8 +12857,7 @@ const ex = {},
         server_port: "",
         parent_id: "0",
         route_ids: [],
-        protocol_settings: null,
-        comment: ""
+        protocol_settings: null
     };
 
 function hx() {
