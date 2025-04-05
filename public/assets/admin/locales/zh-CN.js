@@ -1986,9 +1986,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
   },
   "subscribe": {
     "plan": {
-      "title": "订阅套餐",
-      "add": "添加套餐",
-      "search": "搜索套餐...",
+      "title": "订阅计划",
+      "add": "添加计划",
+      "search": "搜索计划...",
       "sort": {
         "edit": "编辑排序",
         "save": "保存排序"
@@ -1996,19 +1996,21 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "columns": {
         "id": "ID",
         "show": "显示",
-        "sell": "新购",
+        "sell": "销售",
         "renew": "续费",
-        "renew_tooltip": "在订阅停止销售时，已购用户是否可以续费",
+        "renew_tooltip": "当订阅停止销售时，现有用户是否可以续费",
         "name": "名称",
+        "language": "语言",
         "stats": "统计",
         "group": "权限组",
         "price": "价格",
         "actions": "操作",
         "edit": "编辑",
         "delete": "删除",
+        "translations": "翻译",
         "delete_confirm": {
           "title": "确认删除",
-          "description": "此操作将永久删除该订阅，删除后无法恢复。确定要继续吗？",
+          "description": "此操作将永久删除此订阅，且无法撤销。是否继续？",
           "success": "删除成功"
         },
         "price_period": {
@@ -2032,11 +2034,23 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         }
       },
       "form": {
-        "add_title": "添加套餐",
-        "edit_title": "编辑套餐",
+        "add_title": "添加计划",
+        "edit_title": "编辑计划",
         "name": {
-          "label": "套餐名称",
-          "placeholder": "请输入套餐名称"
+          "label": "计划名称",
+          "placeholder": "输入计划名称"
+        },
+        "language": {
+          "label": "语言",
+          "placeholder": "选择语言",
+          "options": {
+            "en-US": "English",
+            "ja-JP": "日本語",
+            "ko-KR": "한국어",
+            "vi-VN": "Tiếng Việt",
+            "zh-CN": "简体中文",
+            "zh-TW": "繁體中文"
+          }
         },
         "group": {
           "label": "服务器分组",

@@ -20,17 +20,21 @@ class PlanService
      * 获取所有可销售的订阅计划列表
      * 条件：show 和 sell 为 true，且容量充足
      *
+     * @param string $language 请求的语言
      * @return Collection
      */
-    public function getAvailablePlans(): Collection
+    public function getAvailablePlans(string $language = null): Collection
     {
-        return Plan::where('show', true)
-            ->where('sell', true)
-            ->orderBy('sort')
-            ->get()
-            ->filter(function ($plan) {
-                return $this->hasCapacity($plan);
-            });
+        // 如果没有指定语言，使用默认语言
+        $language = $language ?? Plan::DEFAULT_LANGUAGE;
+        
+        // 获取指定语言的计划
+        $plans = Plan::getTranslatedPlans($language);
+        
+        // 过滤出可销售的且容量充足的计划
+        return $plans->filter(function ($plan) {
+            return $plan->show && $plan->sell && $this->hasCapacity($plan);
+        });
     }
 
     /**

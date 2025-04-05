@@ -538,21 +538,23 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           "renew": "갱신",
           "renew_tooltip": "구독 판매가 중단된 경우 기존 사용자의 갱신 가능 여부",
           "name": "이름",
+          "language": "언어",
           "stats": "통계",
           "group": "권한 그룹",
           "price": "가격",
           "actions": "작업",
           "edit": "편집",
           "delete": "삭제",
+          "translations": "번역",
           "delete_confirm": {
             "title": "삭제 확인",
-            "description": "이 작업은 이 구독을 영구적으로 삭제하며 되돌릴 수 없습니다. 계속하시겠습니까?",
+            "description": "이 작업은 이 구독을 영구적으로 삭제하며 취소할 수 없습니다. 계속하시겠습니까?",
             "success": "성공적으로 삭제됨"
           },
           "price_period": {
             "monthly": "월간",
             "quarterly": "분기",
-            "half_yearly": "반년",
+            "half_yearly": "반기",
             "yearly": "연간",
             "two_yearly": "2년",
             "three_yearly": "3년",
@@ -561,7 +563,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "unit": {
               "month": "/월",
               "quarter": "/분기",
-              "half_year": "/반년",
+              "half_year": "/반기",
               "year": "/년",
               "two_year": "/2년",
               "three_year": "/3년",
@@ -575,6 +577,18 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           "name": {
             "label": "플랜 이름",
             "placeholder": "플랜 이름 입력"
+          },
+          "language": {
+            "label": "언어",
+            "placeholder": "언어 선택",
+            "options": {
+              "en-US": "English",
+              "ja-JP": "日本語",
+              "ko-KR": "한국어",
+              "vi-VN": "Tiếng Việt",
+              "zh-CN": "简体中文",
+              "zh-TW": "繁體中文"
+            }
           },
           "group": {
             "label": "권한 그룹",
@@ -1981,18 +1995,20 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "show": "표시",
         "sell": "판매",
         "renew": "갱신",
-        "renew_tooltip": "구독 판매가 중단된 후 기존 사용자의 갱신 가능 여부",
+        "renew_tooltip": "구독 판매 중지 시 기존 사용자가 갱신할 수 있는지 여부",
         "name": "이름",
+        "language": "언어",
         "stats": "통계",
         "group": "권한 그룹",
         "price": "가격",
         "actions": "작업",
         "edit": "편집",
         "delete": "삭제",
+        "translations": "번역",
         "delete_confirm": {
           "title": "삭제 확인",
           "description": "이 작업은 이 구독을 영구적으로 삭제하며 취소할 수 없습니다. 계속하시겠습니까?",
-          "success": "삭제 완료"
+          "success": "성공적으로 삭제됨"
         },
         "price_period": {
           "monthly": "월간",
@@ -2021,10 +2037,23 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           "label": "플랜 이름",
           "placeholder": "플랜 이름 입력"
         },
+        "language": {
+          "label": "언어",
+          "placeholder": "언어 선택",
+          "options": {
+            "en-US": "English",
+            "ja-JP": "日本語",
+            "ko-KR": "한국어",
+            "vi-VN": "Tiếng Việt",
+            "zh-CN": "简体中文",
+            "zh-TW": "繁體中文"
+          }
+        },
         "group": {
-          "label": "서버 그룹",
+          "label": "권한 그룹",
           "add": "그룹 추가",
-          "placeholder": "서버 그룹 선택"
+          "placeholder": "권한 그룹을 선택해주세요",
+          "empty": "검색 결과가 없습니다"
         },
         "transfer": {
           "label": "트래픽",

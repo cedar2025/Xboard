@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Plan;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PlanSave extends FormRequest
@@ -15,6 +16,7 @@ class PlanSave extends FormRequest
     {
         return [
             'name' => 'required',
+            'language' => 'required|string|in:' . implode(',', array_keys(Plan::SUPPORTED_LANGUAGES)),
             'content' => '',
             'group_id' => 'required',
             'transfer_enable' => 'required',
@@ -35,23 +37,23 @@ class PlanSave extends FormRequest
     public function messages()
     {
         return [
-            'name.required' => '套餐名称不能为空',
-            'type.required' => '套餐类型不能为空',
-            'type.in' => '套餐类型格式有误',
-            'group_id.required' => '权限组不能为空',
+            'name.required' => '名称不能为空',
+            'language.required' => '语言不能为空',
+            'language.in' => '不支持的语言',
+            'group_id.required' => '分组不能为空',
             'transfer_enable.required' => '流量不能为空',
-            'month_price.integer' => '月付金额格式有误',
-            'quarter_price.integer' => '季付金额格式有误',
-            'half_year_price.integer' => '半年付金额格式有误',
-            'year_price.integer' => '年付金额格式有误',
-            'two_year_price.integer' => '两年付金额格式有误',
-            'three_year_price.integer' => '三年付金额格式有误',
-            'onetime_price.integer' => '一次性金额有误',
-            'reset_price.integer' => '流量重置包金额有误',
-            'reset_traffic_method.integer' => '流量重置方式格式有误',
-            'reset_traffic_method.in' => '流量重置方式格式有误',
-            'capacity_limit.integer' => '容纳用户量限制格式有误',
-            'speed_limit.integer' => '限速格式有误'
+            'month_price.integer' => '月付价格格式有误',
+            'quarter_price.integer' => '季付价格格式有误',
+            'half_year_price.integer' => '半年付价格格式有误',
+            'year_price.integer' => '年付价格格式有误',
+            'two_year_price.integer' => '两年付价格格式有误',
+            'three_year_price.integer' => '三年付价格格式有误',
+            'onetime_price.integer' => '一次性价格格式有误',
+            'reset_price.integer' => '重置流量价格格式有误',
+            'reset_traffic_method.integer' => '重置流量方式格式有误',
+            'reset_traffic_method.in' => '重置流量方式格式有误',
+            'capacity_limit.integer' => '容量限制格式有误',
+            'speed_limit.integer' => '速度限制格式有误'
         ];
     }
 }
