@@ -82,6 +82,18 @@ class Stash implements ProtocolInterface
                 array_push($proxy, self::buildTrojan($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
+            if ($item['type'] === 'tuic') {
+                array_push($proxy, self::buildTuic($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'socks') {
+                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'http') {
+                array_push($proxy, self::buildHttp($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
         }
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
@@ -289,12 +301,91 @@ class Stash implements ProtocolInterface
 
     }
 
+    public static function buildTuic($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'tuic',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'uuid' => $password,
+            'password' => $password,
+            'congestion-controller' => data_get($protocol_settings, 'congestion_control', 'cubic'),
+            'udp-relay-mode' => data_get($protocol_settings, 'udp_relay_mode', 'native'),
+            'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
+            'reduce-rtt' => true,
+            'fast-open' => true,
+            'heartbeat-interval' => 10000,
+            'request-timeout' => 8000,
+            'max-udp-relay-packet-size' => 1500,
+        ];
+
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+
+        return $array;
+    }
+
+    public static function buildSocks5($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'socks5',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+            'udp' => true,
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['sni'] = $serverName;
+            }
+        }
+
+        return $array;
+    }
+
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'http',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['sni'] = $serverName;
+            }
+        }
+
+        return $array;
+    }
+
     private function isRegex($exp)
     {
         if (empty($exp)) {
             return false;
         }
-        return @preg_match($exp, '') !== false;
+        try {
+            return preg_match($exp, '') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     private function isMatch($exp, $str)

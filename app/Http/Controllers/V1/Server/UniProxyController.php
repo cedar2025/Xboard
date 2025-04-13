@@ -150,6 +150,20 @@ class UniProxyController extends Controller
             'socks' => [
                 'server_port' => (int) $serverPort,
             ],
+            'naive' => [
+                'server_port' => (int) $serverPort,
+                'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => $protocolSettings['tls_settings']
+            ],
+            'http' => [
+                'server_port' => (int) $serverPort,
+                'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => $protocolSettings['tls_settings']
+            ],
+            'mieru' => [
+                'server_port' => (string) $serverPort,
+                'protocol' => (int) $protocolSettings['protocol'],
+            ],
             default => []
         };
 
@@ -163,7 +177,7 @@ class UniProxyController extends Controller
         }
 
         $eTag = sha1(json_encode($response));
-        if (strpos($request->header('If-None-Match', '') ?? '', $eTag) !== false) {
+        if (strpos($request->header('If-None-Match', ''), $eTag) !== false) {
             return response(null, 304);
         }
         return response($response)->header('ETag', "\"{$eTag}\"");
