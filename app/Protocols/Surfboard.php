@@ -4,6 +4,7 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Facades\File;
 
 class Surfboard implements ProtocolInterface
 {
@@ -63,7 +64,7 @@ class Surfboard implements ProtocolInterface
 
         $defaultConfig = base_path() . '/resources/rules/default.surfboard.conf';
         $customConfig = base_path() . '/resources/rules/custom.surfboard.conf';
-        if (\File::exists($customConfig)) {
+        if (File::exists($customConfig)) {
             $config = file_get_contents("$customConfig");
         } else {
             $config = file_get_contents("$defaultConfig");
@@ -127,9 +128,9 @@ class Surfboard implements ProtocolInterface
             array_push($config, 'tls=true');
             if (data_get($protocol_settings, 'tls_settings')) {
                 $tlsSettings = data_get($protocol_settings, 'tls_settings');
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
+                if (!!data_get($tlsSettings, 'allowInsecure'))
                     array_push($config, 'skip-cert-verify=' . ($tlsSettings['allowInsecure'] ? 'true' : 'false'));
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
+                if (!!data_get($tlsSettings, 'serverName'))
                     array_push($config, "sni={$tlsSettings['serverName']}");
             }
         }
@@ -161,8 +162,8 @@ class Surfboard implements ProtocolInterface
             'tfo=true',
             'udp-relay=true'
         ];
-        if (!empty($protocol_settings['allow_insecure'])) {
-            array_push($config, $protocol_settings['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (data_get($protocol_settings, 'allow_insecure')) {
+            array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

@@ -50,9 +50,9 @@ class XboardInstall extends Command
     {
         try {
             $isDocker = file_exists('/.dockerenv');
-            $enableSqlite = env('ENABLE_SQLITE', false);
-            $enableRedis = env('ENABLE_REDIS', false);
-            $adminAccount = env('ADMIN_ACCOUNT', '');
+            $enableSqlite = getenv('ENABLE_SQLITE', false);
+            $enableRedis = getenv('ENABLE_REDIS', false);
+            $adminAccount = getenv('ADMIN_ACCOUNT', false);
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
@@ -60,7 +60,7 @@ class XboardInstall extends Command
             $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
             if (
                 (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
-                || (env('INSTALLED', false) && $isDocker)
+                || (getenv('INSTALLED', false) && $isDocker)
             ) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
                 $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");

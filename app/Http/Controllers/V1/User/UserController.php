@@ -58,11 +58,13 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
-        if (!Helper::multiPasswordVerify(
-            $user->password_algo,
-            $user->password_salt,
-            $request->input('old_password'),
-            $user->password)
+        if (
+            !Helper::multiPasswordVerify(
+                $user->password_algo,
+                $user->password_salt,
+                $request->input('old_password'),
+                $user->password
+            )
         ) {
             return $this->fail([400, __('The old password is wrong')]);
         }

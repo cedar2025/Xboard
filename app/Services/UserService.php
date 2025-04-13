@@ -12,7 +12,7 @@ use App\Services\Plugin\HookManager;
 
 class UserService
 {
-    private function calcResetDayByMonthFirstDay()
+    private function calcResetDayByMonthFirstDay(): int
     {
         $today = date('d');
         $lastDay = date('d', strtotime('last day of +0 months'));
@@ -51,55 +51,34 @@ class UserService
         return (int) (($nextYear - time()) / 86400);
     }
 
-    public function getResetDay(User $user)
+    public function getResetDay(User $user): ?int
     {
-        if (!isset($user->plan)) {
-            $user->plan = Plan::find($user->plan_id);
-        }
-        if ($user->expired_at <= time() || $user->expired_at === NULL)
+        // 前置条件检查
+        if ($user->expired_at <= time() || $user->expired_at === null) {
             return null;
-        // if reset method is not reset
-        if ($user->plan->reset_traffic_method === 2)
-            return null;
-        switch (true) {
-            case ($user->plan->reset_traffic_method === NULL): {
-                $resetTrafficMethod = admin_setting('reset_traffic_method', 0);
-                switch ((int) $resetTrafficMethod) {
-                    // month first day
-                    case 0:
-                        return $this->calcResetDayByMonthFirstDay();
-                    // expire day
-                    case 1:
-                        return $this->calcResetDayByExpireDay($user->expired_at);
-                    // no action
-                    case 2:
-                        return null;
-                    // year first day
-                    case 3:
-                        return $this->calcResetDayByYearFirstDay();
-                    // year expire day
-                    case 4:
-                        return $this->calcResetDayByYearExpiredAt($user->expired_at);
-                }
-                break;
-            }
-            case ($user->plan->reset_traffic_method === 0): {
-                return $this->calcResetDayByMonthFirstDay();
-            }
-            case ($user->plan->reset_traffic_method === 1): {
-                return $this->calcResetDayByExpireDay($user->expired_at);
-            }
-            case ($user->plan->reset_traffic_method === 2): {
-                return null;
-            }
-            case ($user->plan->reset_traffic_method === 3): {
-                return $this->calcResetDayByYearFirstDay();
-            }
-            case ($user->plan->reset_traffic_method === 4): {
-                return $this->calcResetDayByYearExpiredAt($user->expired_at);
-            }
         }
-        return null;
+
+        // 获取重置方式逻辑统一
+        $resetMethod = $user->plan->reset_traffic_method === Plan::RESET_TRAFFIC_FOLLOW_SYSTEM
+            ? (int)admin_setting('reset_traffic_method', 0)
+            : $user->plan->reset_traffic_method;
+
+        // 验证重置方式有效性
+        if (!in_array($resetMethod, array_keys(Plan::getResetTrafficMethods()), true)) {
+            return null;
+        }
+
+        // 方法映射表
+        $methodHandlers = [
+            Plan::RESET_TRAFFIC_FIRST_DAY_MONTH => fn() => $this->calcResetDayByMonthFirstDay(),
+            Plan::RESET_TRAFFIC_MONTHLY => fn() => $this->calcResetDayByExpireDay($user->expired_at),
+            Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => fn() => $this->calcResetDayByYearFirstDay(),
+            Plan::RESET_TRAFFIC_YEARLY => fn() => $this->calcResetDayByYearExpiredAt($user->expired_at),
+        ];
+
+        $handler = $methodHandlers[$resetMethod] ?? null;
+        
+        return $handler ? $handler() : null;
     }
 
     public function isAvailable(User $user)

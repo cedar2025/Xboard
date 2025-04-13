@@ -15,14 +15,10 @@ use ReCaptcha\ReCaptcha;
 
 class CommController extends Controller
 {
-    private function isEmailVerify()
-    {
-        return $this->success((int)admin_setting('email_verify', 0) ? 1 : 0);
-    }
 
     public function sendEmailVerify(CommSendEmailVerify $request)
     {
-        if ((int)admin_setting('recaptcha_enable', 0)) {
+        if ((int) admin_setting('recaptcha_enable', 0)) {
             $recaptcha = new ReCaptcha(admin_setting('recaptcha_key'));
             $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
             if (!$recaptchaResp->isSuccess()) {
@@ -63,12 +59,4 @@ class CommController extends Controller
         return $this->success(true);
     }
 
-    private function getEmailSuffix()
-    {
-        $suffix = admin_setting('email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT);
-        if (!is_array($suffix)) {
-            return preg_split('/,/', $suffix);
-        }
-        return $suffix;
-    }
 }
