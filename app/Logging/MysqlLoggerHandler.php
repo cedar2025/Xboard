@@ -17,28 +17,28 @@ class MysqlLoggerHandler extends AbstractProcessingHandler
     protected function write(LogRecord $record): void
     {
         $record = $record->toArray();
-        try{
-            if(isset($record['context']['exception']) && is_object($record['context']['exception'])){
+        try {
+            if (isset($record['context']['exception']) && is_object($record['context']['exception'])) {
                 $record['context']['exception'] = (array)$record['context']['exception'];
             }
-            $record['request_data'] = request()->all() ??[];
+            
+            $record['request_data'] = request()->all();
+            
             $log = [
                 'title' => $record['message'],
                 'level' => $record['level_name'],
-                'host' => $record['request_host'] ?? request()->getSchemeAndHttpHost(),
-                'uri' => $record['request_uri'] ?? request()->getRequestUri(),
-                'method' => $record['request_method'] ?? request()->getMethod(),
+                'host' => $record['extra']['request_host'] ?? request()->getSchemeAndHttpHost(),
+                'uri' => $record['extra']['request_uri'] ?? request()->getRequestUri(),
+                'method' => $record['extra']['request_method'] ?? request()->getMethod(),
                 'ip' => request()->getClientIp(),
-                'data' => json_encode($record['request_data']) ,
-                'context' => isset($record['context']) ? json_encode($record['context']) : '',
+                'data' => json_encode($record['request_data']),
+                'context' => json_encode($record['context']),
                 'created_at' => $record['datetime']->getTimestamp(),
                 'updated_at' => $record['datetime']->getTimestamp(),
             ];
             
-            LogModel::insert(
-                $log
-            );
-        }catch (\Exception $e){
+            LogModel::insert($log);
+        } catch (\Exception $e) {
             // Log::channel('daily')->error($e->getMessage().$e->getFile().$e->getTraceAsString());
         }
     }

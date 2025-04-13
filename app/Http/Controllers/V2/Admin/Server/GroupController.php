@@ -14,15 +14,15 @@ class GroupController extends Controller
 {
     public function fetch(Request $request): JsonResponse
     {
-
         $serverGroups = ServerGroup::query()
             ->orderByDesc('id')
             ->withCount('users')
-            ->get()
-            ->transform(function ($group) {
-                $group->server_count = $group->servers()->count();
-                return $group;
-            });
+            ->get();
+
+        // 只在需要时手动加载server_count
+        $serverGroups->each(function ($group) {
+            $group->setAttribute('server_count', $group->server_count);
+        });
 
         return $this->success($serverGroups);
     }

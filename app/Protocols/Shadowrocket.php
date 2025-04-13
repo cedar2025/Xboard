@@ -89,9 +89,9 @@ class Shadowrocket implements ProtocolInterface
         if ($protocol_settings['tls']) {
             $config['tls'] = 1;
             if (data_get($protocol_settings, 'tls_settings')) {
-                if (data_get($protocol_settings, 'tls_settings.allow_insecure') && !empty(data_get($protocol_settings, 'tls_settings.allow_insecure')))
+                if (!!data_get($protocol_settings, 'tls_settings.allow_insecure'))
                     $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
-                if (data_get($protocol_settings, 'tls_settings.server_name') && !empty(data_get($protocol_settings, 'tls_settings.server_name')))
+                if (!!data_get($protocol_settings, 'tls_settings.server_name'))
                     $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
             }
         }
@@ -100,8 +100,8 @@ class Shadowrocket implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
                 }
                 break;
             case 'ws':
@@ -168,8 +168,8 @@ class Shadowrocket implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
                 }
                 break;
             case 'ws':
@@ -225,6 +225,8 @@ class Shadowrocket implements ProtocolInterface
     public static function buildHysteria($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
+        $uri = ''; // 初始化变量
+        
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $params = [
