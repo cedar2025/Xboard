@@ -176,24 +176,37 @@ class Surge implements ProtocolInterface
     public static function buildHysteria($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        if ($protocol_settings['version'] != 2)
+        if ($protocol_settings['version'] != 2) {
             return '';
+        }
+
         $config = [
             "{$server['name']}=hysteria2",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            "download-bandwidth={$protocol_settings['bandwidth']['up']}",
-            $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
-            // 'tfo=true', 
-            'udp-relay=true'
         ];
-        if (data_get($protocol_settings, 'tls.allow_insecure')) {
-            $config[] = data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+
+        // 可选字段：download-bandwidth（非必须）
+        $bandwidthDown = data_get($protocol_settings, 'bandwidth.down');
+        if (!empty($bandwidthDown)) {
+            $config[] = "download-bandwidth={$bandwidthDown}";
         }
+
+        // 可选字段：sni
+        $sni = data_get($protocol_settings, 'tls.server_name');
+        if (!empty($sni)) {
+            $config[] = "sni={$sni}";
+        }
+
+        // 可选字段：跳过证书验证
+        $skipVerify = data_get($protocol_settings, 'tls.allow_insecure');
+        if (isset($skipVerify)) {
+            $config[] = $skipVerify ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+        }
+        $config[] = 'udp-relay=true';
         $config = array_filter($config);
-        $uri = implode(',', $config);
-        $uri .= "\r\n";
+        $uri = implode(',', $config) . "\r\n";
         return $uri;
     }
 }

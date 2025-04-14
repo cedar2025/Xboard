@@ -82,6 +82,16 @@ class OrderController extends Controller
 
     private function buildFilterQuery(Builder $query, string $field, mixed $value): void
     {
+        // 针对 user_id 进行严格匹配
+        if ($field === 'user_id') {
+            if (is_array($value)) {
+                $query->whereIn($field, array_map('intval', $value));
+            } else {
+                $query->where($field, (int) $value);
+            }
+            return;
+        }
+        
         // Handle array values for 'in' operations
         if (is_array($value)) {
             $query->whereIn($field, $value);
