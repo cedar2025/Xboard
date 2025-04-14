@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Exceptions\ApiException;
 use Illuminate\Support\Facades\Auth;
 use Closure;
-use App\Models\User;
 
 class Admin
 {
@@ -18,13 +17,15 @@ class Admin
      */
     public function handle($request, Closure $next)
     {
-        /** @var User|null $user */
-        $user = Auth::guard('sanctum')->user();
-        
-        if (!$user || !$user->is_admin) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (!Auth::guard('sanctum')->check()) {
+            throw new ApiException('未登录或登陆已过期', 403);
         }
-        
+
+        $user = Auth::guard('sanctum')->user();
+        if (!$user->is_admin) {
+            throw new ApiException('无管理员权限', 403);
+        }
+
         return $next($request);
     }
 }

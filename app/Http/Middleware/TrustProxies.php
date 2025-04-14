@@ -8,8 +8,9 @@ use Illuminate\Http\Request;
 class TrustProxies extends Middleware
 {
     /**
-     * 可信代理列表
-     * @var array<int, string>|string|null
+     * The trusted proxies for this application.
+     *
+     * @var array|string
      */
     protected $proxies = [
         "173.245.48.0/20",
@@ -35,7 +36,8 @@ class TrustProxies extends Middleware
     ];
 
     /**
-     * 代理头映射
+     * The headers that should be used to detect proxies.
+     *
      * @var int
      */
     protected $headers =

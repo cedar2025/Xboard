@@ -7,8 +7,9 @@ use Illuminate\Cookie\Middleware\EncryptCookies as Middleware;
 class EncryptCookies extends Middleware
 {
     /**
-     * 不需要加密的Cookie名称列表
-     * @var array<int, string>
+     * The names of the cookies that should not be encrypted.
+     *
+     * @var array
      */
     protected $except = [
         //

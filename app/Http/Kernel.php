@@ -11,7 +11,7 @@ class Kernel extends HttpKernel
      *
      * These middleware are run during every request to your application.
      *
-     * @var array<int, class-string>
+     * @var array
      */
     protected $middleware = [
         \Illuminate\Http\Middleware\HandleCors::class,
@@ -26,7 +26,7 @@ class Kernel extends HttpKernel
     /**
      * The application's route middleware groups.
      *
-     * @var array<string, array<int, class-string|string>>
+     * @var array
      */
     protected $middlewareGroups = [
         'web' => [
@@ -57,7 +57,7 @@ class Kernel extends HttpKernel
      *
      * These middleware may be assigned to groups or used individually.
      *
-     * @var array<string, class-string>
+     * @var array
      */
     protected $middlewareAliases = [
         'auth' => \App\Http\Middleware\Authenticate::class,
@@ -84,7 +84,7 @@ class Kernel extends HttpKernel
      *
      * This forces non-global middleware to always be in the given order.
      *
-     * @var array<class-string>
+     * @var array
      */
     protected $middlewarePriority = [
         \Illuminate\Session\Middleware\StartSession::class,
