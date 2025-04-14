@@ -54,19 +54,7 @@ class ServerSave extends FormRequest
             'reality_settings.short_id' => 'nullable|string',
         ],
         'socks' => [
-        ],
-        'naive' => [
-            'tls' => 'required|integer',
-            'tls_settings' => 'nullable|array',
-        ],
-        'http' => [
-            'tls' => 'required|integer',
-            'tls_settings' => 'nullable|array',
-        ],
-        'mieru' => [
-            'transport' => 'required|string',
-            'multiplexing' => 'required|string',
-        ],
+        ]
     ];
 
     private function getBaseRules(): array

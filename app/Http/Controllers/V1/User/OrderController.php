@@ -43,15 +43,16 @@ class OrderController extends Controller
         $request->validate([
             'trade_no' => 'required|string',
         ]);
-        $order = Order::with(['payment','plan'])
+        $order = Order::with('payment')
             ->where('user_id', $request->user()->id)
             ->where('trade_no', $request->input('trade_no'))
             ->first();
         if (!$order) {
             return $this->fail([400, __('Order does not exist or has been paid')]);
         }
+        $order['plan'] = Plan::find($order->plan_id);
         $order['try_out_plan_id'] = (int) admin_setting('try_out_plan_id');
-        if (!$order->plan) {
+        if (!$order['plan']) {
             return $this->fail([400, __('Subscription plan does not exist')]);
         }
         if ($order->surplus_order_ids) {
@@ -80,7 +81,7 @@ class OrderController extends Controller
         // Validate plan purchase
         $planService->validatePurchase($user, $request->input('period'));
 
-        return DB::transaction(function () use ($request, $plan, $user, $userService) {
+        return DB::transaction(function () use ($request, $plan, $user, $userService, $planService) {
             $period = $request->input('period');
             $newPeriod = PlanService::getPeriodKey($period);
 
@@ -168,13 +169,12 @@ class OrderController extends Controller
             ]);
         }
         $payment = Payment::find($method);
-        if (!$payment || !$payment->enable) {
+        if (!$payment || $payment->enable !== 1)
             return $this->fail([400, __('Payment method is not available')]);
-        }
         $paymentService = new PaymentService($payment->payment, $payment->id);
         $order->handling_amount = NULL;
         if ($payment->handling_fee_fixed || $payment->handling_fee_percent) {
-            $order->handling_amount = (int) round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
+            $order->handling_amount = round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
         }
         $order->payment_id = $method;
         if (!$order->save())

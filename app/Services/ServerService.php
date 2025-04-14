@@ -15,18 +15,14 @@ class ServerService
      * 获取所有服务器列表
      * @return Collection
      */
-    public static function getAllServers(): Collection
+    public static function getAllServers()
     {
-        $query = Server::orderBy('sort', 'ASC');
-
-        return $query->get()->append([
-            'last_check_at',
-            'last_push_at',
-            'online',
-            'is_online',
-            'available_status',
-            'cache_key'
-        ]);
+        return Server::orderBy('sort', 'ASC')
+            ->get()
+            ->transform(function (Server $server) {
+                $server->loadServerStatus();
+                return $server;
+            });
     }
 
     /**
@@ -36,24 +32,27 @@ class ServerService
      */
     public static function getAvailableServers(User $user): array
     {
-        $servers = Server::whereJsonContains('group_ids', (string) $user->group_id)
+        return Server::whereJsonContains('group_ids', (string) $user->group_id)
             ->where('show', true)
             ->orderBy('sort', 'ASC')
             ->get()
-            ->append(['last_check_at', 'last_push_at', 'online', 'is_online', 'available_status', 'cache_key', 'server_key']);
+            ->transform(function (Server $server) use ($user) {
+                $server->loadParentCreatedAt();
+                $server->handlePortAllocation();
+                $server->loadServerStatus();
+                if ($server->type === 'shadowsocks') {
+                    $server->server_key = Helper::getServerKey($server->created_at, 16);
+                }
+                $server->generateShadowsocksPassword($user);
 
-        $servers = collect($servers)->map(function ($server) use ($user) {
-            // 判断动态端口
-            if (str_contains($server?->port, '-')) {
-                $server->port = (int) Helper::randomPort($server->port);
-                $server->ports = $server->port;
-            }
-            $server->password = $server->generateShadowsocksPassword($user);
-            return $server;
-        })->toArray();
-
-        return $servers;
+                return $server;
+            })
+            ->toArray();
     }
+
+    /** 
+     * 加
+     */
 
     /**
      * 根据权限组获取可用的用户列表

@@ -12,7 +12,6 @@ class Payment extends Model
     protected $casts = [
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
-        'config' => 'array',
-        'enable' => 'boolean'
+        'config' => 'array'
     ];
 }

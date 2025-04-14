@@ -3,38 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * App\Models\Order
- *
- * @property int $id
- * @property int $user_id
- * @property int $plan_id
- * @property int|null $payment_id
- * @property int $period
- * @property string $trade_no
- * @property int $total_amount
- * @property int|null $handling_amount
- * @property int|null $balance_amount
- * @property int $type
- * @property int $status
- * @property array|null $surplus_order_ids
- * @property int|null $coupon_id
- * @property int $created_at
- * @property int $updated_at
- * @property int|null $commission_status
- * @property int|null $invite_user_id
- * @property int|null $actual_commission_balance
- * @property int|null $commission_rate
- * @property int|null $commission_auto_check
- * 
- * @property-read Plan $plan
- * @property-read Payment|null $payment
- * @property-read User $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, CommissionLog> $commission_log
- */
 class Order extends Model
 {
     protected $table = 'v2_order';
@@ -43,8 +12,7 @@ class Order extends Model
     protected $casts = [
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
-        'surplus_order_ids' => 'array',
-        'handling_amount' => 'integer'
+        'surplus_order_ids' => 'array'
     ];
 
     const STATUS_PENDING = 0; // 待支付
@@ -72,34 +40,21 @@ class Order extends Model
         self::TYPE_RESET_TRAFFIC => '流量重置',
     ];
 
-    /**
-     * 获取与订单关联的支付方式
-     */
-    public function payment(): BelongsTo
+    public function payment()
     {
         return $this->belongsTo(Payment::class, 'payment_id', 'id');
     }
 
-    /**
-     * 获取与订单关联的用户
-     */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
-
-    /**
-     * 获取与订单关联的套餐
-     */
-    public function plan(): BelongsTo
+    public function plan()
     {
-        return $this->belongsTo(Plan::class, 'plan_id', 'id');
+        return $this->belongsTo(Plan::class);
     }
 
-    /**
-     * 获取与订单关联的佣金记录
-     */
-    public function commission_log(): HasMany
+    public function commission_log()
     {
         return $this->hasMany(CommissionLog::class, 'trade_no', 'trade_no');
     }

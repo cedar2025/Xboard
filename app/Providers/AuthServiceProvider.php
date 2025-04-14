@@ -8,15 +8,17 @@ use Illuminate\Support\Facades\Gate;
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * 策略映射
-     * @var array<class-string, class-string>
+     * The policy mappings for the application.
+     *
+     * @var array
      */
     protected $policies = [
         // 'App\Model' => 'App\Policies\ModelPolicy',
     ];
 
     /**
-     * 注册任何认证/授权服务
+     * Register any authentication / authorization services.
+     *
      * @return void
      */
     public function boot()

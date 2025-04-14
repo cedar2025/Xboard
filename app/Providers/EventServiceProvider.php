@@ -8,14 +8,16 @@ use Illuminate\Support\Facades\Event;
 class EventServiceProvider extends ServiceProvider
 {
     /**
-     * 事件监听器映射
-     * @var array<string, array<int, class-string>>
+     * The event listener mappings for the application.
+     *
+     * @var array
      */
     protected $listen = [
     ];
 
     /**
-     * 注册任何事件
+     * Register any events for your application.
+     *
      * @return void
      */
     public function boot()

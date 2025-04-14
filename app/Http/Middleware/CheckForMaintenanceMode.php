@@ -2,17 +2,16 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
+use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode as Middleware;
 
-class CheckForMaintenanceMode extends PreventRequestsDuringMaintenance
+class CheckForMaintenanceMode extends Middleware
 {
     /**
-     * 维护模式白名单URI
-     * @var array<int, string>
+     * The URIs that should be reachable while maintenance mode is enabled.
+     *
+     * @var array
      */
     protected $except = [
-        // 示例：
-        // '/api/health-check',
-        // '/status'
+        //
     ];
 }

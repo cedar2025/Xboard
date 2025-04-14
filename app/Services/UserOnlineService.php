@@ -156,17 +156,13 @@ class UserOnlineService
     }
 
     /**
-     * Calculate the number of devices based on IPs array and device limit mode.
-     *
-     * @param array $ipsArray Array containing IP data
-     * @return int Number of devices
+     * 计算设备数量
      */
     private function calculateDeviceCount(array $ipsArray): int
     {
-        $mode = (int) admin_setting('device_limit_mode', 0);
-
-        return match ($mode) {
-            // Loose mode: Count unique IPs (ignoring suffixes after '_')
+        // 设备限制模式
+        return match ((int) admin_setting('device_limit_mode', 0)) {
+            // 宽松模式
             1 => collect($ipsArray)
                 ->filter(fn(mixed $data): bool => is_array($data) && isset($data['aliveips']))
                 ->flatMap(
@@ -177,12 +173,9 @@ class UserOnlineService
                 )
                 ->unique()
                 ->count(),
-            // Strict mode: Sum total number of alive IPs
             0 => collect($ipsArray)
                 ->filter(fn(mixed $data): bool => is_array($data) && isset($data['aliveips']))
-                ->sum(fn(array $data): int => count($data['aliveips'])),
-            // Handle invalid modes
-            default => throw new \InvalidArgumentException("Invalid device limit mode: $mode"),
+                ->sum(fn(array $data): int => count($data['aliveips']))
         };
     }
 }
