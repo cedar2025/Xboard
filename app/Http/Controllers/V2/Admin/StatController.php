@@ -25,7 +25,8 @@ class StatController extends Controller
     {
         // 获取在线节点数
         $onlineNodes = Server::all()->filter(function ($server) {
-            return !!$server->is_online;
+            $server->loadServerStatus();
+            return $server->is_online;
         })->count();
         // 获取在线设备数和在线用户数
         $onlineDevices = User::where('t', '>=', time() - 600)
@@ -267,7 +268,8 @@ class StatController extends Controller
 
         // 获取在线节点数
         $onlineNodes = Server::all()->filter(function ($server) {
-            return !!$server->is_online;
+            $server->loadServerStatus();
+            return $server->is_online;
         })->count();
 
         // 获取在线设备数和在线用户数

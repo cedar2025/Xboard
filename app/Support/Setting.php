@@ -32,11 +32,10 @@ class Setting
     /**
      * 设置配置信息.
      *
-     * @param  string  $key
-     * @param  mixed  $value
-     * @return bool 设置是否成功
+     * @param  array  $data
+     * @return $this
      */
-    public function set(string $key, $value = null): bool
+    public function set($key, $value = null): bool
     {
         if (is_array($value)) {
             $value = json_encode($value);
@@ -51,12 +50,12 @@ class Setting
     /**
      * 保存配置到数据库.
      *
-     * @param  array  $settings 要保存的设置数组
-     * @return bool 保存是否成功
+     * @param  array  $data
+     * @return $this
      */
-    public function save(array $settings): bool
+    public function save(array $data = []): bool
     {
-        foreach ($settings as $key => $value) {
+        foreach ($data as $key => $value) {
             $this->set($key, $value);
         }
 
@@ -99,23 +98,5 @@ class Setting
     public function toArray(): array
     {
         return $this->fromDatabase();
-    }
-
-    /**
-     * 更新单个设置项
-     * 
-     * @param string $key 设置键名
-     * @param mixed $value 设置值
-     * @return bool 更新是否成功
-     */
-    public function update(string $key, $value): bool
-    {
-        if (is_array($value)) {
-            $value = json_encode($value);
-        }
-        $key = strtolower($key);
-        SettingModel::updateOrCreate(['name' => $key], ['value' => $value]);
-        $this->cache->forget(self::CACHE_KEY);
-        return true;
     }
 }

@@ -8,7 +8,6 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PlanController extends Controller
 {
@@ -59,7 +58,7 @@ class PlanController extends Controller
                 return $this->success(true);
             } catch (\Exception $e) {
                 DB::rollBack();
-                Log::error($e);
+                \Log::error($e);
                 return $this->fail([500, '保存失败']);
             }
         }
@@ -77,12 +76,12 @@ class PlanController extends Controller
         if (User::where('plan_id', $request->input('id'))->first()) {
             return $this->fail([400201, '该订阅下存在用户无法删除']);
         }
-        
-        $plan = Plan::find($request->input('id'));
-        if (!$plan) {
-            return $this->fail([400202, '该订阅不存在']);
+        if ($request->input('id')) {
+            $plan = Plan::find($request->input('id'));
+            if (!$plan) {
+                return $this->fail([400202, '该订阅不存在']);
+            }
         }
-        
         return $this->success($plan->delete());
     }
 
@@ -102,7 +101,7 @@ class PlanController extends Controller
         try {
             $plan->update($updateData);
         } catch (\Exception $e) {
-            Log::error($e);
+            \Log::error($e);
             return $this->fail([500, '保存失败']);
         }
 
@@ -125,7 +124,7 @@ class PlanController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error($e);
+            \Log::error($e);
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);

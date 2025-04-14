@@ -112,13 +112,16 @@ class CheckCommission extends Command
                 DB::rollBack();
                 return false;
             }
-            CommissionLog::create([
+            if (!CommissionLog::create([
                 'invite_user_id' => $inviteUserId,
                 'user_id' => $order->user_id,
                 'trade_no' => $order->trade_no,
                 'order_amount' => $order->total_amount,
                 'get_amount' => $commissionBalance
-            ]);
+            ])) {
+                DB::rollBack();
+                return false;
+            }
             $inviteUserId = $inviter->invite_user_id;
             // update order actual commission balance
             $order->actual_commission_balance = $order->actual_commission_balance + $commissionBalance;

@@ -10,13 +10,12 @@ use App\Models\ServerGroup;
 use App\Services\ServerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ManageController extends Controller
 {
     public function getNodes(Request $request)
     {
-        $servers = ServerService::getAllServers()->map(function ($item) {
+        $servers = collect(ServerService::getAllServers())->map(function ($item) {
             $item['groups'] = ServerGroup::whereIn('id', $item['group_ids'])->get(['name', 'id']);
             $item['parent'] = $item->parent;
             return $item;
@@ -42,7 +41,7 @@ class ManageController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error($e);
+            \Log::error($e);
             return $this->fail([500, '保存失败']);
 
         }
@@ -61,7 +60,7 @@ class ManageController extends Controller
                 $server->update($params);
                 return $this->success(true);
             } catch (\Exception $e) {
-                Log::error($e);
+                \Log::error($e);
                 return $this->fail([500, '保存失败']);
             }
         }
@@ -70,7 +69,7 @@ class ManageController extends Controller
             Server::create($params);
             return $this->success(true);
         } catch (\Exception $e) {
-            Log::error($e);
+            \Log::error($e);
             return $this->fail([500, '创建失败']);
         }
 
@@ -84,7 +83,7 @@ class ManageController extends Controller
             'show' => 'integer',
         ]);
 
-        if (!Server::where('id', $request->id)->update(['show' => $request->show])) {
+        if (Server::where('id', $request->id)->update(['show' => $request->show]) === false) {
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);
