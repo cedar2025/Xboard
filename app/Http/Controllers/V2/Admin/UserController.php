@@ -207,7 +207,7 @@ class UserController extends Controller
             return $this->fail([400202, '用户不存在']);
         }
         // 检查邮箱是否被使用
-        if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
+        if (User::whereRaw('LOWER(email) = ?', [strtolower($params['email'])])->first() && $user->email !== $params['email']) {
             return $this->fail([400201, '邮箱已被使用']);
         }
         // 处理密码
@@ -227,7 +227,7 @@ class UserController extends Controller
             $params['group_id'] = $plan->group_id;
         }
         // 处理邀请用户
-        if ($request->input('invite_user_email') && $inviteUser = User::where('email', $request->input('invite_user_email'))->first()) {
+        if ($request->input('invite_user_email') && $inviteUser = User::whereRaw('LOWER(email) = ?', [strtolower($request->input('invite_user_email'))])->first()) {
             $params['invite_user_id'] = $inviteUser->id;
         } else {
             $params['invite_user_id'] = null;
@@ -339,59 +339,40 @@ class UserController extends Controller
 
     public function generate(UserGenerate $request)
     {
-        if ($request->input('email_prefix')) {
-            if ($request->input('plan_id')) {
-                $plan = Plan::find($request->input('plan_id'));
-                if (!$plan) {
-                    return $this->fail([400202, '订阅计划不存在']);
-                }
-            }
-            $user = [
-                'email' => $request->input('email_prefix') . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
-                'uuid' => Helper::guid(true),
-                'token' => Helper::guid()
-            ];
-            if (User::where('email', $user['email'])->first()) {
-                return $this->fail([400201, '邮箱已存在于系统中']);
-            }
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            if (!User::create($user)) {
-                return $this->fail([500, '生成失败']);
-            }
-            return $this->success(true);
-        }
-        if ($request->input('generate_count')) {
-            $this->multiGenerate($request);
-        }
-    }
-
-    private function multiGenerate(Request $request)
-    {
-        if ($request->input('plan_id')) {
-            $plan = Plan::find($request->input('plan_id'));
-            if (!$plan) {
-                return $this->fail([400202, '订阅计划不存在']);
-            }
-        }
+        $request->validate([
+            'generate_count' => 'nullable|integer|max:500',
+            'expired_at' => 'nullable|integer',
+            'plan_id' => 'nullable|integer',
+            'email_prefix' => 'nullable',
+            'email_suffix' => 'required',
+            'password' => 'nullable'
+        ], [
+            'generate_count.integer' => '生成数量必须为数字',
+            'generate_count.max' => '生成数量最大为500个'
+        ]);
+        $generateCount = $request->input('generate_count', 1);
+        $expiredAt = $request->input('expired_at');
+        $planId = $request->input('plan_id');
+        $emailPrefix = $request->input('email_prefix');
+        $emailSuffix = $request->input('email_suffix');
+        $password = $request->input('password');
         $users = [];
-        for ($i = 0; $i < $request->input('generate_count'); $i++) {
+        for ($i = 0; $i < $generateCount; $i++) {
             $user = [
-                'email' => Helper::randomChar(6) . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
+                'email' => $emailPrefix ? $emailPrefix . $i . '@' . $emailSuffix : Helper::guid(false) . '@' . $emailSuffix,
+                'password' => $password ? password_hash($password, PASSWORD_DEFAULT) : password_hash(Helper::guid(false), PASSWORD_DEFAULT),
                 'uuid' => Helper::guid(true),
                 'token' => Helper::guid(),
+                'expired_at' => $expiredAt,
+                'plan_id' => $planId,
                 'created_at' => time(),
                 'updated_at' => time()
             ];
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            array_push($users, $user);
+            // Use case-insensitive email comparison
+            if (User::whereRaw('LOWER(email) = ?', [strtolower($user['email'])])->first()) {
+                continue;
+            }
+            $users[] = $user;
         }
         try {
             DB::beginTransaction();

@@ -33,7 +33,7 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400202,'用户不存在']);
         }
-        if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
+        if (User::whereRaw('LOWER(email) = ?', [strtolower($params['email'])])->first() && $user->email !== $params['email']) {
             return $this->fail([400201,'邮箱已被使用']);
         }
         if (isset($params['password'])) {
