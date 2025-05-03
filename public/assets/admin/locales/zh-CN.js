@@ -1561,11 +1561,6 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "placeholder": "选择路由组",
         "empty": "未找到结果"
       },
-      "comment": {
-        "label": "备注",
-        "placeholder": "输入节点备注（如过期日期）",
-        "tooltip": "添加关于此节点的备注或说明"
-      },
       "submit": "提交",
       "cancel": "取消",
       "success": "提交成功"
