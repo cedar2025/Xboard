@@ -1594,6 +1594,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "placeholder": "Select route groups",
         "empty": "No results found"
       },
+      "comment": {
+        "label": "Comment",
+        "placeholder": "Enter node comment (e.g. expiration date)",
+        "tooltip": "Add notes or descriptions about this node"
+      },
+        "label": "Comment",
+        "placeholder": "Enter node comment (e.g. expiration date)",
+        "tooltip": "Add notes or descriptions about this node"
+      },
       "submit": "Submit",
       "cancel": "Cancel",
       "success": "Submitted successfully"

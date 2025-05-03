@@ -1590,6 +1590,11 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "placeholder": "라우트 그룹 선택",
         "empty": "검색 결과가 없습니다"
       },
+      "comment": {
+        "label": "메모",
+        "placeholder": "노드 메모 입력 (예: 만료일)",
+        "tooltip": "이 노드에 대한 메모나 설명을 추가하세요"
+      },
       "submit": "제출",
       "cancel": "취소",
       "success": "제출 완료"
