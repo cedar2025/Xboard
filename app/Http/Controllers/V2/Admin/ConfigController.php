@@ -64,12 +64,6 @@ class ConfigController extends Controller
         return $this->success(true);
     }
 
-    private function getTemplateContent(string $filename): string
-    {
-        $path = resource_path("rules/{$filename}");
-        return File::exists($path) ? File::get($path) : '';
-    }
-
     public function fetch(Request $request)
     {
         $key = $request->input('key');

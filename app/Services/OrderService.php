@@ -127,30 +127,30 @@ class OrderService
         $inviter = User::find($user->invite_user_id);
         if (!$inviter)
             return;
+        $commissionType = (int) $inviter->commission_type;
+        if ($commissionType === User::COMMISSION_TYPE_SYSTEM) {
+            $commissionType = (bool) admin_setting('commission_first_time_enable', true) ? User::COMMISSION_TYPE_ONETIME : User::COMMISSION_TYPE_PERIOD;
+        }
         $isCommission = false;
-        switch ((int) $inviter->commission_type) {
-            case 0:
-                $commissionFirstTime = (int) admin_setting('commission_first_time_enable', 1);
-                $isCommission = (!$commissionFirstTime || ($commissionFirstTime && !$this->haveValidOrder($user)));
-                break;
-            case 1:
+        switch ($commissionType) {
+            case User::COMMISSION_TYPE_PERIOD:
                 $isCommission = true;
                 break;
-            case 2:
+            case User::COMMISSION_TYPE_ONETIME:
                 $isCommission = !$this->haveValidOrder($user);
                 break;
         }
 
         if (!$isCommission)
             return;
-        if ($inviter && $inviter->commission_rate) {
+        if ($inviter->commission_rate) {
             $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
         } else {
             $order->commission_balance = $order->total_amount * (admin_setting('invite_commission', 10) / 100);
         }
     }
 
-    private function haveValidOrder(User $user)
+    private function haveValidOrder(User $user): Order|null
     {
         return Order::where('user_id', $user->id)
             ->whereNotIn('status', [0, 2])

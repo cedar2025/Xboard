@@ -134,7 +134,7 @@ class Helper
 
     public static function randomPort($range): int {
         $portRange = explode('-', $range);
-        return random_int($portRange[0], $portRange[1]);
+        return random_int((int)$portRange[0], (int)$portRange[1]);
     }
 
     public static function base64EncodeUrlSafe($data)
