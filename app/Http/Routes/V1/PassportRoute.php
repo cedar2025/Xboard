@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Routes\V1;
 
+use App\Http\Controllers\V1\Passport\AuthController;
+use App\Http\Controllers\V1\Passport\CommController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class PassportRoute
@@ -11,15 +13,15 @@ class PassportRoute
             'prefix' => 'passport'
         ], function ($router) {
             // Auth
-            $router->post('/auth/register', 'V1\\Passport\\AuthController@register');
-            $router->post('/auth/login', 'V1\\Passport\\AuthController@login');
-            $router->get ('/auth/token2Login', 'V1\\Passport\\AuthController@token2Login');
-            $router->post('/auth/forget', 'V1\\Passport\\AuthController@forget');
-            $router->post('/auth/getQuickLoginUrl', 'V1\\Passport\\AuthController@getQuickLoginUrl');
-            $router->post('/auth/loginWithMailLink', 'V1\\Passport\\AuthController@loginWithMailLink');
+            $router->post('/auth/register', [AuthController::class, 'register']);
+            $router->post('/auth/login', [AuthController::class, 'login']);
+            $router->get('/auth/token2Login', [AuthController::class, 'token2Login']);
+            $router->post('/auth/forget', [AuthController::class, 'forget']);
+            $router->post('/auth/getQuickLoginUrl', [AuthController::class, 'getQuickLoginUrl']);
+            $router->post('/auth/loginWithMailLink', [AuthController::class, 'loginWithMailLink']);
             // Comm
-            $router->post('/comm/sendEmailVerify', 'V1\\Passport\\CommController@sendEmailVerify');
-            $router->post('/comm/pv', 'V1\\Passport\\CommController@pv');
+            $router->post('/comm/sendEmailVerify', [CommController::class, 'sendEmailVerify']);
+            $router->post('/comm/pv', [CommController::class, 'pv']);
         });
     }
 }

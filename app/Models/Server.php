@@ -9,7 +9,45 @@ use Illuminate\Support\Facades\Cache;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
+/**
+ * App\Models\Server
+ *
+ * @property int $id
+ * @property string $name 节点名称
+ * @property string $type 服务类型
+ * @property string $host 主机地址
+ * @property string $port 端口
+ * @property string|null $server_port 服务器端口
+ * @property array|null $group_ids 分组IDs
+ * @property array|null $route_ids 路由IDs
+ * @property array|null $tags 标签
+ * @property string|null $show 是否显示
+ * @property string|null $allow_insecure 是否允许不安全
+ * @property string|null $network 网络类型
+ * @property int|null $parent_id 父节点ID
+ * @property float|null $rate 倍率
+ * @property int|null $sort 排序
+ * @property array|null $protocol_settings 协议设置
+ * @property int $created_at
+ * @property int $updated_at
+ * 
+ * @property-read Server|null $parent 父节点
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, StatServer> $stats 节点统计
+ * 
+ * @property-read int|null $last_check_at 最后检查时间（Unix时间戳）
+ * @property-read int|null $last_push_at 最后推送时间（Unix时间戳）
+ * @property-read int $online 在线用户数
+ * @property-read int $is_online 是否在线（1在线 0离线）
+ * @property-read string $available_status 可用状态描述
+ * @property-read string $cache_key 缓存键
+ * @property string|null $ports 端口范围
+ * @property string|null $password 密码
+ * @property int|null $u 上行流量
+ * @property int|null $d 下行流量
+ * @property int|null $total 总流量
+ */
 class Server extends Model
 {
     public const TYPE_HYSTERIA = 'hysteria';
@@ -19,6 +57,9 @@ class Server extends Model
     public const TYPE_TUIC = 'tuic';
     public const TYPE_SHADOWSOCKS = 'shadowsocks';
     public const TYPE_SOCKS = 'socks';
+    public const TYPE_NAIVE = 'naive';
+    public const TYPE_HTTP = 'http';
+    public const TYPE_MIERU = 'mieru';
     public const STATUS_OFFLINE = 0;
     public const STATUS_ONLINE_NO_PUSH = 1;
     public const STATUS_ONLINE = 2;
@@ -53,6 +94,9 @@ class Server extends Model
         self::TYPE_TUIC,
         self::TYPE_SHADOWSOCKS,
         self::TYPE_SOCKS,
+        self::TYPE_NAIVE,
+        self::TYPE_HTTP,
+        self::TYPE_MIERU,
     ];
 
     protected $table = 'v2_server';
@@ -143,6 +187,32 @@ class Server extends Model
                     'allow_insecure' => ['type' => 'boolean', 'default' => false]
                 ]
             ]
+        ],
+        self::TYPE_SOCKS => [
+            'tls' => ['type' => 'integer', 'default' => 0],
+            'tls_settings' => [
+                'type' => 'object',
+                'fields' => [
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                ]
+            ]
+        ],
+        self::TYPE_NAIVE => [
+            'tls' => ['type' => 'integer', 'default' => 0],
+            'tls_settings' => ['type' => 'array', 'default' => null]
+        ],
+        self::TYPE_HTTP => [
+            'tls' => ['type' => 'integer', 'default' => 0],
+            'tls_settings' => [
+                'type' => 'object',
+                'fields' => [
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                ]
+            ]
+        ],
+        self::TYPE_MIERU => [
+            'transport' => ['type' => 'string', 'default' => 'tcp'],
+            'multiplexing' => ['type' => 'string', 'default' => 'MULTIPLEXING_LOW']
         ]
     ];
 
@@ -174,19 +244,6 @@ class Server extends Model
         return $result;
     }
 
-    private function getDefaultSettings(array $configs): array
-    {
-        $defaults = [];
-        foreach ($configs as $key => $config) {
-            if ($config['type'] === 'object') {
-                $defaults[$key] = $this->getDefaultSettings($config['fields']);
-            } else {
-                $defaults[$key] = $config['default'];
-            }
-        }
-        return $defaults;
-    }
-
     public function getProtocolSettingsAttribute($value)
     {
         $settings = json_decode($value, true) ?? [];
@@ -206,53 +263,22 @@ class Server extends Model
         $this->attributes['protocol_settings'] = json_encode($castedSettings);
     }
 
-    public function loadParentCreatedAt(): void
-    {
-        if ($this->parent_id) {
-            $this->created_at = $this->parent()->value('created_at');
-        }
-    }
-
-    public function loadServerStatus(): void
-    {
-        $type = strtoupper($this->type);
-        $serverId = $this->parent_id ?: $this->id;
-
-        $this->last_check_at = Cache::get(CacheKey::get("SERVER_{$type}_LAST_CHECK_AT", $serverId));
-        $this->last_push_at = Cache::get(CacheKey::get("SERVER_{$type}_LAST_PUSH_AT", $serverId));
-        $this->online = Cache::get(CacheKey::get("SERVER_{$type}_ONLINE_USER", $serverId)) ?? 0;
-        $this->is_online = (time() - 300 > $this->last_check_at) ? 0 : 1;
-        $this->available_status = $this->getAvailableStatus();
-        $this->cache_key = "{$this->type}-{$this->id}-{$this->updated_at}-{$this->is_online}";
-    }
-
-    public function handlePortAllocation(): void
-    {
-        if (strpos($this->port, '-') !== false) {
-            $this->ports = $this->port;
-            $this->port = Helper::randomPort($this->port);
-        } else {
-            $this->port = (int) $this->port;
-        }
-    }
-
-    public function generateShadowsocksPassword(User $user): void
+    public function generateShadowsocksPassword(User $user): string
     {
         if ($this->type !== self::TYPE_SHADOWSOCKS) {
-            return;
+            return $user->uuid;
         }
 
-        $this->password = $user->uuid;
 
         $cipher = data_get($this, 'protocol_settings.cipher');
         if (!$cipher || !isset(self::CIPHER_CONFIGURATIONS[$cipher])) {
-            return;
+            return $user->uuid;
         }
 
         $config = self::CIPHER_CONFIGURATIONS[$cipher];
         $serverKey = Helper::getServerKey($this->created_at, $config['serverKeySize']);
         $userKey = Helper::uuidToBase64($user->uuid, $config['userKeySize']);
-        $this->password = "{$serverKey}:{$userKey}";
+        return "{$serverKey}:{$userKey}";
     }
 
     public static function normalizeType(string $type): string
@@ -265,7 +291,7 @@ class Server extends Model
         return in_array(self::normalizeType($type), self::VALID_TYPES, true);
     }
 
-    public function getAvailableStatus(): int
+    public function getAvailableStatusAttribute(): int
     {
         $now = time();
         if (!$this->last_check_at || ($now - self::CHECK_INTERVAL) >= $this->last_check_at) {
@@ -297,4 +323,84 @@ class Server extends Model
         return ServerRoute::whereIn('id', $this->route_ids)->get();
     }
 
+    /**
+     * 最后检查时间访问器
+     */
+    protected function lastCheckAt(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_LAST_CHECK_AT", $serverId));
+            }
+        );
+    }
+
+    /**
+     * 最后推送时间访问器
+     */
+    protected function lastPushAt(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_LAST_PUSH_AT", $serverId));
+            }
+        );
+    }
+
+    /**
+     * 在线用户数访问器
+     */
+    protected function online(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_ONLINE_USER", $serverId)) ?? 0;
+            }
+        );
+    }
+
+    /**
+     * 是否在线访问器
+     */
+    protected function isOnline(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return (time() - 300 > $this->last_check_at) ? 0 : 1;
+            }
+        );
+    }
+
+    /**
+     * 缓存键访问器
+     */
+    protected function cacheKey(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return "{$this->type}-{$this->id}-{$this->updated_at}-{$this->is_online}";
+            }
+        );
+    }
+
+    /**
+     * 服务器密钥访问器
+     */
+    protected function serverKey(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->type === self::TYPE_SHADOWSOCKS) {
+                    return Helper::getServerKey($this->created_at, 16);
+                }
+                return null;
+            }
+        );
+    }
 }

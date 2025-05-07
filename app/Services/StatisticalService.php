@@ -122,7 +122,7 @@ class StatisticalService
             $key = "{$rate}_{$uid}";
             $stats[$key] = $stats[$key] ?? [
                 'record_at' => $this->startAt,
-                'server_rate' => number_format($rate, 2, '.', ''),
+                'server_rate' => number_format((float) $rate, 2, '.', ''),
                 'u' => 0,
                 'd' => 0,
                 'user_id' => intval($userId),
@@ -156,27 +156,40 @@ class StatisticalService
 
 
     /**
-     * 获取缓存中的服务器爆表
+     * Retrieve server statistics from Redis cache.
+     *
+     * @return array<int, array{server_id: int, server_type: string, u: float, d: float}>
      */
-    public function getStatServer()
+    public function getStatServer(): array
     {
+        /** @var array<string, array{server_id: int, server_type: string, u: float, d: float}> $stats */
         $stats = [];
         $statsServer = $this->redis->zrange($this->statServerKey, 0, -1, true);
+
         foreach ($statsServer as $member => $value) {
-            list($serverType, $serverId, $type) = explode('_', $member);
+            $parts = explode('_', $member);
+            if (count($parts) !== 3) {
+                continue; // Skip malformed members
+            }
+            [$serverType, $serverId, $type] = $parts;
+
+            if (!in_array($type, ['u', 'd'], true)) {
+                continue; // Skip invalid types
+            }
+
             $key = "{$serverType}_{$serverId}";
             if (!isset($stats[$key])) {
                 $stats[$key] = [
-                    'server_id' => intval($serverId),
+                    'server_id' => (int) $serverId,
                     'server_type' => $serverType,
-                    'u' => 0,
-                    'd' => 0,
+                    'u' => 0.0,
+                    'd' => 0.0,
                 ];
             }
-            $stats[$key][$type] += $value;
+            $stats[$key][$type] += (float) $value;
         }
-        return array_values($stats);
 
+        return array_values($stats);
     }
 
     /**
@@ -281,25 +294,22 @@ class StatisticalService
                     ->where('record_type', 'd');
             }
         )
+            ->withSum('stats as u', 'u') // 预加载 u 的总和
+            ->withSum('stats as d', 'd') // 预加载 d 的总和
             ->get()
-            ->each(function ($item) {
-                $item->u = (int) $item->stats()->sum('u');
-                $item->d = (int) $item->stats()->sum('d');
-                $item->total = (int) $item->u + $item->d;
-                $item->server_name = optional($item->parent)->name ?? $item->name;
-                $item->server_id = $item->id;
-                $item->server_type = $item->type;
+            ->map(function ($item) {
+                return [
+                    'server_name' => optional($item->parent)->name ?? $item->name,
+                    'server_id' => $item->id,
+                    'server_type' => $item->type,
+                    'u' => (int) $item->u,
+                    'd' => (int) $item->d,
+                    'total' => (int) $item->u + (int) $item->d,
+                ];
             })
             ->sortByDesc('total')
-            ->select([
-                'server_name',
-                'server_id',
-                'server_type',
-                'u',
-                'd',
-                'total'
-            ])
-            ->values()->toArray();
+            ->values()
+            ->toArray();
         return $statistics;
     }
 
