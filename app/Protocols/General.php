@@ -5,7 +5,7 @@ namespace App\Protocols;
 
 use App\Contracts\ProtocolInterface;
 use App\Utils\Helper;
-
+use Illuminate\Support\Arr;
 class General implements ProtocolInterface
 {
     public $flags = ['general', 'v2rayn', 'v2rayng', 'passwall', 'ssrplus', 'sagernet'];
@@ -44,6 +44,9 @@ class General implements ProtocolInterface
             }
             if ($item['type'] === 'hysteria') {
                 $uri .= self::buildHysteria($user['uuid'], $item);
+            }
+            if ($item['type'] === 'socks') {
+                $uri .= self::buildSocks($user['uuid'], $item);
             }
         }
         return base64_encode($uri);
@@ -87,8 +90,11 @@ class General implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['host'] = data_get($protocol_settings, 'network_settings.headers.Host') ? \Arr::random(data_get($protocol_settings, 'network_settings.headers.Host'), ['/']) : null;
+                    $config['path'] = Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['host'] = 
+                    data_get($protocol_settings, 'network_settings.headers.Host') 
+                    ? Arr::random(data_get($protocol_settings, 'network_settings.headers.Host', ['/']), ) 
+                    : null;
                 }
                 break;
             case 'ws':
@@ -247,6 +253,13 @@ class General implements ProtocolInterface
         $uri .= "\r\n";
 
         return $uri;
+    }
+
+    public static function buildSocks($password, $server)
+    {
+        $name = rawurlencode($server['name']);
+        $credentials = base64_encode("{$password}:{$password}");
+        return "socks://{$credentials}@{$server['host']}:{$server['port']}#{$name}\r\n";
     }
 
 }

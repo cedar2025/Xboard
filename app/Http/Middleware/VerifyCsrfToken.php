@@ -7,16 +7,14 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 class VerifyCsrfToken extends Middleware
 {
     /**
-     * Indicates whether the XSRF-TOKEN cookie should be set on the response.
-     *
+     * 是否在响应中设置XSRF-TOKEN cookie
      * @var bool
      */
     protected $addHttpCookie = true;
 
     /**
-     * The URIs that should be excluded from CSRF verification.
-     *
-     * @var array
+     * 不需要CSRF验证的URI列表
+     * @var array<int, string>
      */
     protected $except = [
         //

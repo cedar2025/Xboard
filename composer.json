@@ -37,8 +37,10 @@
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.9",
         "fakerphp/faker": "^1.9.1",
+        "larastan/larastan": "^3.0",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.0",
+        "nunomaduro/larastan": "^3.1",
         "orangehill/iseed": "^3.0",
         "phpunit/phpunit": "^10.5",
         "spatie/laravel-ignition": "^2.4"
