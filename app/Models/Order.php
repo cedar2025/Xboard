@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $user_id
  * @property int $plan_id
  * @property int|null $payment_id
- * @property int $period
+ * @property string $period
  * @property string $trade_no
  * @property int $total_amount
  * @property int|null $handling_amount
