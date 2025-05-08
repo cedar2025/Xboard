@@ -19,11 +19,11 @@ class ExportV2Log extends Command
     public function handle()
     {
         $days = $this->argument('days');
-        $date = Carbon::now()->subDays($days)->startOfDay();
+        $date = Carbon::now()->subDays((float) $days)->startOfDay();
 
         $logs = DB::table('v2_log')
-                    ->where('created_at', '>=', $date->timestamp)
-                    ->get();
+            ->where('created_at', '>=', $date->timestamp)
+            ->get();
 
         $fileName = "v2_logs_" . Carbon::now()->format('Y_m_d_His') . ".csv";
         $handle = fopen(storage_path("logs/$fileName"), 'w');
@@ -35,19 +35,19 @@ class ExportV2Log extends Command
             fputcsv($handle, [
                 $log->level,
                 $log->id,
-                $log->title, 
-                $log->host, 
-                $log->uri, 
-                $log->method, 
-                $log->data, 
-                $log->ip, 
-                $log->context, 
-                Carbon::createFromTimestamp($log->created_at)->toDateTimeString(), 
+                $log->title,
+                $log->host,
+                $log->uri,
+                $log->method,
+                $log->data,
+                $log->ip,
+                $log->context,
+                Carbon::createFromTimestamp($log->created_at)->toDateTimeString(),
                 Carbon::createFromTimestamp($log->updated_at)->toDateTimeString()
             ]);
         }
 
         fclose($handle);
-        $this->info("日志成功导出到：  ". storage_path("logs/$fileName"));
+        $this->info("日志成功导出到：  " . storage_path("logs/$fileName"));
     }
 }
