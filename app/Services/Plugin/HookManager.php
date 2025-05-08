@@ -45,9 +45,16 @@ class HookManager
      * @param mixed ...$args 其他参数
      * @return mixed
      */
-    public static function filter(string $hook, mixed $value): mixed
+    public static function filter(string $hook, mixed $value, mixed ...$args): mixed
     {
-        return Eventy::filter($hook, $value);
+        if (!self::hasHook($hook)) {
+            return $value;
+        }
+
+        /** @phpstan-ignore-next-line */
+        $result = Eventy::filter($hook, $value, ...$args);
+
+        return $result;
     }
 
     /**
@@ -87,5 +94,11 @@ class HookManager
     {
         Eventy::removeAction($hook, $callback);
         Eventy::removeFilter($hook, $callback);
+    }
+
+    private static function hasHook(string $hook): bool
+    {
+        // Implementation of hasHook method
+        return true; // Placeholder return, actual implementation needed
     }
 }

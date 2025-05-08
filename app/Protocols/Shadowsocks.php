@@ -47,7 +47,7 @@ class Shadowsocks implements ProtocolInterface
         $subs['version'] = 1;
         $subs['bytes_used'] = $bytesUsed;
         $subs['bytes_remaining'] = $bytesRemaining;
-        $subs['servers'] = array_merge($subs['servers'] ? $subs['servers'] : [], $configs);
+        $subs['servers'] = array_merge($subs['servers'], $configs);
 
         return json_encode($subs, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }

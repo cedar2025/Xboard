@@ -53,7 +53,6 @@ class QuantumultX implements ProtocolInterface
             'udp-relay=true',
             "tag={$server['name']}"
         ];
-        $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
