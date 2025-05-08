@@ -283,6 +283,9 @@ class Stash implements ProtocolInterface
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['sni'] = $serverName;
         }
+        if (isset($server['ports'])) {
+            $array['ports'] = $server['ports'];
+        }
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $array['type'] = 'hysteria';
@@ -294,7 +297,6 @@ class Stash implements ProtocolInterface
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
-                $array['ports'] = data_get($protocol_settings, 'ports');
                 break;
         }
         return $array;
