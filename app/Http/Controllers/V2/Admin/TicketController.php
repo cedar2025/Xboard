@@ -55,13 +55,10 @@ class TicketController extends Controller
         if (!$ticket) {
             return $this->fail([400202, '工单不存在']);
         }
-        $ticket->user = UserController::transformUserData($ticket->user);
-        $ticket->messages->each(function ($message) use ($ticket) {
-            $message->is_me = $message->user_id !== $ticket->user_id;
+        $result = $ticket->toArray();
+        $result['user'] = UserController::transformUserData($ticket->user);
 
-        });
-
-        return $this->success($ticket);
+        return $this->success($result);
     }
 
     /**
@@ -91,12 +88,16 @@ class TicketController extends Controller
                 perPage: $request->integer('pageSize', 10),
                 page: $request->integer('current', 1)
             );
-        $tickets->getCollection()->transform(function ($ticket) {
-            $ticket->user = UserController::transformUserData($ticket->user);
-            return $ticket;
-        });
+
+        // 获取items然后映射转换
+        $items = collect($tickets->items())->map(function ($ticket) {
+            $ticketData = $ticket->toArray();
+            $ticketData['user'] = UserController::transformUserData($ticket->user);
+            return $ticketData;
+        })->all();
+
         return response([
-            'data' => $tickets->items(),
+            'data' => $items,
             'total' => $tickets->total()
         ]);
     }
@@ -136,5 +137,20 @@ class TicketController extends Controller
         } catch (\Exception $e) {
             return $this->fail([500101, '关闭失败']);
         }
+    }
+
+    public function show($ticketId)
+    {
+        $ticket = Ticket::with([
+            'user',
+            'messages' => function ($query) {
+                $query->with(['user']); // 如果需要用户信息
+            }
+        ])->findOrFail($ticketId);
+
+        // 自动包含 is_me 属性
+        return response()->json([
+            'data' => $ticket
+        ]);
     }
 }

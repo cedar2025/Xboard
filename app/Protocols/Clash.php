@@ -28,7 +28,7 @@ class Clash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        
+
         // 优先从 admin_setting 获取模板
         $template = admin_setting('subscribe_template_clash');
         if (empty($template)) {
@@ -40,7 +40,7 @@ class Clash implements ProtocolInterface
                 $template = file_get_contents($defaultConfig);
             }
         }
-        
+
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
@@ -65,6 +65,14 @@ class Clash implements ProtocolInterface
             }
             if ($item['type'] === 'trojan') {
                 array_push($proxy, self::buildTrojan($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'socks') {
+                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'http') {
+                array_push($proxy, self::buildHttp($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
         }
@@ -171,7 +179,7 @@ class Clash implements ProtocolInterface
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $array['http-opts'] = [
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                        'path' => \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
                     ];
                 }
                 break;
@@ -231,9 +239,56 @@ class Clash implements ProtocolInterface
         return $array;
     }
 
+    public static function buildSocks5($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'socks5';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+        $array['udp'] = true;
+
+        $array['username'] = $password;
+        $array['password'] = $password;
+
+        // TLS 配置
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+        }
+
+        return $array;
+    }
+
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'http';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+
+        $array['username'] = $password;
+        $array['password'] = $password;
+
+        // TLS 配置
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+        }
+
+        return $array;
+    }
+
     private function isMatch($exp, $str)
     {
-        return @preg_match($exp, $str);
+        try {
+            return preg_match($exp, $str) === 1;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     private function isRegex($exp)
@@ -241,6 +296,10 @@ class Clash implements ProtocolInterface
         if (empty($exp)) {
             return false;
         }
-        return @preg_match((string) $exp, '') !== false;
+        try {
+            return preg_match($exp, '') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

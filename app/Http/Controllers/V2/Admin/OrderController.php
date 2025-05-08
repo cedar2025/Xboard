@@ -15,6 +15,7 @@ use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -27,7 +28,7 @@ class OrderController extends Controller
         if ($order->surplus_order_ids) {
             $order['surplus_orders'] = Order::whereIn('id', $order->surplus_order_ids)->get();
         }
-        $order['period'] = PlanService::getLegacyPeriod($order->period);
+        $order['period'] = PlanService::getLegacyPeriod((string) $order->period);
         return $this->success($order);
     }
 
@@ -45,17 +46,21 @@ class OrderController extends Controller
 
         $this->applyFiltersAndSorts($request, $orderModel);
 
-        return response()->json(
-            $orderModel
-                ->latest('created_at')
-                ->paginate(
-                    perPage: $pageSize,
-                    page: $current
-                )->through(fn($order) => [
-                    ...$order->toArray(),
-                    'period' => PlanService::getLegacyPeriod($order->period)
-                ]),
-        );
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginatedResults */
+        $paginatedResults = $orderModel
+            ->latest('created_at')
+            ->paginate(
+                perPage: $pageSize,
+                page: $current
+            );
+
+        $paginatedResults->getCollection()->transform(function($order) {
+            $orderArray = $order->toArray();
+            $orderArray['period'] = PlanService::getLegacyPeriod((string) $order->period);
+            return $orderArray;
+        });
+
+        return response()->json($paginatedResults);
     }
 
     private function applyFiltersAndSorts(Request $request, Builder $builder): void
@@ -112,8 +117,8 @@ class OrderController extends Controller
             'lte' => '<=',
             'like' => 'like',
             'notlike' => 'not like',
-            'null' => static fn($q) => $q->whereNull($queryField),
-            'notnull' => static fn($q) => $q->whereNotNull($queryField),
+            'null' => static fn($q) => $q->whereNull($field),
+            'notnull' => static fn($q) => $q->whereNotNull($field),
             default => 'like'
         }, match (strtolower($operator)) {
             'like', 'notlike' => "%{$filterValue}%",
@@ -184,7 +189,7 @@ class OrderController extends Controller
         try {
             $order->update($params);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '更新失败']);
         }
 
@@ -215,11 +220,12 @@ class OrderController extends Controller
             $orderService = new OrderService($order);
             $order->user_id = $user->id;
             $order->plan_id = $plan->id;
-            $order->period = PlanService::getPeriodKey($request->input('period'));
+            $period = $request->input('period');
+            $order->period = (int) PlanService::getPeriodKey((string) $period);
             $order->trade_no = Helper::guid();
             $order->total_amount = $request->input('total_amount');
 
-            if (PlanService::getPeriodKey($order->period) === Plan::PERIOD_RESET_TRAFFIC) {
+            if (PlanService::getPeriodKey((string) $order->period) === Plan::PERIOD_RESET_TRAFFIC) {
                 $order->type = Order::TYPE_RESET_TRAFFIC;
             } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id) {
                 $order->type = Order::TYPE_UPGRADE;

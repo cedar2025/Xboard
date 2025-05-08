@@ -7,7 +7,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use InvalidArgumentException;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * App\Models\Plan
+ *
+ * @property int $id
+ * @property string $name 套餐名称
+ * @property int|null $group_id 权限组ID
+ * @property int $transfer_enable 流量(KB)
+ * @property int|null $speed_limit 速度限制Mbps
+ * @property bool $show 是否显示
+ * @property bool $renew 是否允许续费
+ * @property bool $sell 是否允许购买
+ * @property array|null $prices 价格配置
+ * @property int $sort 排序
+ * @property string|null $content 套餐描述
+ * @property int $reset_traffic_method 流量重置方式
+ * @property int|null $capacity_limit 订阅人数限制
+ * @property int|null $device_limit 设备数量限制
+ * @property int $created_at
+ * @property int $updated_at
+ * 
+ * @property-read ServerGroup|null $group 关联的权限组
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Order> $order 关联的订单
+ */
 class Plan extends Model
 {
     use HasFactory;
@@ -16,12 +40,12 @@ class Plan extends Model
     protected $dateFormat = 'U';
 
     // 定义流量重置方式
-    public const RESET_TRAFFIC_FOLLOW_SYSTEM = 0;    // 跟随系统设置
-    public const RESET_TRAFFIC_FIRST_DAY_MONTH = 1;  // 每月1号
-    public const RESET_TRAFFIC_MONTHLY = 2;          // 按月重置
-    public const RESET_TRAFFIC_NEVER = 3;            // 不重置
-    public const RESET_TRAFFIC_FIRST_DAY_YEAR = 4;   // 每年1月1日
-    public const RESET_TRAFFIC_YEARLY = 5;           // 按年重置
+    public const RESET_TRAFFIC_FOLLOW_SYSTEM = null;    // 跟随系统设置
+    public const RESET_TRAFFIC_FIRST_DAY_MONTH = 0;  // 每月1号
+    public const RESET_TRAFFIC_MONTHLY = 1;          // 按月重置
+    public const RESET_TRAFFIC_NEVER = 2;            // 不重置
+    public const RESET_TRAFFIC_FIRST_DAY_YEAR = 3;   // 每年1月1日
+    public const RESET_TRAFFIC_YEARLY = 4;           // 按年重置
 
     // 定义价格类型
     public const PRICE_TYPE_RESET_TRAFFIC = 'reset_traffic';  // 重置流量价格
@@ -346,7 +370,7 @@ class Plan extends Model
         return $this->hasMany(User::class);
     }
 
-    public function group()
+    public function group(): HasOne
     {
         return $this->hasOne(ServerGroup::class, 'id', 'group_id');
     }
@@ -383,5 +407,10 @@ class Plan extends Model
         $prices = $this->prices ?? [];
         $prices[self::PRICE_TYPE_RESET_TRAFFIC] = max(0, $price);
         $this->prices = $prices;
+    }
+
+    public function order(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }

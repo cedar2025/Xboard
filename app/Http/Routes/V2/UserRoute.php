@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Routes\V2;
 
+use App\Http\Controllers\V1\User\UserController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class UserRoute
@@ -12,8 +13,8 @@ class UserRoute
             'middleware' => 'user'
         ], function ($router) {
             // User
-            $router->get('/resetSecurity', 'V1\\User\\UserController@resetSecurity');
-            $router->get('/info', 'V1\\User\\UserController@info');
+            $router->get('/resetSecurity', [UserController::class, 'resetSecurity']);
+            $router->get('/info', [UserController::class, 'info']);
         });
     }
 }

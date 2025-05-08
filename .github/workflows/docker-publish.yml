@@ -2,7 +2,7 @@ name: Docker Build and Publish
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "new-dev"]
   workflow_dispatch:
 
 env:
@@ -59,7 +59,12 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,format=long
-            type=raw,value=new
+            type=raw,value=new,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=${{ steps.get_version.outputs.version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Get version
         id: get_version
@@ -80,10 +85,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:master
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:new
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xboard:${{ steps.get_version.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
             BUILDKIT_MULTI_PLATFORM=1 
