@@ -221,7 +221,7 @@ class OrderController extends Controller
             $order->user_id = $user->id;
             $order->plan_id = $plan->id;
             $period = $request->input('period');
-            $order->period = (int) PlanService::getPeriodKey((string) $period);
+            $order->period = PlanService::getPeriodKey((string) $period);
             $order->trade_no = Helper::guid();
             $order->total_amount = $request->input('total_amount');
 
