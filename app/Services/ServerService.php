@@ -47,6 +47,8 @@ class ServerService
             if (str_contains($server->port, '-')) {
                 $server->port = (string) Helper::randomPort($server->port);
                 $server->ports = $server->port;
+            } else {
+                $server->port = (int) $server->port;
             }
             $server->password = $server->generateShadowsocksPassword($user);
             return $server;
