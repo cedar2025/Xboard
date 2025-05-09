@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string $name 节点名称
  * @property string $type 服务类型
  * @property string $host 主机地址
- * @property string $port 端口
- * @property string|null $server_port 服务器端口
+ * @property string|int $port 端口
+ * @property int|null $server_port 服务器端口
  * @property array|null $group_ids 分组IDs
  * @property array|null $route_ids 路由IDs
  * @property array|null $tags 标签
