@@ -45,8 +45,9 @@ class ServerService
         $servers = collect($servers)->map(function ($server) use ($user) {
             // 判断动态端口
             if (str_contains($server->port, '-')) {
-                $server->port = (string) Helper::randomPort($server->port);
-                $server->ports = $server->port;
+                $port = $server->port;
+                $server->port = (int) Helper::randomPort($port);
+                $server->ports = $port;
             } else {
                 $server->port = (int) $server->port;
             }

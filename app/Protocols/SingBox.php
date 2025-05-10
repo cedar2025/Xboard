@@ -3,6 +3,7 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Arr;
 
 class SingBox implements ProtocolInterface
 {
@@ -44,7 +45,7 @@ class SingBox implements ProtocolInterface
         if (!empty($template)) {
             return is_array($template) ? $template : json_decode($template, true);
         }
-        
+
         $defaultConfig = base_path('resources/rules/default.sing-box.json');
         $customConfig = base_path('resources/rules/custom.sing-box.json');
         $jsonData = file_exists($customConfig) ? file_get_contents($customConfig) : file_get_contents($defaultConfig);
@@ -70,8 +71,9 @@ class SingBox implements ProtocolInterface
                 $vmessConfig = $this->buildVmess($this->user['uuid'], $item);
                 $proxies[] = $vmessConfig;
             }
-            if ($item['type'] === 'vless' 
-                &&  in_array(data_get($protocol_settings, 'network'), ['tcp', 'ws', 'grpc', 'http', 'quic', 'httpupgrade'])
+            if (
+                $item['type'] === 'vless'
+                && in_array(data_get($protocol_settings, 'network'), ['tcp', 'ws', 'grpc', 'http', 'quic', 'httpupgrade'])
             ) {
                 $vlessConfig = $this->buildVless($this->user['uuid'], $item);
                 $proxies[] = $vlessConfig;
@@ -158,7 +160,7 @@ class SingBox implements ProtocolInterface
         $transport = match ($protocol_settings['network']) {
             'tcp' => [
                 'type' => 'http',
-                'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
             ],
             'ws' => [
                 'type' => 'ws',
@@ -306,9 +308,12 @@ class SingBox implements ProtocolInterface
                 'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
             ]
         ];
+        if (isset($server['ports'])) {
+            $baseConfig['server_ports'][] = str_replace('-', ':', $server['ports']);
+        }
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
-        }   
+        }
         $speedConfig = [
             'up_mbps' => $protocol_settings['bandwidth']['up'],
             'down_mbps' => $protocol_settings['bandwidth']['down'],
@@ -415,7 +420,7 @@ class SingBox implements ProtocolInterface
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
             ];
-            
+
             if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                 $array['tls']['server_name'] = $serverName;
             }
