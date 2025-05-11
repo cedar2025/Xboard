@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  * @property-read \App\Models\Ticket $ticket 关联的工单
- * @property-read bool $is_me 当前消息是否由工单发起人发送
+ * @property-read bool $is_from_user 消息是否由工单发起人发送
+ * @property-read bool $is_from_admin 消息是否由管理员发送
  */
 class TicketMessage extends Model
 {
@@ -27,7 +28,7 @@ class TicketMessage extends Model
         'updated_at' => 'timestamp'
     ];
 
-    protected $appends = ['is_me'];
+    protected $appends = ['is_from_user', 'is_from_admin'];
 
     /**
      * 关联的工单
@@ -40,8 +41,16 @@ class TicketMessage extends Model
     /**
      * 判断消息是否由工单发起人发送
      */
-    public function getIsMeAttribute(): bool
+    public function getIsFromUserAttribute(): bool
     {
         return $this->ticket->user_id === $this->user_id;
+    }
+
+    /**
+     * 判断消息是否由管理员发送
+     */
+    public function getIsFromAdminAttribute(): bool
+    {
+        return $this->ticket->user_id !== $this->user_id;
     }
 }
