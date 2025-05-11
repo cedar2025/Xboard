@@ -1739,6 +1739,83 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "empty": "未找到可用的ALPN协议"
           }
         }
+      },
+      "socks": {
+        "version": {
+          "label": "协议版本",
+          "placeholder": "选择SOCKS版本"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "不使用请留空"
+          },
+          "allow_insecure": "允许不安全?"
+        },
+        "network": {
+          "label": "传输协议",
+          "placeholder": "选择传输协议"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "不使用请留空"
+          },
+          "allow_insecure": "允许不安全?"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持",
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        }
+      },
+      "http": {
+        "tls": {
+          "label": "TLS",
+          "placeholder": "请选择安全性",
+          "disabled": "不支持",
+          "enabled": "支持",
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "服务器名称指示(SNI)",
+            "placeholder": "当节点地址与证书不一致时用于证书验证"
+          },
+          "allow_insecure": "允许不安全连接"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "传输协议",
+          "placeholder": "选择传输协议"
+        },
+        "multiplexing": {
+          "label": "多路复用",
+          "placeholder": "选择多路复用级别",
+          "MULTIPLEXING_OFF": "关闭",
+          "MULTIPLEXING_LOW": "低",
+          "MULTIPLEXING_MIDDLE": "中",
+          "MULTIPLEXING_HIGH": "高"
+        }
       }
     },
     "network_settings": {

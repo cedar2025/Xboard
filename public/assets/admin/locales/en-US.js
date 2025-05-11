@@ -1772,6 +1772,83 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "empty": "No ALPN Protocols Available"
           }
         }
+      },
+      "socks": {
+        "version": {
+          "label": "Protocol Version",
+          "placeholder": "Select SOCKS Version"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Leave empty if not used"
+          },
+          "allow_insecure": "Allow Insecure?"
+        },
+        "network": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "http": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        },
+        "multiplexing": {
+          "label": "Multiplexing",
+          "placeholder": "Select multiplexing level",
+          "MULTIPLEXING_OFF": "Disabled",
+          "MULTIPLEXING_LOW": "Low",
+          "MULTIPLEXING_MIDDLE": "Medium",
+          "MULTIPLEXING_HIGH": "High"
+        }
       }
     },
     "network_settings": {
