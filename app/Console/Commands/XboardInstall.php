@@ -59,7 +59,7 @@ class XboardInstall extends Command
             $this->info(" / /\ \ | |_) | (_) | (_| | | | (_| | ");
             $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
             if (
-                (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
+                (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED', false))
                 || (getenv('INSTALLED', false) && $isDocker)
             ) {
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
@@ -234,7 +234,11 @@ class XboardInstall extends Command
 
     private function set_env_var($key, $value)
     {
-        $value = !strpos($value, ' ') ? $value : '"' . $value . '"';
+        if (is_bool($value)) {
+            $value = $value ? 'true' : 'false';
+        } else {
+            $value = !strpos($value, ' ') ? $value : '"' . $value . '"';
+        }
         $key = strtoupper($key);
 
         $envPath = app()->environmentFilePath();
