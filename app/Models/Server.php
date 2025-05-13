@@ -276,7 +276,9 @@ class Server extends Model
         }
 
         $config = self::CIPHER_CONFIGURATIONS[$cipher];
-        $serverKey = Helper::getServerKey($this->created_at, $config['serverKeySize']);
+        // Use parent's created_at if this is a child node
+        $serverCreatedAt = $this->parent_id ? $this->parent->created_at : $this->created_at;
+        $serverKey = Helper::getServerKey($serverCreatedAt, $config['serverKeySize']);
         $userKey = Helper::uuidToBase64($user->uuid, $config['userKeySize']);
         return "{$serverKey}:{$userKey}";
     }
