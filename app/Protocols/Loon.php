@@ -31,12 +31,6 @@ class Loon implements ProtocolInterface
         foreach ($servers as $item) {
             if (
                 $item['type'] === 'shadowsocks'
-                && in_array(data_get($item['protocol_settings'], 'cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
             ) {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
@@ -58,6 +52,10 @@ class Loon implements ProtocolInterface
     public static function buildShadowsocks($password, $server)
     {
         $cipher = data_get($server['protocol_settings'], 'cipher');
+        $obfs = data_get($server['protocol_settings'], 'obfs');
+        $obfs_host = data_get($server['protocol_settings'], 'obfs_settings.host');
+        $obfs_uri = data_get($server['protocol_settings'], 'obfs_settings.path', '/');
+
         $config = [
             "{$server['name']}=Shadowsocks",
             "{$server['host']}",
@@ -67,9 +65,15 @@ class Loon implements ProtocolInterface
             'fast-open=false',
             'udp=true'
         ];
+
+        if ($obfs && $obfs_host) {
+            $config[] = "obfs-name={$obfs}";
+            $config[] = "obfs-host={$obfs_host}";
+            $config[] = "obfs-uri={$obfs_uri}";
+        }
+
         $config = array_filter($config);
-        $uri = implode(',', $config);
-        $uri .= "\r\n";
+        $uri = implode(',', $config) . "\r\n";
         return $uri;
     }
 

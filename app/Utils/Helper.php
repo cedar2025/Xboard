@@ -177,7 +177,7 @@ class Helper
 
     public static function getRandFingerprint() {
         $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq'];
-        return \Arr::random($fingerprints);
+        return Arr::random($fingerprints);
     }
 
     public static function encodeURIComponent($str) {
