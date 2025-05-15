@@ -5,6 +5,7 @@ namespace App\Protocols;
 use App\Models\ServerHysteria;
 use Symfony\Component\Yaml\Yaml;
 use App\Contracts\ProtocolInterface;
+use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 
 class Stash implements ProtocolInterface
@@ -35,12 +36,12 @@ class Stash implements ProtocolInterface
         $appName = admin_setting('app_name', 'XBoard');
 
         $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-        : (
-            File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
-        );
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : (
+                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
+            );
 
         $config = Yaml::parse($template);
         $proxy = [];
@@ -49,12 +50,6 @@ class Stash implements ProtocolInterface
         foreach ($servers as $item) {
             if (
                 $item['type'] === 'shadowsocks'
-                && in_array(data_get($item, 'protocol_settings.cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
             ) {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
@@ -65,9 +60,6 @@ class Stash implements ProtocolInterface
             }
             if (
                 $item['type'] === 'vless'
-                && in_array(data_get($item['protocol_settings'], 'network'), ['tcp', 'ws', 'grpc', 'http', 'h2'])
-                && in_array(data_get($item['protocol_settings'], 'tls'), [1, 0])
-                && in_array(data_get($item['protocol_settings'], 'flow'), ['xtls-rprx-origin', 'xtls-rprx-direct', 'xtls-rprx-splice'])
             ) {
                 array_push($proxy, self::buildVless($user['uuid'], $item));
                 array_push($proxies, $item['name']);
@@ -145,6 +137,13 @@ class Stash implements ProtocolInterface
         $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
+        if (data_get($protocol_settings, 'obfs') == 'http') {
+            $array['plugin'] = 'obfs';
+            $array['plugin-opts'] = [
+                'mode' => 'http',
+                'host' => data_get($protocol_settings, 'obfs.host'),
+            ];
+        }
         return $array;
     }
 
@@ -202,8 +201,7 @@ class Stash implements ProtocolInterface
         $array['flow'] = data_get($protocol_settings, 'flow');
         $array['udp'] = true;
 
-        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq']; //随机客户端指纹
-        $array['client-fingerprint'] = $fingerprints[rand(0, count($fingerprints) - 1)];
+        $array['client-fingerprint'] = Helper::getRandFingerprint();
 
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
@@ -213,6 +211,12 @@ class Stash implements ProtocolInterface
                     $array['servername'] = $serverName;
                 }
                 break;
+            case 2:
+                $array['tls'] = true;
+                $array['reality-opts']= [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
+                ];
         }
 
         switch (data_get($protocol_settings, 'network')) {
