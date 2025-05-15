@@ -4,6 +4,7 @@ namespace App\Protocols;
 
 use App\Contracts\ProtocolInterface;
 use App\Utils\Helper;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
 
 class Clash implements ProtocolInterface
@@ -11,6 +12,8 @@ class Clash implements ProtocolInterface
     public $flags = ['clash'];
     private $servers;
     private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
 
     public function __construct($user, $servers)
     {
@@ -29,17 +32,9 @@ class Clash implements ProtocolInterface
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        // 优先从 admin_setting 获取模板
-        $template = admin_setting('subscribe_template_clash');
-        if (empty($template)) {
-            $defaultConfig = base_path('resources/rules/default.clash.yaml');
-            $customConfig = base_path('resources/rules/custom.clash.yaml');
-            if (file_exists($customConfig)) {
-                $template = file_get_contents($customConfig);
-            } else {
-                $template = file_get_contents($defaultConfig);
-            }
-        }
+        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         $config = Yaml::parse($template);
         $proxy = [];
