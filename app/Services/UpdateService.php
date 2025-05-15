@@ -387,7 +387,7 @@ class UpdateService
                 Log::info('Restarting Octane server after update...');
                 // Update version cache before restart
                 $this->updateVersionCache();
-                Process::run('php artisan octane:reload');
+                Process::run('php artisan octane:stop');
                 Log::info('Octane server restarted successfully.');
             } else {
                 Log::info('Octane is not running, skipping restart.');
