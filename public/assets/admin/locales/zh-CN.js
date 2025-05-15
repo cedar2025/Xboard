@@ -363,8 +363,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           },
           "expire": {
             "label": "限制时长",
-            "placeholder": "输入限制时长（小时）",
-            "description": "注册限制的持续时间（小时）"
+            "placeholder": "输入限制时长（分钟）",
+            "description": "注册限制的持续时间（分钟）"
           }
         },
         "passwordLimit": {
@@ -379,8 +379,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           },
           "expire": {
             "label": "锁定时长",
-            "placeholder": "输入锁定时长（小时）",
-            "description": "账户锁定的持续时间（小时）"
+            "placeholder": "输入锁定时长（分钟）",
+            "description": "账户锁定的持续时间（分钟）"
           }
         }
       }
