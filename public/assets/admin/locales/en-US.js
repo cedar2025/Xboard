@@ -443,8 +443,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Limit Duration",
-            "placeholder": "Enter limit duration in hours",
-            "description": "Duration of the registration limit in hours"
+            "placeholder": "Enter limit duration in minutes",
+            "description": "Duration of the registration limit in minutes"
           }
         },
         "passwordLimit": {
@@ -459,8 +459,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Lock Duration",
-            "placeholder": "Enter lock duration in hours",
-            "description": "Duration of the account lock in hours"
+            "placeholder": "Enter lock duration in minutes",
+            "description": "Duration of the account lock in minutes"
           }
         }
       }
