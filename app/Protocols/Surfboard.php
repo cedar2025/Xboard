@@ -11,6 +11,8 @@ class Surfboard implements ProtocolInterface
     public $flags = ['surfboard'];
     private $servers;
     private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surfboard.conf';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surfboard.conf';
 
     public function __construct($user, $servers)
     {
@@ -62,14 +64,9 @@ class Surfboard implements ProtocolInterface
             }
         }
 
-        $defaultConfig = base_path() . '/resources/rules/default.surfboard.conf';
-        $customConfig = base_path() . '/resources/rules/custom.surfboard.conf';
-        if (File::exists($customConfig)) {
-            $config = file_get_contents("$customConfig");
-        } else {
-            $config = file_get_contents("$defaultConfig");
-        }
-
+        $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
         // Subscription link
         $subsURL = Helper::getSubscribeUrl($user['token']);
         $subsDomain = request()->header('Host');
