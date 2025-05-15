@@ -144,6 +144,13 @@ class Clash implements ProtocolInterface
         $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
+        if (data_get($protocol_settings, 'obfs') == 'http') {
+            $array['plugin'] = 'obfs';
+            $array['plugin-opts'] = [
+                'mode' => 'http',
+                'host' => data_get($protocol_settings, 'obfs.host'),
+            ];
+        }
         return $array;
     }
 

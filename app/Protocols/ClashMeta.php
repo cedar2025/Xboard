@@ -153,6 +153,7 @@ class ClashMeta implements ProtocolInterface
 
     public static function buildShadowsocks($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'ss';
@@ -161,6 +162,13 @@ class ClashMeta implements ProtocolInterface
         $array['cipher'] = data_get($server['protocol_settings'], 'cipher');
         $array['password'] = data_get($server, 'password', $password);
         $array['udp'] = true;
+        if (data_get($protocol_settings, 'obfs') == 'http') {
+            $array['plugin'] = 'obfs';
+            $array['plugin-opts'] = [
+                'mode' => 'http',
+                'host' => data_get($protocol_settings, 'obfs.host'),
+            ];
+        }
         return $array;
     }
 
