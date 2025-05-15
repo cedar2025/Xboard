@@ -5,12 +5,17 @@ namespace App\Protocols;
 use App\Models\ServerHysteria;
 use Symfony\Component\Yaml\Yaml;
 use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Facades\File;
 
 class Stash implements ProtocolInterface
 {
     public $flags = ['stash'];
     private $servers;
     private $user;
+
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.stash.yaml';
+    const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
 
     public function __construct($user, $servers)
     {
@@ -28,22 +33,15 @@ class Stash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        
-        // 优先从 admin_setting 获取模板
-        $template = admin_setting('subscribe_template_stash');
-        if (empty($template)) {
-            $defaultConfig = base_path('resources/rules/default.clash.yaml');
-            $customClashConfig = base_path('resources/rules/custom.clash.yaml');
-            $customStashConfig = base_path('resources/rules/custom.stash.yaml');
-            if (file_exists($customStashConfig)) {
-                $template = file_get_contents($customStashConfig);
-            } elseif (file_exists($customClashConfig)) {
-                $template = file_get_contents($customClashConfig);
-            } else {
-                $template = file_get_contents($defaultConfig);
-            }
-        }
-        
+
+        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+        : (
+            File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+            ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
+        );
+
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];

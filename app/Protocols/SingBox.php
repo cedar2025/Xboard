@@ -4,6 +4,7 @@ namespace App\Protocols;
 use App\Utils\Helper;
 use App\Contracts\ProtocolInterface;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 
 class SingBox implements ProtocolInterface
 {
@@ -11,6 +12,8 @@ class SingBox implements ProtocolInterface
     private $servers;
     private $user;
     private $config;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.sing-box.json';
 
     public function __construct($user, $servers)
     {
@@ -40,15 +43,9 @@ class SingBox implements ProtocolInterface
 
     protected function loadConfig()
     {
-        // 优先从 admin_setting 获取模板
-        $template = admin_setting('subscribe_template_singbox');
-        if (!empty($template)) {
-            return is_array($template) ? $template : json_decode($template, true);
-        }
-
-        $defaultConfig = base_path('resources/rules/default.sing-box.json');
-        $customConfig = base_path('resources/rules/custom.sing-box.json');
-        $jsonData = file_exists($customConfig) ? file_get_contents($customConfig) : file_get_contents($defaultConfig);
+        $jsonData = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         return json_decode($jsonData, true);
     }
@@ -227,7 +224,7 @@ class SingBox implements ProtocolInterface
         $transport = match ($protocol_settings['network']) {
             'tcp' => data_get($protocol_settings, 'network_settings.header.type') == 'http' ? [
                 'type' => 'http',
-                'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
             ] : null,
             'ws' => array_filter([
                 'type' => 'ws',
@@ -308,9 +305,9 @@ class SingBox implements ProtocolInterface
                 'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
             ]
         ];
-        if (isset($server['ports'])) {
-            $baseConfig['server_ports'][] = str_replace('-', ':', $server['ports']);
-        }
+        // if (isset($server['ports'])) {
+        //     $baseConfig['server_ports'][] = str_replace('-', ':', $server['ports']);
+        // }
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
         }

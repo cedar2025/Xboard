@@ -4,16 +4,25 @@ namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ConfigSave;
-use App\Models\Setting;
+use App\Protocols\Clash;
+use App\Protocols\ClashMeta;
+use App\Protocols\Loon;
+use App\Protocols\SingBox;
+use App\Protocols\Stash;
+use App\Protocols\Surfboard;
+use App\Protocols\Surge;
 use App\Services\MailService;
 use App\Services\TelegramService;
 use App\Services\ThemeService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ConfigController extends Controller
 {
+
+
     public function getEmailTemplate()
     {
         $path = resource_path('views/mail/');
@@ -48,6 +57,17 @@ class ConfigController extends Controller
             'data' => $mailLog,
         ]);
     }
+    /**
+     * 获取规则模板内容
+     * 
+     * @param string $file 文件路径
+     * @return string 文件内容
+     */
+    private function getTemplateContent(string $file): string
+    {
+        $path = base_path($file);
+        return File::exists($path) ? File::get($path) : '';
+    }
 
     public function setTelegramWebhook(Request $request)
     {
@@ -62,6 +82,18 @@ class ConfigController extends Controller
         $telegramService->getMe();
         $telegramService->setWebhook($hookUrl);
         return $this->success(true);
+    }
+
+    /**
+     * 获取自定义规则文件路径，如果不存在则返回默认文件路径
+     * 
+     * @param string $customFile 自定义规则文件路径
+     * @param string $defaultFile 默认文件名
+     * @return string 文件名
+     */
+    private function getRuleFile(string $customFile, string $defaultFile): string
+    {
+        return File::exists(base_path($customFile)) ? $customFile : $defaultFile;
     }
 
     public function fetch(Request $request)
@@ -166,44 +198,31 @@ class ConfigController extends Controller
             ],
             'subscribe_template' => [
                 'subscribe_template_singbox' => (function () {
-                    $template = admin_setting('subscribe_template_singbox');
-                    if (!empty($template)) {
-                        return is_array($template)
-                            ? json_encode($template, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-                            : $template;
-                    }
-                    
-                    $content = file_exists(base_path('resources/rules/custom.sing-box.json'))
-                        ? file_get_contents(base_path('resources/rules/custom.sing-box.json'))
-                        : file_get_contents(base_path('resources/rules/default.sing-box.json'));
-                        
-                    // 确保返回格式化的 JSON 字符串
+                    $content = $this->getTemplateContent(
+                        $this->getRuleFile(SingBox::CUSTOM_TEMPLATE_FILE, SingBox::DEFAULT_TEMPLATE_FILE));
                     return json_encode(json_decode($content), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 })(),
-                'subscribe_template_clash' => (string) (admin_setting('subscribe_template_clash') ?: (
-                    file_exists(base_path('resources/rules/custom.clash.yaml'))
-                        ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
-                        : file_get_contents(base_path('resources/rules/default.clash.yaml'))
-                )),
-                'subscribe_template_clashmeta' => (string) (admin_setting('subscribe_template_clashmeta') ?: (
-                    file_exists(base_path('resources/rules/custom.clashmeta.yaml'))
-                        ? file_get_contents(base_path('resources/rules/custom.clashmeta.yaml'))
-                        : (file_exists(base_path('resources/rules/custom.clash.yaml'))
-                            ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
-                            : file_get_contents(base_path('resources/rules/default.clash.yaml')))
-                )),
-                'subscribe_template_stash' => (string) (admin_setting('subscribe_template_stash') ?: (
-                    file_exists(base_path('resources/rules/custom.stash.yaml'))
-                        ? file_get_contents(base_path('resources/rules/custom.stash.yaml'))
-                        : (file_exists(base_path('resources/rules/custom.clash.yaml'))
-                            ? file_get_contents(base_path('resources/rules/custom.clash.yaml'))
-                            : file_get_contents(base_path('resources/rules/default.clash.yaml')))
-                )),
-                'subscribe_template_surge' => (string) (admin_setting('subscribe_template_surge') ?: (
-                    file_exists(base_path('resources/rules/custom.surge.conf'))
-                        ? file_get_contents(base_path('resources/rules/custom.surge.conf'))
-                        : file_get_contents(base_path('resources/rules/default.surge.conf'))
-                )),
+                'subscribe_template_clash' => (string) $this->getTemplateContent(
+                    $this->getRuleFile(Clash::CUSTOM_TEMPLATE_FILE, Clash::DEFAULT_TEMPLATE_FILE)
+                ),
+                'subscribe_template_clashmeta' => (string) $this->getTemplateContent(
+                    $this->getRuleFile(
+                        ClashMeta::CUSTOM_TEMPLATE_FILE,
+                        $this->getRuleFile(ClashMeta::CUSTOM_CLASH_TEMPLATE_FILE, ClashMeta::DEFAULT_TEMPLATE_FILE)
+                    )
+                ),
+                'subscribe_template_stash' => (string) $this->getTemplateContent(
+                    $this->getRuleFile(
+                        Stash::CUSTOM_TEMPLATE_FILE,
+                        $this->getRuleFile(Stash::CUSTOM_CLASH_TEMPLATE_FILE, Stash::DEFAULT_TEMPLATE_FILE)
+                    )
+                ),
+                'subscribe_template_surge' => (string) $this->getTemplateContent(
+                    $this->getRuleFile(Stash::CUSTOM_TEMPLATE_FILE, Stash::DEFAULT_TEMPLATE_FILE)
+                ),
+                'subscribe_template_surfboard' => (string) $this->getTemplateContent(
+                    $this->getRuleFile(Surfboard::CUSTOM_TEMPLATE_FILE, Surfboard::DEFAULT_TEMPLATE_FILE)
+                )
             ]
         ];
         if ($key && isset($data[$key])) {
@@ -219,6 +238,29 @@ class ConfigController extends Controller
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
+
+        // 处理特殊的模板设置字段，将其保存为文件
+        $templateFields = [
+            'subscribe_template_clash' => Clash::CUSTOM_TEMPLATE_FILE,
+            'subscribe_template_clashmeta' => ClashMeta::CUSTOM_TEMPLATE_FILE,
+            'subscribe_template_stash' => Stash::CUSTOM_TEMPLATE_FILE,
+            'subscribe_template_surge' => Surge::CUSTOM_TEMPLATE_FILE,
+            'subscribe_template_singbox' => SingBox::CUSTOM_TEMPLATE_FILE,
+            'subscribe_template_surfboard' => Surfboard::CUSTOM_TEMPLATE_FILE,
+        ];
+
+        foreach ($templateFields as $field => $filename) {
+            if (isset($data[$field])) {
+                $content = $data[$field];
+                // 对于JSON格式的内容，确保格式化正确
+                if ($field === 'subscribe_template_singbox' && is_array($content)) {
+                    $content = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+                $this->saveTemplateContent($filename, $content);
+                unset($data[$field]); // 从数据库保存列表中移除
+            }
+        }
+
         foreach ($data as $k => $v) {
             if ($k == 'frontend_theme') {
                 $themeService = app(ThemeService::class);
@@ -228,5 +270,27 @@ class ConfigController extends Controller
         }
         // \Artisan::call('horizon:terminate'); //重启队列使配置生效
         return $this->success(true);
+    }
+
+    /**
+     * 保存规则模板内容到文件
+     * 
+     * @param string $filepath 文件名
+     * @param string $content 文件内容
+     * @return bool 是否保存成功
+     */
+    private function saveTemplateContent(string $filepath, string $content): bool
+    {
+        $path = base_path($filepath);
+        try {
+            File::put($path, $content);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('保存规则模板失败', [
+                'filepath' => $path,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 }
