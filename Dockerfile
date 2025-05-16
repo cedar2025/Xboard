@@ -16,12 +16,16 @@ WORKDIR /www
 
 COPY .docker /
 
-# Add build argument for cache busting
-ARG CACHEBUST=1
-ARG REPO_URL=https://github.com/cedar2025/Xboard
-RUN git config --global --add safe.directory /www && \
-    echo "Cache bust: ${CACHEBUST}" && \
-    git clone --depth 1 ${REPO_URL} .
+# Add build arguments
+ARG CACHEBUST
+ARG REPO_URL
+ARG BRANCH_NAME
+
+RUN echo "Attempting to clone branch: ${BRANCH_NAME} from ${REPO_URL} with CACHEBUST: ${CACHEBUST}" && \
+    rm -rf ./* && \
+    rm -rf .git && \
+    git config --global --add safe.directory /www && \
+    git clone --depth 1 --branch ${BRANCH_NAME} ${REPO_URL} .
 
 COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
