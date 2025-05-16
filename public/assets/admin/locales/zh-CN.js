@@ -803,6 +803,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "surge": {
         "title": "Surge 配置模板",
         "description": "配置 Surge 订阅模板，支持 Surge 配置文件格式"
+      },
+      "surfboard": {
+        "title": "Surfboard 配置模版",
+        "description": "配额 Surfboard 订阅模版"
       }
     }
   },
