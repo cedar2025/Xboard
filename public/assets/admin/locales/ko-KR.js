@@ -796,6 +796,10 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "surge": {
         "title": "Surge 템플릿",
         "description": "Surge의 구독 템플릿 형식 설정"
+      },
+      "surfboard": {
+        "title": "Surfboard 템플릿",
+        "description": "Surfboard의 구독 템플릿 형식 설정"
       }
     }
   },

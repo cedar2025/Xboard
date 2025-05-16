@@ -218,7 +218,7 @@ class ConfigController extends Controller
                     )
                 ),
                 'subscribe_template_surge' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(Stash::CUSTOM_TEMPLATE_FILE, Stash::DEFAULT_TEMPLATE_FILE)
+                    $this->getRuleFile(Surge::CUSTOM_TEMPLATE_FILE, Surge::DEFAULT_TEMPLATE_FILE)
                 ),
                 'subscribe_template_surfboard' => (string) $this->getTemplateContent(
                     $this->getRuleFile(Surfboard::CUSTOM_TEMPLATE_FILE, Surfboard::DEFAULT_TEMPLATE_FILE)

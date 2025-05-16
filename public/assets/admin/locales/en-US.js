@@ -798,6 +798,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "surge": {
         "title": "Surge Template",
         "description": "Configure subscription template format for Surge"
+      },
+      "surfboard": {
+        "title": "Surfboard Template",
+        "description": "Configure subscription template format for Surfboard"
       }
     }
   },
