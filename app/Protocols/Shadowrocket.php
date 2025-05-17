@@ -70,8 +70,8 @@ class Shadowrocket implements ProtocolInterface
 
         $uri = "ss://{$str}@{$addr}:{$server['port']}";
         if ($protocol_settings['obfs'] == 'http') {
-            $obfs_host = data_get($protocol_settings, 'obfs_settings.obfs-host');
-            $obfs_path = data_get($protocol_settings, 'obfs_settings.obfs-path');
+            $obfs_host = data_get($protocol_settings, 'obfs_settings.host');
+            $obfs_path = data_get($protocol_settings, 'obfs_settings.path');
             $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$obfs_host};obfs-uri={$obfs_path}";
         }
         return $uri . "#{$name}\r\n";
