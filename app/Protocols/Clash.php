@@ -148,7 +148,7 @@ class Clash implements ProtocolInterface
             $array['plugin'] = 'obfs';
             $array['plugin-opts'] = [
                 'mode' => 'http',
-                'host' => data_get($protocol_settings, 'obfs.host'),
+                'host' => data_get($protocol_settings, 'obfs_settings.host'),
             ];
         }
         return $array;
