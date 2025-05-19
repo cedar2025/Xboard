@@ -147,6 +147,11 @@ class UniProxyController extends Controller
                 'zero_rtt_handshake' => false,
                 'heartbeat' => "3s",
             ],
+            'anytls' => [
+                'server_port' => (int) $serverPort,
+                'server_name' => $protocolSettings['tls']['server_name'],
+                'padding_scheme' => $protocolSettings['padding_scheme'],
+            ],
             'socks' => [
                 'server_port' => (int) $serverPort,
             ],

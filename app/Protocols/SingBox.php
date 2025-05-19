@@ -83,6 +83,10 @@ class SingBox implements ProtocolInterface
                 $tuicConfig = $this->buildTuic($this->user['uuid'], $item);
                 $proxies[] = $tuicConfig;
             }
+            if ($item['type'] === 'anytls') {
+                $anytlsConfig = $this->buildAnyTLS($this->user['uuid'], $item);
+                $proxies[] = $anytlsConfig;
+            }
             if ($item['type'] === 'socks') {
                 $socksConfig = $this->buildSocks($this->user['uuid'], $item);
                 $proxies[] = $socksConfig;
@@ -367,6 +371,29 @@ class SingBox implements ProtocolInterface
         } else {
             $array['uuid'] = $password;
             $array['password'] = $password;
+        }
+
+        return $array;
+    }
+
+    protected function buildAnyTLS($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'type' => 'anytls',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'password' => $password,
+            'server_port' => $server['port'],
+                'tls' => [
+                    'enabled' => true,
+                    'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
+                    'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
+                ]
+            ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['tls']['server_name'] = $serverName;
         }
 
         return $array;
