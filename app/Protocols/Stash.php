@@ -76,6 +76,10 @@ class Stash implements ProtocolInterface
                 array_push($proxy, self::buildTuic($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
+            if ($item['type'] === 'anytls') {
+                array_push($proxy, self::buildAnyTLS($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
             if ($item['type'] === 'socks') {
                 array_push($proxy, self::buildSocks5($user['uuid'], $item));
                 array_push($proxies, $item['name']);
@@ -213,7 +217,7 @@ class Stash implements ProtocolInterface
                 break;
             case 2:
                 $array['tls'] = true;
-                $array['reality-opts']= [
+                $array['reality-opts'] = [
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
                     'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
                 ];
@@ -329,6 +333,23 @@ class Stash implements ProtocolInterface
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['sni'] = $serverName;
         }
+
+        return $array;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'anytls',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'sni' => data_get($protocol_settings, 'tls_settings.server_name'),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+            'udp' => true,
+        ];
 
         return $array;
     }
