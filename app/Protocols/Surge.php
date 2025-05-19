@@ -4,12 +4,15 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Facades\File;
 
 class Surge implements ProtocolInterface
 {
     public $flags = ['surge'];
     private $servers;
     private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surge.conf';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surge.conf';
 
     public function __construct($user, $servers)
     {
@@ -59,17 +62,10 @@ class Surge implements ProtocolInterface
             }
         }
 
-        // 优先从 admin_setting 获取模板
-        $config = admin_setting('subscribe_template_surge');
-        if (empty($config)) {
-            $defaultConfig = base_path('resources/rules/default.surge.conf');
-            $customConfig = base_path('resources/rules/custom.surge.conf');
-            if (file_exists($customConfig)) {
-                $config = file_get_contents($customConfig);
-            } else {
-                $config = file_get_contents($defaultConfig);
-            }
-        }
+
+        $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -164,7 +160,7 @@ class Surge implements ProtocolInterface
             'udp-relay=true'
         ];
         if (!empty($protocol_settings['allow_insecure'])) {
-            array_push($config, $protocol_settings['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+            array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
@@ -189,7 +185,7 @@ class Surge implements ProtocolInterface
             'udp-relay=true'
         ];
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
-            $config[] = data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+            $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

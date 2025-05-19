@@ -5,12 +5,18 @@ namespace App\Protocols;
 use App\Models\ServerHysteria;
 use Symfony\Component\Yaml\Yaml;
 use App\Contracts\ProtocolInterface;
+use App\Utils\Helper;
+use Illuminate\Support\Facades\File;
 
 class Stash implements ProtocolInterface
 {
     public $flags = ['stash'];
     private $servers;
     private $user;
+
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.stash.yaml';
+    const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
 
     public function __construct($user, $servers)
     {
@@ -28,22 +34,15 @@ class Stash implements ProtocolInterface
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        
-        // 优先从 admin_setting 获取模板
-        $template = admin_setting('subscribe_template_stash');
-        if (empty($template)) {
-            $defaultConfig = base_path('resources/rules/default.clash.yaml');
-            $customClashConfig = base_path('resources/rules/custom.clash.yaml');
-            $customStashConfig = base_path('resources/rules/custom.stash.yaml');
-            if (file_exists($customStashConfig)) {
-                $template = file_get_contents($customStashConfig);
-            } elseif (file_exists($customClashConfig)) {
-                $template = file_get_contents($customClashConfig);
-            } else {
-                $template = file_get_contents($defaultConfig);
-            }
-        }
-        
+
+        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : (
+                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
+            );
+
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
@@ -51,12 +50,6 @@ class Stash implements ProtocolInterface
         foreach ($servers as $item) {
             if (
                 $item['type'] === 'shadowsocks'
-                && in_array(data_get($item, 'protocol_settings.cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
             ) {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
@@ -67,9 +60,6 @@ class Stash implements ProtocolInterface
             }
             if (
                 $item['type'] === 'vless'
-                && in_array(data_get($item['protocol_settings'], 'network'), ['tcp', 'ws', 'grpc', 'http', 'h2'])
-                && in_array(data_get($item['protocol_settings'], 'tls'), [1, 0])
-                && in_array(data_get($item['protocol_settings'], 'flow'), ['xtls-rprx-origin', 'xtls-rprx-direct', 'xtls-rprx-splice'])
             ) {
                 array_push($proxy, self::buildVless($user['uuid'], $item));
                 array_push($proxies, $item['name']);
@@ -80,6 +70,18 @@ class Stash implements ProtocolInterface
             }
             if ($item['type'] === 'trojan') {
                 array_push($proxy, self::buildTrojan($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'tuic') {
+                array_push($proxy, self::buildTuic($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'socks') {
+                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'http') {
+                array_push($proxy, self::buildHttp($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
         }
@@ -135,6 +137,13 @@ class Stash implements ProtocolInterface
         $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
+        if (data_get($protocol_settings, 'obfs') == 'http') {
+            $array['plugin'] = 'obfs';
+            $array['plugin-opts'] = [
+                'mode' => 'http',
+                'host' => data_get($protocol_settings, 'obfs_settings.host'),
+            ];
+        }
         return $array;
     }
 
@@ -192,8 +201,7 @@ class Stash implements ProtocolInterface
         $array['flow'] = data_get($protocol_settings, 'flow');
         $array['udp'] = true;
 
-        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq']; //随机客户端指纹
-        $array['client-fingerprint'] = $fingerprints[rand(0, count($fingerprints) - 1)];
+        $array['client-fingerprint'] = Helper::getRandFingerprint();
 
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
@@ -203,6 +211,12 @@ class Stash implements ProtocolInterface
                     $array['servername'] = $serverName;
                 }
                 break;
+            case 2:
+                $array['tls'] = true;
+                $array['reality-opts']= [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
+                ];
         }
 
         switch (data_get($protocol_settings, 'network')) {
@@ -271,6 +285,9 @@ class Stash implements ProtocolInterface
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['sni'] = $serverName;
         }
+        if (isset($server['ports'])) {
+            $array['ports'] = $server['ports'];
+        }
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $array['type'] = 'hysteria';
@@ -282,11 +299,85 @@ class Stash implements ProtocolInterface
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
-                $array['ports'] = data_get($protocol_settings, 'ports');
                 break;
         }
         return $array;
 
+    }
+
+    public static function buildTuic($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'tuic',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'uuid' => $password,
+            'password' => $password,
+            'congestion-controller' => data_get($protocol_settings, 'congestion_control', 'cubic'),
+            'udp-relay-mode' => data_get($protocol_settings, 'udp_relay_mode', 'native'),
+            'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
+            'reduce-rtt' => true,
+            'fast-open' => true,
+            'heartbeat-interval' => 10000,
+            'request-timeout' => 8000,
+            'max-udp-relay-packet-size' => 1500,
+        ];
+
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+
+        return $array;
+    }
+
+    public static function buildSocks5($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'socks5',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+            'udp' => true,
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['sni'] = $serverName;
+            }
+        }
+
+        return $array;
+    }
+
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'http',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['sni'] = $serverName;
+            }
+        }
+
+        return $array;
     }
 
     private function isRegex($exp)
@@ -294,7 +385,11 @@ class Stash implements ProtocolInterface
         if (empty($exp)) {
             return false;
         }
-        return @preg_match($exp, '') !== false;
+        try {
+            return preg_match($exp, '') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     private function isMatch($exp, $str)

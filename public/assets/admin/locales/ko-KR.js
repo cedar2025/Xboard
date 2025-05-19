@@ -441,8 +441,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           },
           "expire": {
             "label": "제한 기간",
-            "placeholder": "제한 기간을 시간 단위로 입력",
-            "description": "등록 제한 기간(시간)"
+            "placeholder": "제한 기간을 분 단위로 입력",
+            "description": "등록 제한 기간(분)"
           }
         },
         "passwordLimit": {
@@ -457,8 +457,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           },
           "expire": {
             "label": "잠금 기간",
-            "placeholder": "잠금 기간을 시간 단위로 입력",
-            "description": "계정 잠금 기간(시간)"
+            "placeholder": "잠금 기간을 분 단위로 입력",
+            "description": "계정 잠금 기간(분)"
           }
         }
       }
@@ -796,6 +796,10 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "surge": {
         "title": "Surge 템플릿",
         "description": "Surge의 구독 템플릿 형식 설정"
+      },
+      "surfboard": {
+        "title": "Surfboard 템플릿",
+        "description": "Surfboard의 구독 템플릿 형식 설정"
       }
     }
   },
@@ -1739,6 +1743,83 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "placeholder": "ALPN 프로토콜 선택",
             "empty": "사용 가능한 ALPN 프로토콜이 없습니다"
           }
+        }
+      },
+      "socks": {
+        "version": {
+          "label": "프로토콜 버전",
+          "placeholder": "SOCKS 버전 선택"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "보안을 선택해주세요",
+          "disabled": "비활성화",
+          "enabled": "활성화"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "서버 이름 표시(SNI)",
+            "placeholder": "사용하지 않는 경우 비워두세요"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용?"
+        },
+        "network": {
+          "label": "전송 프로토콜",
+          "placeholder": "전송 프로토콜 선택"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "서버 이름 표시(SNI)",
+            "placeholder": "사용하지 않는 경우 비워두세요"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용?"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "보안을 선택해주세요",
+          "disabled": "비활성화",
+          "enabled": "활성화",
+          "server_name": {
+            "label": "서버 이름 표시(SNI)",
+            "placeholder": "노드 주소와 인증서가 다를 때 인증서 확인에 사용"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용"
+        }
+      },
+      "http": {
+        "tls_settings": {
+          "server_name": {
+            "label": "서버 이름 표시(SNI)",
+            "placeholder": "사용하지 않는 경우 비워두세요"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용?"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "보안을 선택해주세요",
+          "disabled": "비활성화",
+          "enabled": "활성화",
+          "server_name": {
+            "label": "서버 이름 표시(SNI)",
+            "placeholder": "노드 주소와 인증서가 다를 때 인증서 확인에 사용"
+          },
+          "allow_insecure": "안전하지 않은 연결 허용"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "전송 프로토콜",
+          "placeholder": "전송 프로토콜 선택"
+        },
+        "multiplexing": {
+          "label": "다중화",
+          "placeholder": "다중화 수준 선택",
+          "MULTIPLEXING_OFF": "비활성화",
+          "MULTIPLEXING_LOW": "낮음",
+          "MULTIPLEXING_MIDDLE": "중간",
+          "MULTIPLEXING_HIGH": "높음"
         }
       }
     }

@@ -81,7 +81,7 @@ class UserController extends Controller
         // 处理关联查询
         if (str_contains($field, '.')) {
             [$relation, $relationField] = explode('.', $field);
-            $query->whereHas($relation, function($q) use ($relationField, $value) {
+            $query->whereHas($relation, function ($q) use ($relationField, $value) {
                 if (is_array($value)) {
                     $q->whereIn($relationField, $value);
                 } else if (is_string($value) && str_contains($value, ':')) {
@@ -163,7 +163,8 @@ class UserController extends Controller
         $users = $userModel->orderBy('id', 'desc')
             ->paginate($pageSize, ['*'], 'page', $current);
 
-        $users->getCollection()->transform(function ($user) {
+        /** @phpstan-ignore-next-line */
+        $users->getCollection()->transform(function ($user): array {
             return self::transformUserData($user);
         });
 
@@ -177,13 +178,14 @@ class UserController extends Controller
      * Transform user data for response
      *
      * @param User $user
-     * @return User
+     * @return array<string, mixed>
      */
-    public static function transformUserData(User $user): User
+    public static function transformUserData(User $user): array
     {
-        $user->subscribe_url = Helper::getSubscribeUrl($user->token);
-        $user->balance = $user->balance / 100;
-        $user->commission_balance = $user->commission_balance / 100;
+        $user = $user->toArray();
+        $user['balance'] = $user['balance'] / 100;
+        $user['commission_balance'] = $user['commission_balance'] / 100;
+        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         return $user;
     }
 
@@ -235,7 +237,7 @@ class UserController extends Controller
 
         if (isset($params['banned']) && (int) $params['banned'] === 1) {
             $authService = new AuthService($user);
-            $authService->removeSession();
+            $authService->removeAllSessions();
         }
         if (isset($params['balance'])) {
             $params['balance'] = $params['balance'] * 100;
@@ -263,7 +265,7 @@ class UserController extends Controller
     {
         ini_set('memory_limit', '-1');
         gc_enable(); // 启用垃圾回收
-        
+
         // 优化查询：使用with预加载plan关系，避免N+1问题
         $query = User::with('plan:id,name')
             ->orderBy('id', 'asc')
@@ -278,18 +280,18 @@ class UserController extends Controller
                 'token',
                 'plan_id'
             ]);
-            
+
         $this->applyFiltersAndSorts($request, $query);
-        
+
         $filename = 'users_' . date('Y-m-d_His') . '.csv';
-        
-        return response()->streamDownload(function() use ($query) {
+
+        return response()->streamDownload(function () use ($query) {
             // 打开输出流
             $output = fopen('php://output', 'w');
-            
+
             // 添加BOM标记，确保Excel正确显示中文
-            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             // 写入CSV头部
             fputcsv($output, [
                 '邮箱',
@@ -301,9 +303,9 @@ class UserController extends Controller
                 '订阅计划',
                 '订阅地址'
             ]);
-            
+
             // 分批处理数据以减少内存使用
-            $query->chunk(500, function($users) use ($output) {
+            $query->chunk(500, function ($users) use ($output) {
                 foreach ($users as $user) {
                     try {
                         $row = [
@@ -325,11 +327,11 @@ class UserController extends Controller
                         continue; // 继续处理下一条记录
                     }
                 }
-                
+
                 // 清理内存
                 gc_collect_cycles();
             });
-            
+
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',

@@ -4,12 +4,15 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Facades\File;
 
 class Surfboard implements ProtocolInterface
 {
     public $flags = ['surfboard'];
     private $servers;
     private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surfboard.conf';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surfboard.conf';
 
     public function __construct($user, $servers)
     {
@@ -61,14 +64,9 @@ class Surfboard implements ProtocolInterface
             }
         }
 
-        $defaultConfig = base_path() . '/resources/rules/default.surfboard.conf';
-        $customConfig = base_path() . '/resources/rules/custom.surfboard.conf';
-        if (\File::exists($customConfig)) {
-            $config = file_get_contents("$customConfig");
-        } else {
-            $config = file_get_contents("$defaultConfig");
-        }
-
+        $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
         // Subscription link
         $subsURL = Helper::getSubscribeUrl($user['token']);
         $subsDomain = request()->header('Host');
@@ -127,9 +125,9 @@ class Surfboard implements ProtocolInterface
             array_push($config, 'tls=true');
             if (data_get($protocol_settings, 'tls_settings')) {
                 $tlsSettings = data_get($protocol_settings, 'tls_settings');
-                if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
+                if (!!data_get($tlsSettings, 'allowInsecure'))
                     array_push($config, 'skip-cert-verify=' . ($tlsSettings['allowInsecure'] ? 'true' : 'false'));
-                if (isset($tlsSettings['serverName']) && !empty($tlsSettings['serverName']))
+                if (!!data_get($tlsSettings, 'serverName'))
                     array_push($config, "sni={$tlsSettings['serverName']}");
             }
         }
@@ -161,8 +159,8 @@ class Surfboard implements ProtocolInterface
             'tfo=true',
             'udp-relay=true'
         ];
-        if (!empty($protocol_settings['allow_insecure'])) {
-            array_push($config, $protocol_settings['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (data_get($protocol_settings, 'allow_insecure')) {
+            array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

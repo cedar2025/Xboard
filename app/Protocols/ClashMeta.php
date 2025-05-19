@@ -5,6 +5,7 @@ namespace App\Protocols;
 use App\Contracts\ProtocolInterface;
 use App\Models\ServerHysteria;
 use App\Utils\Helper;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
 
 class ClashMeta implements ProtocolInterface
@@ -12,8 +13,15 @@ class ClashMeta implements ProtocolInterface
     public $flags = ['meta', 'verge', 'flclash'];
     private $servers;
     private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clashmeta.yaml';
+    const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
 
-    public function __construct($user, $servers, array $options = null)
+    /**
+     * @param mixed $user 用户实例
+     * @param array $servers 服务器列表
+     */
+    public function __construct($user, $servers)
     {
         $this->user = $user;
         $this->servers = $servers;
@@ -24,31 +32,25 @@ class ClashMeta implements ProtocolInterface
         return $this->flags;
     }
 
+
     public function handle()
     {
         $servers = $this->servers;
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
-        
-        // 优先从 admin_setting 获取模板
-        $template = admin_setting('subscribe_template_clashmeta');
-        if (empty($template)) {
-            $defaultConfig = base_path('resources/rules/default.clash.yaml');
-            $customClashConfig = base_path('resources/rules/custom.clash.yaml');
-            $customConfig = base_path('resources/rules/custom.clashmeta.yaml');
-            if (file_exists($customConfig)) {
-                $template = file_get_contents($customConfig);
-            } elseif (file_exists($customClashConfig)) {
-                $template = file_get_contents($customClashConfig);
-            } else {
-                $template = file_get_contents($defaultConfig);
-            }
-        }
-        
+
+        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : (
+                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
+                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
+            );
+
         $config = Yaml::parse($template);
         $proxy = [];
         $proxies = [];
-        
+
         foreach ($servers as $item) {
             $protocol_settings = $item['protocol_settings'];
             if ($item['type'] === 'shadowsocks') {
@@ -76,6 +78,18 @@ class ClashMeta implements ProtocolInterface
             }
             if ($item['type'] === 'tuic') {
                 array_push($proxy, self::buildTuic($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'socks') {
+                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'http') {
+                array_push($proxy, self::buildHttp($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'mieru') {
+                array_push($proxy, self::buildMieru($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
         }
@@ -139,6 +153,7 @@ class ClashMeta implements ProtocolInterface
 
     public static function buildShadowsocks($password, $server)
     {
+        $protocol_settings = $server['protocol_settings'];
         $array = [];
         $array['name'] = $server['name'];
         $array['type'] = 'ss';
@@ -147,6 +162,13 @@ class ClashMeta implements ProtocolInterface
         $array['cipher'] = data_get($server['protocol_settings'], 'cipher');
         $array['password'] = data_get($server, 'password', $password);
         $array['udp'] = true;
+        if (data_get($protocol_settings, 'obfs') == 'http') {
+            $array['plugin'] = 'obfs';
+            $array['plugin-opts'] = [
+                'mode' => 'http',
+                'host' => data_get($protocol_settings, 'obfs_settings.host'),
+            ];
+        }
         return $array;
     }
 
@@ -176,7 +198,7 @@ class ClashMeta implements ProtocolInterface
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $array['http-opts'] = [
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                        'path' => \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
                     ];
                 }
                 break;
@@ -369,9 +391,78 @@ class ClashMeta implements ProtocolInterface
         return $array;
     }
 
+    public static function buildMieru($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'mieru',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP')),
+            'multiplexing' => data_get($protocol_settings, 'multiplexing', 'MULTIPLEXING_LOW')
+        ];
+
+        // 如果配置了端口范围
+        if (isset($server['ports'])) {
+            $array['port-range'] = $server['ports'];
+        }
+
+        return $array;
+    }
+
+    public static function buildSocks5($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'socks5';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+        $array['udp'] = true;
+
+        $array['username'] = $password;
+        $array['password'] = $password;
+
+        // TLS 配置
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+        }
+
+        return $array;
+    }
+
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'http';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+
+        $array['username'] = $password;
+        $array['password'] = $password;
+
+        // TLS 配置
+        if (data_get($protocol_settings, 'tls')) {
+            $array['tls'] = true;
+            $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+        }
+
+        return $array;
+    }
+
     private function isMatch($exp, $str)
     {
-        return @preg_match($exp, $str);
+        try {
+            return preg_match($exp, $str) === 1;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     private function isRegex($exp)
@@ -379,6 +470,10 @@ class ClashMeta implements ProtocolInterface
         if (empty($exp)) {
             return false;
         }
-        return @preg_match($exp, '') !== false;
+        try {
+            return preg_match($exp, '') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

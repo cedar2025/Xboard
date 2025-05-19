@@ -42,9 +42,9 @@ class Kernel extends ConsoleKernel
         // horizon metrics
         $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
         // backup Timing
-        if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
-            $schedule->command('backup:database', ['true'])->daily()->onOneServer();
-        }
+        // if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
+        //     $schedule->command('backup:database', ['true'])->daily()->onOneServer();
+        // }
         // 每分钟清理过期的在线状态
         $schedule->call(function () {
             app(UserOnlineService::class)->cleanExpiredOnlineStatus();
