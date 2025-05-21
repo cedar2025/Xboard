@@ -80,6 +80,10 @@ class ClashMeta implements ProtocolInterface
                 array_push($proxy, self::buildTuic($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
+            if ($item['type'] === 'anytls'){
+                array_push($proxy, self::buildAnyTLS($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
             if ($item['type'] === 'socks') {
                 array_push($proxy, self::buildSocks5($user['uuid'], $item));
                 array_push($proxies, $item['name']);
@@ -387,6 +391,24 @@ class ClashMeta implements ProtocolInterface
 
         $array['congestion-controller'] = data_get($protocol_settings, 'congestion_control', 'cubic');
         $array['udp-relay-mode'] = data_get($protocol_settings, 'udp_relay_mode', 'native');
+
+        return $array;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'anytls',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'udp' => true,
+        ];
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
+        
 
         return $array;
     }
