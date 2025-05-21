@@ -4,7 +4,7 @@ namespace App\Utils;
 
 class CacheKey
 {
-    CONST KEYS = [
+    const KEYS = [
         'EMAIL_VERIFY_CODE' => '邮箱验证码',
         'LAST_SEND_EMAIL_VERIFY_TIMESTAMP' => '最后一次发送邮箱验证码时间',
         'SERVER_VMESS_ONLINE_USER' => '节点在线用户',
@@ -31,6 +31,10 @@ class CacheKey
         'MULTI_SERVER_TUIC_ONLINE_USER' => 'TUIC节点多服务器在线用户',
         'SERVER_TUIC_LAST_CHECK_AT' => 'TUIC节点最后检查时间',
         'SERVER_TUIC_LAST_PUSH_AT' => 'TUIC节点最后推送时间',
+        'SERVER_ANYTLS_ONLINE_USER' => 'ANYTLS节点在线用户',
+        'MULTI_SERVER_ANYTLS_ONLINE_USER' => 'ANYTLS节点多服务器在线用户',
+        'SERVER_ANYTLS_LAST_CHECK_AT' => 'ANYTLS节点最后检查时间',
+        'SERVER_ANYTLS_LAST_PUSH_AT' => 'ANYTLS节点最后推送时间',
         'SERVER_SOCKS_ONLINE_USER' => 'socks节点在线用户',
         'MULTI_SERVER_SOCKS_ONLINE_USER' => 'socks节点多服务器在线用户',
         'SERVER_SOCKS_LAST_CHECK_AT' => 'socks节点最后检查时间',
