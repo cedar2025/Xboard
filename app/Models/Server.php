@@ -56,6 +56,7 @@ class Server extends Model
     public const TYPE_VMESS = 'vmess';
     public const TYPE_TUIC = 'tuic';
     public const TYPE_SHADOWSOCKS = 'shadowsocks';
+    public const TYPE_ANYTLS = 'anytls';
     public const TYPE_SOCKS = 'socks';
     public const TYPE_NAIVE = 'naive';
     public const TYPE_HTTP = 'http';
@@ -93,6 +94,7 @@ class Server extends Model
         self::TYPE_VMESS,
         self::TYPE_TUIC,
         self::TYPE_SHADOWSOCKS,
+        self::TYPE_ANYTLS,
         self::TYPE_SOCKS,
         self::TYPE_NAIVE,
         self::TYPE_HTTP,
@@ -180,6 +182,29 @@ class Server extends Model
             'congestion_control' => ['type' => 'string', 'default' => 'cubic'],
             'alpn' => ['type' => 'array', 'default' => ['h3']],
             'udp_relay_mode' => ['type' => 'string', 'default' => 'native'],
+            'tls' => [
+                'type' => 'object',
+                'fields' => [
+                    'server_name' => ['type' => 'string', 'default' => null],
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                ]
+            ]
+        ],
+        self::TYPE_ANYTLS => [
+            'padding_scheme' => [
+                'type' => 'array',
+                'default' => [
+                    "stop=8",
+                    "0=30-30",
+                    "1=100-400",
+                    "2=400-500,c,500-1000,c,500-1000,c,500-1000,c,500-1000",
+                    "3=9-9,500-1000",
+                    "4=500-1000",
+                    "5=500-1000",
+                    "6=500-1000",
+                    "7=500-1000"
+                ]
+            ],
             'tls' => [
                 'type' => 'object',
                 'fields' => [
