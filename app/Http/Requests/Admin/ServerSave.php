@@ -14,6 +14,8 @@ class ServerSave extends FormRequest
             'obfs' => 'nullable|string',
             'obfs_settings.path' => 'nullable|string',
             'obfs_settings.host' => 'nullable|string',
+            'plugin' => 'nullable|string',
+            'plugin_opts' => 'nullable|string',
         ],
         'vmess' => [
             'tls' => 'required|integer',
@@ -66,6 +68,10 @@ class ServerSave extends FormRequest
         'mieru' => [
             'transport' => 'required|string',
             'multiplexing' => 'required|string',
+        ],
+        'anytls' => [
+            'tls' => 'nullable|array',
+            'alpn' => 'nullable|string',
         ],
     ];
 

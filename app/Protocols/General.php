@@ -2,26 +2,30 @@
 
 namespace App\Protocols;
 
-
-use App\Contracts\ProtocolInterface;
 use App\Utils\Helper;
 use Illuminate\Support\Arr;
-class General implements ProtocolInterface
+use App\Support\AbstractProtocol;
+
+class General extends AbstractProtocol
 {
     public $flags = ['general', 'v2rayn', 'v2rayng', 'passwall', 'ssrplus', 'sagernet'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'v2rayng' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '1.9.5'
+                ],
+            ],
+        ],
+        'v2rayN' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '6.31'
+                ],
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -63,7 +67,14 @@ class General implements ProtocolInterface
             base64_encode("{$protocol_settings['cipher']}:{$password}")
         );
         $addr = Helper::wrapIPv6($server['host']);
-        return "ss://{$str}@{$addr}:{$server['port']}#{$name}\r\n";
+        $plugin = data_get($protocol_settings, 'plugin');
+        $plugin_opts = data_get($protocol_settings, 'plugin_opts');
+        $url = "ss://{$str}@{$addr}:{$server['port']}";
+        if ($plugin && $plugin_opts) {
+            $url .= '/?' . 'plugin=' . $plugin . ';' . rawurlencode($plugin_opts);
+        }
+        $url .= "#{$name}\r\n";
+        return $url;
     }
 
     public static function buildVmess($uuid, $server)
@@ -91,10 +102,10 @@ class General implements ProtocolInterface
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
                     $config['path'] = Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['host'] = 
-                    data_get($protocol_settings, 'network_settings.headers.Host') 
-                    ? Arr::random(data_get($protocol_settings, 'network_settings.headers.Host', ['/']), ) 
-                    : null;
+                    $config['host'] =
+                        data_get($protocol_settings, 'network_settings.headers.Host')
+                        ? Arr::random(data_get($protocol_settings, 'network_settings.headers.Host', ['/']), )
+                        : null;
                 }
                 break;
             case 'ws':
@@ -215,7 +226,7 @@ class General implements ProtocolInterface
         }
         $query = http_build_query($array);
         $addr = Helper::wrapIPv6($server['host']);
-        
+
         $uri = "trojan://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
@@ -261,5 +272,4 @@ class General implements ProtocolInterface
         $credentials = base64_encode("{$password}:{$password}");
         return "socks://{$credentials}@{$server['host']}:{$server['port']}#{$name}\r\n";
     }
-
 }

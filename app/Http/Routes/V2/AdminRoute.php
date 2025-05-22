@@ -193,6 +193,7 @@ class AdminRoute
                 $router->get('/getQueueWorkload', [SystemController::class, 'getQueueWorkload']);
                 $router->get('/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');
                 $router->get('/getSystemLog', [SystemController::class, 'getSystemLog']);
+                $router->get('/getHorizonFailedJobs', [SystemController::class, 'getHorizonFailedJobs']);
             });
 
             // Update

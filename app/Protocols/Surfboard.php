@@ -3,27 +3,15 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
 use Illuminate\Support\Facades\File;
+use App\Support\AbstractProtocol;
 
-class Surfboard implements ProtocolInterface
+class Surfboard extends AbstractProtocol
 {
     public $flags = ['surfboard'];
-    private $servers;
-    private $user;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surfboard.conf';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surfboard.conf';
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
 
     public function handle()
     {
@@ -65,8 +53,8 @@ class Surfboard implements ProtocolInterface
         }
 
         $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
         // Subscription link
         $subsURL = Helper::getSubscribeUrl($user['token']);
         $subsDomain = request()->header('Host');
@@ -102,6 +90,35 @@ class Surfboard implements ProtocolInterface
             'tfo=true',
             'udp-relay=true'
         ];
+
+
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
+
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";

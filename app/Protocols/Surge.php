@@ -3,27 +3,24 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
 use Illuminate\Support\Facades\File;
+use App\Support\AbstractProtocol;
 
-class Surge implements ProtocolInterface
+class Surge extends AbstractProtocol
 {
     public $flags = ['surge'];
-    private $servers;
-    private $user;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surge.conf';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surge.conf';
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'surge' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '2398'
+                ],
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -64,8 +61,8 @@ class Surge implements ProtocolInterface
 
 
         $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -102,6 +99,32 @@ class Surge implements ProtocolInterface
             'tfo=true',
             'udp-relay=true'
         ];
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";

@@ -150,7 +150,9 @@ class Server extends Model
         self::TYPE_SHADOWSOCKS => [
             'cipher' => ['type' => 'string', 'default' => null],
             'obfs' => ['type' => 'string', 'default' => null],
-            'obfs_settings' => ['type' => 'array', 'default' => null]
+            'obfs_settings' => ['type' => 'array', 'default' => null],
+            'plugin' => ['type' => 'string', 'default' => null],
+            'plugin_opts' => ['type' => 'string', 'default' => null]
         ],
         self::TYPE_HYSTERIA => [
             'version' => ['type' => 'integer', 'default' => 2],

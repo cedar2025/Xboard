@@ -2,24 +2,11 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
 
-class Shadowsocks implements ProtocolInterface
+class Shadowsocks extends AbstractProtocol
 {
     public $flags = ['shadowsocks'];
-    private $servers;
-    private $user;
-
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
 
     public function handle()
     {

@@ -2,26 +2,22 @@
 
 namespace App\Protocols;
 
-use App\Models\ServerHysteria;
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
 
-class Shadowrocket implements ProtocolInterface
+class Shadowrocket extends AbstractProtocol
 {
     public $flags = ['shadowrocket'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'shadowrocket' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '1993'
+                ],
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -52,10 +48,10 @@ class Shadowrocket implements ProtocolInterface
                 $uri .= self::buildHysteria($user['uuid'], $item);
             }
             if ($item['type'] === 'tuic') {
-                $uri.= self::buildTuic($user['uuid'], $item);
+                $uri .= self::buildTuic($user['uuid'], $item);
             }
             if ($item['type'] === 'anytls') {
-                $uri.= self::buildAnyTLS($user['uuid'], $item);
+                $uri .= self::buildAnyTLS($user['uuid'], $item);
             }
         }
         return base64_encode($uri);
@@ -75,10 +71,10 @@ class Shadowrocket implements ProtocolInterface
         $addr = Helper::wrapIPv6($server['host']);
 
         $uri = "ss://{$str}@{$addr}:{$server['port']}";
-        if ($protocol_settings['obfs'] == 'http') {
-            $obfs_host = data_get($protocol_settings, 'obfs_settings.host');
-            $obfs_path = data_get($protocol_settings, 'obfs_settings.path');
-            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$obfs_host};obfs-uri={$obfs_path}";
+        $plugin = data_get($protocol_settings, 'plugin') == 'obfs' ? 'obfs-local' : data_get($protocol_settings, 'plugin');
+        $plugin_opts = data_get($protocol_settings, 'plugin_opts');
+        if ($plugin && $plugin_opts) {
+            $uri .= '/?' . 'plugin=' . $plugin . ';' . rawurlencode($plugin_opts);
         }
         return $uri . "#{$name}\r\n";
     }
@@ -232,7 +228,7 @@ class Shadowrocket implements ProtocolInterface
     {
         $protocol_settings = $server['protocol_settings'];
         $uri = ''; // 初始化变量
-        
+
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $params = [
@@ -293,13 +289,13 @@ class Shadowrocket implements ProtocolInterface
         ];
         if (data_get($protocol_settings, 'version') === 4) {
             $params['token'] = $password;
-        }else{
+        } else {
             $params['uuid'] = $password;
             $params['password'] = $password;
         }
         $query = http_build_query($params);
         $uri = "tuic://{$server['host']}:{$server['port']}?{$query}#{$name}";
-        $uri.= "\r\n";
+        $uri .= "\r\n";
         return $uri;
     }
 
@@ -313,7 +309,7 @@ class Shadowrocket implements ProtocolInterface
         ];
         $query = http_build_query($params);
         $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
-        $uri.= "\r\n";
+        $uri .= "\r\n";
         return $uri;
     }
 }

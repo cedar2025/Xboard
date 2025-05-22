@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Plugin;
+use App\Services\Plugin\HookManager;
 use App\Services\Plugin\PluginManager;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\Octane\Events\WorkerStarting;
 
 class PluginServiceProvider extends ServiceProvider
 {

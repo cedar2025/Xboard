@@ -21,9 +21,36 @@ class SystemController extends Controller
         $data = [
             'schedule' => $this->getScheduleStatus(),
             'horizon' => $this->getHorizonStatus(),
-            'schedule_last_runtime' => Cache::get(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null))
+            'schedule_last_runtime' => Cache::get(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null)),
+            'logs' => $this->getLogStatistics()
         ];
         return $this->success($data);
+    }
+
+    /**
+     * 获取日志统计信息
+     * 
+     * @return array 各级别日志的数量统计
+     */
+    protected function getLogStatistics(): array
+    {
+        // 初始化日志统计数组
+        $statistics = [
+            'info' => 0,
+            'warning' => 0,
+            'error' => 0,
+            'total' => 0
+        ];
+
+        if (class_exists(LogModel::class) && LogModel::count() > 0) {
+            $statistics['info'] = LogModel::where('level', 'info')->count();
+            $statistics['warning'] = LogModel::where('level', 'warning')->count();
+            $statistics['error'] = LogModel::where('level', 'error')->count();
+            $statistics['total'] = LogModel::count();
+
+            return $statistics;
+        }
+        return $statistics;
     }
 
     public function getQueueWorkload(WorkloadRepository $workload)
@@ -31,14 +58,14 @@ class SystemController extends Controller
         return $this->success(collect($workload->get())->sortBy('name')->values()->toArray());
     }
 
-    protected function getScheduleStatus():bool
+    protected function getScheduleStatus(): bool
     {
         return (time() - 120) < Cache::get(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null));
     }
 
-    protected function getHorizonStatus():bool
+    protected function getHorizonStatus(): bool
     {
-        if (! $masters = app(MasterSupervisorRepository::class)->all()) {
+        if (!$masters = app(MasterSupervisorRepository::class)->all()) {
             return false;
         }
 
@@ -88,7 +115,7 @@ class SystemController extends Controller
      */
     protected function totalPausedMasters()
     {
-        if (! $masters = app(MasterSupervisorRepository::class)->all()) {
+        if (!$masters = app(MasterSupervisorRepository::class)->all()) {
             return 0;
         }
 
@@ -97,7 +124,8 @@ class SystemController extends Controller
         })->count();
     }
 
-    public function getSystemLog(Request $request) {
+    public function getSystemLog(Request $request)
+    {
         $current = $request->input('current') ? $request->input('current') : 1;
         $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
         $builder = LogModel::orderBy('created_at', 'DESC')
@@ -108,6 +136,27 @@ class SystemController extends Controller
         return response([
             'data' => $res,
             'total' => $total
+        ]);
+    }
+
+    public function getHorizonFailedJobs(Request $request, JobRepository $jobRepository)
+    {
+        $current = max(1, (int) $request->input('current', 1));
+        $pageSize = max(10, (int) $request->input('page_size', 20));
+        $offset = ($current - 1) * $pageSize;
+
+        $failedJobs = collect($jobRepository->getFailed())
+            ->sortByDesc('failed_at')
+            ->slice($offset, $pageSize)
+            ->values();
+
+        $total = $jobRepository->countFailed();
+
+        return response()->json([
+            'data' => $failedJobs,
+            'total' => $total,
+            'current' => $current,
+            'page_size' => $pageSize,
         ]);
     }
 }
