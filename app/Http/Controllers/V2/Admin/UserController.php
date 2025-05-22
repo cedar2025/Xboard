@@ -367,7 +367,7 @@ class UserController extends Controller
             return $this->success(true);
         }
         if ($request->input('generate_count')) {
-            $this->multiGenerate($request);
+            return $this->multiGenerate($request);
         }
     }
 
@@ -406,15 +406,44 @@ class UserController extends Controller
             Log::error($e);
             return $this->fail([500, '生成失败']);
         }
-        $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
-        foreach ($users as $user) {
-            $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-            $createDate = date('Y-m-d H:i:s', $user['created_at']);
-            $password = $request->input('password') ?? $user['email'];
-            $subscribeUrl = Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']);
-            $data .= "{$user['email']},{$password},{$expireDate},{$user['uuid']},{$createDate},{$subscribeUrl}\r\n";
+
+        // 判断是否导出 CSV
+        if ($request->input('download_csv')) {
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="users.csv"',
+            ];
+            $callback = function () use ($users, $request) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
+                foreach ($users as $user) {
+                    $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
+                    $createDate = date('Y-m-d H:i:s', $user['created_at']);
+                    $password = $request->input('password') ?? $user['email'];
+                    $subscribeUrl = Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']);
+                    fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
+                }
+                fclose($handle);
+            };
+            return response()->streamDownload($callback, 'users.csv', $headers);
         }
-        echo $data;
+
+        // 默认返回 JSON
+        $data = collect($users)->map(function ($user) use ($request) {
+            return [
+                'email' => $user['email'],
+                'password' => $request->input('password') ?? $user['email'],
+                'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
+                'uuid' => $user['uuid'],
+                'created_at' => date('Y-m-d H:i:s', $user['created_at']),
+                'subscribe_url' => Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']),
+            ];
+        });
+        return response()->json([
+            'code' => 0,
+            'message' => '批量生成成功',
+            'data' => $data,
+        ]);
     }
 
     public function sendMail(UserSendMail $request)

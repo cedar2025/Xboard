@@ -2,29 +2,15 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
-use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
+use App\Support\AbstractProtocol;
 
-class Clash implements ProtocolInterface
+class Clash extends AbstractProtocol
 {
     public $flags = ['clash'];
-    private $servers;
-    private $user;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
-
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
 
     public function handle()
     {
@@ -33,8 +19,8 @@ class Clash implements ProtocolInterface
         $appName = admin_setting('app_name', 'XBoard');
 
         $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-        ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-        : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         $config = Yaml::parse($template);
         $proxy = [];
@@ -122,13 +108,6 @@ class Clash implements ProtocolInterface
         if ($subsDomain) {
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
-        // // Force the nodes ip to be a direct rule
-        // collect($this->servers)->pluck('host')->map(function ($host) {
-        //     $host = trim($host);
-        //     return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
-        // })->flatten()->unique()->each(function ($nodeIP) use (&$config) {
-        //     array_unshift($config['rules'], "IP-CIDR,{$nodeIP}/32,DIRECT,no-resolve");
-        // });
 
         return $config;
     }
@@ -144,12 +123,47 @@ class Clash implements ProtocolInterface
         $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
-        if (data_get($protocol_settings, 'obfs') == 'http') {
-            $array['plugin'] = 'obfs';
-            $array['plugin-opts'] = [
-                'mode' => 'http',
-                'host' => data_get($protocol_settings, 'obfs_settings.host'),
-            ];
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            $array['plugin'] = $plugin;
+
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+
+            // 根据插件类型进行字段映射
+            switch ($plugin) {
+                case 'obfs':
+                    $array['plugin-opts'] = [
+                        'mode' => $parsedOpts['obfs'] ?? data_get($protocol_settings, 'obfs', 'http'),
+                        'host' => $parsedOpts['obfs-host'] ?? data_get($protocol_settings, 'obfs_settings.host', ''),
+                    ];
+
+                    if (isset($parsedOpts['path'])) {
+                        $array['plugin-opts']['path'] = $parsedOpts['path'];
+                    }
+                    break;
+                case 'v2ray-plugin':
+                    $array['plugin-opts'] = [
+                        'mode' => $parsedOpts['mode'] ?? 'websocket',
+                        'tls' => isset($parsedOpts['tls']) && $parsedOpts['tls'] == 'true',
+                        'host' => $parsedOpts['host'] ?? '',
+                        'path' => $parsedOpts['path'] ?? '/',
+                    ];
+                    break;
+                default:
+                    // 对于其他插件，直接使用解析出的键值对
+                    $array['plugin-opts'] = $parsedOpts;
+            }
         }
         return $array;
     }

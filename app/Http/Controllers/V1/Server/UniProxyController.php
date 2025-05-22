@@ -95,8 +95,8 @@ class UniProxyController extends Controller
             'shadowsocks' => [
                 ...$baseConfig,
                 'cipher' => $protocolSettings['cipher'],
-                'obfs' => $protocolSettings['obfs'],
-                'obfs_settings' => $protocolSettings['obfs_settings'],
+                'plugin' => $protocolSettings['plugin'],
+                'plugin_opts' => $protocolSettings['plugin_opts'],
                 'server_key' => match ($protocolSettings['cipher']) {
                         '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
                         '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
