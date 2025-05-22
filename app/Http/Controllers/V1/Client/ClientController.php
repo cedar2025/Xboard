@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\V1\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\Server;
 use App\Protocols\General;
 use App\Services\Plugin\HookManager;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
@@ -31,26 +30,6 @@ class ClientController extends Controller
         'anytls' => '[anytls]'
     ];
 
-    // 支持hy2 的客户端版本列表
-    private const CLIENT_VERSIONS = [
-        'NekoBox' => '1.2.7',
-        'sing-box' => '1.5.0',
-        'stash' => '2.5.0',
-        'Shadowrocket' => '1993',
-        'ClashMetaForAndroid' => '2.9.0',
-        'Nekoray' => '3.24',
-        'verge' => '1.3.8',
-        'ClashX Meta' => '1.3.5',
-        'Hiddify' => '0.1.0',
-        'loon' => '637',
-        'v2rayng' => '1.9.5',
-        'v2rayN' => '6.31',
-        'surge' => '2398',
-        'flclash' => '0.8.0'
-    ];
-
-    private const ALLOWED_TYPES = ['vmess', 'vless', 'trojan', 'hysteria', 'shadowsocks', 'hysteria2', 'tuic', 'anytls'];
-
 
     public function subscribe(Request $request)
     {
@@ -69,123 +48,138 @@ class ClientController extends Controller
         }
 
         $clientInfo = $this->getClientInfo($request);
-        $types = $this->getFilteredTypes($request->input('types'), $clientInfo['supportHy2']);
-        $filterArr = $this->getFilterArray($request->input('filter'));
-        // Get available servers and apply filters
+
+        $requestedTypes = $this->parseRequestedTypes($request->input('types'));
+        $filterKeywords = $this->parseFilterKeywords($request->input('filter'));
+
+        $protocolClassName = app('protocols.manager')->matchProtocolClassName($clientInfo['flag'])
+            ?? General::class;
+
         $servers = ServerService::getAvailableServers($user);
+
         $serversFiltered = $this->filterServers(
             servers: $servers,
-            types: $types,
-            filters: $filterArr,
+            allowedTypes: $requestedTypes,
+            filterKeywords: $filterKeywords
         );
 
         $this->setSubscribeInfoToServers($serversFiltered, $user, count($servers) - count($serversFiltered));
         $serversFiltered = $this->addPrefixToServerName($serversFiltered);
 
-        // Handle protocol response
-        if ($clientInfo['flag']) {
-            foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
-                $className = 'App\\Protocols\\' . basename($file, '.php');
-                $protocol = new $className($user, $serversFiltered);
-                if (
-                    collect($protocol->getFlags())
-                        ->contains(fn($f) => stripos($clientInfo['flag'], $f) !== false)
-                ) {
-                    return $protocol->handle();
-                }
-            }
-        }
+        // Instantiate the protocol class with filtered servers and client info
+        $protocolInstance = app()->make($protocolClassName, [
+            'user' => $user,
+            'servers' => $serversFiltered,
+            'clientName' => $clientInfo['name'] ?? null,
+            'clientVersion' => $clientInfo['version'] ?? null
+        ]);
 
-        return (new General($user, $serversFiltered))->handle();
+        return $protocolInstance->handle();
     }
 
-    private function getFilteredTypes(string|null $types, bool $supportHy2): array
+    /**
+     * Parses the input string for requested server types.
+     */
+    private function parseRequestedTypes(?string $typeInputString): array
     {
-        if ($types === 'all') {
-            return self::ALLOWED_TYPES;
+        if (blank($typeInputString)) {
+            return Server::VALID_TYPES;
         }
 
-        $allowedTypes = $supportHy2
-            ? self::ALLOWED_TYPES
-            : array_diff(self::ALLOWED_TYPES, ['hysteria2']);
-        if (!$types) {
-            return array_values($allowedTypes);
-        }
+        $requested = collect(preg_split('/[|,｜]+/', $typeInputString))
+            ->map(fn($type) => trim($type))
+            ->filter() // Remove empty strings that might result from multiple delimiters
+            ->all();
 
-        $userTypes = explode('|', str_replace(['|', '｜', ','], '|', $types));
-        return array_values(array_intersect($userTypes, $allowedTypes));
+        return array_values(array_intersect($requested, Server::VALID_TYPES));
     }
 
-    private function getFilterArray(?string $filter): ?array
+    /**
+     * Parses the input string for filter keywords.
+     */
+    private function parseFilterKeywords(?string $filterInputString): ?array
     {
-        if ($filter === null) {
+        if (blank($filterInputString) || mb_strlen($filterInputString) > 20) {
             return null;
         }
-        return mb_strlen($filter) > 20 ? null :
-            explode('|', str_replace(['|', '｜', ','], '|', $filter));
+
+        return collect(preg_split('/[|,｜]+/', $filterInputString))
+            ->map(fn($keyword) => trim($keyword))
+            ->filter() // Remove empty strings
+            ->all();
+    }
+
+    /**
+     * Filters servers based on allowed types and keywords.
+     */
+    private function filterServers(array $servers, array $allowedTypes, ?array $filterKeywords): array
+    {
+        return collect($servers)->filter(function ($server) use ($allowedTypes, $filterKeywords) {
+            // Condition 1: Server type must be in the list of allowed types
+            if (!in_array($server['type'], $allowedTypes)) {
+                return false; // Filter out (don't keep)
+            }
+
+            // Condition 2: If filterKeywords are provided, at least one keyword must match
+            if (!empty($filterKeywords)) { // Check if $filterKeywords is not empty
+                $keywordMatch = collect($filterKeywords)->contains(function ($keyword) use ($server) {
+                    return stripos($server['name'], $keyword) !== false
+                        || in_array($keyword, $server['tags'] ?? []);
+                });
+                if (!$keywordMatch) {
+                    return false; // Filter out if no keywords match
+                }
+            }
+            // Keep the server if its type is allowed AND (no filter keywords OR at least one keyword matched)
+            return true;
+        })->values()->all();
     }
 
     private function getClientInfo(Request $request): array
     {
         $flag = strtolower($request->input('flag') ?? $request->header('User-Agent', ''));
-        preg_match('/\/v?(\d+(\.\d+){0,2})/', $flag, $matches);
-        $version = $matches[1] ?? null;
 
-        $supportHy2 = $version ? $this->checkHy2Support($flag, $version) : true;
+        $clientName = null;
+        $clientVersion = null;
 
-        return [
-            'flag' => $flag,
-            'version' => $version,
-            'supportHy2' => $supportHy2
-        ];
-    }
+        if (preg_match('/([a-zA-Z0-9\-_]+)[\/\s]+(v?[0-9]+(?:\.[0-9]+){0,2})/', $flag, $matches)) {
+            $potentialName = strtolower($matches[1]);
+            $clientVersion = preg_replace('/^v/', '', $matches[2]);
 
-    private function checkHy2Support(string $flag, string $version): bool
-    {
-        $clientFound = false;
-        foreach (self::CLIENT_VERSIONS as $client => $minVersion) {
-            if (stripos($flag, $client) !== false) {
-                $clientFound = true;
-                if (version_compare($version, $minVersion, '>=')) {
-                    return true;
+            if (in_array($potentialName, app('protocols.flags'))) {
+                $clientName = $potentialName;
+            }
+        }
+
+        if (!$clientName) {
+            $flags = collect(app('protocols.flags'))->sortByDesc(fn($f) => strlen($f))->values()->all();
+            foreach ($flags as $name) {
+                if (stripos($flag, $name) !== false) {
+                    $clientName = $name;
+                    if (!$clientVersion) {
+                        $pattern = '/' . preg_quote($name, '/') . '[\/\s]+(v?[0-9]+(?:\.[0-9]+){0,2})/i';
+                        if (preg_match($pattern, $flag, $vMatches)) {
+                            $clientVersion = preg_replace('/^v/', '', $vMatches[1]);
+                        }
+                    }
+                    break;
                 }
             }
         }
-        // 如果客户端不在列表中，返回 true
-        return !$clientFound;
+
+        if (!$clientVersion) {
+            if (preg_match('/\/v?(\d+(?:\.\d+){0,2})/', $flag, $matches)) {
+                $clientVersion = $matches[1];
+            }
+        }
+
+        return [
+            'flag' => $flag,
+            'name' => $clientName,
+            'version' => $clientVersion
+        ];
     }
 
-    private function filterServers(array $servers, array $types, ?array $filters): array
-    {
-        return collect($servers)->reject(function ($server) use ($types, $filters) {
-            // Check Hysteria2 compatibility
-            if ($server['type'] === 'hysteria' && optional($server['protocol_settings'])['version'] === 2) {
-                if (!in_array('hysteria2', $types)) {
-                    return true;
-                }
-            } else {
-                if (!in_array($server['type'], $types)) {
-                    return true;
-                }
-            }
-            // Apply custom filters
-            if ($filters) {
-                return !collect($filters)->contains(function ($filter) use ($server) {
-                    return stripos($server['name'], $filter) !== false
-                        || in_array($filter, $server['tags'] ?? []);
-                });
-            }
-            return false;
-        })->values()->all();
-    }
-
-    /**
-     * Summary of setSubscribeInfoToServers
-     * @param mixed $servers
-     * @param mixed $user
-     * @param mixed $rejectServerCount
-     * @return void
-     */
     private function setSubscribeInfoToServers(&$servers, $user, $rejectServerCount = 0)
     {
         if (!isset($servers[0]))
@@ -216,18 +210,11 @@ class ClientController extends Controller
         ]));
     }
 
-    /**
-     * Add protocol prefix to server names if enabled in admin settings
-     *
-     * @param array<int, array<string, mixed>> $servers
-     * @return array<int, array<string, mixed>>
-     */
     private function addPrefixToServerName(array $servers): array
     {
         if (!admin_setting('show_protocol_to_server_enable', false)) {
             return $servers;
         }
-
         return collect($servers)
             ->map(function (array $server): array {
                 $server['name'] = $this->getPrefixedServerName($server);
@@ -235,22 +222,16 @@ class ClientController extends Controller
             })
             ->all();
     }
-    /**
-     * Get server name with protocol prefix
-     *
-     * @param array<string, mixed> $server
-     */
+
     private function getPrefixedServerName(array $server): string
     {
         $type = $server['type'] ?? '';
         if (!isset(self::PROTOCOL_PREFIXES[$type])) {
             return $server['name'] ?? '';
         }
-
         $prefix = is_array(self::PROTOCOL_PREFIXES[$type])
             ? self::PROTOCOL_PREFIXES[$type][$server['protocol_settings']['version'] ?? 1] ?? ''
             : self::PROTOCOL_PREFIXES[$type];
-
         return $prefix . ($server['name'] ?? '');
     }
 }

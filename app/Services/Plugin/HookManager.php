@@ -2,11 +2,53 @@
 
 namespace App\Services\Plugin;
 
-use TorMorten\Eventy\Facades\Events as Eventy;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Illuminate\Support\Facades\App;
 
 class HookManager
 {
+    /**
+     * 存储动作钩子的容器
+     * 
+     * 使用request()存储周期内的钩子数据，避免Octane内存泄漏
+     */
+    protected static function getActions(): array
+    {
+        if (!App::has('hook.actions')) {
+            App::instance('hook.actions', []);
+        }
+
+        return App::make('hook.actions');
+    }
+
+    /**
+     * 存储过滤器钩子的容器
+     */
+    protected static function getFilters(): array
+    {
+        if (!App::has('hook.filters')) {
+            App::instance('hook.filters', []);
+        }
+
+        return App::make('hook.filters');
+    }
+
+    /**
+     * 设置动作钩子
+     */
+    protected static function setActions(array $actions): void
+    {
+        App::instance('hook.actions', $actions);
+    }
+
+    /**
+     * 设置过滤器钩子
+     */
+    protected static function setFilters(array $filters): void
+    {
+        App::instance('hook.filters', $filters);
+    }
+
     /**
      * 拦截响应
      *
@@ -21,7 +63,7 @@ class HookManager
         } elseif (is_array($response)) {
             $response = response()->json($response);
         }
-        
+
         throw new InterceptResponseException($response);
     }
 
@@ -34,7 +76,20 @@ class HookManager
      */
     public static function call(string $hook, mixed $payload = null): void
     {
-        Eventy::action($hook, $payload);
+        $actions = self::getActions();
+
+        if (!isset($actions[$hook])) {
+            return;
+        }
+
+        // 按优先级排序
+        ksort($actions[$hook]);
+
+        foreach ($actions[$hook] as $callbacks) {
+            foreach ($callbacks as $callback) {
+                $callback($payload);
+            }
+        }
     }
 
     /**
@@ -47,12 +102,21 @@ class HookManager
      */
     public static function filter(string $hook, mixed $value, mixed ...$args): mixed
     {
-        if (!self::hasHook($hook)) {
+        $filters = self::getFilters();
+
+        if (!isset($filters[$hook])) {
             return $value;
         }
 
-        /** @phpstan-ignore-next-line */
-        $result = Eventy::filter($hook, $value, ...$args);
+        // 按优先级排序
+        ksort($filters[$hook]);
+
+        $result = $value;
+        foreach ($filters[$hook] as $callbacks) {
+            foreach ($callbacks as $callback) {
+                $result = $callback($result, ...$args);
+            }
+        }
 
         return $result;
     }
@@ -67,7 +131,20 @@ class HookManager
      */
     public static function register(string $hook, callable $callback, int $priority = 20): void
     {
-        Eventy::addAction($hook, $callback, $priority);
+        $actions = self::getActions();
+
+        if (!isset($actions[$hook])) {
+            $actions[$hook] = [];
+        }
+
+        if (!isset($actions[$hook][$priority])) {
+            $actions[$hook][$priority] = [];
+        }
+
+        // 使用随机键存储回调，避免相同优先级覆盖
+        $actions[$hook][$priority][spl_object_hash($callback)] = $callback;
+
+        self::setActions($actions);
     }
 
     /**
@@ -80,7 +157,20 @@ class HookManager
      */
     public static function registerFilter(string $hook, callable $callback, int $priority = 20): void
     {
-        Eventy::addFilter($hook, $callback, $priority);
+        $filters = self::getFilters();
+
+        if (!isset($filters[$hook])) {
+            $filters[$hook] = [];
+        }
+
+        if (!isset($filters[$hook][$priority])) {
+            $filters[$hook][$priority] = [];
+        }
+
+        // 使用随机键存储回调，避免相同优先级覆盖
+        $filters[$hook][$priority][spl_object_hash($callback)] = $callback;
+
+        self::setFilters($filters);
     }
 
     /**
@@ -92,13 +182,88 @@ class HookManager
      */
     public static function remove(string $hook, ?callable $callback = null): void
     {
-        Eventy::removeAction($hook, $callback);
-        Eventy::removeFilter($hook, $callback);
+        $actions = self::getActions();
+        $filters = self::getFilters();
+
+        // 如果回调为null，直接移除整个钩子
+        if ($callback === null) {
+            if (isset($actions[$hook])) {
+                unset($actions[$hook]);
+                self::setActions($actions);
+            }
+
+            if (isset($filters[$hook])) {
+                unset($filters[$hook]);
+                self::setFilters($filters);
+            }
+
+            return;
+        }
+
+        // 移除特定回调
+        $callbackId = spl_object_hash($callback);
+
+        // 从actions中移除
+        if (isset($actions[$hook])) {
+            foreach ($actions[$hook] as $priority => $callbacks) {
+                if (isset($callbacks[$callbackId])) {
+                    unset($actions[$hook][$priority][$callbackId]);
+
+                    // 如果优先级下没有回调了，删除该优先级
+                    if (empty($actions[$hook][$priority])) {
+                        unset($actions[$hook][$priority]);
+                    }
+
+                    // 如果钩子下没有任何优先级了，删除该钩子
+                    if (empty($actions[$hook])) {
+                        unset($actions[$hook]);
+                    }
+                }
+            }
+            self::setActions($actions);
+        }
+
+        // 从filters中移除
+        if (isset($filters[$hook])) {
+            foreach ($filters[$hook] as $priority => $callbacks) {
+                if (isset($callbacks[$callbackId])) {
+                    unset($filters[$hook][$priority][$callbackId]);
+
+                    // 如果优先级下没有回调了，删除该优先级
+                    if (empty($filters[$hook][$priority])) {
+                        unset($filters[$hook][$priority]);
+                    }
+
+                    // 如果钩子下没有任何优先级了，删除该钩子
+                    if (empty($filters[$hook])) {
+                        unset($filters[$hook]);
+                    }
+                }
+            }
+            self::setFilters($filters);
+        }
     }
 
-    private static function hasHook(string $hook): bool
+    /**
+     * 检查是否存在钩子
+     *
+     * @param string $hook 钩子名称
+     * @return bool
+     */
+    public static function hasHook(string $hook): bool
     {
-        // Implementation of hasHook method
-        return true; // Placeholder return, actual implementation needed
+        $actions = self::getActions();
+        $filters = self::getFilters();
+
+        return isset($actions[$hook]) || isset($filters[$hook]);
+    }
+
+    /**
+     * 清理所有钩子（在Octane重置时调用）
+     */
+    public static function reset(): void
+    {
+        App::instance('hook.actions', []);
+        App::instance('hook.filters', []);
     }
 }

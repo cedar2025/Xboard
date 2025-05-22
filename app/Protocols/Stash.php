@@ -2,32 +2,61 @@
 
 namespace App\Protocols;
 
-use App\Models\ServerHysteria;
 use Symfony\Component\Yaml\Yaml;
-use App\Contracts\ProtocolInterface;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
+use App\Support\AbstractProtocol;
 
-class Stash implements ProtocolInterface
+class Stash extends AbstractProtocol
 {
     public $flags = ['stash'];
-    private $servers;
-    private $user;
+    protected $protocolRequirements = [
+        'stash' => [
+            'vless' => [
+                'protocol_settings.tls' => [
+                    '2' => '3.1.0'  // Reality 在3.1.0版本中添加
+                ],
+                'protocol_settings.flow' => [
+                    'xtls-rprx-vision' => '3.1.0',
+                ]
+            ],
+            'hysteria' => [
+                'base_version' => '2.0.0',
+                'protocol_settings.version' => [
+                    '1' => '2.0.0', // Hysteria 1
+                    '2' => '2.5.0'  // Hysteria 2，2.5.0 版本开始支持（2023年11月8日）
+                ],
+                // 'protocol_settings.ports' => [
+                //     'true' => '2.6.4' // Hysteria 2 端口跳转功能于2.6.4版本支持（2024年8月4日）
+                // ]
+            ],
+            'tuic' => [
+                'base_version' => '2.3.0' // TUIC 协议自身需要 2.3.0+
+            ],
+            'shadowsocks' => [
+                'base_version' => '2.0.0',
+                // ShadowSocks2022 在3.0.0版本中添加（2025年4月2日）
+                'protocol_settings.cipher' => [
+                    '2022-blake3-aes-128-gcm' => '3.0.0',
+                    '2022-blake3-aes-256-gcm' => '3.0.0',
+                    '2022-blake3-chacha20-poly1305' => '3.0.0'
+                ]
+            ],
+            'shadowtls' => [
+                'base_version' => '3.0.0' // ShadowTLS 在3.0.0版本中添加（2025年4月2日）
+            ],
+            'ssh' => [
+                'base_version' => '2.6.4' // SSH 协议在2.6.4中添加（2024年8月4日）
+            ],
+            'juicity' => [
+                'base_version' => '2.6.4' // Juicity 协议在2.6.4中添加（2024年8月4日）
+            ]
+        ]
+    ];
 
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.stash.yaml';
     const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
-
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
 
     public function handle()
     {
@@ -48,9 +77,7 @@ class Stash implements ProtocolInterface
         $proxies = [];
 
         foreach ($servers as $item) {
-            if (
-                $item['type'] === 'shadowsocks'
-            ) {
+            if ($item['type'] === 'shadowsocks') {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
@@ -58,10 +85,8 @@ class Stash implements ProtocolInterface
                 array_push($proxy, self::buildVmess($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
-            if (
-                $item['type'] === 'vless'
-            ) {
-                array_push($proxy, self::buildVless($user['uuid'], $item));
+            if ($item['type'] === 'vless') {
+                array_push($proxy, $this->buildVless($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'hysteria') {
@@ -141,12 +166,50 @@ class Stash implements ProtocolInterface
         $array['cipher'] = data_get($protocol_settings, 'cipher');
         $array['password'] = $uuid;
         $array['udp'] = true;
-        if (data_get($protocol_settings, 'obfs') == 'http') {
-            $array['plugin'] = 'obfs';
-            $array['plugin-opts'] = [
-                'mode' => 'http',
-                'host' => data_get($protocol_settings, 'obfs_settings.host'),
-            ];
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            $array['plugin'] = $plugin;
+
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+
+            // 根据插件类型进行字段映射
+            switch ($plugin) {
+                case 'obfs':
+                    $array['plugin-opts'] = [
+                        'mode' => $parsedOpts['obfs'],
+                        'host' => $parsedOpts['obfs-host'],
+                    ];
+
+                    // 可选path参数
+                    if (isset($parsedOpts['path'])) {
+                        $array['plugin-opts']['path'] = $parsedOpts['path'];
+                    }
+                    break;
+
+                case 'v2ray-plugin':
+                    $array['plugin-opts'] = [
+                        'mode' => $parsedOpts['mode'] ?? 'websocket',
+                        'tls' => isset($parsedOpts['tls']) && $parsedOpts['tls'] == 'true',
+                        'host' => $parsedOpts['host'] ?? '',
+                        'path' => $parsedOpts['path'] ?? '/',
+                    ];
+                    break;
+
+                default:
+                    // 对于其他插件，直接使用解析出的键值对
+                    $array['plugin-opts'] = $parsedOpts;
+            }
         }
         return $array;
     }
@@ -193,7 +256,7 @@ class Stash implements ProtocolInterface
         return $array;
     }
 
-    public static function buildVless($uuid, $server)
+    public function buildVless($uuid, $server)
     {
         $protocol_settings = $server['protocol_settings'];
         $array = [];
@@ -202,7 +265,6 @@ class Stash implements ProtocolInterface
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['uuid'] = $uuid;
-        $array['flow'] = data_get($protocol_settings, 'flow');
         $array['udp'] = true;
 
         $array['client-fingerprint'] = Helper::getRandFingerprint();
@@ -226,7 +288,7 @@ class Stash implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
                 break;
             case 'ws':
                 $array['network'] = 'ws';
@@ -262,7 +324,7 @@ class Stash implements ProtocolInterface
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/'])[0];
+                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
                 break;
             case 'ws':
                 $array['network'] = 'ws';
