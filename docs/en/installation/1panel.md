@@ -107,7 +107,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777
     restart: unless-stopped
     networks:
       - 1panel-network
