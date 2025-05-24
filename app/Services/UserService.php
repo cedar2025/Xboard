@@ -14,20 +14,20 @@ class UserService
 {
     private function calcResetDayByMonthFirstDay(): int
     {
-        $today = date('d');
-        $lastDay = date('d', strtotime('last day of +0 months'));
+        $today = (int) date('d');
+        $lastDay = (int) date('d', strtotime('last day of +0 months'));
         return $lastDay - $today;
     }
 
     private function calcResetDayByExpireDay(int $expiredAt)
     {
-        $day = date('d', $expiredAt);
-        $today = date('d');
-        $lastDay = date('d', strtotime('last day of +0 months'));
-        if ((int) $day >= (int) $today && (int) $day >= (int) $lastDay) {
+        $day = (int) date('d', $expiredAt);
+        $today = (int) date('d');
+        $lastDay = (int) date('d', strtotime('last day of +0 months'));
+        if ($day >= $today && $day >= $lastDay) {
             return $lastDay - $today;
         }
-        if ((int) $day >= (int) $today) {
+        if ($day >= $today) {
             return $day - $today;
         }
 
