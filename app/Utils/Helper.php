@@ -128,8 +128,32 @@ class Helper
             $subscribeUrl = self::replaceByPattern($subscribeUrl);
         }
 
+        $subscribeUrl = self::processWildcardPrefix($subscribeUrl);
+
         $finalUrl = $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
         return HookManager::filter('subscribe.url', $finalUrl);
+    }
+
+    /**
+     * 处理URL通配符前缀替换（例如 http://*. 或 https://*.），自动检测前缀
+     *
+     * @param string $url 原始URL
+     * @return string 处理后的URL
+     */
+    private static function processWildcardPrefix(string $url): string
+    {
+        $pattern = '/^(https?:\/\/)\*\./';
+        if (preg_match($pattern, $url, $matches)) {
+            $prefix = $matches[1];
+            $prefixLength = strlen($prefix);
+            $pos = strpos($url, '.', $prefixLength);
+            if ($pos !== false) {
+                return $prefix . Helper::randomChar(5) . substr($url, $pos);
+            } else {
+                return str_replace($prefix . '*.', $prefix . Helper::randomChar(5) . '.', $url);
+            }
+        }
+        return $url;
     }
 
     public static function randomPort($range): int {
