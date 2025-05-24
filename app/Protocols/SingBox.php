@@ -48,6 +48,9 @@ class SingBox extends AbstractProtocol
             ],
             'wireguard' => [
                 'base_version' => '1.5.0'
+            ],
+            'anytls' => [
+                'base_version' => '1.12.0'
             ]
         ]
     ];
@@ -340,15 +343,16 @@ class SingBox extends AbstractProtocol
                 'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
             ]
         ];
-        Log::info($this->clientName);
-        Log::info($this->clientVersion);
-        // if (
-        //     isset($server['ports'])
-        //     && $this->clientName == 'sfm'
-        //     && version_compare($this->clientVersion, '1.11.0', '>=')
-        // ) {
-        //     $baseConfig['server_ports'][] = str_replace('-', ':', $server['ports']);
-        // }
+        // 支持 1.11.0 版本及以上 `server_ports` 和 `hop_interval` 配置
+        if ($this->supportsFeature('sing-box', '1.11.0')) {
+            if (isset($server['ports'])) {
+                $baseConfig['server_ports'] = [str_replace('-', ':', $server['ports'])];
+            }
+            if (isset($protocol_settings['hop_interval'])) {
+                $baseConfig['hop_interval'] = "{$protocol_settings['hop_interval']}s";
+            }
+        }
+
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
         }

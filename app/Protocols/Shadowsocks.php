@@ -36,7 +36,8 @@ class Shadowsocks extends AbstractProtocol
         $subs['bytes_remaining'] = $bytesRemaining;
         $subs['servers'] = array_merge($subs['servers'], $configs);
 
-        return json_encode($subs, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        return response()->json($subs)
+            ->header('content-type', 'application/json');
     }
 
     public static function SIP008($server, $user)

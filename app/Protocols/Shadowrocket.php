@@ -16,6 +16,9 @@ class Shadowrocket extends AbstractProtocol
                     '2' => '1993'
                 ],
             ],
+            'anytls' => [
+                'base_version' => '2592'
+            ],
         ],
     ];
 
@@ -54,7 +57,8 @@ class Shadowrocket extends AbstractProtocol
                 $uri .= self::buildAnyTLS($user['uuid'], $item);
             }
         }
-        return base64_encode($uri);
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain');
     }
 
 
@@ -267,8 +271,12 @@ class Shadowrocket extends AbstractProtocol
                     $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
                 }
                 $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
-                if (isset($server['ports']))
+                if (isset($protocol_settings['hop_interval'])) {
+                    $params['keepalive'] = $protocol_settings['hop_interval'];
+                }
+                if (isset($server['ports'])) {
                     $params['mport'] = $server['ports'];
+                }
                 $query = http_build_query($params);
                 $addr = Helper::wrapIPv6($server['host']);
 

@@ -40,6 +40,7 @@ class ServerSave extends FormRequest
             'tls.allow_insecure' => 'nullable|boolean',
             'bandwidth.up' => 'nullable|integer',
             'bandwidth.down' => 'nullable|integer',
+            'hop_interval' => 'integer|nullable',
         ],
         'vless' => [
             'tls' => 'required|integer',

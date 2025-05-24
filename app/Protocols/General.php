@@ -53,7 +53,7 @@ class General extends AbstractProtocol
                 $uri .= self::buildSocks($user['uuid'], $item);
             }
         }
-        return base64_encode($uri);
+        return response(base64_encode($uri))->header('content-type', 'text/plain');
     }
 
     public static function buildShadowsocks($password, $server)

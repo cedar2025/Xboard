@@ -41,7 +41,8 @@ class Loon extends AbstractProtocol
                 $uri .= self::buildHysteria($user['uuid'], $item, $user);
             }
         }
-        return response($uri, 200)
+        return response($uri)
+            ->header('content-type', 'text/plain')
             ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
