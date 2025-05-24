@@ -12,6 +12,9 @@ class Stash extends AbstractProtocol
     public $flags = ['stash'];
     protected $protocolRequirements = [
         'stash' => [
+            'anytls' => [
+                'base_version' => '3.1.0'
+            ],
             'vless' => [
                 'protocol_settings.tls' => [
                     '2' => '3.1.0'  // Reality 在3.1.0版本中添加
