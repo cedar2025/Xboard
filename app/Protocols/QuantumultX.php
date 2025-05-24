@@ -24,7 +24,8 @@ class QuantumultX extends AbstractProtocol
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
         }
-        return response(base64_encode($uri), 200)
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain')
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 

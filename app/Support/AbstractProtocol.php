@@ -28,7 +28,7 @@ abstract class AbstractProtocol
      * @var array 协议标识
      */
     public $flags = [];
-    
+
     /**
      * @var array 协议需求配置
      */
@@ -48,7 +48,7 @@ abstract class AbstractProtocol
         $this->servers = $servers;
         $this->clientName = $clientName;
         $this->clientVersion = $clientVersion;
-        
+
         // 服务器过滤逻辑
         $this->servers = $this->filterServersByVersion();
     }
@@ -69,7 +69,7 @@ abstract class AbstractProtocol
      * @return mixed
      */
     abstract public function handle();
-    
+
     /**
      * 根据客户端版本过滤不兼容的服务器
      *
@@ -103,20 +103,23 @@ abstract class AbstractProtocol
         $serverType = $server['type'] ?? null;
         // 如果该协议没有特定要求，则认为兼容
         if (!isset($this->protocolRequirements[$this->clientName][$serverType])) {
-            
             return true;
         }
-        
+
         $requirements = $this->protocolRequirements[$this->clientName][$serverType];
-        
+
+        if (isset($requirements['base_version']) && version_compare($this->clientVersion, $requirements['base_version'], '<')) {
+            return false;
+        }
+
         // 检查每个路径的版本要求
         foreach ($requirements as $path => $valueRequirements) {
             $actualValue = data_get($server, $path);
-            
+
             if ($actualValue === null) {
                 continue;
             }
-            
+
             if (isset($valueRequirements[$actualValue])) {
                 $requiredVersion = $valueRequirements[$actualValue];
                 if (version_compare($this->clientVersion, $requiredVersion, '<')) {
@@ -124,7 +127,37 @@ abstract class AbstractProtocol
                 }
             }
         }
-        
+
         return true;
     }
-} 
+
+    /**
+     * 检查当前客户端是否支持特定功能
+     *
+     * @param string $clientName 客户端名称
+     * @param string $minVersion 最低版本要求
+     * @param array $additionalConditions 额外条件检查
+     * @return bool
+     */
+    protected function supportsFeature(string $clientName, string $minVersion, array $additionalConditions = []): bool
+    {
+        // 检查客户端名称
+        if ($this->clientName !== $clientName) {
+            return false;
+        }
+
+        // 检查版本号
+        if (empty($this->clientVersion) || version_compare($this->clientVersion, $minVersion, '<')) {
+            return false;
+        }
+
+        // 检查额外条件
+        foreach ($additionalConditions as $condition) {
+            if (!$condition) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

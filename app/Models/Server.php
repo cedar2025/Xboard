@@ -178,7 +178,8 @@ class Server extends Model
                     'server_name' => ['type' => 'string', 'default' => null],
                     'allow_insecure' => ['type' => 'boolean', 'default' => false]
                 ]
-            ]
+            ],
+            'hop_interval' => ['type' => 'integer', 'default' => null]
         ],
         self::TYPE_TUIC => [
             'version' => ['type' => 'integer', 'default' => 5],
