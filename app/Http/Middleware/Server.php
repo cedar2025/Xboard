@@ -23,7 +23,7 @@ class Server
             throw new ApiException('Server does not exist');
         }
 
-        $request->merge(['node_info' => $serverInfo]);
+        $request->attributes->set('node_info', $serverInfo);
         return $next($request);
     }
 

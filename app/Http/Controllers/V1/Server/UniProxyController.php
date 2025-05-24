@@ -19,11 +19,19 @@ class UniProxyController extends Controller
     ) {
     }
 
+    /**
+     * 获取当前请求的节点信息
+     */
+    private function getNodeInfo(Request $request)
+    {
+        return $request->attributes->get('node_info');
+    }
+
     // 后端获取用户
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
         Cache::put(CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_CHECK_AT', $nodeId), time(), 3600);
@@ -55,7 +63,7 @@ class UniProxyController extends Controller
         if (empty($data)) {
             return $this->success(true);
         }
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
 
@@ -78,7 +86,7 @@ class UniProxyController extends Controller
     // 后端获取配置
     public function config(Request $request)
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $protocolSettings = $node->protocol_settings;
 
@@ -191,7 +199,7 @@ class UniProxyController extends Controller
     // 获取在线用户数据（wyx2685
     public function alivelist(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
             ->where('device_limit', '>', 0);
         $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
@@ -201,7 +209,7 @@ class UniProxyController extends Controller
     // 后端提交在线数据
     public function alive(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $data = json_decode(request()->getContent(), true);
         if ($data === null) {
             return response()->json([
@@ -215,7 +223,7 @@ class UniProxyController extends Controller
     // 提交节点负载状态
     public function status(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
 
         $data = $request->validate([
             'cpu' => 'required|numeric|min:0|max:100',
