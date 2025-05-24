@@ -58,7 +58,9 @@ class AuthService
         
         $accessToken = PersonalAccessToken::findToken($token);
         
-        return $accessToken?->tokenable;
+        $tokenable = $accessToken?->tokenable;
+        
+        return $tokenable instanceof User ? $tokenable : null;
     }
 
     /**
