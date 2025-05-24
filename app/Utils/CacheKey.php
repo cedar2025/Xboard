@@ -4,53 +4,10 @@ namespace App\Utils;
 
 class CacheKey
 {
-    const KEYS = [
+    // 核心缓存键定义
+    const CORE_KEYS = [
         'EMAIL_VERIFY_CODE' => '邮箱验证码',
         'LAST_SEND_EMAIL_VERIFY_TIMESTAMP' => '最后一次发送邮箱验证码时间',
-        'SERVER_VMESS_ONLINE_USER' => '节点在线用户',
-        'MULTI_SERVER_VMESS_ONLINE_USER' => '节点多服务器在线用户',
-        'SERVER_VMESS_LAST_CHECK_AT' => '节点最后检查时间',
-        'SERVER_VMESS_LAST_PUSH_AT' => '节点最后推送时间',
-        'SERVER_TROJAN_ONLINE_USER' => 'trojan节点在线用户',
-        'MULTI_SERVER_TROJAN_ONLINE_USER' => 'trojan节点多服务器在线用户',
-        'SERVER_TROJAN_LAST_CHECK_AT' => 'trojan节点最后检查时间',
-        'SERVER_TROJAN_LAST_PUSH_AT' => 'trojan节点最后推送时间',
-        'SERVER_SHADOWSOCKS_ONLINE_USER' => 'ss节点在线用户',
-        'MULTI_SERVER_SHADOWSOCKS_ONLINE_USER' => 'ss节点多服务器在线用户',
-        'SERVER_SHADOWSOCKS_LAST_CHECK_AT' => 'ss节点最后检查时间',
-        'SERVER_SHADOWSOCKS_LAST_PUSH_AT' => 'ss节点最后推送时间',
-        'SERVER_HYSTERIA_ONLINE_USER' => 'hysteria节点在线用户',
-        'MULTI_SERVER_HYSTERIA_ONLINE_USER' => 'hysteria节点多服务器在线用户',
-        'SERVER_HYSTERIA_LAST_CHECK_AT' => 'hysteria节点最后检查时间',
-        'SERVER_HYSTERIA_LAST_PUSH_AT' => 'hysteria节点最后推送时间',
-        'SERVER_VLESS_ONLINE_USER' => 'vless节点在线用户',
-        'MULTI_SERVER_VLESS_ONLINE_USER' => 'vless节点多服务器在线用户',
-        'SERVER_VLESS_LAST_CHECK_AT' => 'vless节点最后检查时间',
-        'SERVER_VLESS_LAST_PUSH_AT' => 'vless节点最后推送时间',
-        'SERVER_TUIC_ONLINE_USER' => 'TUIC节点在线用户',
-        'MULTI_SERVER_TUIC_ONLINE_USER' => 'TUIC节点多服务器在线用户',
-        'SERVER_TUIC_LAST_CHECK_AT' => 'TUIC节点最后检查时间',
-        'SERVER_TUIC_LAST_PUSH_AT' => 'TUIC节点最后推送时间',
-        'SERVER_ANYTLS_ONLINE_USER' => 'ANYTLS节点在线用户',
-        'MULTI_SERVER_ANYTLS_ONLINE_USER' => 'ANYTLS节点多服务器在线用户',
-        'SERVER_ANYTLS_LAST_CHECK_AT' => 'ANYTLS节点最后检查时间',
-        'SERVER_ANYTLS_LAST_PUSH_AT' => 'ANYTLS节点最后推送时间',
-        'SERVER_SOCKS_ONLINE_USER' => 'socks节点在线用户',
-        'MULTI_SERVER_SOCKS_ONLINE_USER' => 'socks节点多服务器在线用户',
-        'SERVER_SOCKS_LAST_CHECK_AT' => 'socks节点最后检查时间',
-        'SERVER_SOCKS_LAST_PUSH_AT' => 'socks节点最后推送时间',
-        'SERVER_NAIVE_ONLINE_USER' => 'naive节点在线用户',
-        'MULTI_SERVER_NAIVE_ONLINE_USER' => 'naive节点多服务器在线用户',
-        'SERVER_NAIVE_LAST_CHECK_AT' => 'naive节点最后检查时间',
-        'SERVER_NAIVE_LAST_PUSH_AT' => 'naive节点最后推送时间',
-        'SERVER_HTTP_ONLINE_USER' => 'http节点在线用户',
-        'MULTI_SERVER_HTTP_ONLINE_USER' => 'http节点多服务器在线用户',
-        'SERVER_HTTP_LAST_CHECK_AT' => 'http节点最后检查时间',
-        'SERVER_HTTP_LAST_PUSH_AT' => 'http节点最后推送时间',
-        'SERVER_MIERU_ONLINE_USER' => 'mieru节点在线用户',
-        'MULTI_SERVER_MIERU_ONLINE_USER' => 'mieru节点多服务器在线用户',
-        'SERVER_MIERU_LAST_CHECK_AT' => 'mieru节点最后检查时间',
-        'SERVER_MIERU_LAST_PUSH_AT' => 'mieru节点最后推送时间',
         'TEMP_TOKEN' => '临时令牌',
         'LAST_SEND_EMAIL_REMIND_TRAFFIC' => '最后发送流量邮件提醒',
         'SCHEDULE_LAST_CHECK_AT' => '计划任务最后检查时间',
@@ -61,11 +18,50 @@ class CacheKey
         'FORGET_REQUEST_LIMIT' => '找回密码次数限制'
     ];
 
-    public static function get(string $key, $uniqueValue)
+    // 允许的缓存键模式（支持通配符）
+    const ALLOWED_PATTERNS = [
+        'SERVER_*_ONLINE_USER',        // 节点在线用户
+        'MULTI_SERVER_*_ONLINE_USER',  // 多服务器在线用户
+        'SERVER_*_LAST_CHECK_AT',      // 节点最后检查时间
+        'SERVER_*_LAST_PUSH_AT',       // 节点最后推送时间
+        'SERVER_*_LOAD_STATUS',        // 节点负载状态
+        'SERVER_*_LAST_LOAD_AT',       // 节点最后负载提交时间
+    ];
+
+    /**
+     * 生成缓存键
+     */
+    public static function get(string $key, $uniqueValue = null): string
     {
-        if (!in_array($key, array_keys(self::KEYS))) {
-            abort(500, 'key is not in cache key list');
+        // 检查是否为核心键
+        if (array_key_exists($key, self::CORE_KEYS)) {
+            return $uniqueValue ? $key . '_' . $uniqueValue : $key;
         }
-        return $key . '_' . $uniqueValue;
+
+        // 检查是否匹配允许的模式
+        if (self::matchesPattern($key)) {
+            return $uniqueValue ? $key . '_' . $uniqueValue : $key;
+        }
+
+        // 开发环境下记录警告，生产环境允许通过
+        if (app()->environment('local', 'development')) {
+            logger()->warning("Unknown cache key used: {$key}");
+        }
+
+        return $uniqueValue ? $key . '_' . $uniqueValue : $key;
+    }
+
+    /**
+     * 检查键名是否匹配允许的模式
+     */
+    private static function matchesPattern(string $key): bool
+    {
+        foreach (self::ALLOWED_PATTERNS as $pattern) {
+            $regex = '/^' . str_replace('*', '[A-Z_]+', $pattern) . '$/';
+            if (preg_match($regex, $key)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

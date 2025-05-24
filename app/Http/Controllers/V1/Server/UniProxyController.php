@@ -211,4 +211,48 @@ class UniProxyController extends Controller
         $this->userOnlineService->updateAliveData($data, $node->type, $node->id);
         return response()->json(['data' => true]);
     }
+
+    // 提交节点负载状态
+    public function status(Request $request): JsonResponse
+    {
+        $node = $request->input('node_info');
+
+        $data = $request->validate([
+            'cpu' => 'required|numeric|min:0|max:100',
+            'mem.total' => 'required|integer|min:0',
+            'mem.used' => 'required|integer|min:0',
+            'swap.total' => 'required|integer|min:0',
+            'swap.used' => 'required|integer|min:0',
+            'disk.total' => 'required|integer|min:0',
+            'disk.used' => 'required|integer|min:0',
+        ]);
+
+        $nodeType = $node->type;
+        $nodeId = $node->id;
+
+        $statusData = [
+            'cpu' => (float) $data['cpu'],
+            'mem' => [
+                'total' => (int) $data['mem']['total'],
+                'used' => (int) $data['mem']['used'],
+            ],
+            'swap' => [
+                'total' => (int) $data['swap']['total'],
+                'used' => (int) $data['swap']['used'],
+            ],
+            'disk' => [
+                'total' => (int) $data['disk']['total'],
+                'used' => (int) $data['disk']['used'],
+            ],
+            'updated_at' => now()->timestamp,
+        ];
+
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+        cache([
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LOAD_STATUS', $nodeId) => $statusData,
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_LOAD_AT', $nodeId) => now()->timestamp,
+        ], $cacheTime);
+
+        return response()->json(['data' => true, "code" => 0, "message" => "success"]);
+    }
 }

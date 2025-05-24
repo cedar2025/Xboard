@@ -864,6 +864,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "save": "저장",
     "cancel": "취소",
     "confirm": "확인",
+    "close": "닫기",
     "delete": {
       "success": "삭제되었습니다",
       "failed": "삭제에 실패했습니다"
@@ -1069,6 +1070,49 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "viewDetail": "세부 정보 보기",
         "action": "작업"
       }
+    },
+    "systemLog": {
+      "title": "시스템 로그",
+      "description": "시스템 운영 로그 조회",
+      "viewAll": "모두 보기",
+      "level": "레벨",
+      "time": "시간",
+      "message": "메시지",
+      "logTitle": "제목",
+      "method": "요청 방법",
+      "action": "작업",
+      "context": "컨텍스트",
+      "search": "로그 검색...",
+      "noLogs": "로그 없음",
+      "noInfoLogs": "정보 로그 없음",
+      "noWarningLogs": "경고 로그 없음",
+      "noErrorLogs": "오류 로그 없음",
+      "noSearchResults": "일치하는 로그가 없습니다",
+      "detailTitle": "로그 세부 정보",
+      "viewDetail": "세부 정보 보기",
+      "host": "호스트",
+      "ip": "IP 주소",
+      "uri": "URI",
+      "requestData": "요청 데이터",
+      "exception": "예외",
+      "totalLogs": "총 로그 수: {{count}}",
+      "tabs": {
+        "all": "전체",
+        "info": "정보",
+        "warning": "경고",
+        "error": "오류"
+      },
+      "filter": {
+        "searchAndLevel": "필터 결과: \\\"{{keyword}}\\\"를 포함하고 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
+        "searchOnly": "검색 결과: \\\"{{keyword}}\\\"를 포함하는 로그 {{count}}개",
+        "levelOnly": "필터 결과: 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
+        "reset": "필터 초기화"
+      }
+    },
+    "common": {
+      "refresh": "새로고침",
+      "close": "닫기",
+      "pagination": "{{current}}/{{total}} 페이지, 총 {{count}}개 항목"
     },
     "search": {
       "placeholder": "메뉴 및 기능 검색...",
@@ -1541,6 +1585,17 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "title": "권한 그룹",
         "tooltip": "이 노드를 구독할 수 있는 그룹",
         "empty": "--"
+      },
+      "loadStatus": {
+        "title": "부하 상태",
+        "tooltip": "서버 리소스 사용량",
+        "noData": "데이터 없음",
+        "details": "시스템 부하 세부정보",
+        "cpu": "CPU 사용률",
+        "memory": "메모리 사용량",
+        "swap": "스왑 사용량",
+        "disk": "디스크 사용량",
+        "lastUpdate": "마지막 업데이트"
       },
       "type": "유형",
       "actions": "작업",
