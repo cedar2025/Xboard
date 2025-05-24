@@ -472,8 +472,13 @@ class ClashMeta extends AbstractProtocol
             'password' => $password,
             'udp' => true,
         ];
-        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
 
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+        if ($allowInsecure = data_get($protocol_settings, 'tls.allow_insecure')) {
+            $array['skip-cert-verify'] = (bool) $allowInsecure;
+        }
 
         return $array;
     }
