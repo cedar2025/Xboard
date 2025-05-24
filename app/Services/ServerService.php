@@ -25,7 +25,8 @@ class ServerService
             'online',
             'is_online',
             'available_status',
-            'cache_key'
+            'cache_key',
+            'load_status'
         ]);
     }
 
