@@ -38,7 +38,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('reset:traffic')->daily()->onOneServer();
         $schedule->command('reset:log')->daily()->onOneServer();
         // send
-        $schedule->command('send:remindMail')->dailyAt('11:30')->onOneServer();
+        $schedule->command('send:remindMail', ['--force'])->dailyAt('11:30')->onOneServer();
         // horizon metrics
         $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
         // backup Timing
