@@ -128,11 +128,26 @@ class SystemController extends Controller
     {
         $current = $request->input('current') ? $request->input('current') : 1;
         $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
+        $level = $request->input('level');
+        $keyword = $request->input('keyword');
+        
         $builder = LogModel::orderBy('created_at', 'DESC')
-            ->setFilterAllowKeys('level');
+            ->when($level, function ($query) use ($level) {
+                return $query->where('level', strtoupper($level));
+            })
+            ->when($keyword, function ($query) use ($keyword) {
+                return $query->where(function ($q) use ($keyword) {
+                    $q->where('data', 'like', '%' . $keyword . '%')
+                      ->orWhere('context', 'like', '%' . $keyword . '%')
+                      ->orWhere('title', 'like', '%' . $keyword . '%')
+                      ->orWhere('uri', 'like', '%' . $keyword . '%');
+                });
+            });
+            
         $total = $builder->count();
         $res = $builder->forPage($current, $pageSize)
             ->get();
+            
         return response([
             'data' => $res,
             'total' => $total

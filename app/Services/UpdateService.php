@@ -40,7 +40,7 @@ class UpdateService
                 list($date, $hash) = explode(':', trim($result->output()));
                 Cache::forever(self::CACHE_VERSION_DATE, $date);
                 Cache::forever(self::CACHE_VERSION, substr($hash, 0, 7));
-                Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
+                // Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
                 return;
             }
         } catch (\Exception $e) {

@@ -47,6 +47,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property int|null $u 上行流量
  * @property int|null $d 下行流量
  * @property int|null $total 总流量
+ * @property-read array|null $load_status 负载状态（包含CPU、内存、交换区、磁盘信息）
  */
 class Server extends Model
 {
@@ -429,6 +430,20 @@ class Server extends Model
                     return Helper::getServerKey($this->created_at, 16);
                 }
                 return null;
+            }
+        );
+    }
+
+    /**
+     * 负载状态访问器
+     */
+    protected function loadStatus(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_LOAD_STATUS", $serverId));
             }
         );
     }

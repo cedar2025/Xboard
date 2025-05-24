@@ -871,6 +871,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "save": "保存",
     "cancel": "取消",
     "confirm": "确认",
+    "close": "关闭",
     "delete": {
       "success": "删除成功",
       "failed": "删除失败"
@@ -1059,14 +1060,36 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "level": "级别",
       "time": "时间",
       "message": "消息",
+      "logTitle": "标题",
+      "method": "请求方法",
       "action": "操作",
       "context": "上下文",
       "search": "搜索日志内容...",
       "noLogs": "暂无日志记录",
+      "noInfoLogs": "暂无信息日志记录",
+      "noWarningLogs": "暂无警告日志记录",
+      "noErrorLogs": "暂无错误日志记录",
       "noSearchResults": "没有匹配的日志记录",
       "detailTitle": "日志详情",
       "viewDetail": "查看详情",
-      "totalLogs": "总日志数：{{count}}"
+      "host": "主机",
+      "ip": "IP地址",
+      "uri": "URI",
+      "requestData": "请求数据",
+      "exception": "异常信息",
+      "totalLogs": "总日志数：{{count}}",
+      "tabs": {
+        "all": "全部",
+        "info": "信息",
+        "warning": "警告",
+        "error": "错误"
+      },
+      "filter": {
+        "searchAndLevel": "筛选结果: 包含\"{{keyword}}\"且级别为\"{{level}}\"的日志共 {{count}} 条",
+        "searchOnly": "搜索结果: 包含\"{{keyword}}\"的日志共 {{count}} 条",
+        "levelOnly": "筛选结果: 级别为\"{{level}}\"的日志共 {{count}} 条",
+        "reset": "重置筛选"
+      }
     },
     "common": {
       "refresh": "刷新",
@@ -1513,6 +1536,17 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "title": "权限组",
         "tooltip": "可订阅到该节点的权限组",
         "empty": "--"
+      },
+      "loadStatus": {
+        "title": "负载状态",
+        "tooltip": "服务器资源使用情况",
+        "noData": "暂无数据",
+        "details": "系统负载详情",
+        "cpu": "CPU 使用率",
+        "memory": "内存使用",
+        "swap": "交换区",
+        "disk": "磁盘使用",
+        "lastUpdate": "最后更新"
       },
       "type": "类型",
       "actions": "操作",

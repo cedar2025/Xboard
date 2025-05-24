@@ -866,6 +866,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "close": "Close",
     "delete": {
       "success": "Deleted successfully",
       "failed": "Failed to delete"
@@ -1061,14 +1062,36 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "level": "Level",
       "time": "Time",
       "message": "Message",
+      "logTitle": "Title",
+      "method": "Method",
       "action": "Action",
       "context": "Context",
       "search": "Search logs...",
       "noLogs": "No logs available",
+      "noInfoLogs": "No info logs available",
+      "noWarningLogs": "No warning logs available",
+      "noErrorLogs": "No error logs available",
       "noSearchResults": "No matching logs found",
       "detailTitle": "Log Details",
       "viewDetail": "View Details",
-      "totalLogs": "Total logs: {{count}}"
+      "host": "Host",
+      "ip": "IP Address",
+      "uri": "URI",
+      "requestData": "Request Data",
+      "exception": "Exception",
+      "totalLogs": "Total logs: {{count}}",
+      "tabs": {
+        "all": "All",
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "filter": {
+        "searchAndLevel": "Filter results: {{count}} logs containing \\\"{{keyword}}\\\" with level \\\"{{level}}\\\"",
+        "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
+        "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
+        "reset": "Reset Filters"
+      }
     },
     "common": {
       "refresh": "Refresh",
@@ -1546,6 +1569,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "title": "Permission Groups",
         "tooltip": "Groups that can subscribe to this node",
         "empty": "--"
+      },
+      "loadStatus": {
+        "title": "Load Status",
+        "tooltip": "Server resource usage",
+        "noData": "No Data",
+        "details": "System Load Details",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "swap": "Swap Usage",
+        "disk": "Disk Usage",
+        "lastUpdate": "Last Updated"
       },
       "type": "Type",
       "actions": "Actions",

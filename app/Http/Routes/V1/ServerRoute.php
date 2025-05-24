@@ -23,6 +23,7 @@ class ServerRoute
                 $route->post('push', [UniProxyController::class, 'push']);
                 $route->post('alive', [UniProxyController::class, 'alive']);
                 $route->get('alivelist', [UniProxyController::class, 'alivelist']);
+                $route->post('status', [UniProxyController::class, 'status']);
             });
             $router->group([
                 'prefix' => 'ShadowsocksTidalab',
