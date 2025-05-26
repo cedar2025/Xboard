@@ -51,6 +51,12 @@ class Shadowrocket implements ProtocolInterface
             if ($item['type'] === 'hysteria') {
                 $uri .= self::buildHysteria($user['uuid'], $item);
             }
+            if ($item['type'] === 'tuic') {
+                $uri.= self::buildTuic($user['uuid'], $item);
+            }
+            if ($item['type'] === 'anytls') {
+                $uri.= self::buildAnyTLS($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -274,6 +280,40 @@ class Shadowrocket implements ProtocolInterface
                 $uri .= "\r\n";
                 break;
         }
+        return $uri;
+    }
+    public static function buildTuic($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $name = rawurlencode($server['name']);
+        $params = [
+            'alpn' => data_get($protocol_settings, 'alpn'),
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+        ];
+        if (data_get($protocol_settings, 'version') === 4) {
+            $params['token'] = $password;
+        }else{
+            $params['uuid'] = $password;
+            $params['password'] = $password;
+        }
+        $query = http_build_query($params);
+        $uri = "tuic://{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri.= "\r\n";
+        return $uri;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $name = rawurlencode($server['name']);
+        $params = [
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+        ];
+        $query = http_build_query($params);
+        $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri.= "\r\n";
         return $uri;
     }
 }
