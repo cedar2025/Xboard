@@ -448,7 +448,7 @@ class StatController extends Controller
                 ->where('record_at', '<=', $endDate)
                 ->groupBy('server_id')
                 ->orderBy('value', 'DESC')
-                ->limit(10)
+                ->limit(100)
                 ->get();
 
             // Get previous period data for comparison
