@@ -19,11 +19,19 @@ class UniProxyController extends Controller
     ) {
     }
 
+    /**
+     * 获取当前请求的节点信息
+     */
+    private function getNodeInfo(Request $request)
+    {
+        return $request->attributes->get('node_info');
+    }
+
     // 后端获取用户
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
         Cache::put(CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_CHECK_AT', $nodeId), time(), 3600);
@@ -55,7 +63,7 @@ class UniProxyController extends Controller
         if (empty($data)) {
             return $this->success(true);
         }
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $nodeId = $node->id;
 
@@ -78,7 +86,7 @@ class UniProxyController extends Controller
     // 后端获取配置
     public function config(Request $request)
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $nodeType = $node->type;
         $protocolSettings = $node->protocol_settings;
 
@@ -95,8 +103,8 @@ class UniProxyController extends Controller
             'shadowsocks' => [
                 ...$baseConfig,
                 'cipher' => $protocolSettings['cipher'],
-                'obfs' => $protocolSettings['obfs'],
-                'obfs_settings' => $protocolSettings['obfs_settings'],
+                'plugin' => $protocolSettings['plugin'],
+                'plugin_opts' => $protocolSettings['plugin_opts'],
                 'server_key' => match ($protocolSettings['cipher']) {
                         '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
                         '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
@@ -186,7 +194,7 @@ class UniProxyController extends Controller
     // 获取在线用户数据（wyx2685
     public function alivelist(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
             ->where('device_limit', '>', 0);
         $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
@@ -196,7 +204,7 @@ class UniProxyController extends Controller
     // 后端提交在线数据
     public function alive(Request $request): JsonResponse
     {
-        $node = $request->input('node_info');
+        $node = $this->getNodeInfo($request);
         $data = json_decode(request()->getContent(), true);
         if ($data === null) {
             return response()->json([
@@ -205,5 +213,49 @@ class UniProxyController extends Controller
         }
         $this->userOnlineService->updateAliveData($data, $node->type, $node->id);
         return response()->json(['data' => true]);
+    }
+
+    // 提交节点负载状态
+    public function status(Request $request): JsonResponse
+    {
+        $node = $this->getNodeInfo($request);
+
+        $data = $request->validate([
+            'cpu' => 'required|numeric|min:0|max:100',
+            'mem.total' => 'required|integer|min:0',
+            'mem.used' => 'required|integer|min:0',
+            'swap.total' => 'required|integer|min:0',
+            'swap.used' => 'required|integer|min:0',
+            'disk.total' => 'required|integer|min:0',
+            'disk.used' => 'required|integer|min:0',
+        ]);
+
+        $nodeType = $node->type;
+        $nodeId = $node->id;
+
+        $statusData = [
+            'cpu' => (float) $data['cpu'],
+            'mem' => [
+                'total' => (int) $data['mem']['total'],
+                'used' => (int) $data['mem']['used'],
+            ],
+            'swap' => [
+                'total' => (int) $data['swap']['total'],
+                'used' => (int) $data['swap']['used'],
+            ],
+            'disk' => [
+                'total' => (int) $data['disk']['total'],
+                'used' => (int) $data['disk']['used'],
+            ],
+            'updated_at' => now()->timestamp,
+        ];
+
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+        cache([
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LOAD_STATUS', $nodeId) => $statusData,
+            CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_LOAD_AT', $nodeId) => now()->timestamp,
+        ], $cacheTime);
+
+        return response()->json(['data' => true, "code" => 0, "message" => "success"]);
     }
 }

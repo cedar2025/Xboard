@@ -14,6 +14,8 @@ class ServerSave extends FormRequest
             'obfs' => 'nullable|string',
             'obfs_settings.path' => 'nullable|string',
             'obfs_settings.host' => 'nullable|string',
+            'plugin' => 'nullable|string',
+            'plugin_opts' => 'nullable|string',
         ],
         'vmess' => [
             'tls' => 'required|integer',
@@ -38,6 +40,7 @@ class ServerSave extends FormRequest
             'tls.allow_insecure' => 'nullable|boolean',
             'bandwidth.up' => 'nullable|integer',
             'bandwidth.down' => 'nullable|integer',
+            'hop_interval' => 'integer|nullable',
         ],
         'vless' => [
             'tls' => 'required|integer',
@@ -66,6 +69,11 @@ class ServerSave extends FormRequest
         'mieru' => [
             'transport' => 'required|string',
             'multiplexing' => 'required|string',
+        ],
+        'anytls' => [
+            'tls' => 'nullable|array',
+            'alpn' => 'nullable|string',
+            'padding_scheme' => 'nullable|array',
         ],
     ];
 

@@ -866,6 +866,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "close": "Close",
     "delete": {
       "success": "Deleted successfully",
       "failed": "Failed to delete"
@@ -1030,7 +1031,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "result": "Result",
         "duration": "Duration",
         "attempts": "Attempts",
-        "nextRetry": "Next Retry"
+        "nextRetry": "Next Retry",
+        "failedJobsDetailTitle": "Failed Jobs Details",
+        "viewFailedJobs": "View Failed Jobs",
+        "jobDetailTitle": "Job Details",
+        "time": "Time",
+        "queue": "Queue",
+        "name": "Job Name",
+        "exception": "Exception",
+        "noFailedJobs": "No failed jobs",
+        "connection": "Connection",
+        "payload": "Job Payload",
+        "viewDetail": "View Details",
+        "action": "Action"
       },
       "actions": {
         "retry": "Retry",
@@ -1041,6 +1054,49 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "empty": "No jobs in queue",
       "loading": "Loading queue status...",
       "error": "Failed to load queue status"
+    },
+    "systemLog": {
+      "title": "System Logs",
+      "description": "View system operation logs",
+      "viewAll": "View All",
+      "level": "Level",
+      "time": "Time",
+      "message": "Message",
+      "logTitle": "Title",
+      "method": "Method",
+      "action": "Action",
+      "context": "Context",
+      "search": "Search logs...",
+      "noLogs": "No logs available",
+      "noInfoLogs": "No info logs available",
+      "noWarningLogs": "No warning logs available",
+      "noErrorLogs": "No error logs available",
+      "noSearchResults": "No matching logs found",
+      "detailTitle": "Log Details",
+      "viewDetail": "View Details",
+      "host": "Host",
+      "ip": "IP Address",
+      "uri": "URI",
+      "requestData": "Request Data",
+      "exception": "Exception",
+      "totalLogs": "Total logs: {{count}}",
+      "tabs": {
+        "all": "All",
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "filter": {
+        "searchAndLevel": "Filter results: {{count}} logs containing \\\"{{keyword}}\\\" with level \\\"{{level}}\\\"",
+        "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
+        "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
+        "reset": "Reset Filters"
+      }
+    },
+    "common": {
+      "refresh": "Refresh",
+      "close": "Close",
+      "pagination": "Page {{current}}/{{total}}, {{count}} items total"
     },
     "search": {
       "placeholder": "Search menus and functions...",
@@ -1514,6 +1570,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "tooltip": "Groups that can subscribe to this node",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "Load Status",
+        "tooltip": "Server resource usage",
+        "noData": "No Data",
+        "details": "System Load Details",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "swap": "Swap Usage",
+        "disk": "Disk Usage",
+        "lastUpdate": "Last Updated"
+      },
       "type": "Type",
       "actions": "Actions",
       "copyAddress": "Copy Connection Address",
@@ -1556,7 +1623,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "rate": {
         "label": "Rate",
-        "error": "Please enter a valid rate"
+        "error": "Rate is required",
+        "error_numeric": "Rate must be a number",
+        "error_gte_zero": "Rate must be greater than or equal to 0"
       },
       "code": {
         "label": "Custom Node ID",
@@ -1575,18 +1644,22 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "host": {
         "label": "Node Address",
-        "placeholder": "Please enter domain or IP"
+        "placeholder": "Please enter domain or IP",
+        "error": "Node address is required"
       },
       "port": {
         "label": "Connection Port",
         "placeholder": "User connection port",
         "tooltip": "The port that users actually connect to, this is the port number that needs to be filled in the client configuration. If using transit or tunnel, this port may be different from the port that the server actually listens on.",
-        "sync": "Sync to server port"
+        "sync": "Sync to server port",
+        "error": "Connection port is required"
       },
       "server_port": {
         "label": "Server Port",
-        "placeholder": "Server listening port",
-        "tooltip": "The port that the server actually listens on, this is the real port opened on the server. If using transit or tunnel, this port may be different from the user connection port."
+        "placeholder": "Enter server port",
+        "error": "Server port is required",
+        "tooltip": "The actual listening port on the server.",
+        "sync": "Sync to server port"
       },
       "parent": {
         "label": "Parent Node",
@@ -2003,7 +2076,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "generate_count_placeholder": "Enter count for batch generation",
         "cancel": "Cancel",
         "submit": "Generate",
-        "success": "Generated successfully"
+        "success": "Generated successfully",
+        "download_csv": "Export as CSV file"
       }
     },
     "edit": {

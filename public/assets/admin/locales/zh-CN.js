@@ -871,6 +871,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "save": "保存",
     "cancel": "取消",
     "confirm": "确认",
+    "close": "关闭",
     "delete": {
       "success": "删除成功",
       "failed": "删除失败"
@@ -1028,7 +1029,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "result": "结果",
         "duration": "耗时",
         "attempts": "重试次数",
-        "nextRetry": "下次重试"
+        "nextRetry": "下次重试",
+        "failedJobsDetailTitle": "失败任务详情",
+        "viewFailedJobs": "查看报错详情",
+        "jobDetailTitle": "任务详细信息",
+        "time": "时间",
+        "queue": "队列",
+        "name": "任务名称",
+        "exception": "异常信息",
+        "noFailedJobs": "暂无失败任务",
+        "connection": "连接类型",
+        "payload": "任务数据",
+        "viewDetail": "查看详情",
+        "action": "操作"
       },
       "actions": {
         "retry": "重试",
@@ -1039,6 +1052,49 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "empty": "队列中暂无作业",
       "loading": "正在加载队列状态...",
       "error": "加载队列状态失败"
+    },
+    "systemLog": {
+      "title": "系统日志",
+      "description": "查看系统运行日志记录",
+      "viewAll": "查看全部",
+      "level": "级别",
+      "time": "时间",
+      "message": "消息",
+      "logTitle": "标题",
+      "method": "请求方法",
+      "action": "操作",
+      "context": "上下文",
+      "search": "搜索日志内容...",
+      "noLogs": "暂无日志记录",
+      "noInfoLogs": "暂无信息日志记录",
+      "noWarningLogs": "暂无警告日志记录",
+      "noErrorLogs": "暂无错误日志记录",
+      "noSearchResults": "没有匹配的日志记录",
+      "detailTitle": "日志详情",
+      "viewDetail": "查看详情",
+      "host": "主机",
+      "ip": "IP地址",
+      "uri": "URI",
+      "requestData": "请求数据",
+      "exception": "异常信息",
+      "totalLogs": "总日志数：{{count}}",
+      "tabs": {
+        "all": "全部",
+        "info": "信息",
+        "warning": "警告",
+        "error": "错误"
+      },
+      "filter": {
+        "searchAndLevel": "筛选结果: 包含\"{{keyword}}\"且级别为\"{{level}}\"的日志共 {{count}} 条",
+        "searchOnly": "搜索结果: 包含\"{{keyword}}\"的日志共 {{count}} 条",
+        "levelOnly": "筛选结果: 级别为\"{{level}}\"的日志共 {{count}} 条",
+        "reset": "重置筛选"
+      }
+    },
+    "common": {
+      "refresh": "刷新",
+      "close": "关闭",
+      "pagination": "第 {{current}}/{{total}} 页，共 {{count}} 条"
     }
   },
   "route": {
@@ -1481,6 +1537,17 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "tooltip": "可订阅到该节点的权限组",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "负载状态",
+        "tooltip": "服务器资源使用情况",
+        "noData": "暂无数据",
+        "details": "系统负载详情",
+        "cpu": "CPU 使用率",
+        "memory": "内存使用",
+        "swap": "交换区",
+        "disk": "磁盘使用",
+        "lastUpdate": "最后更新"
+      },
       "type": "类型",
       "actions": "操作",
       "copyAddress": "复制连接地址",
@@ -1523,7 +1590,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "rate": {
         "label": "倍率",
-        "error": "请输入有效的倍率"
+        "error": "倍率不能为空",
+        "error_numeric": "费率必须是数字",
+        "error_gte_zero": "费率必须大于或等于0"
       },
       "code": {
         "label": "自定义节点ID",
@@ -1542,21 +1611,24 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "host": {
         "label": "节点地址",
-        "placeholder": "请输入节点域名或者IP"
+        "placeholder": "请输入节点域名或者IP",
+        "error": "节点地址不能为空"
       },
       "port": {
         "label": "连接端口",
         "placeholder": "用户连接端口",
-        "tooltip": "用户实际连接使用的端口，这是客户端配置中需要填写的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
-        "sync": "同步到服务端口"
+        "tooltip": "用户实际连接使用的端口号。如果使用了中转或隧道，这个端口可能与服务器实际监听的端口不同。",
+        "sync": "同步到服务端口",
+        "error": "连接端口不能为空"
       },
       "server_port": {
         "label": "服务端口",
-        "placeholder": "服务端开放端口",
-        "tooltip": "服务器实际监听的端口，这是在服务器上开放的真实端口。如果使用了中转或隧道，这个端口可能与用户连接端口不同。"
+        "placeholder": "请输入服务端口",
+        "error": "服务端口不能为空",
+        "tooltip": "服务器上的实际监听端口。"
       },
       "parent": {
-        "label": "父节点",
+        "label": "父级节点",
         "placeholder": "选择父节点",
         "none": "无"
       },
@@ -1970,7 +2042,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "generate_count_placeholder": "如果为批量生产请输入生成数量",
         "cancel": "取消",
         "submit": "生成",
-        "success": "生成成功"
+        "success": "生成成功",
+        "download_csv": "导出为 CSV 文件"
       }
     },
     "edit": {

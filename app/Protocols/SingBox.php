@@ -2,29 +2,58 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use App\Support\AbstractProtocol;
 
-class SingBox implements ProtocolInterface
+class SingBox extends AbstractProtocol
 {
-    public $flags = ['sing-box', 'hiddify'];
-    private $servers;
-    private $user;
+    public $flags = ['sing-box', 'hiddify', 'sfm'];
     private $config;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.sing-box.json';
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    /**
+     * 多客户端协议支持配置
+     */
+    protected $protocolRequirements = [
+        'sing-box' => [
+            'vless' => [
+                'base_version' => '1.5.0',
+                'protocol_settings.flow' => [
+                    'xtls-rprx-vision' => '1.5.0'
+                ],
+                'protocol_settings.tls' => [
+                    '2' => '1.6.0' // Reality
+                ]
+            ],
+            'hysteria' => [
+                'base_version' => '1.5.0',
+                'protocol_settings.version' => [
+                    '2' => '1.5.0' // Hysteria 2
+                ]
+            ],
+            'tuic' => [
+                'base_version' => '1.5.0'
+            ],
+            'ssh' => [
+                'base_version' => '1.8.0'
+            ],
+            'juicity' => [
+                'base_version' => '1.7.0'
+            ],
+            'shadowtls' => [
+                'base_version' => '1.6.0'
+            ],
+            'wireguard' => [
+                'base_version' => '1.5.0'
+            ],
+            'anytls' => [
+                'base_version' => '1.12.0'
+            ]
+        ]
+    ];
 
     public function handle()
     {
@@ -121,13 +150,18 @@ class SingBox implements ProtocolInterface
 
     protected function buildShadowsocks($password, $server)
     {
+        $protocol_settings = data_get($server, 'protocol_settings');
         $array = [];
         $array['tag'] = $server['name'];
         $array['type'] = 'shadowsocks';
         $array['server'] = $server['host'];
         $array['server_port'] = $server['port'];
-        $array['method'] = data_get($server, 'protocol_settings.cipher');
+        $array['method'] = data_get($protocol_settings, 'cipher');
         $array['password'] = data_get($server, 'password', $password);
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $array['plugin'] = data_get($protocol_settings, 'plugin');
+            $array['plugin_opts'] = data_get($protocol_settings, 'plugin_opts', '');
+        }
 
         return $array;
     }
@@ -305,9 +339,16 @@ class SingBox implements ProtocolInterface
                 'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
             ]
         ];
-        // if (isset($server['ports'])) {
-        //     $baseConfig['server_ports'][] = str_replace('-', ':', $server['ports']);
-        // }
+        // 支持 1.11.0 版本及以上 `server_ports` 和 `hop_interval` 配置
+        if ($this->supportsFeature('sing-box', '1.11.0')) {
+            if (isset($server['ports'])) {
+                $baseConfig['server_ports'] = [str_replace('-', ':', $server['ports'])];
+            }
+            if (isset($protocol_settings['hop_interval'])) {
+                $baseConfig['hop_interval'] = "{$protocol_settings['hop_interval']}s";
+            }
+        }
+
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
         }
@@ -367,6 +408,29 @@ class SingBox implements ProtocolInterface
         } else {
             $array['uuid'] = $password;
             $array['password'] = $password;
+        }
+
+        return $array;
+    }
+
+    protected function buildAnyTLS($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'type' => 'anytls',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'password' => $password,
+            'server_port' => $server['port'],
+            'tls' => [
+                'enabled' => true,
+                'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
+                'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
+            ]
+        ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['tls']['server_name'] = $serverName;
         }
 
         return $array;

@@ -864,6 +864,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "save": "저장",
     "cancel": "취소",
     "confirm": "확인",
+    "close": "닫기",
     "delete": {
       "success": "삭제되었습니다",
       "failed": "삭제에 실패했습니다"
@@ -1026,7 +1027,21 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "result": "결과",
         "duration": "소요 시간",
         "attempts": "시도 횟수",
-        "nextRetry": "다음 재시도"
+        "nextRetry": "다음 재시도",
+        "failedJobsDetailTitle": "실패한 작업 세부 정보",
+        "viewFailedJobs": "실패한 작업 보기",
+        "jobDetailTitle": "작업 세부 정보",
+        "time": "시간",
+        "queue": "대기열",
+        "name": "작업 이름",
+        "exception": "예외",
+        "noFailedJobs": "실패한 작업 없음",
+        "connection": "연결",
+        "payload": "작업 페이로드",
+        "viewDetail": "세부 정보 보기",
+        "action": "작업",
+        "noRecentOrder": "최근 주문 없음",
+        "viewAll": "모두 보기"
       },
       "actions": {
         "retry": "재시도",
@@ -1036,7 +1051,68 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "empty": "대기열에 작업 없음",
       "loading": "대기열 상태 로딩 중...",
-      "error": "대기열 상태 로드 실패"
+      "error": "대기열 상태 로드 실패",
+      "recentOrders": {
+        "title": "최근 주문"
+      },
+      "jobs": {
+        "title": "작업 현황",
+        "failedJobsDetailTitle": "실패한 작업 세부 정보",
+        "viewFailedJobs": "실패한 작업 보기",
+        "jobDetailTitle": "작업 세부 정보",
+        "time": "시간",
+        "queue": "대기열",
+        "name": "작업 이름",
+        "exception": "예외",
+        "noFailedJobs": "실패한 작업 없음",
+        "connection": "연결",
+        "payload": "작업 페이로드",
+        "viewDetail": "세부 정보 보기",
+        "action": "작업"
+      }
+    },
+    "systemLog": {
+      "title": "시스템 로그",
+      "description": "시스템 운영 로그 조회",
+      "viewAll": "모두 보기",
+      "level": "레벨",
+      "time": "시간",
+      "message": "메시지",
+      "logTitle": "제목",
+      "method": "요청 방법",
+      "action": "작업",
+      "context": "컨텍스트",
+      "search": "로그 검색...",
+      "noLogs": "로그 없음",
+      "noInfoLogs": "정보 로그 없음",
+      "noWarningLogs": "경고 로그 없음",
+      "noErrorLogs": "오류 로그 없음",
+      "noSearchResults": "일치하는 로그가 없습니다",
+      "detailTitle": "로그 세부 정보",
+      "viewDetail": "세부 정보 보기",
+      "host": "호스트",
+      "ip": "IP 주소",
+      "uri": "URI",
+      "requestData": "요청 데이터",
+      "exception": "예외",
+      "totalLogs": "총 로그 수: {{count}}",
+      "tabs": {
+        "all": "전체",
+        "info": "정보",
+        "warning": "경고",
+        "error": "오류"
+      },
+      "filter": {
+        "searchAndLevel": "필터 결과: \\\"{{keyword}}\\\"를 포함하고 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
+        "searchOnly": "검색 결과: \\\"{{keyword}}\\\"를 포함하는 로그 {{count}}개",
+        "levelOnly": "필터 결과: 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
+        "reset": "필터 초기화"
+      }
+    },
+    "common": {
+      "refresh": "새로고침",
+      "close": "닫기",
+      "pagination": "{{current}}/{{total}} 페이지, 총 {{count}}개 항목"
     },
     "search": {
       "placeholder": "메뉴 및 기능 검색...",
@@ -1510,6 +1586,17 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "tooltip": "이 노드를 구독할 수 있는 그룹",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "부하 상태",
+        "tooltip": "서버 리소스 사용량",
+        "noData": "데이터 없음",
+        "details": "시스템 부하 세부정보",
+        "cpu": "CPU 사용률",
+        "memory": "메모리 사용량",
+        "swap": "스왑 사용량",
+        "disk": "디스크 사용량",
+        "lastUpdate": "마지막 업데이트"
+      },
       "type": "유형",
       "actions": "작업",
       "copyAddress": "연결 주소 복사",
@@ -1552,7 +1639,9 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "rate": {
         "label": "요금",
-        "error": "올바른 요금을 입력해주세요"
+        "error": "요금은 필수입니다",
+        "error_numeric": "요금은 숫자여야 합니다",
+        "error_gte_zero": "요금은 0보다 크거나 같아야 합니다"
       },
       "code": {
         "label": "사용자 지정 노드 ID",
@@ -1571,18 +1660,21 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "host": {
         "label": "노드 주소",
-        "placeholder": "도메인 또는 IP를 입력해주세요"
+        "placeholder": "도메인 또는 IP를 입력해주세요",
+        "error": "노드 주소는 필수입니다"
       },
       "port": {
         "label": "연결 포트",
         "placeholder": "사용자 연결 포트",
         "tooltip": "사용자가 실제로 연결하는 포트로, 클라이언트 설정에 입력해야 하는 포트 번호입니다. 중계 또는 터널을 사용하는 경우 서버가 실제로 수신하는 포트와 다를 수 있습니다.",
-        "sync": "서버 포트와 동기화"
+        "sync": "서버 포트와 동기화",
+        "error": "연결 포트는 필수입니다"
       },
       "server_port": {
         "label": "서버 포트",
-        "placeholder": "서버 수신 포트",
-        "tooltip": "서버가 실제로 수신하는 포트로, 서버에서 실제로 열린 포트입니다. 중계 또는 터널을 사용하는 경우 사용자 연결 포트와 다를 수 있습니다."
+        "placeholder": "서버 포트 입력",
+        "error": "서버 포트는 필수입니다",
+        "tooltip": "서버의 실제 수신 포트입니다."
       },
       "parent": {
         "label": "상위 노드",
@@ -1953,7 +2045,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "generate_count_placeholder": "일괄 생성할 수량 입력",
         "cancel": "취소",
         "submit": "생성",
-        "success": "생성 완료"
+        "success": "생성 완료",
+        "download_csv": "CSV 파일로 내보내기"
       }
     },
     "edit": {

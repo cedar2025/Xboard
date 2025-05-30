@@ -2,24 +2,11 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
 
-class QuantumultX implements ProtocolInterface
+class QuantumultX extends AbstractProtocol
 {
-    public $flags = ['quantumult%20x'];
-    private $servers;
-    private $user;
-
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    public $flags = ['quantumult%20x', 'quantumult-x'];
 
     public function handle()
     {
@@ -37,7 +24,8 @@ class QuantumultX implements ProtocolInterface
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
         }
-        return response(base64_encode($uri), 200)
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain')
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
@@ -53,6 +41,32 @@ class QuantumultX implements ProtocolInterface
             'udp-relay=true',
             "tag={$server['name']}"
         ];
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
