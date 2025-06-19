@@ -149,17 +149,10 @@ class XboardInstall extends Command
             // ---------- Redis 配置 ----------
             $isRedisValid = false;
             while (!$isRedisValid) {
-                if ($isDocker && ($enableRedis || confirm(label: '是否启用 Docker Redis？', default: true))) {
-                    $envConfig['REDIS_HOST'] = '/data/redis.sock';
-                    $envConfig['REDIS_PORT'] = 0;
-                    $envConfig['REDIS_PASSWORD'] = null;
-                } else {
-                    $envConfig['REDIS_HOST'] = text('请输入 Redis 地址', default: '127.0.0.1');
-                    $envConfig['REDIS_PORT'] = text('请输入 Redis 端口', default: '6379');
-                    $envConfig['REDIS_PASSWORD'] = text('请输入 Redis 密码 (可留空)', default: '');
-                }
+                $envConfig['REDIS_HOST'] = text('请输入 Redis 地址', default: '127.0.0.1');
+                $envConfig['REDIS_PORT'] = text('请输入 Redis 端口', default: '6379');
+                $envConfig['REDIS_PASSWORD'] = text('请输入 Redis 密码 (可留空)', default: '');
 
-                // 提前注入 config
                 Config::set('database.redis.client', 'phpredis');
                 Config::set('database.redis.default', [
                     'host' => $envConfig['REDIS_HOST'],
