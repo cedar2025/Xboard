@@ -17,35 +17,14 @@ use function Laravel\Prompts\note;
 
 class XboardInstall extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'xboard:install';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'xboard 初始化安装';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         parent::__construct();
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
     public function handle()
     {
         try {
@@ -53,11 +32,13 @@ class XboardInstall extends Command
             $enableSqlite = getenv('ENABLE_SQLITE', false);
             $enableRedis = getenv('ENABLE_REDIS', false);
             $adminAccount = getenv('ADMIN_ACCOUNT', false);
+
             $this->info("__    __ ____                      _  ");
             $this->info("\ \  / /| __ )  ___   __ _ _ __ __| | ");
             $this->info(" \ \/ / | __ \ / _ \ / _` | '__/ _` | ");
             $this->info(" / /\ \ | |_) | (_) | (_| | | | (_| | ");
             $this->info("/_/  \_\|____/ \___/ \__,_|_|  \__,_| ");
+
             if (
                 (File::exists(base_path() . '/.env') && $this->getEnvValue('INSTALLED'))
                 || (getenv('INSTALLED', false) && $isDocker)
@@ -65,23 +46,36 @@ class XboardInstall extends Command
                 $securePath = admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key'))));
                 $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");
                 $this->warn("如需重新安装请清空目录下 .env 文件的内容（Docker安装方式不可以删除此文件）");
-                $this->warn("快捷清空.env命令：");
                 note('rm .env && touch .env');
                 return;
             }
+
             if (is_dir(base_path() . '/.env')) {
                 $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
                 return;
             }
-            // 选择是否使用Sqlite
-            if ($enableSqlite || confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
+
+            // ---------- 数据库类型选择 ----------
+            $validDbTypes = ['mysql', 'sqlite', 'pgsql'];
+            $databaseType = $enableSqlite ? 'sqlite' : strtolower(
+                text(
+                    label: '请选择数据库类型 (mysql/sqlite/pgsql)',
+                    default: 'mysql',
+                    validate: fn($v) => in_array(strtolower($v), $validDbTypes) ? null : '只能输入 mysql、sqlite 或 pgsql'
+                )
+            );
+
+            $envConfig = [];
+
+            if ($databaseType === 'sqlite') {
                 $sqliteFile = '.docker/.data/database.sqlite';
                 if (!file_exists(base_path($sqliteFile))) {
-                    // 创建空文件
                     if (!touch(base_path($sqliteFile))) {
-                        $this->info("sqlite创建成功: $sqliteFile");
+                        $this->error("无法创建 SQLite 数据库文件: $sqliteFile");
+                        return;
                     }
                 }
+
                 $envConfig = [
                     'DB_CONNECTION' => 'sqlite',
                     'DB_DATABASE' => $sqliteFile,
@@ -89,132 +83,145 @@ class XboardInstall extends Command
                     'DB_USERNAME' => '',
                     'DB_PASSWORD' => '',
                 ];
+
                 try {
                     Config::set("database.default", 'sqlite');
                     Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
                     DB::purge('sqlite');
                     DB::connection('sqlite')->getPdo();
-                    if (!blank(DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
-                        if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '退出安装')) {
-                            $this->info('正在清空数据库请稍等');
+
+                    $tables = DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN);
+                    if (!blank($tables)) {
+                        if (confirm(label: '检测到已有数据，是否清空数据库？', default: false)) {
                             $this->call('db:wipe', ['--force' => true]);
-                            $this->info('数据库清空完成');
                         } else {
                             return;
                         }
                     }
                 } catch (\Exception $e) {
-                    // 连接失败，输出错误消息
                     $this->error("数据库连接失败：" . $e->getMessage());
+                    return;
                 }
+
             } else {
-                $isMysqlValid = false;
-                while (!$isMysqlValid) {
+                $isValid = false;
+                while (!$isValid) {
                     $envConfig = [
-                        'DB_CONNECTION' => 'mysql',
-                        'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
-                        'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
-                        'DB_DATABASE' => text(label: '请输入数据库名', default: 'xboard', required: true),
-                        'DB_USERNAME' => text(label: '请输入数据库用户名', default: 'root', required: true),
-                        'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
+                        'DB_CONNECTION' => $databaseType,
+                        'DB_HOST' => text('请输入数据库地址', default: '127.0.0.1'),
+                        'DB_PORT' => text('请输入数据库端口', default: $databaseType === 'mysql' ? '3306' : '5432'),
+                        'DB_DATABASE' => text('请输入数据库名', default: 'xboard'),
+                        'DB_USERNAME' => text('请输入数据库用户名', default: $databaseType === 'mysql' ? 'root' : 'postgres'),
+                        'DB_PASSWORD' => text('请输入数据库密码', default: ''),
                     ];
+
                     try {
-                        Config::set("database.default", 'mysql');
-                        Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
-                        Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
-                        Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
-                        Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
-                        Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
-                        DB::purge('mysql');
-                        DB::connection('mysql')->getPdo();
-                        $isMysqlValid = true;
-                        if (!blank(DB::connection('mysql')->select('SHOW TABLES'))) {
-                            if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
-                                $this->info('正在清空数据库请稍等');
+                        Config::set("database.default", $databaseType);
+                        Config::set("database.connections.{$databaseType}.host", $envConfig['DB_HOST']);
+                        Config::set("database.connections.{$databaseType}.port", $envConfig['DB_PORT']);
+                        Config::set("database.connections.{$databaseType}.database", $envConfig['DB_DATABASE']);
+                        Config::set("database.connections.{$databaseType}.username", $envConfig['DB_USERNAME']);
+                        Config::set("database.connections.{$databaseType}.password", $envConfig['DB_PASSWORD']);
+
+                        DB::purge($databaseType);
+                        DB::connection($databaseType)->getPdo();
+
+                        $tables = $databaseType === 'mysql'
+                            ? DB::select('SHOW TABLES')
+                            : DB::select("SELECT tablename FROM pg_tables WHERE schemaname='public'");
+
+                        if (!blank($tables)) {
+                            if (confirm(label: '检测到已有数据，是否清空数据库？', default: false)) {
                                 $this->call('db:wipe', ['--force' => true]);
-                                $this->info('数据库清空完成');
                             } else {
-                                $isMysqlValid = false;
+                                $isValid = false;
+                                continue;
                             }
                         }
+
+                        $isValid = true;
                     } catch (\Exception $e) {
-                        // 连接失败，输出错误消息
                         $this->error("数据库连接失败：" . $e->getMessage());
-                        $this->info("请重新输入数据库配置");
                     }
                 }
             }
-            $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
-            $isReidsValid = false;
-            while (!$isReidsValid) {
-                // 判断是否为Docker环境
-                if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
+
+            // ---------- Redis 配置 ----------
+            $isRedisValid = false;
+            while (!$isRedisValid) {
+                if ($isDocker && ($enableRedis || confirm(label: '是否启用 Docker Redis？', default: true))) {
                     $envConfig['REDIS_HOST'] = '/data/redis.sock';
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
                 } else {
-                    $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
-                    $envConfig['REDIS_PORT'] = text(label: '请输入Redis端口', default: '6379', required: true);
-                    $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
+                    $envConfig['REDIS_HOST'] = text('请输入 Redis 地址', default: '127.0.0.1');
+                    $envConfig['REDIS_PORT'] = text('请输入 Redis 端口', default: '6379');
+                    $envConfig['REDIS_PASSWORD'] = text('请输入 Redis 密码 (可留空)', default: '');
                 }
-                $redisConfig = [
-                    'client' => 'phpredis',
-                    'default' => [
-                        'host' => $envConfig['REDIS_HOST'],
-                        'password' => $envConfig['REDIS_PASSWORD'],
-                        'port' => $envConfig['REDIS_PORT'],
-                        'database' => 0,
-                    ],
-                ];
+
+                // 提前注入 config
+                Config::set('database.redis.client', 'phpredis');
+                Config::set('database.redis.default', [
+                    'host' => $envConfig['REDIS_HOST'],
+                    'port' => (int) $envConfig['REDIS_PORT'],
+                    'password' => $envConfig['REDIS_PASSWORD'] ?: null,
+                    'database' => 0,
+                ]);
+                Config::set('cache.default', 'redis');
+
                 try {
-                    $redis = new \Illuminate\Redis\RedisManager(app(), 'phpredis', $redisConfig);
+                    $redis = new \Illuminate\Redis\RedisManager(app(), 'phpredis', [
+                        'default' => Config::get('database.redis.default'),
+                    ]);
                     $redis->ping();
-                    $isReidsValid = true;
+                    $isRedisValid = true;
                 } catch (\Exception $e) {
-                    // 连接失败，输出错误消息
-                    $this->error("redis连接失败：" . $e->getMessage());
-                    $this->info("请重新输入REDIS配置");
-                    $enableRedis = false;
-                    sleep(1);
+                    $this->error("Redis 连接失败：" . $e->getMessage());
                 }
             }
 
-            if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
-                abort(500, '复制环境文件失败，请检查目录权限');
+            $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
+
+            // 写入 .env
+            if (!copy(base_path('.env.example'), base_path('.env'))) {
+                abort(500, '复制 .env 文件失败，请检查权限');
             }
-            ;
-            $email = !empty($adminAccount) ? $adminAccount : text(
-                label: '请输入管理员账号',
+
+            $email = $adminAccount ?: text(
+                '请输入管理员邮箱',
                 default: 'admin@demo.com',
-                required: true,
-                validate: fn(string $email): ?string => match (true) {
-                    !filter_var($email, FILTER_VALIDATE_EMAIL) => '请输入有效的邮箱地址.',
-                    default => null,
-                }
+                validate: fn($v) => filter_var($v, FILTER_VALIDATE_EMAIL) ? null : '邮箱格式不正确'
             );
+
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
             $this->call('config:cache');
-            Artisan::call('cache:clear');
-            $this->info('正在导入数据库请稍等...');
-            Artisan::call("migrate", ['--force' => true]);
-            $this->info(Artisan::output());
-            $this->info('数据库导入完成');
-            $this->info('开始注册管理员账号');
-            if (!self::registerAdmin($email, $password)) {
-                abort(500, '管理员账号注册失败，请重试');
+            try {
+                Artisan::call('cache:clear');
+            } catch (\Exception $e) {
+                $this->warn("Redis 缓存清理失败：" . $e->getMessage());
             }
-            $this->info('🎉：一切就绪');
-            $this->info("管理员邮箱：{$email}");
-            $this->info("管理员密码：{$password}");
 
-            $defaultSecurePath = hash('crc32b', config('app.key'));
-            $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
+            Artisan::call('migrate', ['--force' => true]);
+            $this->info('数据库初始化完成');
+            $this->info(Artisan::output());
+
+            $this->info('开始创建管理员...');
+            if (!self::registerAdmin($email, $password)) {
+                abort(500, '管理员创建失败');
+            }
+
+            $securePath = hash('crc32b', config('app.key'));
             $envConfig['INSTALLED'] = true;
             $this->saveToEnv($envConfig);
+
+            $this->info("🎉 安装完成，管理员账号：{$email}");
+            $this->info("管理员密码：{$password}");
+            $this->info("访问 http(s)://你的站点/{$securePath} 登录后台");
+
         } catch (\Exception $e) {
-            $this->error($e);
+            $this->error($e->getMessage());
         }
     }
 
@@ -222,9 +229,7 @@ class XboardInstall extends Command
     {
         $user = new User();
         $user->email = $email;
-        if (strlen($password) < 8) {
-            abort(500, '管理员密码长度最小为8位字符');
-        }
+        if (strlen($password) < 8) abort(500, '管理员密码必须至少8位');
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
@@ -236,32 +241,27 @@ class XboardInstall extends Command
     {
         $value = !strpos($value, ' ') ? $value : '"' . $value . '"';
         $key = strtoupper($key);
-
         $envPath = app()->environmentFilePath();
         $contents = file_get_contents($envPath);
-
-        if (preg_match("/^{$key}=[^\r\n]*/m", $contents, $matches)) {
-            $contents = str_replace($matches[0], "{$key}={$value}", $contents);
+        if (preg_match("/^{$key}=.*/m", $contents)) {
+            $contents = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $contents);
         } else {
             $contents .= "\n{$key}={$value}\n";
         }
-
         return file_put_contents($envPath, $contents) !== false;
     }
 
     private function saveToEnv($data = [])
     {
         foreach ($data as $key => $value) {
-            self::set_env_var($key, $value);
+            $this->set_env_var($key, $value);
         }
-        return true;
     }
 
     function getEnvValue($key, $default = null)
     {
         $dotenv = \Dotenv\Dotenv::createImmutable(base_path());
         $dotenv->load();
-
         return Env::get($key, $default);
     }
 }
