@@ -15,7 +15,7 @@ Xboard is a modern panel system built on Laravel 11, focusing on providing a cle
 
 ## ✨ Features
 
-- 🚀 Built with Laravel 11 + Octane for significant performance gains
+- 🚀 Built with Laravel 12 + Octane for significant performance gains
 - 🎨 Redesigned admin interface (React + Shadcn UI)
 - 📱 Modern user frontend (Vue3 + TypeScript)
 - 🐳 Ready-to-use Docker deployment solution
