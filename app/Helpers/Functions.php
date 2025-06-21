@@ -1,5 +1,6 @@
 <?php
 use App\Support\Setting;
+use Illuminate\Support\Facades\App;
 
 if (! function_exists('admin_setting')) {
     /**
@@ -11,15 +12,31 @@ if (! function_exists('admin_setting')) {
      */
     function admin_setting($key = null, $default = null)
     {
+        $setting = Setting::getInstance();
+        
         if ($key === null) {
-            return App::make(Setting::class)->toArray();
+            return $setting->toArray();
         }
 
         if (is_array($key)) {
-            App::make(Setting::class)->save($key);
+            $setting->save($key);
             return '';
         }
+        
         $default = config('v2board.'. $key) ?? $default;
-        return App::make(Setting::class)->get($key) ?? $default ;
+        return $setting->get($key) ?? $default;
+    }
+}
+
+if (! function_exists('admin_settings_batch')) {
+    /**
+     * 批量获取配置参数，性能优化版本
+     *
+     * @param array $keys 配置键名数组
+     * @return array 返回键值对数组
+     */
+    function admin_settings_batch(array $keys): array
+    {
+        return Setting::getInstance()->getBatch($keys);
     }
 }

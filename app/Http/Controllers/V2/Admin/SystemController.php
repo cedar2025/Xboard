@@ -130,7 +130,7 @@ class SystemController extends Controller
         $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
         $level = $request->input('level');
         $keyword = $request->input('keyword');
-        
+
         $builder = LogModel::orderBy('created_at', 'DESC')
             ->when($level, function ($query) use ($level) {
                 return $query->where('level', strtoupper($level));
@@ -138,16 +138,16 @@ class SystemController extends Controller
             ->when($keyword, function ($query) use ($keyword) {
                 return $query->where(function ($q) use ($keyword) {
                     $q->where('data', 'like', '%' . $keyword . '%')
-                      ->orWhere('context', 'like', '%' . $keyword . '%')
-                      ->orWhere('title', 'like', '%' . $keyword . '%')
-                      ->orWhere('uri', 'like', '%' . $keyword . '%');
+                        ->orWhere('context', 'like', '%' . $keyword . '%')
+                        ->orWhere('title', 'like', '%' . $keyword . '%')
+                        ->orWhere('uri', 'like', '%' . $keyword . '%');
                 });
             });
-            
+
         $total = $builder->count();
         $res = $builder->forPage($current, $pageSize)
             ->get();
-            
+
         return response([
             'data' => $res,
             'total' => $total
@@ -173,5 +173,127 @@ class SystemController extends Controller
             'current' => $current,
             'page_size' => $pageSize,
         ]);
+    }
+
+    /**
+     * 清除系统日志
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function clearSystemLog(Request $request)
+    {
+        $request->validate([
+            'days' => 'integer|min:1|max:365',
+            'level' => 'string|in:info,warning,error,all',
+            'limit' => 'integer|min:100|max:10000'
+        ], [
+            'days.required' => '请指定要清除多少天前的日志',
+            'days.integer' => '天数必须为整数',
+            'days.min' => '天数不能少于1天',
+            'days.max' => '天数不能超过365天',
+            'level.in' => '日志级别只能是：info、warning、error、all',
+            'limit.min' => '单次清除数量不能少于100条',
+            'limit.max' => '单次清除数量不能超过10000条'
+        ]);
+
+        $days = $request->input('days', 30); // 默认清除30天前的日志
+        $level = $request->input('level', 'all'); // 默认清除所有级别
+        $limit = $request->input('limit', 1000); // 默认单次清除1000条
+
+        try {
+            $cutoffDate = now()->subDays($days);
+
+            // 构建查询条件
+            $query = LogModel::where('created_at', '<', $cutoffDate->timestamp);
+
+            if ($level !== 'all') {
+                $query->where('level', strtoupper($level));
+            }
+
+            // 获取要删除的记录数量
+            $totalCount = $query->count();
+
+            if ($totalCount === 0) {
+                return $this->success([
+                    'message' => '没有找到符合条件的日志记录',
+                    'deleted_count' => 0,
+                    'total_count' => $totalCount
+                ]);
+            }
+
+            // 分批删除，避免单次删除过多数据
+            $deletedCount = 0;
+            $batchSize = min($limit, 1000); // 每批最多1000条
+
+            while ($deletedCount < $limit && $deletedCount < $totalCount) {
+                $remainingLimit = min($batchSize, $limit - $deletedCount);
+
+                $batchQuery = LogModel::where('created_at', '<', $cutoffDate->timestamp);
+                if ($level !== 'all') {
+                    $batchQuery->where('level', strtoupper($level));
+                }
+
+                $idsToDelete = $batchQuery->limit($remainingLimit)->pluck('id');
+
+                if ($idsToDelete->isEmpty()) {
+                    break;
+                }
+
+                $batchDeleted = LogModel::whereIn('id', $idsToDelete)->delete();
+                $deletedCount += $batchDeleted;
+
+                // 避免长时间占用数据库连接
+                if ($deletedCount < $limit && $deletedCount < $totalCount) {
+                    usleep(100000); // 暂停0.1秒
+                }
+            }
+
+            return $this->success([
+                'message' => '日志清除完成',
+                'deleted_count' => $deletedCount,
+                'total_count' => $totalCount,
+                'remaining_count' => max(0, $totalCount - $deletedCount)
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->error('清除日志失败：' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 获取日志清除统计信息
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getLogClearStats(Request $request)
+    {
+        $days = $request->input('days', 30);
+        $level = $request->input('level', 'all');
+
+        try {
+            $cutoffDate = now()->subDays($days);
+
+            $query = LogModel::where('created_at', '<', $cutoffDate->timestamp);
+            if ($level !== 'all') {
+                $query->where('level', strtoupper($level));
+            }
+
+            $stats = [
+                'days' => $days,
+                'level' => $level,
+                'cutoff_date' => $cutoffDate->format(format: 'Y-m-d H:i:s'),
+                'total_logs' => LogModel::count(),
+                'logs_to_clear' => $query->count(),
+                'oldest_log' => LogModel::orderBy('created_at', 'asc')->first(),
+                'newest_log' => LogModel::orderBy('created_at', 'desc')->first(),
+            ];
+
+            return $this->success($stats);
+
+        } catch (\Exception $e) {
+            return $this->error('获取统计信息失败：' . $e->getMessage());
+        }
     }
 }
