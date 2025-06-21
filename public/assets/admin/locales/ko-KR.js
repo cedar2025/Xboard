@@ -1095,7 +1095,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "uri": "URI",
       "requestData": "요청 데이터",
       "exception": "예외",
-      "totalLogs": "총 로그 수: {{count}}",
+      "totalLogs": "총 로그 수",
       "tabs": {
         "all": "전체",
         "info": "정보",

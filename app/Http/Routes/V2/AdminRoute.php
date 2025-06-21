@@ -192,6 +192,8 @@ class AdminRoute
                 $router->get('/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');
                 $router->get('/getSystemLog', [SystemController::class, 'getSystemLog']);
                 $router->get('/getHorizonFailedJobs', [SystemController::class, 'getHorizonFailedJobs']);
+                $router->post('/clearSystemLog', [SystemController::class, 'clearSystemLog']);
+                $router->get('/getLogClearStats', [SystemController::class, 'getLogClearStats']);
             });
 
             // Update
