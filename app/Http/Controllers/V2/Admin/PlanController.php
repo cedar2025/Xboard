@@ -18,7 +18,15 @@ class PlanController extends Controller
             ->with([
                 'group:id,name'
             ])
-            ->withCount('users')
+            ->withCount([
+                'users',
+                'users as active_users_count' => function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('expired_at', '>', time())
+                          ->orWhereNull('expired_at');
+                    });
+                }
+            ])
             ->get();
 
         return $this->success($plans);
