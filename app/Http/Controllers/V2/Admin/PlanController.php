@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PlanSave;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
@@ -32,27 +33,17 @@ class PlanController extends Controller
         return $this->success($plans);
     }
 
-    public function save(Request $request)
+    public function save(PlanSave $request)
     {
-        $params = $request->validate([
-            'id' => 'nullable|integer',
-            'name' => 'required|string',
-            'content' => 'nullable|string',
-            'reset_traffic_method' => 'integer|nullable',
-            'transfer_enable' => 'integer|required',
-            'prices' => 'array|nullable',
-            'group_id' => 'integer|nullable',
-            'speed_limit' => 'integer|nullable',
-            'device_limit' => 'integer|nullable',
-            'capacity_limit' => 'integer|nullable',
-        ]);
+        $params = $request->validated();
+        
         if ($request->input('id')) {
             $plan = Plan::find($request->input('id'));
             if (!$plan) {
                 return $this->fail([400202, '该订阅不存在']);
             }
+            
             DB::beginTransaction();
-            // update user group id and transfer
             try {
                 if ($request->input('force_update')) {
                     User::where('plan_id', $plan->id)->update([

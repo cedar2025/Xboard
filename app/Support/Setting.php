@@ -132,7 +132,7 @@ class Setting
                     CASE_LOWER
                 );
             });
-
+            
             // 处理JSON格式的值
             foreach ($settings as $key => $value) {
                 if (is_string($value) && $value !== null) {

@@ -162,7 +162,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "orderManagement": "订单管理",
     "couponManagement": "优惠券管理",
     "userManagement": "用户管理",
-    "ticketManagement": "工单管理"
+    "ticketManagement": "工单管理",
+    "trafficResetLogs": "流量重置日志"
   },
   "plugin": {
     "title": "插件管理",
@@ -1208,6 +1209,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "basicInfo": "基本信息",
       "amountInfo": "金额信息",
       "timeInfo": "时间信息",
+      "commissionInfo": "佣金信息",
+      "commissionStatusActive": "有效",
       "addOrder": "添加订单",
       "assignOrder": "订单分配",
       "fields": {
@@ -1221,7 +1224,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "refundAmount": "退回金额",
         "deductionAmount": "折抵金额",
         "createdAt": "创建时间",
-        "updatedAt": "更新时间"
+        "updatedAt": "更新时间",
+        "commissionStatus": "佣金状态",
+        "commissionAmount": "佣金金额",
+        "actualCommissionAmount": "实际佣金",
+        "inviteUser": "邀请人",
+        "inviteUserId": "邀请人ID"
       },
       "placeholders": {
         "email": "请输入用户邮箱",
@@ -1963,6 +1971,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "assign_order": "分配订单",
         "copy_url": "复制订阅URL",
         "reset_secret": "重置UUID及订阅URL",
+        "reset_traffic": "重置流量",
         "orders": "TA的订单",
         "invites": "TA的邀请",
         "traffic_records": "TA的流量记录",
@@ -2102,6 +2111,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "title": "操作",
       "send_email": "发送邮件",
       "export_csv": "导出 CSV",
+      "traffic_reset_stats": "流量重置统计",
       "batch_ban": "批量封禁",
       "confirm_ban": {
         "title": "确认批量封禁",
@@ -2110,6 +2120,111 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "cancel": "取消",
         "confirm": "确认封禁",
         "banning": "封禁中..."
+      }
+    },
+    "traffic_reset": {
+      "title": "流量重置",
+      "description": "为用户 {{email}} 重置流量使用量",
+      "tabs": {
+        "reset": "重置流量",
+        "history": "重置历史"
+      },
+      "user_info": "用户信息",
+      "warning": {
+        "title": "重要提醒",
+        "irreversible": "流量重置操作不可逆，请谨慎操作",
+        "reset_to_zero": "重置后用户的上传和下载流量将清零",
+        "logged": "所有重置操作都会被记录在系统日志中"
+      },
+      "reason": {
+        "label": "重置原因",
+        "placeholder": "请输入重置流量的原因（可选）",
+        "optional": "此字段为可选项，用于记录重置原因"
+      },
+      "confirm_reset": "确认重置",
+      "resetting": "重置中...",
+      "reset_success": "流量重置成功",
+      "reset_failed": "流量重置失败",
+      "history": {
+        "summary": "重置概览",
+        "reset_count": "重置次数",
+        "last_reset": "最后重置",
+        "next_reset": "下次重置",
+        "never": "从未重置",
+        "no_schedule": "无定时重置",
+        "records": "重置记录",
+        "recent_records": "最近10次重置记录",
+        "no_records": "暂无重置记录",
+        "reset_time": "重置时间",
+        "traffic_cleared": "清除流量"
+      },
+      "stats": {
+        "title": "流量重置统计",
+        "description": "查看系统流量重置的统计信息",
+        "time_range": "统计时间范围",
+        "total_resets": "总重置次数",
+        "auto_resets": "自动重置",
+        "manual_resets": "手动重置",
+        "cron_resets": "定时重置",
+        "in_period": "最近 {{days}} 天",
+        "breakdown": "重置类型分布",
+        "breakdown_description": "各类型重置操作的百分比分布",
+        "auto_percentage": "自动重置占比",
+        "manual_percentage": "手动重置占比",
+        "cron_percentage": "定时重置占比",
+        "days_options": {
+          "week": "最近一周",
+          "month": "最近一月",
+          "quarter": "最近三月",
+          "year": "最近一年"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "流量重置日志",
+      "description": "查看系统中所有流量重置操作的详细记录",
+      "columns": {
+        "id": "日志ID",
+        "user": "用户",
+        "reset_type": "重置类型",
+        "trigger_source": "触发源",
+        "cleared_traffic": "清除流量",
+        "cleared": "已清除",
+        "upload": "上传",
+        "download": "下载",
+        "reset_time": "重置时间",
+        "log_time": "记录时间"
+      },
+      "filters": {
+        "search_user": "搜索用户邮箱...",
+        "reset_type": "重置类型",
+        "trigger_source": "触发源",
+        "all_types": "全部类型",
+        "all_sources": "全部来源",
+        "start_date": "开始日期",
+        "end_date": "结束日期",
+        "apply_date": "应用筛选",
+        "reset": "重置筛选",
+        "filter_title": "筛选条件",
+        "filter_description": "设置筛选条件来查找特定的流量重置记录",
+        "reset_types": {
+          "monthly": "按月重置",
+          "first_day_month": "每月1号重置",
+          "yearly": "按年重置",
+          "first_day_year": "每年1月1日重置",
+          "manual": "手动重置"
+        },
+        "trigger_sources": {
+          "auto": "自动触发",
+          "manual": "手动触发",
+          "cron": "定时任务"
+        }
+      },
+      "actions": {
+        "export": "导出日志",
+        "exporting": "导出中...",
+        "export_success": "导出成功",
+        "export_failed": "导出失败"
       }
     },
     "messages": {

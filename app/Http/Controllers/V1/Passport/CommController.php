@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\V1\Passport;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\CommSendEmailVerify;
 use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
+use App\Models\User;
 use App\Utils\CacheKey;
-use App\Utils\Dict;
+use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use ReCaptcha\ReCaptcha;
@@ -25,7 +25,22 @@ class CommController extends Controller
                 return $this->fail([400, __('Invalid code is incorrect')]);
             }
         }
+
         $email = $request->input('email');
+
+        // 检查白名单后缀限制
+        if ((int) admin_setting('email_whitelist_enable', 0)) {
+            $isRegisteredEmail = User::where('email', $email)->exists();
+            if (!$isRegisteredEmail) {
+                $allowedSuffixes = Helper::getEmailSuffix();
+                $emailSuffix = substr(strrchr($email, '@'), 1);
+
+                if (!in_array($emailSuffix, $allowedSuffixes)) {
+                    return $this->fail([400, __('Email suffix is not in whitelist')]);
+                }
+            }
+        }
+
         if (Cache::get(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $email))) {
             return $this->fail([400, __('Email verification code has been sent, please request again later')]);
         }
