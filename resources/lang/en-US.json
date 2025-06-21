@@ -7,6 +7,7 @@
     "Currency conversion has timed out, please try again later": "Currency conversion has timed out, please try again later",
     "Email already exists": "Email already exists",
     "Email suffix is not in the Whitelist": "Email suffix is not in the Whitelist",
+    "Email suffix is not in whitelist": "Email suffix is not in whitelist",
     "Email verification code": "Email verification code",
     "Email verification code cannot be empty": "Email verification code cannot be empty",
     "Email verification code has been sent, please request again later": "Email verification code has been sent, please request again later",
@@ -129,5 +130,19 @@
     "update.code_update_failed": "Code update failed: :error",
     "update.migration_failed": "Database migration failed: :error",
     "update.cache_clear_failed": "Cache clearing failed: :error",
-    "update.flag_create_failed": "Failed to create update flag: :error"
+    "update.flag_create_failed": "Failed to create update flag: :error",
+    "traffic_reset.reset_type.monthly": "Monthly Reset",
+    "traffic_reset.reset_type.first_day_month": "First Day of Month Reset",
+    "traffic_reset.reset_type.yearly": "Yearly Reset",
+    "traffic_reset.reset_type.first_day_year": "First Day of Year Reset",
+    "traffic_reset.reset_type.manual": "Manual Reset",
+    "traffic_reset.reset_type.purchase": "Purchase Reset Package",
+    "traffic_reset.source.auto": "Auto Trigger",
+    "traffic_reset.source.manual": "Manual Trigger",
+    "traffic_reset.source.api": "API Call",
+    "traffic_reset.source.cron": "Cron Job",
+    "traffic_reset.source.user_access": "User Access",
+    "traffic_reset.reset_success": "Traffic reset successful",
+    "traffic_reset.reset_failed": "Traffic reset failed, please check logs for details",
+    "traffic_reset.user_cannot_reset": "User cannot reset traffic (user not activated or no valid plan)"
 }

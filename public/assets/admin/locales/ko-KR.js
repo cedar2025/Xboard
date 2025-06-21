@@ -162,6 +162,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "orderManagement": "주문 관리",
     "couponManagement": "쿠폰 관리",
     "userManagement": "사용자 관리",
+    "trafficResetLogs": "트래픽 재설정 로그",
     "ticketManagement": "티켓 관리"
   },
   "plugin": {
@@ -1232,6 +1233,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "basicInfo": "기본 정보",
       "amountInfo": "금액 정보",
       "timeInfo": "시간 정보",
+      "commissionInfo": "수수료 정보",
+      "commissionStatusActive": "활성",
       "addOrder": "주문 추가",
       "assignOrder": "주문 할당",
       "fields": {
@@ -1245,7 +1248,12 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "refundAmount": "환불 금액",
         "deductionAmount": "차감 금액",
         "createdAt": "생성 시간",
-        "updatedAt": "업데이트 시간"
+        "updatedAt": "업데이트 시간",
+        "commissionStatus": "수수료 상태",
+        "commissionAmount": "수수료 금액",
+        "actualCommissionAmount": "실제 수수료",
+        "inviteUser": "초대자",
+        "inviteUserId": "초대자 ID"
       },
       "placeholders": {
         "email": "사용자 이메일을 입력해주세요",
@@ -1969,6 +1977,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "orders": "주문 내역",
         "invites": "초대 내역",
         "traffic_records": "트래픽 기록",
+        "reset_traffic": "트래픽 재설정",
         "delete": "삭제",
         "delete_confirm_title": "사용자 삭제 확인",
         "delete_confirm_description": "이 작업은 사용자 {{email}}와 관련된 모든 데이터(주문, 쿠폰, 트래픽 기록, 지원 티켓 등)를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다. 계속하시겠습니까?"
@@ -2105,6 +2114,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "title": "작업",
       "send_email": "이메일 보내기",
       "export_csv": "CSV 내보내기",
+      "traffic_reset_stats": "트래픽 재설정 통계",
       "batch_ban": "일괄 차단",
       "confirm_ban": {
         "title": "일괄 차단 확인",
@@ -2130,6 +2140,111 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "success": "이메일 전송 성공",
         "failed": "이메일 전송 실패",
         "required_fields": "모든 필수 항목을 입력해주세요"
+      }
+    },
+    "traffic_reset": {
+      "title": "트래픽 재설정",
+      "description": "사용자 {{email}}의 트래픽 사용량 재설정",
+      "tabs": {
+        "reset": "트래픽 재설정",
+        "history": "재설정 기록"
+      },
+      "user_info": "사용자 정보",
+      "warning": {
+        "title": "중요 안내",
+        "irreversible": "트래픽 재설정 작업은 되돌릴 수 없습니다. 신중하게 진행해주세요",
+        "reset_to_zero": "재설정 후 사용자의 업로드 및 다운로드 트래픽이 0으로 초기화됩니다",
+        "logged": "모든 재설정 작업은 시스템 로그에 기록됩니다"
+      },
+      "reason": {
+        "label": "재설정 사유",
+        "placeholder": "트래픽 재설정 사유를 입력해주세요 (선택사항)",
+        "optional": "이 필드는 선택사항이며 재설정 사유를 기록하는 데 사용됩니다"
+      },
+      "confirm_reset": "재설정 확인",
+      "resetting": "재설정 중...",
+      "reset_success": "트래픽 재설정 성공",
+      "reset_failed": "트래픽 재설정 실패",
+      "history": {
+        "summary": "재설정 개요",
+        "reset_count": "재설정 횟수",
+        "last_reset": "마지막 재설정",
+        "next_reset": "다음 재설정",
+        "never": "재설정된 적 없음",
+        "no_schedule": "예약된 재설정 없음",
+        "records": "재설정 기록",
+        "recent_records": "최근 10번의 재설정 기록",
+        "no_records": "재설정 기록이 없습니다",
+        "reset_time": "재설정 시간",
+        "traffic_cleared": "삭제된 트래픽"
+      },
+      "stats": {
+        "title": "트래픽 재설정 통계",
+        "description": "시스템 트래픽 재설정 통계 정보 보기",
+        "time_range": "통계 시간 범위",
+        "total_resets": "총 재설정 횟수",
+        "auto_resets": "자동 재설정",
+        "manual_resets": "수동 재설정",
+        "cron_resets": "예약 재설정",
+        "in_period": "최근 {{days}}일",
+        "breakdown": "재설정 유형별 분석",
+        "breakdown_description": "다양한 재설정 작업 유형의 백분율 분석",
+        "auto_percentage": "자동 재설정 비율",
+        "manual_percentage": "수동 재설정 비율",
+        "cron_percentage": "예약 재설정 비율",
+        "days_options": {
+          "week": "지난 주",
+          "month": "지난 달",
+          "quarter": "지난 분기",
+          "year": "지난 해"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "트래픽 재설정 로그",
+      "description": "시스템의 모든 트래픽 재설정 작업에 대한 상세 기록 보기",
+      "columns": {
+        "id": "로그 ID",
+        "user": "사용자",
+        "reset_type": "재설정 유형",
+        "trigger_source": "트리거 소스",
+        "cleared_traffic": "삭제된 트래픽",
+        "cleared": "삭제됨",
+        "upload": "업로드",
+        "download": "다운로드",
+        "reset_time": "재설정 시간",
+        "log_time": "로그 시간"
+      },
+      "filters": {
+        "search_user": "사용자 이메일 검색...",
+        "reset_type": "재설정 유형",
+        "trigger_source": "트리거 소스",
+        "all_types": "모든 유형",
+        "all_sources": "모든 소스",
+        "start_date": "시작 날짜",
+        "end_date": "종료 날짜",
+        "apply_date": "필터 적용",
+        "reset": "필터 초기화",
+        "filter_title": "필터 옵션",
+        "filter_description": "특정 트래픽 재설정 기록을 찾기 위한 필터 조건을 설정하세요",
+        "reset_types": {
+          "monthly": "월별 재설정",
+          "first_day_month": "매월 1일 재설정",
+          "yearly": "연별 재설정",
+          "first_day_year": "매년 1월 1일 재설정",
+          "manual": "수동 재설정"
+        },
+        "trigger_sources": {
+          "auto": "자동 트리거",
+          "manual": "수동 트리거",
+          "cron": "예약 작업"
+        }
+      },
+      "actions": {
+        "export": "로그 내보내기",
+        "exporting": "내보내는 중...",
+        "export_success": "내보내기 성공",
+        "export_failed": "내보내기 실패"
       }
     },
     "send_mail": {

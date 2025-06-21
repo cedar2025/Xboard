@@ -37,6 +37,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $last_login_at 最后登录时间
  * @property int|null $parent_id 父账户ID
  * @property int|null $is_admin 是否管理员
+ * @property \Carbon\Carbon|null $next_reset_at 下次流量重置时间
+ * @property \Carbon\Carbon|null $last_reset_at 上次流量重置时间
+ * @property int $reset_count 流量重置次数
  * @property int $created_at
  * @property int $updated_at
  * @property bool $commission_auto_check 是否自动计算佣金
@@ -48,6 +51,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Order> $orders 订单列表
  * @property-read \Illuminate\Database\Eloquent\Collection<int, StatUser> $stat 统计信息
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Ticket> $tickets 工单列表
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TrafficResetLog> $trafficResetLogs 流量重置记录
  * @property-read User|null $parent 父账户
  * @property-read string $subscribe_url 订阅链接（动态生成）
  */
@@ -64,14 +68,15 @@ class User extends Authenticatable
         'remind_expire' => 'boolean',
         'remind_traffic' => 'boolean',
         'commission_auto_check' => 'boolean',
-        'commission_rate' => 'float'
+        'commission_rate' => 'float',
+        'next_reset_at' => 'timestamp',
+        'last_reset_at' => 'timestamp',
     ];
     protected $hidden = ['password'];
 
     public const COMMISSION_TYPE_SYSTEM = 0;
     public const COMMISSION_TYPE_PERIOD = 1;
     public const COMMISSION_TYPE_ONETIME = 2;
-
 
     // 获取邀请人信息
     public function invite_user(): BelongsTo
@@ -121,10 +126,70 @@ class User extends Authenticatable
     }
 
     /**
+     * 关联流量重置记录
+     */
+    public function trafficResetLogs(): HasMany
+    {
+        return $this->hasMany(TrafficResetLog::class, 'user_id', 'id');
+    }
+
+    /**
      * 获取订阅链接属性
      */
     public function getSubscribeUrlAttribute(): string
     {
         return Helper::getSubscribeUrl($this->token);
+    }
+
+    /**
+     * 检查用户是否处于活跃状态
+     */
+    public function isActive(): bool
+    {
+        return !$this->banned && 
+               ($this->expired_at === null || $this->expired_at > time()) &&
+               $this->plan_id !== null;
+    }
+
+    /**
+     * 检查是否需要重置流量
+     */
+    public function shouldResetTraffic(): bool
+    {
+        return $this->isActive() &&
+               $this->next_reset_at !== null &&
+               $this->next_reset_at <= time();
+    }
+
+    /**
+     * 获取总使用流量
+     */
+    public function getTotalUsedTraffic(): int
+    {
+        return ($this->u ?? 0) + ($this->d ?? 0);
+    }
+
+    /**
+     * 获取剩余流量
+     */
+    public function getRemainingTraffic(): int
+    {
+        $used = $this->getTotalUsedTraffic();
+        $total = $this->transfer_enable ?? 0;
+        return max(0, $total - $used);
+    }
+
+    /**
+     * 获取流量使用百分比
+     */
+    public function getTrafficUsagePercentage(): float
+    {
+        $total = $this->transfer_enable ?? 0;
+        if ($total <= 0) {
+            return 0;
+        }
+        
+        $used = $this->getTotalUsedTraffic();
+        return min(100, ($used / $total) * 100);
     }
 }

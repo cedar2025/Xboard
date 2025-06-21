@@ -162,6 +162,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "orderManagement": "Order Management",
     "couponManagement": "Coupon Management",
     "userManagement": "User Management",
+    "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management"
   },
   "plugin": {
@@ -1216,6 +1217,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "basicInfo": "Basic Information",
       "amountInfo": "Amount Information",
       "timeInfo": "Time Information",
+      "commissionInfo": "Commission Information",
+      "commissionStatusActive": "Active",
       "addOrder": "Add Order",
       "assignOrder": "Assign Order",
       "fields": {
@@ -1229,7 +1232,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "refundAmount": "Refund Amount",
         "deductionAmount": "Deduction Amount",
         "createdAt": "Created At",
-        "updatedAt": "Updated At"
+        "updatedAt": "Updated At",
+        "commissionStatus": "Commission Status",
+        "commissionAmount": "Commission Amount",
+        "actualCommissionAmount": "Actual Commission",
+        "inviteUser": "Inviter",
+        "inviteUserId": "Inviter ID"
       },
       "placeholders": {
         "email": "Please enter user email",
@@ -2000,6 +2008,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "orders": "Orders",
         "invites": "Invites",
         "traffic_records": "Traffic Records",
+        "reset_traffic": "Reset Traffic",
         "delete": "Delete",
         "delete_confirm_title": "Confirm Delete User",
         "delete_confirm_description": "This action will permanently delete user {{email}} and all associated data, including orders, coupons, traffic records, and support tickets. This action cannot be undone. Do you want to continue?"
@@ -2136,6 +2145,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "title": "Actions",
       "send_email": "Send Email",
       "export_csv": "Export CSV",
+      "traffic_reset_stats": "Traffic Reset Stats",
       "batch_ban": "Batch Ban",
       "confirm_ban": {
         "title": "Confirm Batch Ban",
@@ -2161,6 +2171,111 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "success": "Email sent successfully",
         "failed": "Failed to send email",
         "required_fields": "Please fill in all required fields"
+      }
+    },
+    "traffic_reset": {
+      "title": "Traffic Reset",
+      "description": "Reset traffic usage for user {{email}}",
+      "tabs": {
+        "reset": "Reset Traffic",
+        "history": "Reset History"
+      },
+      "user_info": "User Information",
+      "warning": {
+        "title": "Important Notice",
+        "irreversible": "Traffic reset operation is irreversible, please proceed with caution",
+        "reset_to_zero": "After reset, user's upload and download traffic will be cleared to zero",
+        "logged": "All reset operations will be logged in the system"
+      },
+      "reason": {
+        "label": "Reset Reason",
+        "placeholder": "Please enter the reason for traffic reset (optional)",
+        "optional": "This field is optional and used to record the reason for reset"
+      },
+      "confirm_reset": "Confirm Reset",
+      "resetting": "Resetting...",
+      "reset_success": "Traffic reset successful",
+      "reset_failed": "Traffic reset failed",
+      "history": {
+        "summary": "Reset Overview",
+        "reset_count": "Reset Count",
+        "last_reset": "Last Reset",
+        "next_reset": "Next Reset",
+        "never": "Never Reset",
+        "no_schedule": "No Scheduled Reset",
+        "records": "Reset Records",
+        "recent_records": "Recent 10 Reset Records",
+        "no_records": "No reset records",
+        "reset_time": "Reset Time",
+        "traffic_cleared": "Traffic Cleared"
+      },
+      "stats": {
+        "title": "Traffic Reset Statistics",
+        "description": "View system traffic reset statistics",
+        "time_range": "Statistics Time Range",
+        "total_resets": "Total Resets",
+        "auto_resets": "Auto Resets",
+        "manual_resets": "Manual Resets",
+        "cron_resets": "Cron Resets",
+        "in_period": "In the last {{days}} days",
+        "breakdown": "Reset Type Breakdown",
+        "breakdown_description": "Percentage breakdown of different reset operation types",
+        "auto_percentage": "Auto Reset Percentage",
+        "manual_percentage": "Manual Reset Percentage",
+        "cron_percentage": "Cron Reset Percentage",
+        "days_options": {
+          "week": "Last Week",
+          "month": "Last Month",
+          "quarter": "Last Quarter",
+          "year": "Last Year"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "Traffic Reset Logs",
+      "description": "View detailed records of all traffic reset operations in the system",
+      "columns": {
+        "id": "Log ID",
+        "user": "User",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "cleared_traffic": "Cleared Traffic",
+        "cleared": "Cleared",
+        "upload": "Upload",
+        "download": "Download",
+        "reset_time": "Reset Time",
+        "log_time": "Log Time"
+      },
+      "filters": {
+        "search_user": "Search user email...",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "all_types": "All Types",
+        "all_sources": "All Sources",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "apply_date": "Apply Filter",
+        "reset": "Reset Filter",
+        "filter_title": "Filter Options",
+        "filter_description": "Set filter conditions to find specific traffic reset records",
+        "reset_types": {
+          "monthly": "Monthly Reset",
+          "first_day_month": "First Day of Month Reset",
+          "yearly": "Yearly Reset",
+          "first_day_year": "First Day of Year Reset",
+          "manual": "Manual Reset"
+        },
+        "trigger_sources": {
+          "auto": "Auto Trigger",
+          "manual": "Manual Trigger",
+          "cron": "Cron Job"
+        }
+      },
+      "actions": {
+        "export": "Export Logs",
+        "exporting": "Exporting...",
+        "export_success": "Export successful",
+        "export_failed": "Export failed"
       }
     },
     "send_mail": {

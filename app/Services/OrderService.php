@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -67,7 +68,7 @@ class OrderService
             }
 
             $this->setSpeedLimit($plan->speed_limit);
-            $this->setDeviceLimit($plan->device_limit);
+            $this->setDeviceLimit($plan->device_limit); 
 
             if (!$this->user->save()) {
                 throw new \Exception('用户信息保存失败');
@@ -79,7 +80,7 @@ class OrderService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             throw new ApiException('开通失败');
         }
     }
@@ -238,7 +239,7 @@ class OrderService
         try {
             OrderHandleJob::dispatchSync($order->trade_no);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return false;
         }
         return true;
@@ -305,7 +306,7 @@ class OrderService
     private function buyByOneTime(Plan $plan)
     {
         $this->buyByResetTraffic();
-        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
+        $this->user->transfer_enable += $plan->transfer_enable * 1073741824;
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = NULL;

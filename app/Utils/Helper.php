@@ -202,4 +202,13 @@ class Helper
         $revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')');
         return strtr(rawurlencode($str), $revert);
     }
+
+    public static function getEmailSuffix(): array|bool
+    {
+        $suffix = admin_setting('email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT);
+        if (!is_array($suffix)) {
+            return preg_split('/,/', $suffix);
+        }
+        return $suffix;
+    }
 }
