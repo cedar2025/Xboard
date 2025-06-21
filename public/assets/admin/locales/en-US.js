@@ -1079,7 +1079,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "uri": "URI",
       "requestData": "Request Data",
       "exception": "Exception",
-      "totalLogs": "Total logs: {{count}}",
+      "totalLogs": "Total logs",
       "tabs": {
         "all": "All",
         "info": "Info",

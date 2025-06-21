@@ -7,6 +7,8 @@ use Illuminate\Support\Arr;
 
 class Helper
 {
+    private static $subscribeUrlCache = null;
+
     public static function uuidToBase64($uuid, $length)
     {
         return base64_encode(substr($uuid, 0, $length));
@@ -122,13 +124,29 @@ class Helper
     public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
         $path = route('client.subscribe', ['token' => $token], false);
-        if (!$subscribeUrl) {
-            $subscribeUrls = explode(',', (string)admin_setting('subscribe_url', ''));
-            $subscribeUrl = Arr::random($subscribeUrls);
-            $subscribeUrl = self::replaceByPattern($subscribeUrl);
+        
+        // 如果已提供订阅URL，直接处理并返回
+        if ($subscribeUrl) {
+            $finalUrl = rtrim($subscribeUrl, '/') . $path;
+            return HookManager::filter('subscribe.url', $finalUrl);
         }
-
-        $finalUrl = $subscribeUrl ? rtrim($subscribeUrl, '/') . $path : url($path);
+        
+        // 使用静态缓存避免重复查询配置
+        if (self::$subscribeUrlCache === null) {
+            $urlString = (string)admin_setting('subscribe_url', '');
+            self::$subscribeUrlCache = $urlString ? explode(',', $urlString) : [];
+        }
+        
+        // 如果没有配置订阅URL，使用默认URL
+        if (empty(self::$subscribeUrlCache)) {
+            return HookManager::filter('subscribe.url', url($path));
+        }
+        
+        // 高效随机选择URL并处理
+        $randomIndex = array_rand(self::$subscribeUrlCache);
+        $selectedUrl = self::replaceByPattern(self::$subscribeUrlCache[$randomIndex]);
+        $finalUrl = rtrim($selectedUrl, '/') . $path;
+        
         return HookManager::filter('subscribe.url', $finalUrl);
     }
 
@@ -184,5 +202,4 @@ class Helper
         $revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')');
         return strtr(rawurlencode($str), $revert);
     }
-    
 }
