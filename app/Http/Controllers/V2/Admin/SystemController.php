@@ -43,9 +43,9 @@ class SystemController extends Controller
         ];
 
         if (class_exists(LogModel::class) && LogModel::count() > 0) {
-            $statistics['info'] = LogModel::where('level', 'info')->count();
-            $statistics['warning'] = LogModel::where('level', 'warning')->count();
-            $statistics['error'] = LogModel::where('level', 'error')->count();
+            $statistics['info'] = LogModel::where('level', 'INFO')->count();
+            $statistics['warning'] = LogModel::where('level', 'WARNING')->count();
+            $statistics['error'] = LogModel::where('level', 'ERROR')->count();
             $statistics['total'] = LogModel::count();
 
             return $statistics;
