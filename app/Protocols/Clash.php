@@ -18,9 +18,10 @@ class Clash extends AbstractProtocol
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        // 优先从数据库配置中获取模板
+        $template = admin_setting('subscribe_template_clash', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
             ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
 
         $config = Yaml::parse($template);
         $proxy = [];

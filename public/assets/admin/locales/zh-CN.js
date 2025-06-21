@@ -1077,7 +1077,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "uri": "URI",
       "requestData": "请求数据",
       "exception": "异常信息",
-      "totalLogs": "总日志数：{{count}}",
+      "totalLogs": "总日志数",
       "tabs": {
         "all": "全部",
         "info": "信息",
