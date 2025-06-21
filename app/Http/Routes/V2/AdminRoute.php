@@ -16,6 +16,7 @@ use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
+use App\Http\Controllers\V2\Admin\TrafficResetController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -228,6 +229,16 @@ class AdminRoute
                 $router->post('disable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'disable']);
                 $router->get('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'getConfig']);
                 $router->post('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'updateConfig']);
+            });
+
+            // 流量重置管理
+            $router->group([
+                'prefix' => 'traffic-reset'
+            ], function ($router) {
+                $router->get('logs', [TrafficResetController::class, 'logs']);
+                $router->get('stats', [TrafficResetController::class, 'stats']);
+                $router->get('user/{userId}/history', [TrafficResetController::class, 'userHistory']);
+                $router->post('reset-user', [TrafficResetController::class, 'resetUser']);
             });
         });
 

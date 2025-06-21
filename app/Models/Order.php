@@ -89,6 +89,14 @@ class Order extends Model
     }
 
     /**
+     * 获取邀请人
+     */
+    public function invite_user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invite_user_id', 'id');
+    }
+
+    /**
      * 获取与订单关联的套餐
      */
     public function plan(): BelongsTo

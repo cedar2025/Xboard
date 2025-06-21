@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1\User;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UserChangePassword;
 use App\Http\Requests\User\UserTransfer;
@@ -15,7 +14,6 @@ use App\Services\AuthService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
-use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
