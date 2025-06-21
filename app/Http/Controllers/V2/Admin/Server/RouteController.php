@@ -6,18 +6,13 @@ use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\ServerRoute;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RouteController extends Controller
 {
     public function fetch(Request $request)
     {
         $routes = ServerRoute::get();
-        // TODO: remove on 1.8.0
-        foreach ($routes as $k => $route) {
-            $array = json_decode($route->match, true);
-            if (is_array($array)) $routes[$k]['match'] = $array;
-        }
-        // TODO: remove on 1.8.0
         return [
             'data' => $routes
         ];
@@ -38,15 +33,13 @@ class RouteController extends Controller
         ]);
         $params['match'] = array_filter($params['match']);
         // TODO: remove on 1.8.0
-        $params['match'] = json_encode($params['match']);
-        // TODO: remove on 1.8.0
         if ($request->input('id')) {
             try {
                 $route = ServerRoute::find($request->input('id'));
                 $route->update($params);
                 return $this->success(true);
             } catch (\Exception $e) {
-                \Log::error($e);
+                Log::error($e);
                 return $this->fail([500,'保存失败']);
             }
         }
@@ -54,7 +47,7 @@ class RouteController extends Controller
             ServerRoute::create($params);
             return $this->success(true);
         }catch(\Exception $e){
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500,'创建失败']);
         }
     }
