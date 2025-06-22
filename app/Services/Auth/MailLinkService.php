@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Request;
 
 class MailLinkService
 {
@@ -98,9 +99,10 @@ class MailLinkService
      * 处理Token登录
      * 
      * @param string $token 登录令牌
+     * @param Request|null $request 请求对象（用于获取IP地址）
      * @return int|null 用户ID或null
      */
-    public function handleTokenLogin(string $token): ?int
+    public function handleTokenLogin(string $token, ?Request $request = null): ?int
     {
         $key = CacheKey::get('TEMP_TOKEN', $token);
         $userId = Cache::get($key);
@@ -115,8 +117,35 @@ class MailLinkService
             return null;
         }
         
+        // Update last login time and IP
+        $user->last_login_at = time();
+        if ($request) {
+            $clientIp = $request->ip();
+            $user->last_login_ip = $this->ipToInt($clientIp);
+            $user->save();
+        }
+        
         Cache::forget($key);
         
         return $userId;
+    }
+
+    /**
+     * 将IP地址转换为整数存储
+     * 
+     * @param string $ip IP地址
+     * @return int 转换后的整数值
+     */
+    private function ipToInt(string $ip): int
+    {
+        // 处理IPv4地址
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $long = ip2long($ip);
+            // 处理负数情况（32位系统）
+            return $long < 0 ? $long + 4294967296 : $long;
+        }
+        
+        // 对于IPv6或其他情况，使用CRC32哈希作为备选方案
+        return abs(crc32($ip));
     }
 } 

@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $device_limit 设备限制数量
  * @property int|null $discount 折扣
  * @property int|null $last_login_at 最后登录时间
+ * @property int|null $last_login_ip 最后登录IP
  * @property int|null $parent_id 父账户ID
  * @property int|null $is_admin 是否管理员
  * @property int $created_at
@@ -126,5 +127,37 @@ class User extends Authenticatable
     public function getSubscribeUrlAttribute(): string
     {
         return Helper::getSubscribeUrl($this->token);
+    }
+
+    /**
+     * 获取可读的最后登录IP地址
+     * 
+     * @return string|null
+     */
+    public function getLastLoginIpReadableAttribute(): ?string
+    {
+        if (!$this->last_login_ip) {
+            return null;
+        }
+
+        // 尝试将整数转换回IPv4地址
+        $ip = long2ip($this->last_login_ip);
+        
+        // 如果转换失败（比如是IPv6的哈希值），则显示原始数值
+        if ($ip === false) {
+            return "Hash: " . $this->last_login_ip;
+        }
+        
+        return $ip;
+    }
+
+    /**
+     * 获取最后登录IP地址（向后兼容的方法）
+     * 
+     * @return string|null
+     */
+    public function getLastLoginIpString(): ?string
+    {
+        return $this->getLastLoginIpReadableAttribute();
     }
 }

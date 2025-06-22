@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\Models\User;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class LoginService
@@ -14,9 +15,10 @@ class LoginService
      *
      * @param string $email 用户邮箱
      * @param string $password 用户密码
+     * @param Request|null $request 请求对象（用于获取IP地址）
      * @return array [成功状态, 用户对象或错误信息]
      */
-    public function login(string $email, string $password): array
+    public function login(string $email, string $password, ?Request $request = null): array
     {
         // 检查密码错误限制
         if ((int)admin_setting('password_limit_enable', true)) {
@@ -58,8 +60,13 @@ class LoginService
             return [false, [400, __('Your account has been suspended')]];
         }
 
-        // 更新最后登录时间
+        // 更新最后登录时间和IP
         $user->last_login_at = time();
+        if ($request) {
+            $clientIp = $request->ip();
+            // Convert IP to integer for storage (handles both IPv4 and IPv6)
+            $user->last_login_ip = $this->ipToInt($clientIp);
+        }
         $user->save();
 
         return [true, $user];
@@ -107,5 +114,24 @@ class LoginService
         Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
         
         return [true, true];
+    }
+
+    /**
+     * 将IP地址转换为整数存储
+     * 
+     * @param string $ip IP地址
+     * @return int 转换后的整数值
+     */
+    private function ipToInt(string $ip): int
+    {
+        // 处理IPv4地址
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $long = ip2long($ip);
+            // 处理负数情况（32位系统）
+            return $long < 0 ? $long + 4294967296 : $long;
+        }
+        
+        // 对于IPv6或其他情况，使用CRC32哈希作为备选方案
+        return abs(crc32($ip));
     }
 } 
