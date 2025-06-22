@@ -145,8 +145,8 @@ class UserService
             'total_available' => $user->transfer_enable ?? 0,
             'remaining' => $user->getRemainingTraffic(),
             'usage_percentage' => $user->getTrafficUsagePercentage(),
-            'next_reset_at' => $user->next_reset_at?->timestamp,
-            'last_reset_at' => $user->last_reset_at?->timestamp,
+            'next_reset_at' => $user->next_reset_at,
+            'last_reset_at' => $user->last_reset_at,
             'reset_count' => $user->reset_count,
         ];
     }

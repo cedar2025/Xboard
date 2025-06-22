@@ -13,6 +13,7 @@ use Laravel\Horizon\Contracts\MetricsRepository;
 use Laravel\Horizon\Contracts\SupervisorRepository;
 use Laravel\Horizon\Contracts\WorkloadRepository;
 use Laravel\Horizon\WaitTimeCalculator;
+use App\Helpers\ResponseEnum;
 
 class SystemController extends Controller
 {
@@ -257,7 +258,7 @@ class SystemController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return $this->error('清除日志失败：' . $e->getMessage());
+            return $this->fail(ResponseEnum::HTTP_ERROR, null, '清除日志失败：' . $e->getMessage());
         }
     }
 
@@ -293,7 +294,7 @@ class SystemController extends Controller
             return $this->success($stats);
 
         } catch (\Exception $e) {
-            return $this->error('获取统计信息失败：' . $e->getMessage());
+            return $this->fail(ResponseEnum::HTTP_ERROR, null, '获取统计信息失败：' . $e->getMessage());
         }
     }
 }

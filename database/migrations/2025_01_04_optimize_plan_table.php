@@ -122,7 +122,7 @@ return new class extends Migration {
             $table->integer('group_id')->change();
             $table->integer('transfer_enable')->change();
             $table->integer('speed_limit')->nullable()->change();
-            $table->boolean('reset_traffic_method')->nullable()->change();
+            $table->integer('reset_traffic_method')->nullable()->change();
             $table->integer('capacity_limit')->nullable()->change();
         });
     }
