@@ -2276,6 +2276,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "exporting": "Exporting...",
         "export_success": "Export successful",
         "export_failed": "Export failed"
+      },
+      "trigger_descriptions": {
+        "manual": "Manually executed traffic reset by administrator",
+        "cron": "Automatically executed by system scheduled task",
+        "auto": "Automatically triggered by system based on conditions",
+        "other": "Triggered by other methods"
       }
     },
     "send_mail": {

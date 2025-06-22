@@ -2225,6 +2225,12 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "exporting": "导出中...",
         "export_success": "导出成功",
         "export_failed": "导出失败"
+      },
+      "trigger_descriptions": {
+        "manual": "管理员手动执行的流量重置",
+        "cron": "系统定时任务自动执行",
+        "auto": "系统根据条件自动触发",
+        "other": "其他方式触发"
       }
     },
     "messages": {
