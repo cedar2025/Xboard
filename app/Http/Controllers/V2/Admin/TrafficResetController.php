@@ -71,7 +71,7 @@ class TrafficResetController extends Controller
     $logs = $query->paginate($perPage);
 
     // 格式化数据
-    $logs->getCollection()->transform(function ($log) {
+    $formattedLogs = $logs->getCollection()->map(function (TrafficResetLog $log) {
       return [
         'id' => $log->id,
         'user_id' => $log->user_id,
@@ -99,7 +99,7 @@ class TrafficResetController extends Controller
     });
 
     return response()->json([
-      'data' => $logs->items(),
+      'data' => $formattedLogs->toArray(),
       'pagination' => [
         'current_page' => $logs->currentPage(),
         'last_page' => $logs->lastPage(),
@@ -198,7 +198,8 @@ class TrafficResetController extends Controller
 
     $history = $this->trafficResetService->getUserResetHistory($user, $limit);
 
-    $data = $history->map(function ($log) {
+    /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\TrafficResetLog> $history */
+    $data = $history->map(function (TrafficResetLog $log) {
       return [
         'id' => $log->id,
         'reset_type' => $log->reset_type,

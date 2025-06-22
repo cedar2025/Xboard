@@ -109,7 +109,6 @@ class TrafficResetService
       Plan::RESET_TRAFFIC_MONTHLY => $this->getNextMonthlyReset($user, $now),
       Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => $this->getNextYearFirstDay($now),
       Plan::RESET_TRAFFIC_YEARLY => $this->getNextYearlyReset($user, $now),
-      Plan::RESET_TRAFFIC_NEVER => null,
       default => null,
     };
   }
@@ -251,6 +250,7 @@ class TrafficResetService
       Plan::RESET_TRAFFIC_MONTHLY => TrafficResetLog::TYPE_MONTHLY,
       Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => TrafficResetLog::TYPE_FIRST_DAY_YEAR,
       Plan::RESET_TRAFFIC_YEARLY => TrafficResetLog::TYPE_YEARLY,
+      Plan::RESET_TRAFFIC_NEVER => TrafficResetLog::TYPE_MANUAL,
       default => TrafficResetLog::TYPE_MANUAL,
     };
   }

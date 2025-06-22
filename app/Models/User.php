@@ -37,8 +37,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $last_login_at 最后登录时间
  * @property int|null $parent_id 父账户ID
  * @property int|null $is_admin 是否管理员
- * @property \Carbon\Carbon|null $next_reset_at 下次流量重置时间
- * @property \Carbon\Carbon|null $last_reset_at 上次流量重置时间
+ * @property int|null $next_reset_at 下次流量重置时间
+ * @property int|null $last_reset_at 上次流量重置时间
  * @property int $reset_count 流量重置次数
  * @property int $created_at
  * @property int $updated_at
@@ -64,7 +64,9 @@ class User extends Authenticatable
     protected $casts = [
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
-        'banned' => 'integer',
+        'banned' => 'boolean',
+        'is_admin' => 'boolean',
+        'is_staff' => 'boolean',
         'remind_expire' => 'boolean',
         'remind_traffic' => 'boolean',
         'commission_auto_check' => 'boolean',

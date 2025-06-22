@@ -135,9 +135,9 @@ class Setting
             
             // 处理JSON格式的值
             foreach ($settings as $key => $value) {
-                if (is_string($value) && $value !== null) {
+                if (is_string($value)) {
                     $decoded = json_decode($value, true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
+                    if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
                         $settings[$key] = $decoded;
                     }
                 }

@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property array|null $group_ids 分组IDs
  * @property array|null $route_ids 路由IDs
  * @property array|null $tags 标签
- * @property string|null $show 是否显示
+ * @property boolean $show 是否显示
  * @property string|null $allow_insecure 是否允许不安全
  * @property string|null $network 网络类型
  * @property int|null $parent_id 父节点ID
@@ -112,6 +112,7 @@ class Server extends Model
         'protocol_settings' => 'array',
         'last_check_at' => 'integer',
         'last_push_at' => 'integer',
+        'show' => 'boolean',
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
