@@ -63,7 +63,18 @@ class LoginService
         // 更新最后登录时间和IP
         $user->last_login_at = time();
         if ($request) {
-            $clientIp = $request->ip();
+            $clientIp = $this->getRealClientIp($request);
+            
+            // Debug logging - remove this after testing
+            \Log::info('IP Debug for user ' . $user->id, [
+                'cf_connecting_ip' => $request->header('CF-Connecting-IP'),
+                'x_real_ip' => $request->header('X-Real-IP'),
+                'x_forwarded_for' => $request->header('X-Forwarded-For'),
+                'laravel_ip' => $request->ip(),
+                'final_ip' => $clientIp,
+                'final_ip_int' => $this->ipToInt($clientIp),
+            ]);
+            
             // Convert IP to integer for storage (handles both IPv4 and IPv6)
             $user->last_login_ip = $this->ipToInt($clientIp);
         }
@@ -114,6 +125,53 @@ class LoginService
         Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
         
         return [true, true];
+    }
+
+    /**
+     * 获取真实客户端IP地址（优先使用Cloudflare头）
+     * 
+     * @param Request $request
+     * @return string
+     */
+    private function getRealClientIp(Request $request): string
+    {
+        // 1. 优先使用Cloudflare的CF-Connecting-IP头
+        if ($request->hasHeader('CF-Connecting-IP')) {
+            $cfIp = $request->header('CF-Connecting-IP');
+            if ($this->isValidPublicIp($cfIp)) {
+                return $cfIp;
+            }
+        }
+        
+        // 2. 尝试X-Real-IP头
+        if ($request->hasHeader('X-Real-IP')) {
+            $realIp = $request->header('X-Real-IP');
+            if ($this->isValidPublicIp($realIp)) {
+                return $realIp;
+            }
+        }
+        
+        // 3. 尝试X-Forwarded-For头（取第一个公网IP）
+        if ($request->hasHeader('X-Forwarded-For')) {
+            $forwardedFor = $request->header('X-Forwarded-For');
+            $ips = array_map('trim', explode(',', $forwardedFor));
+            foreach ($ips as $ip) {
+                if ($this->isValidPublicIp($ip)) {
+                    return $ip;
+                }
+            }
+        }
+        
+        // 4. 最后使用Laravel的ip()方法作为备选
+        return $request->ip();
+    }
+
+    /**
+     * 验证是否为有效的公网IP地址
+     */
+    private function isValidPublicIp(string $ip): bool
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
     }
 
     /**

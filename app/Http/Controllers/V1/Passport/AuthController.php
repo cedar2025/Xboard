@@ -178,23 +178,4 @@ class AuthController extends Controller
         }
         return $this->success(true);
     }
-
-    /**
-     * 将IP地址转换为整数存储
-     * 
-     * @param string $ip IP地址
-     * @return int 转换后的整数值
-     */
-    private function ipToInt(string $ip): int
-    {
-        // 处理IPv4地址
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            $long = ip2long($ip);
-            // 处理负数情况（32位系统）
-            return $long < 0 ? $long + 4294967296 : $long;
-        }
-        
-        // 对于IPv6或其他情况，使用CRC32哈希作为备选方案
-        return abs(crc32($ip));
-    }
 }
