@@ -35,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $device_limit 设备限制数量
  * @property int|null $discount 折扣
  * @property int|null $last_login_at 最后登录时间
- * @property int|null $last_login_ip 最后登录IP
+ * @property string|null $last_login_ip 最后登录IP
  * @property int|null $parent_id 父账户ID
  * @property int|null $is_admin 是否管理员
  * @property int $created_at
@@ -136,19 +136,8 @@ class User extends Authenticatable
      */
     public function getLastLoginIpReadableAttribute(): ?string
     {
-        if (!$this->last_login_ip) {
-            return null;
-        }
-
-        // 尝试将整数转换回IPv4地址
-        $ip = long2ip($this->last_login_ip);
-        
-        // 如果转换失败（比如是IPv6的哈希值），则显示原始数值
-        if ($ip === false) {
-            return "Hash: " . $this->last_login_ip;
-        }
-        
-        return $ip;
+        // 最后登录IP现在直接存储为字符串，无需转换
+        return $this->last_login_ip;
     }
 
     /**
@@ -158,6 +147,6 @@ class User extends Authenticatable
      */
     public function getLastLoginIpString(): ?string
     {
-        return $this->getLastLoginIpReadableAttribute();
+        return $this->last_login_ip;
     }
 }

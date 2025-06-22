@@ -63,6 +63,7 @@ class LoginService
         // 更新最后登录时间和IP
         $user->last_login_at = time();
         if ($request) {
+            // 获取真实客户端IP并直接存储为字符串
             $clientIp = $this->getRealClientIp($request);
             
             // Debug logging - remove this after testing
@@ -72,11 +73,10 @@ class LoginService
                 'x_forwarded_for' => $request->header('X-Forwarded-For'),
                 'laravel_ip' => $request->ip(),
                 'final_ip' => $clientIp,
-                'final_ip_int' => $this->ipToInt($clientIp),
             ]);
             
-            // Convert IP to integer for storage (handles both IPv4 and IPv6)
-            $user->last_login_ip = $this->ipToInt($clientIp);
+            // 直接存储IP字符串，支持IPv4和IPv6
+            $user->last_login_ip = $clientIp;
         }
         $user->save();
 
@@ -172,24 +172,5 @@ class LoginService
     private function isValidPublicIp(string $ip): bool
     {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
-    }
-
-    /**
-     * 将IP地址转换为整数存储
-     * 
-     * @param string $ip IP地址
-     * @return int 转换后的整数值
-     */
-    private function ipToInt(string $ip): int
-    {
-        // 处理IPv4地址
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            $long = ip2long($ip);
-            // 处理负数情况（32位系统）
-            return $long < 0 ? $long + 4294967296 : $long;
-        }
-        
-        // 对于IPv6或其他情况，使用CRC32哈希作为备选方案
-        return abs(crc32($ip));
     }
 } 
