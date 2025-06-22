@@ -39,13 +39,20 @@ class Surge extends AbstractProtocol
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
+                    'chacha20-ietf-poly1305',
+                    '2022-blake3-aes-128-gcm',
+                    '2022-blake3-aes-256-gcm',
+                    '2022-blake3-chacha20-poly1305'
                 ])
             ) {
                 $proxies .= self::buildShadowsocks($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
             if ($item['type'] === 'vmess') {
+                $proxies .= self::buildVmess($user['uuid'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === 'vless') {
                 $proxies .= self::buildVmess($user['uuid'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
@@ -60,9 +67,9 @@ class Surge extends AbstractProtocol
         }
 
 
-        $config = admin_setting('subscribe_template_surge', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
             ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -83,7 +90,6 @@ class Surge extends AbstractProtocol
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
-            ->header('content-type', 'application/octet-stream')
             ->header('content-disposition', "attachment;filename*=UTF-8''" . rawurlencode($appName) . ".conf");
     }
 
@@ -171,6 +177,55 @@ class Surge extends AbstractProtocol
         return $uri;
     }
 
+    public static function buildVless($uuid, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $config = [
+            "{$server['name']}",
+            "{$server['type']}=vless",
+            "{$server['host']}",
+            "{$server['port']}",
+            "username={$uuid}",
+            'tls=false',
+            'udp-relay=true'
+        ];
+
+        if (data_get($protocol_settings, 'tls') == 1) {
+            array_push($config, 'tls=true');
+            if (data_get($protocol_settings, 'tls_settings')) {
+                $tlsSettings = data_get($protocol_settings, 'tls_settings');
+                if (data_get($tlsSettings, 'allow_insecure')) {
+                    array_push($config, 'skip-cert-verify=' . ($tlsSettings['allow_insecure'] ? 'true' : 'false'));
+                }
+                if (data_get($tlsSettings, 'server_name')) {
+                    array_push($config, "servername={$tlsSettings['server_name']}");
+                }
+            }
+        } elseif (data_get($protocol_settings, 'tls') == 2) {
+            array_push($config, 'tls=true');
+            if (data_get($protocol_settings, 'reality_settings')) {
+                $realitySettings = data_get($protocol_settings, 'reality_settings');
+                if (data_get($realitySettings, 'allow_insecure')) {
+                    array_push($config, 'skip-cert-verify=' . ($realitySettings['allow_insecure'] ? 'true' : 'false'));
+                }
+                if (data_get($realitySettings, 'server_name')) {
+                    array_push($config, "servername={$realitySettings['server_name']}");
+                }
+                if (data_get($realitySettings, 'public_key')) {
+                    array_push($config, "reality-public-key={$realitySettings['public_key']}");
+                }
+                if (data_get($realitySettings, 'short_id')) {
+                    array_push($config, "reality-short-id={$realitySettings['short_id']}");
+                }
+                array_push($config, "client-fingerprint=" . Helper::getRandFingerprint());
+            }
+        }
+
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
     public static function buildTrojan($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
@@ -203,16 +258,11 @@ class Surge extends AbstractProtocol
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
+            "download-bandwidth={$protocol_settings['bandwidth']['up']}",
             $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
             // 'tfo=true', 
             'udp-relay=true'
         ];
-        if (data_get($protocol_settings, 'bandwidth.up')) {
-            $config[] = "upload-bandwidth={$protocol_settings['bandwidth']['up']}";
-        }
-        if (data_get($protocol_settings, 'bandwidth.down')) {
-            $config[] = "download-bandwidth={$protocol_settings['bandwidth']['down']}";
-        }
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
