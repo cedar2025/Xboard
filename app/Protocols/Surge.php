@@ -60,9 +60,9 @@ class Surge extends AbstractProtocol
         }
 
 
-        $config = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        $config = admin_setting('subscribe_template_surge', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
             ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE));
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -83,6 +83,7 @@ class Surge extends AbstractProtocol
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
+            ->header('content-type', 'application/octet-stream')
             ->header('content-disposition', "attachment;filename*=UTF-8''" . rawurlencode($appName) . ".conf");
     }
 
@@ -202,11 +203,16 @@ class Surge extends AbstractProtocol
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            "download-bandwidth={$protocol_settings['bandwidth']['up']}",
             $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
             // 'tfo=true', 
             'udp-relay=true'
         ];
+        if (data_get($protocol_settings, 'bandwidth.up')) {
+            $config[] = "upload-bandwidth={$protocol_settings['bandwidth']['up']}";
+        }
+        if (data_get($protocol_settings, 'bandwidth.down')) {
+            $config[] = "download-bandwidth={$protocol_settings['bandwidth']['down']}";
+        }
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }

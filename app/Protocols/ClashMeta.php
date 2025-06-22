@@ -65,13 +65,13 @@ class ClashMeta extends AbstractProtocol
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        $template = File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+        $template = admin_setting('subscribe_template_clashmeta', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
             ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
             : (
                 File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
                 ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
                 : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
-            );
+            ));
 
         $config = Yaml::parse($template);
         $proxy = [];

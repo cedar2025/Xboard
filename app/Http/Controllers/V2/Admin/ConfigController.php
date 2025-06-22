@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ConfigSave;
 use App\Protocols\Clash;
 use App\Protocols\ClashMeta;
-use App\Protocols\Loon;
 use App\Protocols\SingBox;
 use App\Protocols\Stash;
 use App\Protocols\Surfboard;
@@ -17,7 +16,6 @@ use App\Services\ThemeService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 
 class ConfigController extends Controller
 {
@@ -84,22 +82,29 @@ class ConfigController extends Controller
         return $this->success(true);
     }
 
-    /**
-     * 获取自定义规则文件路径，如果不存在则返回默认文件路径
-     * 
-     * @param string $customFile 自定义规则文件路径
-     * @param string $defaultFile 默认文件名
-     * @return string 文件名
-     */
-    private function getRuleFile(string $customFile, string $defaultFile): string
-    {
-        return File::exists(base_path($customFile)) ? $customFile : $defaultFile;
-    }
-
     public function fetch(Request $request)
     {
         $key = $request->input('key');
-        $data = [
+        
+        // 构建配置数据映射
+        $configMappings = $this->getConfigMappings();
+        
+        // 如果请求特定分组，直接返回
+        if ($key && isset($configMappings[$key])) {
+            return $this->success([$key => $configMappings[$key]]);
+        }
+        
+        return $this->success($configMappings);
+    }
+
+    /**
+     * 获取配置映射数据
+     * 
+     * @return array 配置映射数组
+     */
+    private function getConfigMappings(): array
+    {
+        return [
             'invite' => [
                 'invite_force' => (bool) admin_setting('invite_force', 0),
                 'invite_commission' => admin_setting('invite_commission', 10),
@@ -141,7 +146,6 @@ class ConfigController extends Controller
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),
                 'subscribe_path' => admin_setting('subscribe_path', 's'),
-
             ],
             'frontend' => [
                 'frontend_theme' => admin_setting('frontend_theme', 'Xboard'),
@@ -197,69 +201,22 @@ class ConfigController extends Controller
                 'password_limit_expire' => admin_setting('password_limit_expire', 60)
             ],
             'subscribe_template' => [
-                'subscribe_template_singbox' => (function () {
-                    $content = $this->getTemplateContent(
-                        $this->getRuleFile(SingBox::CUSTOM_TEMPLATE_FILE, SingBox::DEFAULT_TEMPLATE_FILE));
-                    return json_encode(json_decode($content), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                })(),
-                'subscribe_template_clash' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(Clash::CUSTOM_TEMPLATE_FILE, Clash::DEFAULT_TEMPLATE_FILE)
+                'subscribe_template_singbox' => $this->formatTemplateContent(
+                    admin_setting('subscribe_template_singbox', $this->getDefaultTemplate('singbox')),
+                    'json'
                 ),
-                'subscribe_template_clashmeta' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(
-                        ClashMeta::CUSTOM_TEMPLATE_FILE,
-                        $this->getRuleFile(ClashMeta::CUSTOM_CLASH_TEMPLATE_FILE, ClashMeta::DEFAULT_TEMPLATE_FILE)
-                    )
-                ),
-                'subscribe_template_stash' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(
-                        Stash::CUSTOM_TEMPLATE_FILE,
-                        $this->getRuleFile(Stash::CUSTOM_CLASH_TEMPLATE_FILE, Stash::DEFAULT_TEMPLATE_FILE)
-                    )
-                ),
-                'subscribe_template_surge' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(Surge::CUSTOM_TEMPLATE_FILE, Surge::DEFAULT_TEMPLATE_FILE)
-                ),
-                'subscribe_template_surfboard' => (string) $this->getTemplateContent(
-                    $this->getRuleFile(Surfboard::CUSTOM_TEMPLATE_FILE, Surfboard::DEFAULT_TEMPLATE_FILE)
-                )
+                'subscribe_template_clash' => admin_setting('subscribe_template_clash', $this->getDefaultTemplate('clash')),
+                'subscribe_template_clashmeta' => admin_setting('subscribe_template_clashmeta', $this->getDefaultTemplate('clashmeta')),
+                'subscribe_template_stash' => admin_setting('subscribe_template_stash', $this->getDefaultTemplate('stash')),
+                'subscribe_template_surge' => admin_setting('subscribe_template_surge', $this->getDefaultTemplate('surge')),
+                'subscribe_template_surfboard' => admin_setting('subscribe_template_surfboard', $this->getDefaultTemplate('surfboard'))
             ]
         ];
-        if ($key && isset($data[$key])) {
-            return $this->success([
-                $key => $data[$key]
-            ]);
-        }
-        ;
-        // TODO: default should be in Dict
-        return $this->success($data);
     }
 
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
-
-        // 处理特殊的模板设置字段，将其保存为文件
-        $templateFields = [
-            'subscribe_template_clash' => Clash::CUSTOM_TEMPLATE_FILE,
-            'subscribe_template_clashmeta' => ClashMeta::CUSTOM_TEMPLATE_FILE,
-            'subscribe_template_stash' => Stash::CUSTOM_TEMPLATE_FILE,
-            'subscribe_template_surge' => Surge::CUSTOM_TEMPLATE_FILE,
-            'subscribe_template_singbox' => SingBox::CUSTOM_TEMPLATE_FILE,
-            'subscribe_template_surfboard' => Surfboard::CUSTOM_TEMPLATE_FILE,
-        ];
-
-        foreach ($templateFields as $field => $filename) {
-            if (isset($data[$field])) {
-                $content = $data[$field];
-                // 对于JSON格式的内容，确保格式化正确
-                if ($field === 'subscribe_template_singbox' && is_array($content)) {
-                    $content = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                }
-                $this->saveTemplateContent($filename, $content);
-                unset($data[$field]); // 从数据库保存列表中移除
-            }
-        }
 
         foreach ($data as $k => $v) {
             if ($k == 'frontend_theme') {
@@ -268,29 +225,86 @@ class ConfigController extends Controller
             }
             admin_setting([$k => $v]);
         }
-        // \Artisan::call('horizon:terminate'); //重启队列使配置生效
+        
         return $this->success(true);
     }
 
     /**
-     * 保存规则模板内容到文件
+     * 格式化模板内容
      * 
-     * @param string $filepath 文件名
-     * @param string $content 文件内容
-     * @return bool 是否保存成功
+     * @param mixed $content 模板内容
+     * @param string $format 输出格式 (json|string)
+     * @return string 格式化后的内容
      */
-    private function saveTemplateContent(string $filepath, string $content): bool
+    private function formatTemplateContent(mixed $content, string $format = 'string'): string
     {
-        $path = base_path($filepath);
-        try {
-            File::put($path, $content);
-            return true;
-        } catch (\Exception $e) {
-            Log::error('保存规则模板失败', [
-                'filepath' => $path,
-                'error' => $e->getMessage()
-            ]);
-            return false;
+        return match ($format) {
+            'json' => match (true) {
+                is_array($content) => json_encode(
+                    value: $content, 
+                    flags: JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+                
+                is_string($content) && str($content)->isJson() => rescue(
+                    callback: fn() => json_encode(
+                        value: json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR), 
+                        flags: JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                    ),
+                    rescue: $content,
+                    report: false
+                ),
+                
+                default => str($content)->toString()
+            },
+            
+            default => str($content)->toString()
+        };
+    }
+
+    /**
+     * 获取默认模板内容
+     * 
+     * @param string $type 模板类型
+     * @return string 默认模板内容
+     */
+    private function getDefaultTemplate(string $type): string
+    {
+        $fileMap = [
+            'singbox' => [SingBox::CUSTOM_TEMPLATE_FILE, SingBox::DEFAULT_TEMPLATE_FILE],
+            'clash' => [Clash::CUSTOM_TEMPLATE_FILE, Clash::DEFAULT_TEMPLATE_FILE],
+            'clashmeta' => [
+                ClashMeta::CUSTOM_TEMPLATE_FILE,
+                ClashMeta::CUSTOM_CLASH_TEMPLATE_FILE,
+                ClashMeta::DEFAULT_TEMPLATE_FILE
+            ],
+            'stash' => [
+                Stash::CUSTOM_TEMPLATE_FILE,
+                Stash::CUSTOM_CLASH_TEMPLATE_FILE,
+                Stash::DEFAULT_TEMPLATE_FILE
+            ],
+            'surge' => [Surge::CUSTOM_TEMPLATE_FILE, Surge::DEFAULT_TEMPLATE_FILE],
+            'surfboard' => [Surfboard::CUSTOM_TEMPLATE_FILE, Surfboard::DEFAULT_TEMPLATE_FILE],
+        ];
+
+        if (!isset($fileMap[$type])) {
+            return '';
         }
+
+        // 按优先级查找可用的模板文件
+        foreach ($fileMap[$type] as $file) {
+            $content = $this->getTemplateContent($file);
+            if (!empty($content)) {
+                // 对于 SingBox，需要格式化 JSON
+                if ($type === 'singbox') {
+                    $decoded = json_decode($content, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    }
+                }
+                return $content;
+            }
+        }
+
+        return '';
     }
 }

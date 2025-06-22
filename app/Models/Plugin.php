@@ -11,6 +11,10 @@ class Plugin extends Model
     protected $guarded = [
         'id',
         'created_at',
-        'updated_at'
+        'updated_at',
+    ];
+
+    protected $casts = [
+        'is_enabled' => 'boolean'
     ];
 }

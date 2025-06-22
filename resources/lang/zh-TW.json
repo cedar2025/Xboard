@@ -51,6 +51,7 @@
     "Invalid coupon": "優惠券無效",
     "Invalid code is incorrect": "驗證碼有誤",
     "Email suffix is not in the Whitelist": "郵箱後綴不處於白名單中",
+    "Email suffix is not in whitelist": "郵箱後綴不在白名單中",
     "Gmail alias is not supported": "不支持 Gmail 別名郵箱",
     "Registration has closed": "本站已關閉註冊",
     "You must use the invitation code to register": "必須使用邀請碼才可以註冊",
@@ -129,5 +130,19 @@
     "update.code_update_failed": "代碼更新失敗: :error",
     "update.migration_failed": "數據庫遷移失敗: :error",
     "update.cache_clear_failed": "緩存清理失敗: :error",
-    "update.flag_create_failed": "創建更新標記失敗: :error"
+    "update.flag_create_failed": "創建更新標記失敗: :error",
+    "traffic_reset.reset_type.monthly": "按月重置",
+    "traffic_reset.reset_type.first_day_month": "每月1號重置",
+    "traffic_reset.reset_type.yearly": "按年重置",
+    "traffic_reset.reset_type.first_day_year": "每年1月1日重置",
+    "traffic_reset.reset_type.manual": "手動重置",
+    "traffic_reset.reset_type.purchase": "購買重置包",
+    "traffic_reset.source.auto": "自動觸發",
+    "traffic_reset.source.manual": "手動觸發",
+    "traffic_reset.source.api": "API調用",
+    "traffic_reset.source.cron": "定時任務",
+    "traffic_reset.source.user_access": "用戶訪問",
+    "traffic_reset.reset_success": "流量重置成功",
+    "traffic_reset.reset_failed": "流量重置失敗，請查看日誌獲取詳細信息",
+    "traffic_reset.user_cannot_reset": "該用戶當前不能重置流量（用戶未激活或無有效套餐）"
 }
