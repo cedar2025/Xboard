@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property array|null $prices 价格配置
  * @property int $sort 排序
  * @property string|null $content 套餐描述
- * @property int $reset_traffic_method 流量重置方式
+ * @property int|null $reset_traffic_method 流量重置方式
  * @property int|null $capacity_limit 订阅人数限制
  * @property int|null $device_limit 设备数量限制
  * @property int $created_at

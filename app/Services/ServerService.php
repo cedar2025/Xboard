@@ -87,13 +87,6 @@ class ServerService
     public static function getRoutes(array $routeIds)
     {
         $routes = ServerRoute::select(['id', 'match', 'action', 'action_value'])->whereIn('id', $routeIds)->get();
-        // TODO: remove on 1.8.0
-        foreach ($routes as $k => $route) {
-            $array = json_decode($route->match, true);
-            if (is_array($array))
-                $routes[$k]['match'] = $array;
-        }
-        // TODO: remove on 1.8.0
         return $routes;
     }
 

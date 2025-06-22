@@ -4,32 +4,33 @@ namespace App\Console\Commands;
 
 use App\Services\TrafficResetService;
 use App\Utils\Helper;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ResetTraffic extends Command
 {
-    /**
+  /**
    * The name and signature of the console command.
-     */
+   */
   protected $signature = 'reset:traffic {--batch-size=100 : 分批处理的批次大小} {--dry-run : 预演模式，不实际执行重置} {--max-time=300 : 最大执行时间（秒）}';
 
-    /**
+  /**
    * The console command description.
-     */
+   */
   protected $description = '流量重置 - 分批处理所有需要重置的用户';
 
-    /**
+  /**
    * 流量重置服务
-     */
+   */
   private TrafficResetService $trafficResetService;
 
   /**
    * Create a new command instance.
    */
   public function __construct(TrafficResetService $trafficResetService)
-    {
-        parent::__construct();
+  {
+    parent::__construct();
     $this->trafficResetService = $trafficResetService;
   }
 
@@ -177,7 +178,7 @@ class ResetTraffic extends Command
           'ID' => $user->id,
           '邮箱' => substr($user->email, 0, 20) . (strlen($user->email) > 20 ? '...' : ''),
           '套餐' => $user->plan->name ?? 'N/A',
-          '下次重置' => $user->next_reset_at->format('m-d H:i'),
+          '下次重置' => Carbon::createFromTimestamp($user->next_reset_at)->format('Y-m-d H:i:s'),
           '当前流量' => Helper::trafficConvert(($user->u ?? 0) + ($user->d ?? 0)),
           '重置次数' => $user->reset_count,
         ];

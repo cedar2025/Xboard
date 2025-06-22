@@ -52,7 +52,7 @@ class SendRemindMail extends Command
         }
 
         $startTime = microtime(true);
-        $progressBar = $this->output->createProgressBar(ceil($totalUsers / $chunkSize));
+        $progressBar = $this->output->createProgressBar((int) ceil($totalUsers / $chunkSize));
         $progressBar->start();
 
         $statistics = $mailService->processUsersInChunks($chunkSize, function () use ($progressBar) {

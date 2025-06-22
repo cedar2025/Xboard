@@ -53,10 +53,10 @@ class UserObserver
       $nextResetTime = $this->trafficResetService->calculateNextResetTime($user);
 
       if ($nextResetTime) {
-        $user->next_reset_at = $nextResetTime->timestamp;
+        $user->setAttribute('next_reset_at', $nextResetTime->timestamp);
       } else {
         // 如果计算结果为空，清除重置时间
-        $user->next_reset_at = null;
+        $user->setAttribute('next_reset_at', null);
       }
 
     } catch (\Exception $e) {
