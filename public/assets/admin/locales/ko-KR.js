@@ -2245,6 +2245,12 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "exporting": "내보내는 중...",
         "export_success": "내보내기 성공",
         "export_failed": "내보내기 실패"
+      },
+      "trigger_descriptions": {
+        "manual": "관리자가 수동으로 실행한 트래픽 재설정",
+        "cron": "시스템 예약 작업에 의한 자동 실행",
+        "auto": "시스템이 조건에 따라 자동 트리거",
+        "other": "기타 방법으로 트리거"
       }
     },
     "send_mail": {
