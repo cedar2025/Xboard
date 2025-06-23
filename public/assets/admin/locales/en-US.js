@@ -1092,7 +1092,25 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
         "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
         "reset": "Reset Filters"
-      }
+      },
+      "clearLogs": "Clear Logs",
+      "clearDays": "Clear Days",
+      "clearDaysDesc": "Clear logs older than how many days (0-365 days, 0 means today)",
+      "clearLevel": "Log Level",
+      "clearLimit": "Batch Limit",
+      "clearLimitDesc": "Batch clear quantity limit (100-10000 records)",
+      "clearPreview": "Clear Preview",
+      "getStats": "Get Statistics",
+      "cutoffDate": "Cutoff Date",
+      "willClear": "Will Clear",
+      "logsUnit": " logs",
+      "clearWarning": "This operation cannot be undone, please proceed with caution!",
+      "clearing": "Clearing...",
+      "confirmClear": "Confirm Clear",
+      "clearSuccess": "Clear completed! {{count}} logs cleared",
+      "clearFailed": "Clear failed",
+      "getStatsFailed": "Failed to get clear statistics",
+      "clearLogsFailed": "Failed to clear logs"
     },
     "common": {
       "refresh": "Refresh",
@@ -1354,6 +1372,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "error": {
         "saveFailed": "Failed to save coupon"
+      },
+      "timeRange": {
+        "quickSet": "Quick Set",
+        "presets": {
+          "1week": "1 Week",
+          "2weeks": "2 Weeks",
+          "1month": "1 Month",
+          "3months": "3 Months",
+          "6months": "6 Months",
+          "1year": "1 Year"
+        }
       }
     },
     "period": {

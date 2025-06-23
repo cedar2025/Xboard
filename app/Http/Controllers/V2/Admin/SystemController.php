@@ -185,7 +185,7 @@ class SystemController extends Controller
     public function clearSystemLog(Request $request)
     {
         $request->validate([
-            'days' => 'integer|min:1|max:365',
+            'days' => 'integer|min:0|max:365',
             'level' => 'string|in:info,warning,error,all',
             'limit' => 'integer|min:100|max:10000'
         ], [
