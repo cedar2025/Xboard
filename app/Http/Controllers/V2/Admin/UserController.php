@@ -420,7 +420,7 @@ class UserController extends Controller
                     $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
                     $createDate = date('Y-m-d H:i:s', $user['created_at']);
                     $password = $request->input('password') ?? $user['email'];
-                    $subscribeUrl = Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']);
+                    $subscribeUrl = Helper::getSubscribeUrl($user['token']);
                     fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
                 }
                 fclose($handle);
@@ -436,7 +436,7 @@ class UserController extends Controller
                 'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
                 'uuid' => $user['uuid'],
                 'created_at' => date('Y-m-d H:i:s', $user['created_at']),
-                'subscribe_url' => Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']),
+                'subscribe_url' => Helper::getSubscribeUrl($user['token']),
             ];
         });
         return response()->json([
