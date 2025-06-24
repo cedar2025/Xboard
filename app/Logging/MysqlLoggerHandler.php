@@ -22,7 +22,15 @@ class MysqlLoggerHandler extends AbstractProcessingHandler
                 $record['context']['exception'] = (array)$record['context']['exception'];
             }
             
-            $record['request_data'] = request()->all();
+            // Filter out sensitive fields from request data
+            $requestData = request()->all();
+            $sensitiveFields = ['password', 'password_confirmation', 'current_password', 'new_password', 'auth_data', 'token'];
+            foreach ($sensitiveFields as $field) {
+                if (isset($requestData[$field])) {
+                    $requestData[$field] = '[FILTERED]';
+                }
+            }
+            $record['request_data'] = $requestData;
             
             $log = [
                 'title' => $record['message'],

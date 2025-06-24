@@ -66,15 +66,6 @@ class LoginService
             // 获取真实客户端IP并直接存储为字符串
             $clientIp = $this->getRealClientIp($request);
             
-            // Debug logging - remove this after testing
-            \Log::info('IP Debug for user ' . $user->id, [
-                'cf_connecting_ip' => $request->header('CF-Connecting-IP'),
-                'x_real_ip' => $request->header('X-Real-IP'),
-                'x_forwarded_for' => $request->header('X-Forwarded-For'),
-                'laravel_ip' => $request->ip(),
-                'final_ip' => $clientIp,
-            ]);
-            
             // 直接存储IP字符串，支持IPv4和IPv6
             $user->last_login_ip = $clientIp;
         }
