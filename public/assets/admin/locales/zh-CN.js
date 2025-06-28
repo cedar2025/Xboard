@@ -336,20 +336,60 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "description": "输入允许的邮箱后缀，每行一个"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "启用reCAPTCHA",
-            "description": "开启后用户注册时需要通过reCAPTCHA验证。"
+            "label": "启用验证码",
+            "description": "开启后用户注册时需要通过验证码验证。"
           },
-          "key": {
-            "label": "reCAPTCHA密钥",
-            "placeholder": "输入reCAPTCHA密钥",
-            "description": "输入您的reCAPTCHA密钥"
+          "type": {
+            "label": "验证码类型",
+            "description": "选择要使用的验证码服务类型",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "recaptcha-v3": "Google reCAPTCHA v3",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA站点密钥",
-            "placeholder": "输入reCAPTCHA站点密钥",
-            "description": "输入您的reCAPTCHA站点密钥"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA密钥",
+              "placeholder": "输入reCAPTCHA密钥",
+              "description": "输入您的reCAPTCHA密钥"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA站点密钥",
+              "placeholder": "输入reCAPTCHA站点密钥",
+              "description": "输入您的reCAPTCHA站点密钥"
+            }
+          },
+          "recaptcha_v3": {
+            "secretKey": {
+              "label": "reCAPTCHA v3密钥",
+              "placeholder": "输入reCAPTCHA v3密钥",
+              "description": "输入您的reCAPTCHA v3服务器密钥"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA v3站点密钥",
+              "placeholder": "输入reCAPTCHA v3站点密钥",
+              "description": "输入您的reCAPTCHA v3站点密钥"
+            },
+            "scoreThreshold": {
+              "label": "分数阈值",
+              "placeholder": "0.5",
+              "description": "设置验证分数阈值（0-1），分数越高表示越可能是真人操作"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile密钥",
+              "placeholder": "输入Turnstile密钥",
+              "description": "输入您的Cloudflare Turnstile密钥"
+            },
+            "siteKey": {
+              "label": "Turnstile站点密钥",
+              "placeholder": "输入Turnstile站点密钥",
+              "description": "输入您的Cloudflare Turnstile站点密钥"
+            }
           }
         },
         "registerLimit": {

@@ -82,9 +82,16 @@ class ConfigSave extends FormRequest
         'email_whitelist_enable' => 'boolean',
         'email_whitelist_suffix' => 'nullable|array',
         'email_gmail_limit_enable' => 'boolean',
+        'captcha_enable' => 'boolean',
+        'captcha_type' => 'in:recaptcha,turnstile,recaptcha-v3',
         'recaptcha_enable' => 'boolean',
         'recaptcha_key' => '',
         'recaptcha_site_key' => '',
+        'recaptcha_v3_secret_key' => '',
+        'recaptcha_v3_site_key' => '',
+        'recaptcha_v3_score_threshold' => 'numeric|min:0|max:1',
+        'turnstile_secret_key' => '',
+        'turnstile_site_key' => '',
         'email_verify' => 'bool',
         'safe_mode_enable' => 'boolean',
         'register_limit_by_ip_enable' => 'boolean',
@@ -124,7 +131,11 @@ class ConfigSave extends FormRequest
             'telegram_discuss_link.url' => 'Telegram群组地址必须为URL格式，必须携带http(s)://',
             'logo.url' => 'LOGO URL格式不正确，必须携带https(s)://',
             'secure_path.min' => '后台路径长度最小为8位',
-            'secure_path.regex' => '后台路径只能为字母或数字'
+            'secure_path.regex' => '后台路径只能为字母或数字',
+            'captcha_type.in' => '人机验证类型只能选择 recaptcha、turnstile 或 recaptcha-v3',
+            'recaptcha_v3_score_threshold.numeric' => 'reCAPTCHA v3 分数阈值必须为数字',
+            'recaptcha_v3_score_threshold.min' => 'reCAPTCHA v3 分数阈值不能小于0',
+            'recaptcha_v3_score_threshold.max' => 'reCAPTCHA v3 分数阈值不能大于1'
         ];
     }
 }
