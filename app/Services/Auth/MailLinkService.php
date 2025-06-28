@@ -19,7 +19,7 @@ class MailLinkService
      */
     public function handleMailLink(string $email, ?string $redirect = null): array
     {
-        if (!(int)admin_setting('login_with_mail_link_enable')) {
+        if (!(int) admin_setting('login_with_mail_link_enable')) {
             return [false, [404, null]];
         }
 
@@ -73,28 +73,6 @@ class MailLinkService
     }
 
     /**
-     * 获取快速登录URL
-     * 
-     * @param User $user 用户对象
-     * @param string|null $redirect 重定向地址
-     * @return string 登录URL
-     */
-    public function getQuickLoginUrl(User $user, ?string $redirect = null): string
-    {
-        $code = Helper::guid();
-        $key = CacheKey::get('TEMP_TOKEN', $code);
-        Cache::put($key, $user->id, 60);
-        
-        $redirectUrl = '/#/login?verify=' . $code . '&redirect=' . ($redirect ? $redirect : 'dashboard');
-        
-        if (admin_setting('app_url')) {
-            return admin_setting('app_url') . $redirectUrl;
-        } else {
-            return url($redirectUrl);
-        }
-    }
-
-    /**
      * 处理Token登录
      * 
      * @param string $token 登录令牌
@@ -104,19 +82,19 @@ class MailLinkService
     {
         $key = CacheKey::get('TEMP_TOKEN', $token);
         $userId = Cache::get($key);
-        
+
         if (!$userId) {
             return null;
         }
-        
+
         $user = User::find($userId);
-        
+
         if (!$user || $user->banned) {
             return null;
         }
-        
+
         Cache::forget($key);
-        
+
         return $userId;
     }
-} 
+}
