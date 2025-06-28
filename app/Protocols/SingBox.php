@@ -125,10 +125,30 @@ class SingBox extends AbstractProtocol
                 $proxies[] = $httpConfig;
             }
         }
+
         foreach ($outbounds as &$outbound) {
-            if (in_array($outbound['type'], ['urltest', 'selector'])) {
-                array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
+            if (!in_array($outbound['type'], ['urltest', 'selector'])) {
+                continue;
             }
+            if (!is_array($outbound['outbounds']))
+                $outbound['outbounds'] = [];
+            $isFilter = false;
+            foreach ($outbound['outbounds'] as $src) {
+                foreach ($proxies as $dst) {
+                    if (!$this->isRegex($src))
+                        continue;
+                    $isFilter = true;
+                    $outbound['outbounds'] = array_values(array_diff($outbound['outbounds'], [$src]));
+                    if ($this->isMatch($src, $dst['tag'])) {
+                        array_push($outbound['outbounds'], $dst['tag']);
+                    }
+                }
+                if ($isFilter)
+                    continue;
+            }
+            if ($isFilter)
+                continue;
+            $outbound['outbounds'] = array_merge($outbound['outbounds'], array_column($proxies, 'tag'));
         }
 
         $outbounds = array_merge($outbounds, $proxies);
@@ -492,5 +512,26 @@ class SingBox extends AbstractProtocol
         }
 
         return $array;
+    }
+
+    private function isMatch($exp, $str)
+    {
+        try {
+            return preg_match($exp, $str) === 1;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    private function isRegex($exp)
+    {
+        if (empty($exp)) {
+            return false;
+        }
+        try {
+            return preg_match($exp, '') !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }
