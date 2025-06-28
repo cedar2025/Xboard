@@ -7,23 +7,22 @@ use App\Http\Requests\Passport\CommSendEmailVerify;
 use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
 use App\Models\User;
+use App\Services\CaptchaService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use ReCaptcha\ReCaptcha;
 
 class CommController extends Controller
 {
 
     public function sendEmailVerify(CommSendEmailVerify $request)
     {
-        if ((int) admin_setting('recaptcha_enable', 0)) {
-            $recaptcha = new ReCaptcha(admin_setting('recaptcha_key'));
-            $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
-            if (!$recaptchaResp->isSuccess()) {
-                return $this->fail([400, __('Invalid code is incorrect')]);
-            }
+                // 验证人机验证码
+        $captchaService = app(CaptchaService::class);
+        [$captchaValid, $captchaError] = $captchaService->verify($request);
+        if (!$captchaValid) {
+            return $this->fail($captchaError);
         }
 
         $email = $request->input('email');

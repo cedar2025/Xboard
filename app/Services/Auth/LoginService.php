@@ -19,12 +19,18 @@ class LoginService
     public function login(string $email, string $password): array
     {
         // 检查密码错误限制
-        if ((int)admin_setting('password_limit_enable', true)) {
-            $passwordErrorCount = (int)Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
-            if ($passwordErrorCount >= (int)admin_setting('password_limit_count', 5)) {
-                return [false, [429, __('There are too many password errors, please try again after :minute minutes.', [
-                    'minute' => admin_setting('password_limit_expire', 60)
-                ])]];
+        if ((int) admin_setting('password_limit_enable', true)) {
+            $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
+            if ($passwordErrorCount >= (int) admin_setting('password_limit_count', 5)) {
+                return [
+                    false,
+                    [
+                        429,
+                        __('There are too many password errors, please try again after :minute minutes.', [
+                            'minute' => admin_setting('password_limit_expire', 60)
+                        ])
+                    ]
+                ];
             }
         }
 
@@ -35,19 +41,21 @@ class LoginService
         }
 
         // 验证密码
-        if (!Helper::multiPasswordVerify(
-            $user->password_algo,
-            $user->password_salt,
-            $password,
-            $user->password)
+        if (
+            !Helper::multiPasswordVerify(
+                $user->password_algo,
+                $user->password_salt,
+                $password,
+                $user->password
+            )
         ) {
             // 增加密码错误计数
-            if ((int)admin_setting('password_limit_enable', true)) {
-                $passwordErrorCount = (int)Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
+            if ((int) admin_setting('password_limit_enable', true)) {
+                $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
                 Cache::put(
                     CacheKey::get('PASSWORD_ERROR_LIMIT', $email),
-                    (int)$passwordErrorCount + 1,
-                    60 * (int)admin_setting('password_limit_expire', 60)
+                    (int) $passwordErrorCount + 1,
+                    60 * (int) admin_setting('password_limit_expire', 60)
                 );
             }
             return [false, [400, __('Incorrect email or password')]];
@@ -77,13 +85,13 @@ class LoginService
     {
         // 检查重置请求限制
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $email);
-        $forgetRequestLimit = (int)Cache::get($forgetRequestLimitKey);
+        $forgetRequestLimit = (int) Cache::get($forgetRequestLimitKey);
         if ($forgetRequestLimit >= 3) {
             return [false, [429, __('Reset failed, Please try again later')]];
         }
 
         // 验证邮箱验证码
-        if ((string)Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email)) !== (string)$emailCode) {
+        if ((string) Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email)) !== (string) $emailCode) {
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
             return [false, [400, __('Incorrect email verification code')]];
         }
@@ -98,14 +106,44 @@ class LoginService
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
-        
+
         if (!$user->save()) {
             return [false, [500, __('Reset failed')]];
         }
 
         // 清除邮箱验证码
         Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
-        
+
         return [true, true];
     }
-} 
+
+
+    /**
+     * 生成临时登录令牌和快速登录URL
+     *
+     * @param User $user 用户对象
+     * @param string $redirect 重定向路径
+     * @return string|null 快速登录URL
+     */
+    public function generateQuickLoginUrl(User $user, string $redirect = 'dashboard'): ?string
+    {
+        if (!$user || !$user->exists) {
+            return null;
+        }
+
+        $code = Helper::guid();
+        $key = CacheKey::get('TEMP_TOKEN', $code);
+
+        Cache::put($key, $user->id, 60);
+
+        $loginRedirect = '/#/login?verify=' . $code . '&redirect=' . $redirect;
+
+        if (admin_setting('app_url')) {
+            $url = admin_setting('app_url') . $loginRedirect;
+        } else {
+            $url = url($loginRedirect);
+        }
+
+        return $url;
+    }
+}

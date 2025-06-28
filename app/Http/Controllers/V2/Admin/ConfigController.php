@@ -85,15 +85,15 @@ class ConfigController extends Controller
     public function fetch(Request $request)
     {
         $key = $request->input('key');
-        
+
         // 构建配置数据映射
         $configMappings = $this->getConfigMappings();
-        
+
         // 如果请求特定分组，直接返回
         if ($key && isset($configMappings[$key])) {
             return $this->success([$key => $configMappings[$key]]);
         }
-        
+
         return $this->success($configMappings);
     }
 
@@ -190,15 +190,23 @@ class ConfigController extends Controller
                 'email_whitelist_enable' => (bool) admin_setting('email_whitelist_enable', 0),
                 'email_whitelist_suffix' => admin_setting('email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT),
                 'email_gmail_limit_enable' => (bool) admin_setting('email_gmail_limit_enable', 0),
-                'recaptcha_enable' => (bool) admin_setting('recaptcha_enable', 0),
+                'captcha_enable' => (bool) admin_setting('captcha_enable', 0),
+                'captcha_type' => admin_setting('captcha_type', 'recaptcha'),
                 'recaptcha_key' => admin_setting('recaptcha_key', ''),
                 'recaptcha_site_key' => admin_setting('recaptcha_site_key', ''),
+                'recaptcha_v3_secret_key' => admin_setting('recaptcha_v3_secret_key', ''),
+                'recaptcha_v3_site_key' => admin_setting('recaptcha_v3_site_key', ''),
+                'recaptcha_v3_score_threshold' => admin_setting('recaptcha_v3_score_threshold', 0.5),
+                'turnstile_secret_key' => admin_setting('turnstile_secret_key', ''),
+                'turnstile_site_key' => admin_setting('turnstile_site_key', ''),
                 'register_limit_by_ip_enable' => (bool) admin_setting('register_limit_by_ip_enable', 0),
                 'register_limit_count' => admin_setting('register_limit_count', 3),
                 'register_limit_expire' => admin_setting('register_limit_expire', 60),
                 'password_limit_enable' => (bool) admin_setting('password_limit_enable', 1),
                 'password_limit_count' => admin_setting('password_limit_count', 5),
-                'password_limit_expire' => admin_setting('password_limit_expire', 60)
+                'password_limit_expire' => admin_setting('password_limit_expire', 60),
+                // 保持向后兼容
+                'recaptcha_enable' => (bool) admin_setting('captcha_enable', 0)
             ],
             'subscribe_template' => [
                 'subscribe_template_singbox' => $this->formatTemplateContent(
@@ -225,7 +233,7 @@ class ConfigController extends Controller
             }
             admin_setting([$k => $v]);
         }
-        
+
         return $this->success(true);
     }
 
@@ -240,23 +248,23 @@ class ConfigController extends Controller
     {
         return match ($format) {
             'json' => match (true) {
-                is_array($content) => json_encode(
-                    value: $content, 
-                    flags: JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-                ),
-                
-                is_string($content) && str($content)->isJson() => rescue(
-                    callback: fn() => json_encode(
-                        value: json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR), 
+                    is_array($content) => json_encode(
+                        value: $content,
                         flags: JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                     ),
-                    rescue: $content,
-                    report: false
-                ),
-                
-                default => str($content)->toString()
-            },
-            
+
+                    is_string($content) && str($content)->isJson() => rescue(
+                        callback: fn() => json_encode(
+                            value: json_decode($content, associative: true, flags: JSON_THROW_ON_ERROR),
+                            flags: JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                        ),
+                        rescue: $content,
+                        report: false
+                    ),
+
+                    default => str($content)->toString()
+                },
+
             default => str($content)->toString()
         };
     }

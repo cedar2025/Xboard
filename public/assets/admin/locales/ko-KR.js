@@ -414,20 +414,42 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "description": "허용된 이메일 접미사를 한 줄에 하나씩 입력하세요"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "reCAPTCHA 활성화",
-            "description": "활성화하면 사용자는 등록 시 reCAPTCHA 인증을 통과해야 합니다."
+            "label": "캡차 활성화",
+            "description": "활성화하면 사용자는 등록 시 캡차 인증을 통과해야 합니다."
           },
-          "key": {
-            "label": "reCAPTCHA 키",
-            "placeholder": "reCAPTCHA 키 입력",
-            "description": "reCAPTCHA 키를 입력하세요"
+          "type": {
+            "label": "캡차 유형",
+            "description": "사용할 캡차 서비스 유형을 선택하세요",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA 사이트 키",
-            "placeholder": "reCAPTCHA 사이트 키 입력",
-            "description": "reCAPTCHA 사이트 키를 입력하세요"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA 키",
+              "placeholder": "reCAPTCHA 키 입력",
+              "description": "reCAPTCHA 키를 입력하세요"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA 사이트 키",
+              "placeholder": "reCAPTCHA 사이트 키 입력",
+              "description": "reCAPTCHA 사이트 키를 입력하세요"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile 키",
+              "placeholder": "Turnstile 키 입력",
+              "description": "Cloudflare Turnstile 키를 입력하세요"
+            },
+            "siteKey": {
+              "label": "Turnstile 사이트 키",
+              "placeholder": "Turnstile 사이트 키 입력",
+              "description": "Cloudflare Turnstile 사이트 키를 입력하세요"
+            }
           }
         },
         "registerLimit": {
