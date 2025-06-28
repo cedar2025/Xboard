@@ -34,7 +34,7 @@ class PluginManager
      */
     public function getPluginPath(string $pluginCode): string
     {
-        return $this->pluginPath . '/' .  Str::studly($pluginCode);
+        return $this->pluginPath . '/' . Str::studly($pluginCode);
     }
 
     /**
@@ -85,16 +85,21 @@ class PluginManager
     {
         $routesPath = $this->getPluginPath($pluginCode) . '/routes';
         if (File::exists($routesPath)) {
-            $files = ['web.php', 'api.php'];
-            foreach ($files as $file) {
-                $routeFile = $routesPath . '/' . $file;
-                if (File::exists($routeFile)) {
-                    Route::middleware('web')
-                        ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
-                        ->group(function () use ($routeFile) {
-                            require $routeFile;
-                        });
-                }
+            $webRouteFile = $routesPath . '/web.php';
+            $apiRouteFile = $routesPath . '/api.php';
+            if (File::exists($webRouteFile)) {
+                Route::middleware('web')
+                    ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
+                    ->group(function () use ($webRouteFile) {
+                        require $webRouteFile;
+                    });
+            }
+            if (File::exists($apiRouteFile)) {
+                Route::middleware('api')
+                    ->namespace($this->getPluginNamespace($pluginCode) . '\\Controllers')
+                    ->group(function () use ($apiRouteFile) {
+                        require $apiRouteFile;
+                    });
             }
         }
     }

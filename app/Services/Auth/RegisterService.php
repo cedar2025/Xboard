@@ -6,6 +6,7 @@ use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\CaptchaService;
+use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Dict;
 use App\Utils\Helper;
@@ -100,16 +101,11 @@ class RegisterService
     /**
      * 处理邀请码
      *
-     * @param User $user 用户对象
-     * @param string|null $inviteCode 邀请码
-     * @return array [是否成功, 错误消息]
+     * @param string $inviteCode 邀请码
+     * @return array [邀请人ID或成功状态, 错误消息]
      */
-    public function handleInviteCode(User $user, ?string $inviteCode): array
+    public function handleInviteCode(string $inviteCode): array
     {
-        if (!$inviteCode) {
-            return [true, null];
-        }
-
         $inviteCodeModel = InviteCode::where('code', $inviteCode)
             ->where('status', 0)
             ->first();
@@ -118,38 +114,18 @@ class RegisterService
             if ((int) admin_setting('invite_force', 0)) {
                 return [false, [400, __('Invalid invitation code')]];
             }
-            return [true, null];
+            return [null, null];
         }
-
-        $user->invite_user_id = $inviteCodeModel->user_id ? $inviteCodeModel->user_id : null;
 
         if (!(int) admin_setting('invite_never_expire', 0)) {
             $inviteCodeModel->status = true;
             $inviteCodeModel->save();
         }
 
-        return [true, null];
+        return [$inviteCodeModel->user_id, null];
     }
 
-    /**
-     * 处理试用计划
-     *
-     * @param User $user 用户对象
-     * @return void
-     */
-    public function handleTryOut(User $user): void
-    {
-        if ((int) admin_setting('try_out_plan_id', 0)) {
-            $plan = Plan::find(admin_setting('try_out_plan_id'));
-            if ($plan) {
-                $user->transfer_enable = $plan->transfer_enable * 1073741824;
-                $user->plan_id = $plan->id;
-                $user->group_id = $plan->group_id;
-                $user->expired_at = time() + (admin_setting('try_out_hour', 1) * 3600);
-                $user->speed_limit = $plan->speed_limit;
-            }
-        }
-    }
+
 
     /**
      * 注册用户
@@ -167,24 +143,25 @@ class RegisterService
 
         $email = $request->input('email');
         $password = $request->input('password');
+        $inviteCode = $request->input('invite_code');
 
-        // 创建用户
-        $user = new User();
-        $user->email = $email;
-        $user->password = password_hash($password, PASSWORD_DEFAULT);
-        $user->uuid = Helper::guid(true);
-        $user->token = Helper::guid();
-        $user->remind_expire = admin_setting('default_remind_expire', 1);
-        $user->remind_traffic = admin_setting('default_remind_traffic', 1);
-
-        // 处理邀请码
-        [$inviteSuccess, $inviteError] = $this->handleInviteCode($user, $request->input('invite_code'));
-        if (!$inviteSuccess) {
-            return [false, $inviteError];
+        // 处理邀请码获取邀请人ID
+        $inviteUserId = null;
+        if ($inviteCode) {
+            [$inviteSuccess, $inviteError] = $this->handleInviteCode($inviteCode);
+            if (!$inviteSuccess) {
+                return [false, $inviteError];
+            }
+            $inviteUserId = $inviteSuccess;
         }
 
-        // 处理试用计划
-        $this->handleTryOut($user);
+        // 创建用户
+        $userService = app(UserService::class);
+        $user = $userService->createUser([
+            'email' => $email,
+            'password' => $password,
+            'invite_user_id' => $inviteUserId,
+        ]);
 
         // 保存用户
         if (!$user->save()) {

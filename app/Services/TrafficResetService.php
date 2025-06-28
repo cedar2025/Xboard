@@ -274,7 +274,7 @@ class TrafficResetService
   /**
    * Batch check and reset users. Processes all eligible users in batches.
    */
-  public function batchCheckReset(int $batchSize = 100, callable $progressCallback = null): array
+  public function batchCheckReset(int $batchSize = 100, ?callable $progressCallback = null): array
   {
     $startTime = microtime(true);
     $totalResetCount = 0;

@@ -72,7 +72,7 @@ class Setting
      * @param  mixed  $value
      * @return bool 设置是否成功
      */
-    public function set(string $key, $value = null): bool
+    public function set(string $key, mixed $value = null): bool
     {
         $key = strtolower($key);
         SettingModel::createOrUpdate($key, $value);

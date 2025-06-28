@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Services\Plugin\HookManager;
 use App\Utils\Dict;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Http;
@@ -30,6 +31,9 @@ class CommController extends Controller
             // 保持向后兼容
             'is_recaptcha' => (int) admin_setting('captcha_enable', 0) ? 1 : 0,
         ];
+
+        $data = HookManager::filter('guest_comm_config', $data);
+
         return $this->success($data);
     }
 }

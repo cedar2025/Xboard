@@ -10,6 +10,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\UserService;
 use App\Traits\QueryOperators;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
@@ -342,30 +343,26 @@ class UserController extends Controller
     public function generate(UserGenerate $request)
     {
         if ($request->input('email_prefix')) {
-            if ($request->input('plan_id')) {
-                $plan = Plan::find($request->input('plan_id'));
-                if (!$plan) {
-                    return $this->fail([400202, '订阅计划不存在']);
-                }
-            }
-            $user = [
-                'email' => $request->input('email_prefix') . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
-                'uuid' => Helper::guid(true),
-                'token' => Helper::guid()
-            ];
-            if (User::where('email', $user['email'])->first()) {
+            $email = $request->input('email_prefix') . '@' . $request->input('email_suffix');
+
+            if (User::where('email', $email)->exists()) {
                 return $this->fail([400201, '邮箱已存在于系统中']);
             }
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            if (!User::create($user)) {
+
+            $userService = app(UserService::class);
+            $user = $userService->createUser([
+                'email' => $email,
+                'password' => $request->input('password') ?? $email,
+                'plan_id' => $request->input('plan_id'),
+                'expired_at' => $request->input('expired_at'),
+            ]);
+
+            if (!$user->save()) {
                 return $this->fail([500, '生成失败']);
             }
             return $this->success(true);
         }
+
         if ($request->input('generate_count')) {
             return $this->multiGenerate($request);
         }
@@ -373,37 +370,32 @@ class UserController extends Controller
 
     private function multiGenerate(Request $request)
     {
-        if ($request->input('plan_id')) {
-            $plan = Plan::find($request->input('plan_id'));
-            if (!$plan) {
-                return $this->fail([400202, '订阅计划不存在']);
-            }
-        }
-        $users = [];
+        $userService = app(UserService::class);
+        $usersData = [];
+
         for ($i = 0; $i < $request->input('generate_count'); $i++) {
-            $user = [
-                'email' => Helper::randomChar(6) . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
-                'uuid' => Helper::guid(true),
-                'token' => Helper::guid(),
-                'created_at' => time(),
-                'updated_at' => time()
+            $email = Helper::randomChar(6) . '@' . $request->input('email_suffix');
+            $usersData[] = [
+                'email' => $email,
+                'password' => $request->input('password') ?? $email,
+                'plan_id' => $request->input('plan_id'),
+                'expired_at' => $request->input('expired_at'),
             ];
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            array_push($users, $user);
         }
+
+
+
         try {
             DB::beginTransaction();
-            if (!User::insert($users)) {
-                throw new \Exception();
+            $users = [];
+            foreach ($usersData as $userData) {
+                $user = $userService->createUser($userData);
+                $user->save();
+                $users[] = $user;
             }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error($e);
             return $this->fail([500, '生成失败']);
         }
 
@@ -417,6 +409,7 @@ class UserController extends Controller
                 $handle = fopen('php://output', 'w');
                 fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
                 foreach ($users as $user) {
+                    $user = $user->refresh();
                     $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
                     $createDate = date('Y-m-d H:i:s', $user['created_at']);
                     $password = $request->input('password') ?? $user['email'];
