@@ -52,7 +52,6 @@ docker compose up -d
 - [Migrate from v2board dev](./docs/en/migration/v2board-dev.md)
 - [Migrate from v2board 1.7.4](./docs/en/migration/v2board-1.7.4.md)
 - [Migrate from v2board 1.7.3](./docs/en/migration/v2board-1.7.3.md)
-- [Migrate from v2board wyx2685](./docs/en/migration/v2board-wyx2685.md)
 
 ## 🛠️ Tech Stack
 
