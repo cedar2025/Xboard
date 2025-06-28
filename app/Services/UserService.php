@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Services\Plugin\HookManager;
 use App\Services\TrafficResetService;
 use App\Models\TrafficResetLog;
+use App\Utils\Helper;
+use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
@@ -23,22 +25,22 @@ class UserService
         // Use TrafficResetService to calculate the next reset time
         $trafficResetService = app(TrafficResetService::class);
         $nextResetTime = $trafficResetService->calculateNextResetTime($user);
-        
+
         if (!$nextResetTime) {
             return null;
         }
-        
+
         // Calculate the remaining days from now to the next reset time
         $now = time();
         $resetTimestamp = $nextResetTime->timestamp;
-        
+
         if ($resetTimestamp <= $now) {
             return 0; // Reset time has passed or is now
         }
-        
+
         // Calculate the difference in days (rounded up)
         $daysDifference = ceil(($resetTimestamp - $now) / 86400);
-        
+
         return (int) $daysDifference;
     }
 
@@ -115,7 +117,7 @@ class UserService
     {
         list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [
             $server,
-            $protocol, 
+            $protocol,
             $data
         ]);
 
@@ -134,10 +136,10 @@ class UserService
     {
         // 检查是否需要重置流量
         app(TrafficResetService::class)->checkAndReset($user, TrafficResetLog::SOURCE_USER_ACCESS);
-        
+
         // 重新获取用户数据（可能已被重置）
         $user->refresh();
-        
+
         return [
             'upload' => $user->u ?? 0,
             'download' => $user->d ?? 0,
@@ -149,5 +151,98 @@ class UserService
             'last_reset_at' => $user->last_reset_at,
             'reset_count' => $user->reset_count,
         ];
+    }
+
+    /**
+     * 创建用户
+     */
+    public function createUser(array $data): User
+    {
+        $user = new User();
+
+        // 基本信息
+        $user->email = $data['email'];
+        $user->password = isset($data['password'])
+            ? Hash::make($data['password'])
+            : Hash::make($data['email']);
+        $user->uuid = Helper::guid(true);
+        $user->token = Helper::guid();
+
+        // 默认设置
+        $user->remind_expire = admin_setting('default_remind_expire', 1);
+        $user->remind_traffic = admin_setting('default_remind_traffic', 1);
+
+        // 可选字段
+        $this->setOptionalFields($user, $data);
+
+        $user->expired_at = null;
+
+        // 处理计划
+        if (isset($data['plan_id'])) {
+            $this->setPlanForUser($user, $data['plan_id'], $data['expired_at'] ?? null);
+        } else {
+            $this->setTryOutPlan(user: $user);
+        }
+
+        return $user;
+    }
+
+    /**
+     * 设置可选字段
+     */
+    private function setOptionalFields(User $user, array $data): void
+    {
+        $optionalFields = [
+            'invite_user_id',
+            'telegram_id',
+            'group_id',
+            'speed_limit',
+            'expired_at',
+            'transfer_enable'
+        ];
+
+        foreach ($optionalFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $user->{$field} = $data[$field];
+            }
+        }
+    }
+
+    /**
+     * 为用户设置计划
+     */
+    private function setPlanForUser(User $user, int $planId, ?int $expiredAt = null): void
+    {
+        $plan = Plan::find($planId);
+        if (!$plan)
+            return;
+
+        $user->plan_id = $plan->id;
+        $user->group_id = $plan->group_id;
+        $user->transfer_enable = $plan->transfer_enable * 1073741824;
+        $user->speed_limit = $plan->speed_limit;
+
+        if ($expiredAt) {
+            $user->expired_at = $expiredAt;
+        }
+    }
+
+    /**
+     * 设置试用计划
+     */
+    private function setTryOutPlan(User $user): void
+    {
+        if (!(int) admin_setting('try_out_plan_id', 0))
+            return;
+
+        $plan = Plan::find(admin_setting('try_out_plan_id'));
+        if (!$plan)
+            return;
+
+        $user->transfer_enable = $plan->transfer_enable * 1073741824;
+        $user->plan_id = $plan->id;
+        $user->group_id = $plan->group_id;
+        $user->expired_at = time() + (admin_setting('try_out_hour', 1) * 3600);
+        $user->speed_limit = $plan->speed_limit;
     }
 }

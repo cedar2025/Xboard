@@ -80,7 +80,7 @@ class CaptchaService
         // 检查分数阈值（如果有的话）
         $score = $recaptchaResp->getScore();
         $threshold = admin_setting('recaptcha_v3_score_threshold', 0.5);
-        if ($score !== null && $score < $threshold) {
+        if ($score < $threshold) {
             return [false, [400, __('Invalid code is incorrect')]];
         }
 

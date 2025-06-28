@@ -58,9 +58,13 @@ abstract class AbstractPlugin
     /**
      * 获取配置
      */
-    public function getConfig(): array
+    public function getConfig(?string $key = null, $default = null): mixed
     {
-        return $this->config;
+        $config = $this->config;
+        if ($key) {
+            $config = $config[$key] ?? $default;
+        }
+        return $config;
     }
 
     /**
