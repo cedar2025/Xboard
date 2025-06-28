@@ -1,7 +1,7 @@
 ---
 name: 🐛 问题反馈 | Bug Report
 about: 提交使用过程中遇到的问题 | Report an issue
-title: "问题："
+title: "Bug Report："
 labels: '🐛 bug'
 assignees: ''
 ---

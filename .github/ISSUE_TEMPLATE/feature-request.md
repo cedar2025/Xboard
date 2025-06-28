@@ -1,7 +1,7 @@
 ---
 name: ✨ 功能请求 | Feature Request
 about: 提交新功能建议或改进意见 | Suggest an idea
-title: "建议："
+title: "Feature Request："
 labels: '✨ enhancement'
 assignees: ''
 ---
