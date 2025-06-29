@@ -48,6 +48,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property int|null $d 下行流量
  * @property int|null $total 总流量
  * @property-read array|null $load_status 负载状态（包含CPU、内存、交换区、磁盘信息）
+ * @property-read float $load_users 用户负载百分比（该节点在线用户数占总在线用户数的百分比）
  */
 class Server extends Model
 {
@@ -421,6 +422,35 @@ class Server extends Model
                 $type = strtoupper($this->type);
                 $serverId = $this->parent_id ?: $this->id;
                 return Cache::get(CacheKey::get("SERVER_{$type}_LOAD_STATUS", $serverId));
+            }
+        );
+    }
+
+    /**
+     * 用户负载百分比访问器
+     */
+    protected function loadUsers(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                // Get online users for this server
+                $serverOnlineUsers = $this->online;
+                
+                if ($serverOnlineUsers === 0) {
+                    return 0;
+                }
+                
+                // Cache total online users for 1 minute to improve performance
+                $totalOnlineUsers = Cache::remember('total_online_users', 60, function () {
+                    return User::where('t', '>=', time() - 600)->count();
+                });
+                
+                if ($totalOnlineUsers === 0) {
+                    return 0;
+                }
+                
+                // Calculate percentage (rounded to 2 decimal places)
+                return round(($serverOnlineUsers / $totalOnlineUsers) * 100, 2);
             }
         );
     }
