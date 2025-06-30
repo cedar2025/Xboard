@@ -31,7 +31,7 @@ class CacheKey
     /**
      * 生成缓存键
      */
-    public static function get(string $key, $uniqueValue = null): string
+    public static function get(string $key, mixed $uniqueValue = null): string
     {
         // 检查是否为核心键
         if (array_key_exists($key, self::CORE_KEYS)) {

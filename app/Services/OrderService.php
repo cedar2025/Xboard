@@ -306,7 +306,7 @@ class OrderService
     private function buyByOneTime(Plan $plan)
     {
         $this->buyByResetTraffic();
-        $this->user->transfer_enable += $plan->transfer_enable * 1073741824;
+        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = NULL;

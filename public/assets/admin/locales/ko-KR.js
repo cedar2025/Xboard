@@ -414,20 +414,42 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "description": "허용된 이메일 접미사를 한 줄에 하나씩 입력하세요"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "reCAPTCHA 활성화",
-            "description": "활성화하면 사용자는 등록 시 reCAPTCHA 인증을 통과해야 합니다."
+            "label": "캡차 활성화",
+            "description": "활성화하면 사용자는 등록 시 캡차 인증을 통과해야 합니다."
           },
-          "key": {
-            "label": "reCAPTCHA 키",
-            "placeholder": "reCAPTCHA 키 입력",
-            "description": "reCAPTCHA 키를 입력하세요"
+          "type": {
+            "label": "캡차 유형",
+            "description": "사용할 캡차 서비스 유형을 선택하세요",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA 사이트 키",
-            "placeholder": "reCAPTCHA 사이트 키 입력",
-            "description": "reCAPTCHA 사이트 키를 입력하세요"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA 키",
+              "placeholder": "reCAPTCHA 키 입력",
+              "description": "reCAPTCHA 키를 입력하세요"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA 사이트 키",
+              "placeholder": "reCAPTCHA 사이트 키 입력",
+              "description": "reCAPTCHA 사이트 키를 입력하세요"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile 키",
+              "placeholder": "Turnstile 키 입력",
+              "description": "Cloudflare Turnstile 키를 입력하세요"
+            },
+            "siteKey": {
+              "label": "Turnstile 사이트 키",
+              "placeholder": "Turnstile 사이트 키 입력",
+              "description": "Cloudflare Turnstile 사이트 키를 입력하세요"
+            }
           }
         },
         "registerLimit": {
@@ -1108,7 +1130,25 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "searchOnly": "검색 결과: \\\"{{keyword}}\\\"를 포함하는 로그 {{count}}개",
         "levelOnly": "필터 결과: 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
         "reset": "필터 초기화"
-      }
+      },
+      "clearLogs": "로그 삭제",
+      "clearDays": "삭제 일수",
+      "clearDaysDesc": "며칠 전 로그를 삭제할지 (0-365일, 0은 오늘)",
+      "clearLevel": "로그 레벨",
+      "clearLimit": "배치 제한",
+      "clearLimitDesc": "배치 삭제 수량 제한 (100-10000건)",
+      "clearPreview": "삭제 미리보기",
+      "getStats": "통계 가져오기",
+      "cutoffDate": "마감일",
+      "willClear": "삭제 예정",
+      "logsUnit": "개 로그",
+      "clearWarning": "이 작업은 되돌릴 수 없습니다. 신중하게 진행해 주세요!",
+      "clearing": "삭제 중...",
+      "confirmClear": "삭제 확인",
+      "clearSuccess": "삭제 완료! {{count}}개 로그 삭제됨",
+      "clearFailed": "삭제 실패",
+      "getStatsFailed": "삭제 통계 가져오기 실패",
+      "clearLogsFailed": "로그 삭제 실패"
     },
     "common": {
       "refresh": "새로고침",
@@ -1370,6 +1410,17 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "error": {
         "saveFailed": "쿠폰 저장 실패"
+      },
+      "timeRange": {
+        "quickSet": "빠른 설정",
+        "presets": {
+          "1week": "1주",
+          "2weeks": "2주",
+          "1month": "1개월",
+          "3months": "3개월",
+          "6months": "6개월",
+          "1year": "1년"
+        }
       }
     },
     "period": {

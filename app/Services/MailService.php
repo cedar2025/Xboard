@@ -30,7 +30,7 @@ class MailService
     /**
      * 分块处理用户提醒邮件
      */
-    public function processUsersInChunks(int $chunkSize, callable $progressCallback = null): array
+    public function processUsersInChunks(int $chunkSize, ?callable $progressCallback = null): array
     {
         $statistics = [
             'processed_users' => 0,

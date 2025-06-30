@@ -43,7 +43,7 @@ class AuthController extends Controller
         $params['email'] = strtolower($params['email']);
 
         [$success, $result] = $this->mailLinkService->handleMailLink(
-            $params['email'], 
+            $params['email'],
             $request->input('redirect')
         );
 
@@ -99,11 +99,11 @@ class AuthController extends Controller
         // 处理直接通过token重定向
         if ($token = $request->input('token')) {
             $redirect = '/#/login?verify=' . $token . '&redirect=' . ($request->input('redirect', 'dashboard'));
-            
+
             return redirect()->to(
                 admin_setting('app_url')
-                    ? admin_setting('app_url') . $redirect
-                    : url($redirect)
+                ? admin_setting('app_url') . $redirect
+                : url($redirect)
             );
         }
 
@@ -116,22 +116,22 @@ class AuthController extends Controller
                     'message' => __('Token error')
                 ], 400);
             }
-            
+
             $user = \App\Models\User::find($userId);
-            
+
             if (!$user) {
                 return response()->json([
                     'message' => __('User not found')
                 ], 400);
             }
-            
+
             $authService = new AuthService($user);
-            
+
             return response()->json([
                 'data' => $authService->generateAuthData()
             ]);
         }
-        
+
         return response()->json([
             'message' => __('Invalid request')
         ], 400);
@@ -143,7 +143,7 @@ class AuthController extends Controller
     public function getQuickLoginUrl(Request $request)
     {
         $authorization = $request->input('auth_data') ?? $request->header('authorization');
-        
+
         if (!$authorization) {
             return response()->json([
                 'message' => ResponseEnum::CLIENT_HTTP_UNAUTHORIZED
@@ -151,14 +151,14 @@ class AuthController extends Controller
         }
 
         $user = AuthService::findUserByBearerToken($authorization);
-        
+
         if (!$user) {
             return response()->json([
                 'message' => ResponseEnum::CLIENT_HTTP_UNAUTHORIZED_EXPIRED
             ], 401);
         }
-        
-        $url = $this->mailLinkService->getQuickLoginUrl($user, $request->input('redirect'));
+
+        $url = $this->loginService->generateQuickLoginUrl($user, $request->input('redirect'));
         return $this->success($url);
     }
 

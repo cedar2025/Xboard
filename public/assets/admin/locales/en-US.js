@@ -416,20 +416,60 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "description": "Enter the allowed email suffixes, one per line"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "Enable reCAPTCHA",
-            "description": "When enabled, users will need to pass reCAPTCHA verification when registering."
+            "label": "Enable Captcha",
+            "description": "When enabled, users will need to pass captcha verification when registering."
           },
-          "key": {
-            "label": "reCAPTCHA Key",
-            "placeholder": "Enter reCAPTCHA key",
-            "description": "Enter your reCAPTCHA key"
+          "type": {
+            "label": "Captcha Type",
+            "description": "Select the captcha service type to use",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "recaptcha-v3": "Google reCAPTCHA v3",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA Site Key",
-            "placeholder": "Enter reCAPTCHA site key",
-            "description": "Enter your reCAPTCHA site key"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA Key",
+              "placeholder": "Enter reCAPTCHA key",
+              "description": "Enter your reCAPTCHA key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA Site Key",
+              "placeholder": "Enter reCAPTCHA site key",
+              "description": "Enter your reCAPTCHA site key"
+            }
+          },
+          "recaptcha_v3": {
+            "secretKey": {
+              "label": "reCAPTCHA v3 Key",
+              "placeholder": "Enter reCAPTCHA v3 key",
+              "description": "Enter your reCAPTCHA v3 server key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA v3 Site Key",
+              "placeholder": "Enter reCAPTCHA v3 site key",
+              "description": "Enter your reCAPTCHA v3 site key"
+            },
+            "scoreThreshold": {
+              "label": "Score Threshold",
+              "placeholder": "0.5",
+              "description": "Set verification score threshold (0-1), higher scores indicate more likely human behavior"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile Key",
+              "placeholder": "Enter Turnstile key",
+              "description": "Enter your Cloudflare Turnstile key"
+            },
+            "siteKey": {
+              "label": "Turnstile Site Key",
+              "placeholder": "Enter Turnstile site key",
+              "description": "Enter your Cloudflare Turnstile site key"
+            }
           }
         },
         "registerLimit": {
@@ -1092,7 +1132,25 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
         "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
         "reset": "Reset Filters"
-      }
+      },
+      "clearLogs": "Clear Logs",
+      "clearDays": "Clear Days",
+      "clearDaysDesc": "Clear logs older than how many days (0-365 days, 0 means today)",
+      "clearLevel": "Log Level",
+      "clearLimit": "Batch Limit",
+      "clearLimitDesc": "Batch clear quantity limit (100-10000 records)",
+      "clearPreview": "Clear Preview",
+      "getStats": "Get Statistics",
+      "cutoffDate": "Cutoff Date",
+      "willClear": "Will Clear",
+      "logsUnit": " logs",
+      "clearWarning": "This operation cannot be undone, please proceed with caution!",
+      "clearing": "Clearing...",
+      "confirmClear": "Confirm Clear",
+      "clearSuccess": "Clear completed! {{count}} logs cleared",
+      "clearFailed": "Clear failed",
+      "getStatsFailed": "Failed to get clear statistics",
+      "clearLogsFailed": "Failed to clear logs"
     },
     "common": {
       "refresh": "Refresh",
@@ -1354,6 +1412,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "error": {
         "saveFailed": "Failed to save coupon"
+      },
+      "timeRange": {
+        "quickSet": "Quick Set",
+        "presets": {
+          "1week": "1 Week",
+          "2weeks": "2 Weeks",
+          "1month": "1 Month",
+          "3months": "3 Months",
+          "6months": "6 Months",
+          "1year": "1 Year"
+        }
       }
     },
     "period": {
