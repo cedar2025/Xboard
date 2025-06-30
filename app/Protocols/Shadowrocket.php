@@ -56,6 +56,9 @@ class Shadowrocket extends AbstractProtocol
             if ($item['type'] === 'anytls') {
                 $uri .= self::buildAnyTLS($user['uuid'], $item);
             }
+            if ($item['type'] === 'socks') {
+                $uri .= self::buildSocks($user['uuid'], $item);
+            }
         }
         return response(base64_encode($uri))
             ->header('content-type', 'text/plain');
@@ -317,6 +320,13 @@ class Shadowrocket extends AbstractProtocol
         ];
         $query = http_build_query($params);
         $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildSocks($password, $server)
+    {
+        $uri = "socks://" . base64_encode("{$password}:{$password}@{$server['host']}:{$server['port']}") . "?method=auto";
         $uri .= "\r\n";
         return $uri;
     }
