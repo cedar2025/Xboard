@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\File;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\note;
+use function Laravel\Prompts\select;
 
 class XboardInstall extends Command
 {
@@ -73,76 +74,27 @@ class XboardInstall extends Command
                 $this->error('😔：安装失败，Docker环境下安装请保留空的 .env 文件');
                 return;
             }
-            // 选择是否使用Sqlite
-            if ($enableSqlite || confirm(label: '是否启用Sqlite(无需额外安装)代替Mysql', default: false, yes: '启用', no: '不启用')) {
-                $sqliteFile = '.docker/.data/database.sqlite';
-                if (!file_exists(base_path($sqliteFile))) {
-                    // 创建空文件
-                    if (!touch(base_path($sqliteFile))) {
-                        $this->info("sqlite创建成功: $sqliteFile");
-                    }
-                }
-                $envConfig = [
-                    'DB_CONNECTION' => 'sqlite',
-                    'DB_DATABASE' => $sqliteFile,
-                    'DB_HOST' => '',
-                    'DB_USERNAME' => '',
-                    'DB_PASSWORD' => '',
-                ];
-                try {
-                    Config::set("database.default", 'sqlite');
-                    Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
-                    DB::purge('sqlite');
-                    DB::connection('sqlite')->getPdo();
-                    if (!blank(DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
-                        if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '退出安装')) {
-                            $this->info('正在清空数据库请稍等');
-                            $this->call('db:wipe', ['--force' => true]);
-                            $this->info('数据库清空完成');
-                        } else {
-                            return;
-                        }
-                    }
-                } catch (\Exception $e) {
-                    // 连接失败，输出错误消息
-                    $this->error("数据库连接失败：" . $e->getMessage());
-                }
-            } else {
-                $isMysqlValid = false;
-                while (!$isMysqlValid) {
-                    $envConfig = [
-                        'DB_CONNECTION' => 'mysql',
-                        'DB_HOST' => text(label: "请输入数据库地址", default: '127.0.0.1', required: true),
-                        'DB_PORT' => text(label: '请输入数据库端口', default: '3306', required: true),
-                        'DB_DATABASE' => text(label: '请输入数据库名', default: 'xboard', required: true),
-                        'DB_USERNAME' => text(label: '请输入数据库用户名', default: 'root', required: true),
-                        'DB_PASSWORD' => text(label: '请输入数据库密码', required: false),
-                    ];
-                    try {
-                        Config::set("database.default", 'mysql');
-                        Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
-                        Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
-                        Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
-                        Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
-                        Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
-                        DB::purge('mysql');
-                        DB::connection('mysql')->getPdo();
-                        $isMysqlValid = true;
-                        if (!blank(DB::connection('mysql')->select('SHOW TABLES'))) {
-                            if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
-                                $this->info('正在清空数据库请稍等');
-                                $this->call('db:wipe', ['--force' => true]);
-                                $this->info('数据库清空完成');
-                            } else {
-                                $isMysqlValid = false;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        // 连接失败，输出错误消息
-                        $this->error("数据库连接失败：" . $e->getMessage());
-                        $this->info("请重新输入数据库配置");
-                    }
-                }
+            // 选择数据库类型
+            $dbType = $enableSqlite ? 'sqlite' : select(
+                label: '请选择数据库类型',
+                options: [
+                    'sqlite' => 'SQLite (无需额外安装)',
+                    'mysql' => 'MySQL',
+                    'postgresql' => 'PostgreSQL'
+                ],
+                default: 'sqlite'
+            );
+
+            // 使用 match 表达式配置数据库
+            $envConfig = match ($dbType) {
+                'sqlite' => $this->configureSqlite(),
+                'mysql' => $this->configureMysql(),
+                'postgresql' => $this->configurePostgresql(),
+                default => throw new \InvalidArgumentException("不支持的数据库类型: {$dbType}")
+            };
+
+            if (is_null($envConfig)) {
+                return; // 用户选择退出安装
             }
             $envConfig['APP_KEY'] = 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC'));
             $isReidsValid = false;
@@ -263,5 +215,145 @@ class XboardInstall extends Command
         $dotenv->load();
 
         return Env::get($key, $default);
+    }
+
+    /**
+     * 配置 SQLite 数据库
+     *
+     * @return array|null
+     */
+    private function configureSqlite(): ?array
+    {
+        $sqliteFile = '.docker/.data/database.sqlite';
+        if (!file_exists(base_path($sqliteFile))) {
+            // 创建空文件
+            if (!touch(base_path($sqliteFile))) {
+                $this->info("sqlite创建成功: $sqliteFile");
+            }
+        }
+
+        $envConfig = [
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => $sqliteFile,
+            'DB_HOST' => '',
+            'DB_USERNAME' => '',
+            'DB_PASSWORD' => '',
+        ];
+
+        try {
+            Config::set("database.default", 'sqlite');
+            Config::set("database.connections.sqlite.database", base_path($envConfig['DB_DATABASE']));
+            DB::purge('sqlite');
+            DB::connection('sqlite')->getPdo();
+
+            if (!blank(DB::connection('sqlite')->getPdo()->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN))) {
+                if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '退出安装')) {
+                    $this->info('正在清空数据库请稍等');
+                    $this->call('db:wipe', ['--force' => true]);
+                    $this->info('数据库清空完成');
+                } else {
+                    return null;
+                }
+            }
+        } catch (\Exception $e) {
+            $this->error("SQLite数据库连接失败：" . $e->getMessage());
+            return null;
+        }
+
+        return $envConfig;
+    }
+
+    /**
+     * 配置 MySQL 数据库
+     *
+     * @return array|null
+     */
+    private function configureMysql(): ?array
+    {
+        while (true) {
+            $envConfig = [
+                'DB_CONNECTION' => 'mysql',
+                'DB_HOST' => text(label: "请输入MySQL数据库地址", default: '127.0.0.1', required: true),
+                'DB_PORT' => text(label: '请输入MySQL数据库端口', default: '3306', required: true),
+                'DB_DATABASE' => text(label: '请输入MySQL数据库名', default: 'xboard', required: true),
+                'DB_USERNAME' => text(label: '请输入MySQL数据库用户名', default: 'root', required: true),
+                'DB_PASSWORD' => text(label: '请输入MySQL数据库密码', required: false),
+            ];
+
+            try {
+                Config::set("database.default", 'mysql');
+                Config::set("database.connections.mysql.host", $envConfig['DB_HOST']);
+                Config::set("database.connections.mysql.port", $envConfig['DB_PORT']);
+                Config::set("database.connections.mysql.database", $envConfig['DB_DATABASE']);
+                Config::set("database.connections.mysql.username", $envConfig['DB_USERNAME']);
+                Config::set("database.connections.mysql.password", $envConfig['DB_PASSWORD']);
+                DB::purge('mysql');
+                DB::connection('mysql')->getPdo();
+
+                if (!blank(DB::connection('mysql')->select('SHOW TABLES'))) {
+                    if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
+                        $this->info('正在清空数据库请稍等');
+                        $this->call('db:wipe', ['--force' => true]);
+                        $this->info('数据库清空完成');
+                        return $envConfig;
+                    } else {
+                        continue; // 重新输入配置
+                    }
+                }
+
+                return $envConfig;
+            } catch (\Exception $e) {
+                $this->error("MySQL数据库连接失败：" . $e->getMessage());
+                $this->info("请重新输入MySQL数据库配置");
+            }
+        }
+    }
+
+    /**
+     * 配置 PostgreSQL 数据库
+     *
+     * @return array|null
+     */
+    private function configurePostgresql(): ?array
+    {
+        while (true) {
+            $envConfig = [
+                'DB_CONNECTION' => 'pgsql',
+                'DB_HOST' => text(label: "请输入PostgreSQL数据库地址", default: '127.0.0.1', required: true),
+                'DB_PORT' => text(label: '请输入PostgreSQL数据库端口', default: '5432', required: true),
+                'DB_DATABASE' => text(label: '请输入PostgreSQL数据库名', default: 'xboard', required: true),
+                'DB_USERNAME' => text(label: '请输入PostgreSQL数据库用户名', default: 'postgres', required: true),
+                'DB_PASSWORD' => text(label: '请输入PostgreSQL数据库密码', required: false),
+            ];
+
+            try {
+                Config::set("database.default", 'pgsql');
+                Config::set("database.connections.pgsql.host", $envConfig['DB_HOST']);
+                Config::set("database.connections.pgsql.port", $envConfig['DB_PORT']);
+                Config::set("database.connections.pgsql.database", $envConfig['DB_DATABASE']);
+                Config::set("database.connections.pgsql.username", $envConfig['DB_USERNAME']);
+                Config::set("database.connections.pgsql.password", $envConfig['DB_PASSWORD']);
+                DB::purge('pgsql');
+                DB::connection('pgsql')->getPdo();
+
+                // 检查PostgreSQL数据库是否有表
+                $tables = DB::connection('pgsql')->select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+                if (!blank($tables)) {
+                    if (confirm(label: '检测到数据库中已经存在数据，是否要清空数据库以便安装新的数据？', default: false, yes: '清空', no: '不清空')) {
+                        $this->info('正在清空数据库请稍等');
+                        $this->call('db:wipe', ['--force' => true]);
+                        $this->info('数据库清空完成');
+                        return $envConfig;
+                    } else {
+                        continue; // 重新输入配置
+                    }
+                }
+
+                return $envConfig;
+            } catch (\Exception $e) {
+                $this->error("PostgreSQL数据库连接失败：" . $e->getMessage());
+                $this->info("请重新输入PostgreSQL数据库配置");
+            }
+        }
     }
 }
