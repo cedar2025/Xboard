@@ -228,6 +228,8 @@ class UniProxyController extends Controller
             'swap.used' => 'required|integer|min:0',
             'disk.total' => 'required|integer|min:0',
             'disk.used' => 'required|integer|min:0',
+            'bandwidth.up' => 'nullable|integer|min:0',
+            'bandwidth.down' => 'nullable|integer|min:0',
         ]);
 
         $nodeType = $node->type;
@@ -246,6 +248,10 @@ class UniProxyController extends Controller
             'disk' => [
                 'total' => (int) $data['disk']['total'],
                 'used' => (int) $data['disk']['used'],
+            ],
+            'bandwidth' => [
+                'up' => (int) ($data['bandwidth']['up'] ?? 0),
+                'down' => (int) ($data['bandwidth']['down'] ?? 0),
             ],
             'updated_at' => now()->timestamp,
         ];

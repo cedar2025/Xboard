@@ -25,6 +25,10 @@ class NodeResource extends JsonResource
             'cache_key' => $this['cache_key'],
             'last_check_at' => $this['last_check_at'],
             'load_users' => $this['load_users'] ?? 0,
+            'bandwidth' => $this['load_status']['bandwidth'] ?? [
+                'up' => 0,
+                'down' => 0
+            ],
         ];
     }
 }
