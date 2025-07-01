@@ -43,7 +43,7 @@ class OrderController extends Controller
         $request->validate([
             'trade_no' => 'required|string',
         ]);
-        $order = Order::with(['payment','plan'])
+        $order = Order::with(['payment', 'plan'])
             ->where('user_id', $request->user()->id)
             ->where('trade_no', $request->input('trade_no'))
             ->first();
@@ -77,45 +77,16 @@ class OrderController extends Controller
         $plan = Plan::findOrFail($request->input('plan_id'));
         $planService = new PlanService($plan);
 
-        // Validate plan purchase
         $planService->validatePurchase($user, $request->input('period'));
 
-        return DB::transaction(function () use ($request, $plan, $user, $userService) {
-            $period = $request->input('period');
-            $newPeriod = PlanService::getPeriodKey($period);
+        $order = OrderService::createFromRequest(
+            $user,
+            $plan,
+            $request->input('period'),
+            $request->input('coupon_code')
+        );
 
-            // Create order
-            $order = new Order([
-                'user_id' => $user->id,
-                'plan_id' => $plan->id,
-                'period' => $newPeriod,
-                'trade_no' => Helper::generateOrderNo(),
-                'total_amount' => optional($plan->prices)[$newPeriod] * 100
-            ]);
-
-            // Apply coupon if provided
-            if ($request->input('coupon_code')) {
-                $this->applyCoupon($order, $request->input('coupon_code'));
-            }
-
-            // Set order attributes
-            $orderService = new OrderService($order);
-            $orderService->setVipDiscount($user);
-            $orderService->setOrderType($user);
-            $orderService->setInvite($user);
-
-            // Handle user balance
-            if ($user->balance && $order->total_amount > 0) {
-                $this->handleUserBalance($order, $user, $userService);
-            }
-
-            if (!$order->save()) {
-                throw new ApiException(__('Failed to create order'));
-            }
-            HookManager::call('order.after_create', $order);
-
-            return $this->success($order->trade_no);
-        });
+        return $this->success($order->trade_no);
     }
 
     protected function applyCoupon(Order $order, string $couponCode): void
