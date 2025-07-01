@@ -42,7 +42,7 @@ class ServerService
             ->where('show', true)
             ->orderBy('sort', 'ASC')
             ->get()
-            ->append(['last_check_at', 'last_push_at', 'online', 'is_online', 'available_status', 'cache_key', 'server_key', 'load_users']);
+            ->append(['last_check_at', 'last_push_at', 'online', 'is_online', 'available_status', 'cache_key', 'server_key', 'load_status', 'load_users']);
 
         $servers = collect($servers)->map(function ($server) use ($user) {
             // 判断动态端口
