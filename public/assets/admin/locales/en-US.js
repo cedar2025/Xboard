@@ -1699,10 +1699,26 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "error": "Please enter a valid name"
       },
       "rate": {
-        "label": "Rate",
-        "error": "Rate is required",
-        "error_numeric": "Rate must be a number",
-        "error_gte_zero": "Rate must be greater than or equal to 0"
+        "label": "Base Rate",
+        "error": "Base rate is required",
+        "error_numeric": "Base rate must be a number",
+        "error_gte_zero": "Base rate must be greater than or equal to 0"
+      },
+      "dynamic_rate": {
+        "enable_label": "Enable Dynamic Rate",
+        "enable_description": "Set different rate multipliers based on time periods",
+        "rules_label": "Time Period Rules",
+        "add_rule": "Add Rule",
+        "rule_title": "Rule {{index}}",
+        "start_time": "Start Time",
+        "end_time": "End Time",
+        "multiplier": "Rate Multiplier",
+        "no_rules": "No rules yet, click the button above to add",
+        "start_time_error": "Start time is required",
+        "end_time_error": "End time is required",
+        "multiplier_error": "Rate multiplier is required",
+        "multiplier_error_numeric": "Rate multiplier must be a number",
+        "multiplier_error_gte_zero": "Rate multiplier must be greater than or equal to 0"
       },
       "code": {
         "label": "Custom Node ID",
@@ -2455,6 +2471,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "placeholder": "Enter capacity limit",
           "unit": "Users"
         },
+        "tags": {
+          "label": "Tags",
+          "placeholder": "Enter a tag and press Enter to confirm"
+        },
         "reset_method": {
           "label": "Traffic Reset Method",
           "placeholder": "Select reset method",
@@ -2493,6 +2513,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "success": {
             "add": "Plan added successfully",
             "update": "Plan updated successfully"
+          },
+          "error": {
+            "validation": "Form validation failed. Please check for errors and try again."
           }
         }
       },

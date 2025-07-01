@@ -43,8 +43,9 @@ class TicketController extends Controller
     {
         try{
             DB::beginTransaction();
-            if ((int)Ticket::where('status', 0)->where('user_id', $request->user()->id)->lockForUpdate()->count()) {
-                throw new \Exception(__('There are other unresolved tickets'));
+            if (Ticket::where('status', 0)->where('user_id', $request->user()->id)->lockForUpdate()->first()) {
+                DB::rollBack();
+                return $this->fail([400, '存在未关闭的工单']);
             }
             $ticket = Ticket::create(array_merge($request->only([
                 'subject',

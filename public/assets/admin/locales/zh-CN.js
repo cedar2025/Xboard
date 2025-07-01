@@ -1666,10 +1666,26 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "error": "请输入有效的节点名称"
       },
       "rate": {
-        "label": "倍率",
-        "error": "倍率不能为空",
-        "error_numeric": "费率必须是数字",
-        "error_gte_zero": "费率必须大于或等于0"
+        "label": "基础倍率",
+        "error": "基础倍率不能为空",
+        "error_numeric": "基础倍率必须是数字",
+        "error_gte_zero": "基础倍率必须大于或等于0"
+      },
+      "dynamic_rate": {
+        "enable_label": "启用动态倍率",
+        "enable_description": "根据时间段设置不同的倍率乘数",
+        "rules_label": "时间段规则",
+        "add_rule": "添加规则",
+        "rule_title": "规则 {{index}}",
+        "start_time": "开始时间",
+        "end_time": "结束时间",
+        "multiplier": "倍率乘数",
+        "no_rules": "暂无规则，点击上方按钮添加",
+        "start_time_error": "开始时间不能为空",
+        "end_time_error": "结束时间不能为空",
+        "multiplier_error": "倍率乘数不能为空",
+        "multiplier_error_numeric": "倍率乘数必须是数字",
+        "multiplier_error_gte_zero": "倍率乘数必须大于或等于0"
       },
       "code": {
         "label": "自定义节点ID",
@@ -2421,6 +2437,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "placeholder": "请输入容量限制",
           "unit": "人"
         },
+        "tags": {
+          "label": "标签",
+          "placeholder": "输入标签后按回车确认"
+        },
         "reset_method": {
           "label": "流量重置方式",
           "placeholder": "请选择重置方式",
@@ -2459,6 +2479,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "success": {
             "add": "套餐添加成功",
             "update": "套餐更新成功"
+          },
+          "error": {
+            "validation": "表单校验失败，请检查并修正错误后重试。"
           }
         }
       },
