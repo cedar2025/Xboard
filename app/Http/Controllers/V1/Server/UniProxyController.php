@@ -230,6 +230,10 @@ class UniProxyController extends Controller
             'disk.used' => 'required|integer|min:0',
             'bandwidth.up' => 'nullable|integer|min:0',
             'bandwidth.down' => 'nullable|integer|min:0',
+            'utilization.fullness_score' => 'nullable|numeric|min:0|max:1',
+            'utilization.is_full' => 'nullable|boolean',
+            'utilization.capacity_settings.bandwidth_capacity_mbps' => 'nullable|integer|min:0',
+            'utilization.capacity_settings.session_ceiling' => 'nullable|integer|min:0',
         ]);
 
         $nodeType = $node->type;
@@ -252,6 +256,14 @@ class UniProxyController extends Controller
             'bandwidth' => [
                 'up' => (int) ($data['bandwidth']['up'] ?? 0),
                 'down' => (int) ($data['bandwidth']['down'] ?? 0),
+            ],
+            'utilization' => [
+                'fullness_score' => (float) ($data['utilization']['fullness_score'] ?? 0),
+                'is_full' => (bool) ($data['utilization']['is_full'] ?? false),
+                'capacity_settings' => [
+                    'bandwidth_capacity_mbps' => (int) ($data['utilization']['capacity_settings']['bandwidth_capacity_mbps'] ?? 0),
+                    'session_ceiling' => (int) ($data['utilization']['capacity_settings']['session_ceiling'] ?? 0),
+                ],
             ],
             'updated_at' => now()->timestamp,
         ];

@@ -29,6 +29,14 @@ class NodeResource extends JsonResource
                 'up' => 0,
                 'down' => 0
             ],
+            'utilization' => $this['load_status']['utilization'] ?? [
+                'fullness_score' => 0,
+                'is_full' => false,
+                'capacity_settings' => [
+                    'bandwidth_capacity_mbps' => 0,
+                    'session_ceiling' => 0,
+                ]
+            ],
         ];
     }
 }
