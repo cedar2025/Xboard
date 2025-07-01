@@ -41,8 +41,9 @@ class EPay implements PaymentInterface
     public function pay($order): array
     {
         $params = [
+            //EPay -------------- Xboard
             'money' => $order['total_amount'] / 100,
-            'name' => $order['trade_no'],
+            'name' => $order['plan_name'],
             'notify_url' => $order['notify_url'],
             'return_url' => $order['return_url'],
             'out_trade_no' => $order['trade_no'],
