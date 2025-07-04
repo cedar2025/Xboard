@@ -12,7 +12,7 @@ if (! function_exists('admin_setting')) {
      */
     function admin_setting($key = null, $default = null)
     {
-        $setting = Setting::getInstance();
+        $setting = app(Setting::class);
         
         if ($key === null) {
             return $setting->toArray();
@@ -37,6 +37,6 @@ if (! function_exists('admin_settings_batch')) {
      */
     function admin_settings_batch(array $keys): array
     {
-        return Setting::getInstance()->getBatch($keys);
+        return app(Setting::class)->getBatch($keys);
     }
 }

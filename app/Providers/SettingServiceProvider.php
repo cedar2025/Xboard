@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Support\Setting;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Log;
 
 class SettingServiceProvider extends ServiceProvider
 {
@@ -16,7 +17,7 @@ class SettingServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->scoped(Setting::class, function (Application $app) {
-            return Setting::getInstance();
+            return new Setting();
         });
 
     }
