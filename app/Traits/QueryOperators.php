@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use Illuminate\Contracts\Database\Query\Expression;
+
 trait QueryOperators
 {
     /**
@@ -51,7 +53,7 @@ trait QueryOperators
      * @param mixed $value
      * @return void
      */
-    protected function applyQueryCondition($query, string $field, string $operator, mixed $value): void
+    protected function applyQueryCondition($query, array|Expression|string $field, string $operator, mixed $value): void
     {
         $queryOperator = $this->getQueryOperator($operator);
         
