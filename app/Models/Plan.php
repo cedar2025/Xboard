@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property bool $renew 是否允许续费
  * @property bool $sell 是否允许购买
  * @property array|null $prices 价格配置
+ * @property array|null $tags 标签
  * @property int $sort 排序
  * @property string|null $content 套餐描述
  * @property int|null $reset_traffic_method 流量重置方式
@@ -85,7 +86,8 @@ class Plan extends Model
         'reset_traffic_method',
         'capacity_limit',
         'sell',
-        'device_limit'
+        'device_limit',
+        'tags'
     ];
 
     protected $casts = [
@@ -95,6 +97,7 @@ class Plan extends Model
         'updated_at' => 'timestamp',
         'group_id' => 'integer',
         'prices' => 'array',
+        'tags' => 'array',
         'reset_traffic_method' => 'integer',
     ];
 
