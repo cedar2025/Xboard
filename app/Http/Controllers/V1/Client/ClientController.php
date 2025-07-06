@@ -82,7 +82,7 @@ class ClientController extends Controller
      */
     private function parseRequestedTypes(?string $typeInputString): array
     {
-        if (blank($typeInputString)) {
+        if (blank($typeInputString) || $typeInputString === 'all') {
             return Server::VALID_TYPES;
         }
 
