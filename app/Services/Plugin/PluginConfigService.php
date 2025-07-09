@@ -35,7 +35,8 @@ class PluginConfigService
                 'label' => $item['label'] ?? '',
                 'placeholder' => $item['placeholder'] ?? '',
                 'description' => $item['description'] ?? '',
-                'value' => $dbConfig[$key] ?? $item['default']
+                'value' => $dbConfig[$key] ?? $item['default'],
+                'options' => $item['options'] ?? []
             ];
         }
 
