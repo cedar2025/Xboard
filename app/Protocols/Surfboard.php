@@ -40,13 +40,13 @@ class Surfboard extends AbstractProtocol
             }
             if ($item['type'] === 'vmess') {
                 // [Proxy]
-                $proxies .= self::buildVmess($user['uuid'], $item);
+                $proxies .= self::buildVmess($item['password'], $item);
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
             if ($item['type'] === 'trojan') {
                 // [Proxy]
-                $proxies .= self::buildTrojan($user['uuid'], $item);
+                $proxies .= self::buildTrojan($item['password'], $item);
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }

@@ -47,7 +47,7 @@ class Shadowsocks extends AbstractProtocol
             "remarks" => $server['name'],
             "server" => $server['host'],
             "server_port" => $server['port'],
-            "password" => $user['uuid'],
+            "password" => $item['password'],
             "method" => data_get($server, 'protocol_settings.cipher')
         ];
         return $config;

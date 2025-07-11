@@ -293,7 +293,7 @@ class Server extends Model
         $this->attributes['protocol_settings'] = json_encode($castedSettings);
     }
 
-    public function generateShadowsocksPassword(User $user): string
+    public function generateServerPassword(User $user): string
     {
         if ($this->type !== self::TYPE_SHADOWSOCKS) {
             return $user->uuid;

@@ -85,35 +85,35 @@ class Stash extends AbstractProtocol
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'vmess') {
-                array_push($proxy, self::buildVmess($user['uuid'], $item));
+                array_push($proxy, self::buildVmess($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'vless') {
-                array_push($proxy, $this->buildVless($user['uuid'], $item));
+                array_push($proxy, $this->buildVless($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'hysteria') {
-                array_push($proxy, self::buildHysteria($user['uuid'], $item));
+                array_push($proxy, self::buildHysteria($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'trojan') {
-                array_push($proxy, self::buildTrojan($user['uuid'], $item));
+                array_push($proxy, self::buildTrojan($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'tuic') {
-                array_push($proxy, self::buildTuic($user['uuid'], $item));
+                array_push($proxy, self::buildTuic($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             // if ($item['type'] === 'anytls') {
-            //     array_push($proxy, self::buildAnyTLS($user['uuid'], $item));
+            //     array_push($proxy, self::buildAnyTLS($item['password'], $item));
             //     array_push($proxies, $item['name']);
             // }
             if ($item['type'] === 'socks') {
-                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+                array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'http') {
-                array_push($proxy, self::buildHttp($user['uuid'], $item));
+                array_push($proxy, self::buildHttp($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
         }

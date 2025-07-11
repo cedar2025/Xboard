@@ -32,13 +32,13 @@ class Loon extends AbstractProtocol
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($user['uuid'], $item);
+                $uri .= self::buildVmess($item['password'], $item);
             }
             if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($user['uuid'], $item);
+                $uri .= self::buildTrojan($item['password'], $item);
             }
             if ($item['type'] === 'hysteria') {
-                $uri .= self::buildHysteria($user['uuid'], $item, $user);
+                $uri .= self::buildHysteria($item['password'], $item, $user);
             }
         }
         return response($uri)

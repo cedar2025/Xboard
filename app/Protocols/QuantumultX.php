@@ -18,10 +18,10 @@ class QuantumultX extends AbstractProtocol
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($user['uuid'], $item);
+                $uri .= self::buildVmess($item['password'], $item);
             }
             if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($user['uuid'], $item);
+                $uri .= self::buildTrojan($item['password'], $item);
             }
         }
         return response(base64_encode($uri))

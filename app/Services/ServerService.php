@@ -52,7 +52,7 @@ class ServerService
             } else {
                 $server->port = (int) $server->port;
             }
-            $server->password = $server->generateShadowsocksPassword($user);
+            $server->password = $server->generateServerPassword($user);
             return $server;
         })->toArray();
 

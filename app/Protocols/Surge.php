@@ -46,15 +46,15 @@ class Surge extends AbstractProtocol
                 $proxyGroup .= $item['name'] . ', ';
             }
             if ($item['type'] === 'vmess') {
-                $proxies .= self::buildVmess($user['uuid'], $item);
+                $proxies .= self::buildVmess($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
             if ($item['type'] === 'trojan') {
-                $proxies .= self::buildTrojan($user['uuid'], $item);
+                $proxies .= self::buildTrojan($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
             if ($item['type'] === 'hysteria') {
-                $proxies .= self::buildHysteria($user['uuid'], $item);
+                $proxies .= self::buildHysteria($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
         }
