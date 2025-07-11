@@ -13,7 +13,7 @@ class Stash extends AbstractProtocol
     protected $protocolRequirements = [
         'stash' => [
             'anytls' => [
-                'base_version' => '3.1.0'
+                'base_version' => '9.9.9'
             ],
             'vless' => [
                 'protocol_settings.tls' => [
@@ -104,10 +104,10 @@ class Stash extends AbstractProtocol
                 array_push($proxy, self::buildTuic($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'anytls') {
-                array_push($proxy, self::buildAnyTLS($user['uuid'], $item));
-                array_push($proxies, $item['name']);
-            }
+            // if ($item['type'] === 'anytls') {
+            //     array_push($proxy, self::buildAnyTLS($user['uuid'], $item));
+            //     array_push($proxies, $item['name']);
+            // }
             if ($item['type'] === 'socks') {
                 array_push($proxy, self::buildSocks5($user['uuid'], $item));
                 array_push($proxies, $item['name']);
