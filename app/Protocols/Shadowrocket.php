@@ -39,25 +39,25 @@ class Shadowrocket extends AbstractProtocol
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($user['uuid'], $item);
+                $uri .= self::buildVmess($item['password'], $item);
             }
             if ($item['type'] === 'vless') {
-                $uri .= self::buildVless($user['uuid'], $item);
+                $uri .= self::buildVless($item['password'], $item);
             }
             if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($user['uuid'], $item);
+                $uri .= self::buildTrojan($item['password'], $item);
             }
             if ($item['type'] === 'hysteria') {
-                $uri .= self::buildHysteria($user['uuid'], $item);
+                $uri .= self::buildHysteria($item['password'], $item);
             }
             if ($item['type'] === 'tuic') {
-                $uri .= self::buildTuic($user['uuid'], $item);
+                $uri .= self::buildTuic($item['password'], $item);
             }
             if ($item['type'] === 'anytls') {
-                $uri .= self::buildAnyTLS($user['uuid'], $item);
+                $uri .= self::buildAnyTLS($item['password'], $item);
             }
             if ($item['type'] === 'socks') {
-                $uri .= self::buildSocks($user['uuid'], $item);
+                $uri .= self::buildSocks($item['password'], $item);
             }
         }
         return response(base64_encode($uri))
