@@ -1,0 +1,9 @@
+*
+!.gitignore
+!AlipayF2F.php
+!BTCPay.php
+!Coinbase.php
+!CoinPayments.php
+!EPay.php
+!MGate.php
+
