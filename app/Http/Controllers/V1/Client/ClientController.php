@@ -56,6 +56,7 @@ class ClientController extends Controller
             ?? General::class;
 
         $servers = ServerService::getAvailableServers($user);
+        $servers = HookManager::filter('client.subscribe.servers', $servers, $user, $request);
 
         $serversFiltered = $this->filterServers(
             servers: $servers,
