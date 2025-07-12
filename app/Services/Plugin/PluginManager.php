@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
 
@@ -51,13 +52,15 @@ class PluginManager
         if (!class_exists($pluginClass)) {
             $pluginFile = $this->getPluginPath($pluginCode) . '/Plugin.php';
             if (!File::exists($pluginFile)) {
-                throw new \Exception("Plugin class file not found: {$pluginFile}");
+                Log::error("Plugin class file not found: {$pluginFile}");
+                return null;
             }
             require_once $pluginFile;
         }
 
         if (!class_exists($pluginClass)) {
-            throw new \Exception("Plugin class not found: {$pluginClass}");
+            Log::error("Plugin class not found: {$pluginClass}");
+            return null;
         }
 
         $plugin = new $pluginClass($pluginCode);
@@ -265,6 +268,7 @@ class PluginManager
         $plugin = $this->loadPlugin($pluginCode);
 
         if (!$plugin) {
+            Plugin::where('code', $pluginCode)->delete();
             throw new \Exception('Plugin not found: ' . $pluginCode);
         }
 
