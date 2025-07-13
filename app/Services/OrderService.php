@@ -37,7 +37,6 @@ class OrderService
      * @param Plan $plan
      * @param string $period
      * @param string|null $couponCode
-     * @param array|null $telegramMessageIds
      * @return Order
      * @throws ApiException
      */
