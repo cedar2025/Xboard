@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $network 网络类型
  * @property int|null $parent_id 父节点ID
  * @property float|null $rate 倍率
+ * @property array|null $rate_time_ranges 倍率时间范围
  * @property int|null $sort 排序
  * @property array|null $protocol_settings 协议设置
  * @property int $created_at
@@ -114,7 +115,9 @@ class Server extends Model
         'last_push_at' => 'integer',
         'show' => 'boolean',
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'rate_time_ranges' => 'array',
+        'rate_time_enable' => 'boolean',
     ];
 
     private const PROTOCOL_CONFIGURATIONS = [
@@ -448,5 +451,17 @@ class Server extends Model
                 return Cache::get(CacheKey::get("SERVER_{$type}_LOAD_STATUS", $serverId));
             }
         );
+    }
+
+    public function getCurrentRate(): float
+    {
+        $now = date('H:i');
+        $ranges = $this->rate_time_ranges ?? [];
+        foreach ($ranges as $range) {
+            if ($now >= $range['start'] && $now <= $range['end']) {
+                return (float) $range['rate'];
+            }
+        }
+        return (float) $this->rate;
     }
 }

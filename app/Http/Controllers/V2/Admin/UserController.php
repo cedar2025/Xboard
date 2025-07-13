@@ -169,10 +169,7 @@ class UserController extends Controller
             return self::transformUserData($user);
         });
 
-        return response([
-            'data' => $users->items(),
-            'total' => $users->total()
-        ]);
+        return $this->paginate($users);
     }
 
     /**

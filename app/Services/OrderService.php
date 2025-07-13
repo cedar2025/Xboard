@@ -6,6 +6,7 @@ use App\Exceptions\ApiException;
 use App\Jobs\OrderHandleJob;
 use App\Models\Order;
 use App\Models\Plan;
+use App\Models\TrafficResetLog;
 use App\Models\User;
 use App\Services\Plugin\HookManager;
 use App\Utils\Helper;
@@ -37,6 +38,7 @@ class OrderService
      * @param Plan $plan
      * @param string $period
      * @param string|null $couponCode
+     * @param array|null $telegramMessageIds
      * @return Order
      * @throws ApiException
      */
@@ -106,7 +108,7 @@ class OrderService
                     $this->buyByOneTime($plan);
                     break;
                 case Plan::PERIOD_RESET_TRAFFIC:
-                    $this->buyByResetTraffic();
+                    app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
                     break;
                 default:
                     $this->buyByPeriod($order, $plan);
@@ -321,7 +323,7 @@ class OrderService
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             return false;
         }
     }
@@ -336,12 +338,6 @@ class OrderService
         $this->user->device_limit = $deviceLimit;
     }
 
-    private function buyByResetTraffic()
-    {
-        $this->user->u = 0;
-        $this->user->d = 0;
-    }
-
     private function buyByPeriod(Order $order, Plan $plan)
     {
         // change plan process
@@ -351,10 +347,10 @@ class OrderService
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         // 从一次性转换到循环
         if ($this->user->expired_at === NULL)
-            $this->buyByResetTraffic();
+            app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
         // 新购
         if ($order->type === Order::TYPE_NEW_PURCHASE)
-            $this->buyByResetTraffic();
+            app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
@@ -362,7 +358,7 @@ class OrderService
 
     private function buyByOneTime(Plan $plan)
     {
-        $this->buyByResetTraffic();
+        app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
@@ -397,7 +393,7 @@ class OrderService
             case 0:
                 break;
             case 1:
-                $this->buyByResetTraffic();
+                app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
                 break;
         }
     }

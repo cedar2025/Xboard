@@ -29,6 +29,7 @@ class PlanResource extends JsonResource
             'capacity_limit' => $this->getFormattedCapacityLimit(),
             'transfer_enable' => $this->resource['transfer_enable'],
             'speed_limit' => $this->resource['speed_limit'],
+            'device_limit' => $this->resource['device_limit'],
             'show' => (bool) $this->resource['show'],
             'sell' => (bool) $this->resource['sell'],
             'renew' => (bool) $this->resource['renew'],

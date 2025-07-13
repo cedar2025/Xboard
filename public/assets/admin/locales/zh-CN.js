@@ -161,6 +161,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "planManagement": "套餐管理",
     "orderManagement": "订单管理",
     "couponManagement": "优惠券管理",
+    "giftCardManagement": "礼品卡管理",
     "userManagement": "用户管理",
     "ticketManagement": "工单管理",
     "trafficResetLogs": "流量重置日志"
@@ -475,7 +476,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "subscribe_path": {
         "title": "订阅路径",
         "description": "订阅路径，修改后将会改变原有的subscribe路径",
-        "current_format": "当前订阅路径格式：{path}/xxxxxxxxxx"
+        "current_format": "当前订阅路径格式：{path}/xxxxxxxxxx",
+        "restart_tip": "修改订阅路径后，可能需要重启服务才能生效。"
       },
       "show_info_to_server": {
         "title": "在订阅中展示订阅信息",
@@ -937,6 +939,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "error": "复制失败",
       "errorLog": "复制到剪贴板时出错"
     },
+    "submit": "提交",
+    "saving": "保存中...",
     "table": {
       "noData": "暂无数据",
       "pagination": {
@@ -960,6 +964,15 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "updating": "更新中...",
       "updateSuccess": "更新成功，系统将在稍后自动重启",
       "updateFailed": "更新失败，请稍后重试"
+    },
+    "time": {
+      "day": "天",
+      "hour": "小时"
+    },
+    "reset": "重置",
+    "export": "导出",
+    "currency": {
+      "yuan": "元"
     }
   },
   "dashboard": {
@@ -1154,6 +1167,348 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "refresh": "刷新",
       "close": "关闭",
       "pagination": "第 {{current}}/{{total}} 页，共 {{count}} 条"
+    }
+  },
+  "giftCard": {
+    "title": "礼品卡管理",
+    "description": "在这里可以管理礼品卡模板、兑换码和使用记录等功能。",
+    "tabs": {
+      "templates": "模板管理",
+      "codes": "兑换码管理",
+      "usages": "使用记录",
+      "statistics": "统计数据"
+    },
+    "template": {
+      "title": "模板管理",
+      "description": "管理礼品卡模板，包括创建、编辑和删除模板。",
+      "table": {
+        "title": "模板列表",
+        "columns": {
+          "id": "ID",
+          "name": "名称",
+          "type": "类型",
+          "status": "状态",
+          "sort": "排序",
+          "rewards": "奖励内容",
+          "created_at": "创建时间",
+          "actions": "操作",
+          "no_rewards": "无奖励"
+        }
+      },
+      "form": {
+        "add": "添加模板",
+        "edit": "编辑模板",
+        "name": {
+          "label": "模板名称",
+          "placeholder": "请输入模板名称",
+          "required": "请输入模板名称"
+        },
+        "sort": {
+          "label": "排序",
+          "placeholder": "数字越小越靠前"
+        },
+        "type": {
+          "label": "类型",
+          "placeholder": "请选择礼品卡类型"
+        },
+        "description": {
+          "label": "描述",
+          "placeholder": "请输入礼品卡描述"
+        },
+        "status": {
+          "label": "状态",
+          "description": "禁用后，此模板将无法生成或兑换新的礼品卡。"
+        },
+        "display": {
+          "title": "显示效果"
+        },
+        "theme_color": {
+          "label": "主题颜色"
+        },
+        "icon": {
+          "label": "图标",
+          "placeholder": "请输入图标的URL"
+        },
+        "background_image": {
+          "label": "背景图片",
+          "placeholder": "请输入背景图片的URL"
+        },
+        "conditions": {
+          "title": "使用条件",
+          "new_user_max_days": {
+            "label": "新用户注册天数限制",
+            "placeholder": "例如: 7 (仅限注册7天内的用户)"
+          },
+          "new_user_only": {
+            "label": "仅限新用户"
+          },
+          "paid_user_only": {
+            "label": "仅限付费用户"
+          },
+          "require_invite": {
+            "label": "需要邀请关系"
+          },
+          "allowed_plans": {
+            "label": "允许的套餐",
+            "placeholder": "选择允许兑换的套餐 (留空则不限制)"
+          },
+          "disallowed_plans": {
+            "label": "禁止的套餐",
+            "placeholder": "选择禁止兑换的套餐 (留空则不限制)"
+          }
+        },
+        "limits": {
+          "title": "使用限制",
+          "max_use_per_user": {
+            "label": "单用户最大使用次数",
+            "placeholder": "留空则不限制"
+          },
+          "cooldown_hours": {
+            "label": "同类卡冷却时间(小时)",
+            "placeholder": "留空则不限制"
+          },
+          "invite_reward_rate": {
+            "label": "邀请人奖励比例",
+            "placeholder": "例如: 0.2 (代表20%)",
+            "description": "使用者有邀请人时，给邀请人的奖励 = 余额奖励 * 此比例"
+          }
+        },
+        "rewards": {
+          "title": "奖励内容",
+          "balance": {
+            "label": "奖励余额 (元)",
+            "short_label": "余额",
+            "placeholder": "请输入奖励的金额(元)"
+          },
+          "transfer_enable": {
+            "label": "奖励流量 (字节)",
+            "short_label": "流量",
+            "placeholder": "请输入奖励的流量(字节)"
+          },
+          "expire_days": {
+            "label": "延长有效期 (天)",
+            "short_label": "有效期",
+            "placeholder": "请输入延长的天数"
+          },
+          "transfer": {
+            "label": "奖励流量 (字节)",
+            "placeholder": "请输入奖励的流量(字节)"
+          },
+          "days": {
+            "label": "延长有效期 (天)",
+            "placeholder": "请输入延长的天数"
+          },
+          "device_limit": {
+            "label": "增加设备数",
+            "short_label": "设备数",
+            "placeholder": "请输入增加的设备数量"
+          },
+          "reset_package": {
+            "label": "重置当月流量",
+            "description": "开启后，兑换时会将用户当前套餐的已用流量清零。"
+          },
+          "reset_count": {
+            "description": "该类型卡将重置用户当月的流量使用。"
+          },
+          "task_card": {
+            "description": "任务礼品卡的具体奖励将在任务系统中配置。"
+          },
+          "plan_id": {
+            "label": "指定套餐",
+            "short_label": "套餐",
+            "placeholder": "请选择一个套餐"
+          },
+          "plan_validity_days": {
+            "label": "套餐有效期 (天)",
+            "short_label": "套餐有效期",
+            "placeholder": "留空则使用套餐默认有效期"
+          },
+          "random_rewards": {
+            "label": "随机奖励池",
+            "add": "添加随机奖励项",
+            "weight": "权重"
+          }
+        },
+        "special_config": {
+          "title": "特殊配置",
+          "start_time": {
+            "label": "活动开始时间",
+            "placeholder": "请选择开始日期"
+          },
+          "end_time": {
+            "label": "活动结束时间",
+            "placeholder": "请选择结束日期"
+          },
+          "festival_bonus": {
+            "label": "节日奖励乘数",
+            "placeholder": "例如: 1.5 (代表1.5倍)"
+          }
+        },
+        "submit": {
+          "saving": "保存中...",
+          "save": "保存"
+        }
+      },
+      "actions": {
+        "edit": "编辑",
+        "delete": "删除",
+        "deleteConfirm": {
+          "title": "确认删除",
+          "description": "此操作将永久删除该模板，确定要继续吗？",
+          "confirmText": "删除"
+        }
+      }
+    },
+    "code": {
+      "title": "兑换码管理",
+      "form": {
+        "generate": "生成兑换码",
+        "template_id": {
+          "label": "选择模板",
+          "placeholder": "请选择一个模板来生成兑换码"
+        },
+        "count": {
+          "label": "生成数量"
+        },
+        "prefix": {
+          "label": "自定义前缀 (可选)"
+        },
+        "expires_hours": {
+          "label": "有效期 (小时)"
+        },
+        "max_usage": {
+          "label": "最大使用次数"
+        },
+        "download_csv": "导出CSV",
+        "submit": {
+          "generating": "生成中...",
+          "generate": "立即生成"
+        }
+      },
+      "description": "管理礼品卡兑换码，包括生成、查看和导出兑换码。",
+      "generate": {
+        "title": "生成兑换码",
+        "template": "选择模板",
+        "count": "生成数量",
+        "prefix": "自定义前缀",
+        "expires_hours": "有效期 (小时)",
+        "max_usage": "最大使用次数",
+        "submit": "生成"
+      },
+      "table": {
+        "title": "兑换码列表",
+        "columns": {
+          "id": "ID",
+          "code": "兑换码",
+          "template_name": "模板名称",
+          "status": "状态",
+          "expires_at": "过期时间",
+          "usage_count": "已用次数",
+          "max_usage": "可用次数",
+          "created_at": "创建时间"
+        }
+      },
+      "actions": {
+        "enable": "启用",
+        "disable": "禁用",
+        "export": "导出",
+        "exportConfirm": {
+          "title": "确认导出",
+          "description": "将导出选定批次的所有兑换码为文本文件。确定要继续吗？",
+          "confirmText": "导出"
+        }
+      },
+      "status": {
+        "0": "未使用",
+        "1": "已使用",
+        "2": "已禁用",
+        "3": "已过期"
+      }
+    },
+    "usage": {
+      "title": "使用记录",
+      "description": "查看礼品卡的使用记录和详细信息。",
+      "table": {
+        "columns": {
+          "id": "ID",
+          "code": "兑换码",
+          "template_name": "模板名称",
+          "user_email": "用户邮箱",
+          "rewards_given": "获得奖励",
+          "invite_rewards": "邀请奖励",
+          "multiplier_applied": "倍数加成",
+          "ip_address": "IP地址",
+          "created_at": "使用时间",
+          "actions": "操作"
+        }
+      },
+      "actions": {
+        "view": "查看详情"
+      }
+    },
+    "statistics": {
+      "title": "统计数据",
+      "description": "查看礼品卡的统计数据和使用情况分析。",
+      "total": {
+        "title": "总体统计",
+        "templates_count": "模板总数",
+        "active_templates_count": "活跃模板数",
+        "codes_count": "兑换码总数",
+        "used_codes_count": "已使用兑换码",
+        "usages_count": "使用记录数"
+      },
+      "daily": {
+        "title": "每日使用量",
+        "chart": "使用量趋势图"
+      },
+      "type": {
+        "title": "类型统计",
+        "chart": "类型分布图"
+      },
+      "dateRange": {
+        "label": "日期范围",
+        "start": "开始日期",
+        "end": "结束日期"
+      }
+    },
+    "types": {
+      "1": "通用礼品卡",
+      "2": "套餐礼品卡",
+      "3": "盲盒礼品卡",
+      "4": "任务礼品卡"
+    },
+    "common": {
+      "search": "搜索礼品卡...",
+      "reset": "重置",
+      "filter": "筛选",
+      "export": "导出",
+      "refresh": "刷新",
+      "back": "返回",
+      "close": "关闭",
+      "confirm": "确认",
+      "cancel": "取消",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "loading": "加载中...",
+      "noData": "暂无数据",
+      "success": "操作成功",
+      "error": "操作失败"
+    },
+    "messages": {
+      "formInvalid": "请检查表单输入是否正确",
+      "templateCreated": "模板创建成功",
+      "templateUpdated": "模板更新成功",
+      "templateDeleted": "模板删除成功",
+      "codeGenerated": "兑换码生成成功",
+      "generateCodeFailed": "兑换码生成失败",
+      "codeStatusUpdated": "兑换码状态更新成功",
+      "updateCodeStatusFailed": "兑换码状态更新失败",
+      "codesExported": "兑换码导出成功",
+      "createTemplateFailed": "创建模板失败",
+      "updateTemplateFailed": "更新模板失败",
+      "deleteTemplateFailed": "删除模板失败",
+      "loadDataFailed": "加载数据失败",
+      "codesGenerated": "兑换码生成成功"
     }
   },
   "route": {
@@ -1672,6 +2027,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "error_gte_zero": "基础倍率必须大于或等于0"
       },
       "dynamic_rate": {
+        "section_title": "动态倍率配置",
         "enable_label": "启用动态倍率",
         "enable_description": "根据时间段设置不同的倍率乘数",
         "rules_label": "时间段规则",

@@ -79,7 +79,7 @@ class UniProxyController extends Controller
         );
 
         $userService = new UserService();
-        $userService->trafficFetch($node->toArray(), $nodeType, $data);
+        $userService->trafficFetch($node, $nodeType, $data);
         return $this->success(true);
     }
 

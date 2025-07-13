@@ -161,6 +161,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "planManagement": "Plan Management",
     "orderManagement": "Order Management",
     "couponManagement": "Coupon Management",
+    "giftCardManagement": "Gift Card Management",
     "userManagement": "User Management",
     "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management"
@@ -555,7 +556,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "subscribe_path": {
         "title": "Subscription Path",
         "description": "Subscription path, modifying will change the original subscribe path",
-        "current_format": "Current subscription path format: {path}/xxxxxxxxxx"
+        "current_format": "Current subscription path format: {path}/xxxxxxxxxx",
+        "restart_tip": "You may need to restart the service for the new subscribe path to take effect."
       },
       "show_info_to_server": {
         "title": "Show Subscription Info in Nodes",
@@ -932,6 +934,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "error": "Copy failed",
       "errorLog": "Error copying to clipboard"
     },
+    "submit": "Submit",
+    "saving": "Saving...",
     "table": {
       "noData": "No data available",
       "pagination": {
@@ -955,6 +959,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "updating": "Updating...",
       "updateSuccess": "Update successful, system will restart shortly",
       "updateFailed": "Update failed, please try again later"
+    },
+    "time": {
+      "day": "day",
+      "hour": " hour(s)"
+    },
+    "reset": "Reset",
+    "export": "Export",
+    "currency": {
+      "yuan": "Yuan"
     }
   },
   "dashboard": {
@@ -1162,6 +1175,241 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "title": "Menu Navigation",
       "noResults": "No results found",
       "loading": "Searching..."
+    }
+  },
+  "giftCard": {
+    "types": {
+      "1": "General Gift Card",
+      "2": "Plan-Specific Gift Card",
+      "3": "Mystery Box Reward",
+      "4": "Task Gift Card"
+    },
+    "status": {
+      "0": "Unused",
+      "1": "Used",
+      "2": "Disabled",
+      "3": "Expired"
+    },
+    "template": {
+      "title": "Gift Card Templates",
+      "add": "Add Template",
+      "search": "Search template name...",
+      "form": {
+        "name": {
+          "label": "Name",
+          "placeholder": "Enter template name"
+        },
+        "sort": {
+          "label": "Sort",
+          "placeholder": "Smaller numbers come first"
+        },
+        "type": {
+          "label": "Type",
+          "placeholder": "Select gift card type"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Enter gift card description"
+        },
+        "status": {
+          "label": "Status",
+          "description": "If disabled, this template cannot be used to generate or redeem new gift cards."
+        },
+        "display": {
+          "title": "Display Settings"
+        },
+        "theme_color": {
+          "label": "Theme Color"
+        },
+        "icon": {
+          "label": "Icon",
+          "placeholder": "Enter the URL of the icon"
+        },
+        "background_image": {
+          "label": "Background Image",
+          "placeholder": "Enter the URL of the background image"
+        },
+        "conditions": {
+          "title": "Usage Conditions",
+          "new_user_max_days": {
+            "label": "New User Registration Day Limit",
+            "placeholder": "e.g., 7 (only for users registered within 7 days)"
+          },
+          "new_user_only": {
+            "label": "New Users Only"
+          },
+          "paid_user_only": {
+            "label": "Paid Users Only"
+          },
+          "require_invite": {
+            "label": "Requires Invitation"
+          },
+          "allowed_plans": {
+            "label": "Allowed Plans",
+            "placeholder": "Select allowed plans (leave empty for no restriction)"
+          },
+          "disallowed_plans": {
+            "label": "Disallowed Plans",
+            "placeholder": "Select disallowed plans (leave empty for no restriction)"
+          }
+        },
+        "limits": {
+          "title": "Usage Limits",
+          "max_use_per_user": {
+            "label": "Max Uses Per User",
+            "placeholder": "Leave empty for no limit"
+          },
+          "cooldown_hours": {
+            "label": "Cooldown for Same Type (Hours)",
+            "placeholder": "Leave empty for no limit"
+          },
+          "invite_reward_rate": {
+            "label": "Inviter Reward Rate",
+            "placeholder": "e.g., 0.2 (for 20%)",
+            "description": "If the user has an inviter, the inviter's reward = balance reward * this rate"
+          }
+        },
+        "rewards": {
+          "title": "Reward Content",
+          "balance": {
+            "label": "Reward Amount (in Yuan)",
+            "short_label": "Balance",
+            "placeholder": "Enter the reward amount in Yuan"
+          },
+          "transfer_enable": {
+            "label": "Reward Traffic (in bytes)",
+            "short_label": "Traffic",
+            "placeholder": "Enter the reward traffic in bytes"
+          },
+          "expire_days": {
+            "label": "Extend Validity (in days)",
+            "short_label": "Validity",
+            "placeholder": "Enter the number of days to extend"
+          },
+          "transfer": {
+            "label": "Reward Traffic (in bytes)",
+            "placeholder": "Enter the reward traffic in bytes"
+          },
+          "days": {
+            "label": "Extend Validity (in days)",
+            "placeholder": "Enter the number of days to extend"
+          },
+          "device_limit": {
+            "label": "Increase Device Limit",
+            "short_label": "Devices",
+            "placeholder": "Enter the number of devices to increase"
+          },
+          "reset_package": {
+            "label": "Reset Monthly Traffic",
+            "description": "If enabled, the user's current plan traffic usage will be reset to zero upon redemption."
+          },
+          "reset_count": {
+            "description": "This type of card will reset the user's traffic usage for the current month."
+          },
+          "task_card": {
+            "description": "The specific rewards for task gift cards will be configured in the task system."
+          },
+          "plan_id": {
+            "label": "Specify Plan",
+            "short_label": "Plan",
+            "placeholder": "Select a plan"
+          },
+          "plan_validity_days": {
+            "label": "Plan Validity (in days)",
+            "short_label": "Plan Validity",
+            "placeholder": "Leave empty to use the plan's default validity"
+          },
+          "random_rewards": {
+            "label": "Random Reward Pool",
+            "add": "Add Random Reward Item",
+            "weight": "Weight"
+          }
+        },
+        "special_config": {
+          "title": "Special Configuration",
+          "start_time": {
+            "label": "Event Start Time",
+            "placeholder": "Pick a start date"
+          },
+          "end_time": {
+            "label": "Event End Time",
+            "placeholder": "Pick an end date"
+          },
+          "festival_bonus": {
+            "label": "Festival Reward Multiplier",
+            "placeholder": "e.g., 1.5 (for 1.5x)"
+          }
+        }
+      }
+    },
+    "code": {
+      "title": "Code Management",
+      "add": "Generate Codes",
+      "search": "Search codes...",
+      "form": {
+        "template_id": {
+          "label": "Gift Card Template",
+          "placeholder": "Select a template"
+        },
+        "count": {
+          "label": "Quantity to Generate",
+          "placeholder": "Enter the quantity to generate"
+        },
+        "prefix": {
+          "label": "Code Prefix",
+          "placeholder": "Leave empty for default prefix GC"
+        },
+        "expires_hours": {
+          "label": "Validity (Hours)",
+          "placeholder": "From generation time, leave empty for no expiration"
+        },
+        "max_usage": {
+          "label": "Max Usage Count",
+          "placeholder": "Total times each code can be used"
+        },
+        "download_csv": "Export as CSV"
+      },
+      "table": {
+        "code": "Code",
+        "template": "Template",
+        "status": "Status",
+        "expires_at": "Expires At",
+        "used_at": "Used At",
+        "used_by": "Used By",
+        "max_usage": "Max Uses",
+        "usage_count": "Usage Count"
+      },
+      "messages": {
+        "generateSuccess": "Codes generated successfully",
+        "generateFailed": "Failed to generate codes",
+        "deleteConfirm": "Are you sure you want to delete this code? This action cannot be undone.",
+        "deleteSuccess": "Code deleted successfully",
+        "deleteFailed": "Failed to delete code"
+      }
+    },
+    "messages": {
+      "formInvalid": "Form validation failed, please check your input.",
+      "templateCreated": "Template created successfully",
+      "templateUpdated": "Template updated successfully",
+      "createTemplateFailed": "Failed to create template",
+      "updateTemplateFailed": "Failed to update template",
+      "deleteConfirm": "Are you sure you want to delete this template? All codes under it will also be deleted.",
+      "deleteSuccess": "Template deleted successfully",
+      "deleteFailed": "Failed to delete template",
+      "codesGenerated": "Codes generated successfully"
+    },
+    "table": {
+      "columns": {
+        "no_rewards": "No Rewards"
+      }
+    },
+    "common": {
+      "currency": {
+        "yuan": "Yuan"
+      },
+      "time": {
+        "day": "day"
+      }
     }
   },
   "route": {
@@ -1705,6 +1953,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "error_gte_zero": "Base rate must be greater than or equal to 0"
       },
       "dynamic_rate": {
+        "section_title": "Dynamic Rate Configuration",
         "enable_label": "Enable Dynamic Rate",
         "enable_description": "Set different rate multipliers based on time periods",
         "rules_label": "Time Period Rules",

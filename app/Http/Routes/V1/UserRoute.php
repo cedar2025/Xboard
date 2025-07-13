@@ -3,6 +3,7 @@ namespace App\Http\Routes\V1;
 
 use App\Http\Controllers\V1\User\CommController;
 use App\Http\Controllers\V1\User\CouponController;
+use App\Http\Controllers\V1\User\GiftCardController;
 use App\Http\Controllers\V1\User\InviteController;
 use App\Http\Controllers\V1\User\KnowledgeController;
 use App\Http\Controllers\V1\User\NoticeController;
@@ -61,6 +62,12 @@ class UserRoute
             $router->get('/server/fetch', [ServerController::class, 'fetch']);
             // Coupon
             $router->post('/coupon/check', [CouponController::class, 'check']);
+            // Gift Card
+            $router->post('/gift-card/check', [GiftCardController::class, 'check']);
+            $router->post('/gift-card/redeem', [GiftCardController::class, 'redeem']);
+            $router->get('/gift-card/history', [GiftCardController::class, 'history']);
+            $router->get('/gift-card/detail', [GiftCardController::class, 'detail']);
+            $router->get('/gift-card/types', [GiftCardController::class, 'types']);
             // Telegram
             $router->get('/telegram/getBotInfo', [TelegramController::class, 'getBotInfo']);
             // Comm
