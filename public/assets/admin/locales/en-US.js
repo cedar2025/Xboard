@@ -1277,9 +1277,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "placeholder": "Enter the reward amount in Yuan"
           },
           "transfer_enable": {
-            "label": "Reward Traffic (in bytes)",
+            "label": "Reward Traffic (in GB)",
             "short_label": "Traffic",
-            "placeholder": "Enter the reward traffic in bytes"
+            "placeholder": "Enter the reward traffic in GB"
           },
           "expire_days": {
             "label": "Extend Validity (in days)",
