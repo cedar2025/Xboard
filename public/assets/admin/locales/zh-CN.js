@@ -1281,9 +1281,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
             "placeholder": "请输入奖励的金额(元)"
           },
           "transfer_enable": {
-            "label": "奖励流量 (字节)",
+            "label": "奖励流量 (GB)",
             "short_label": "流量",
-            "placeholder": "请输入奖励的流量(字节)"
+            "placeholder": "请输入奖励的流量(GB)"
           },
           "expire_days": {
             "label": "延长有效期 (天)",
