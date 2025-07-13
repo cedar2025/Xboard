@@ -428,8 +428,22 @@ class PluginManager
 
         $targetPath = $this->pluginPath . '/' . Str::studly($config['code']);
         if (File::exists($targetPath)) {
-            File::deleteDirectory($extractPath);
-            throw new \Exception('插件已存在');
+            $installedConfigPath = $targetPath . '/config.json';
+            if (!File::exists($installedConfigPath)) {
+                throw new \Exception('已安装插件缺少配置文件，无法判断是否可升级');
+            }
+            $installedConfig = json_decode(File::get($installedConfigPath), true);
+
+            $oldVersion = $installedConfig['version'] ?? null;
+            $newVersion = $config['version'] ?? null;
+            if (!$oldVersion || !$newVersion) {
+                throw new \Exception('插件缺少版本号，无法判断是否可升级');
+            }
+            if (version_compare($newVersion, $oldVersion, '<=')) {
+                throw new \Exception('上传插件版本不高于已安装版本，无法升级');
+            }
+
+            File::deleteDirectory($targetPath);
         }
 
         File::copyDirectory($pluginPath, $targetPath);
