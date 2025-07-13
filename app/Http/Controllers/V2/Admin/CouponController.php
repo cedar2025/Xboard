@@ -46,10 +46,7 @@ class CouponController extends Controller
         $coupons = $builder
             ->orderBy('created_at', 'desc')
             ->paginate($pageSize, ["*"], 'page', $current);
-        return response([
-            'data' => $coupons->items(),
-            'total' => $coupons->total()
-        ]);
+        return $this->paginate($coupons);
     }
 
     public function update(Request $request)

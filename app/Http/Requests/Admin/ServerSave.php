@@ -95,6 +95,11 @@ class ServerSave extends FormRequest
             'excludes' => 'nullable|array',
             'ips' => 'nullable|array',
             'rate' => 'required|numeric',
+            'rate_time_enable' => 'nullable|boolean',
+            'rate_time_ranges' => 'nullable|array',
+            'rate_time_ranges.*.start' => 'required_with:rate_time_ranges|string|date_format:H:i',
+            'rate_time_ranges.*.end' => 'required_with:rate_time_ranges|string|date_format:H:i',
+            'rate_time_ranges.*.rate' => 'required_with:rate_time_ranges|numeric|min:0',
             'protocol_settings' => 'array',
         ];
     }

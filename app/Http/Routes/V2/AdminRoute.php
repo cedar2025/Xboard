@@ -12,6 +12,7 @@ use App\Http\Controllers\V2\Admin\StatController;
 use App\Http\Controllers\V2\Admin\NoticeController;
 use App\Http\Controllers\V2\Admin\TicketController;
 use App\Http\Controllers\V2\Admin\CouponController;
+use App\Http\Controllers\V2\Admin\GiftCardController;
 use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
@@ -156,6 +157,32 @@ class AdminRoute
                 $router->post('/drop', [CouponController::class, 'drop']);
                 $router->post('/show', [CouponController::class, 'show']);
                 $router->post('/update', [CouponController::class, 'update']);
+            });
+
+            // Gift Card
+            $router->group([
+                'prefix' => 'gift-card'
+            ], function ($router) {
+                // Template management
+                $router->any('/templates', [GiftCardController::class, 'templates']);
+                $router->post('/create-template', [GiftCardController::class, 'createTemplate']);
+                $router->post('/update-template', [GiftCardController::class, 'updateTemplate']);
+                $router->post('/delete-template', [GiftCardController::class, 'deleteTemplate']);
+
+                // Code management
+                $router->post('/generate-codes', [GiftCardController::class, 'generateCodes']);
+                $router->any('/codes', [GiftCardController::class, 'codes']);
+                $router->post('/toggle-code', [GiftCardController::class, 'toggleCode']);
+                $router->get('/export-codes', [GiftCardController::class, 'exportCodes']);
+                $router->post('/update-code', [GiftCardController::class, 'updateCode']);
+                $router->post('/delete-code', [GiftCardController::class, 'deleteCode']);
+
+                // Usage records
+                $router->any('/usages', [GiftCardController::class, 'usages']);
+
+                // Statistics
+                $router->any('/statistics', [GiftCardController::class, 'statistics']);
+                $router->get('/types', [GiftCardController::class, 'types']);
             });
 
             // Knowledge

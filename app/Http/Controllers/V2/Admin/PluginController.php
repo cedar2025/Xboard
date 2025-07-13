@@ -8,6 +8,7 @@ use App\Services\Plugin\PluginManager;
 use App\Services\Plugin\PluginConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class PluginController extends Controller
 {
@@ -44,6 +45,11 @@ class PluginController extends Controller
                     $installed = isset($installedPlugins[$code]);
                     // 使用配置服务获取配置
                     $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
+                    $readmeFile = collect(['README.md', 'readme.md'])
+                        ->map(fn($f) => $directory . '/' . $f)
+                        ->first(fn($path) => File::exists($path));
+                    $readmeContent = $readmeFile ? File::get($readmeFile) : '';
+
                     $plugins[] = [
                         'code' => $config['code'],
                         'name' => $config['name'],
@@ -53,6 +59,7 @@ class PluginController extends Controller
                         'is_installed' => $installed,
                         'is_enabled' => $installed ? $installedPlugins[$code]['is_enabled'] : false,
                         'config' => $pluginConfig,
+                        'readme' => $readmeContent,
                     ];
                 }
             }

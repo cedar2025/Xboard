@@ -62,7 +62,7 @@ class TrojanTidalabController extends Controller
         foreach ($data as $item) {
             $formatData[$item['user_id']] = [$item['u'], $item['d']];
         }
-        $userService->trafficFetch($server->toArray(), 'trojan', $formatData);
+        $userService->trafficFetch($server, 'trojan', $formatData);
 
         return response([
             'ret' => 1,
