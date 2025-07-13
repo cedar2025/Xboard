@@ -186,7 +186,11 @@ class General extends AbstractProtocol
                 $config['path'] = data_get($protocol_settings, 'network_settings.path');
                 $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
                 $config['mode'] = data_get($protocol_settings, 'network_settings.mode', 'auto');
-                $config['extra'] = json_encode(data_get($protocol_settings, 'network_settings.extra'));
+                // $config['extra'] = json_encode(data_get($protocol_settings, 'network_settings.extra'));
+                $extra = data_get($protocol_settings, 'network_settings.extra');
+                if ($extra !== null) {
+                    $config['extra'] = json_encode($extra);
+                }
                 break;
         }
 
