@@ -60,14 +60,6 @@ class TrafficResetService
         ]);
 
         $this->clearUserCache($user);
-
-        Log::info(__('traffic_reset.reset_success'), [
-          'user_id' => $user->id,
-          'email' => $user->email,
-          'old_traffic' => $oldTotal,
-          'trigger_source' => $triggerSource,
-        ]);
-
         return true;
       });
     } catch (\Exception $e) {
@@ -283,11 +275,6 @@ class TrafficResetService
     $errors = [];
     $lastProcessedId = 0;
 
-    Log::info('Starting batch traffic reset task.', [
-      'batch_size' => $batchSize,
-      'start_time' => now()->toDateTimeString(),
-    ]);
-
     try {
       do {
         $users = User::where('next_reset_at', '<=', time())
@@ -307,9 +294,7 @@ class TrafficResetService
           break;
         }
 
-        $batchStartTime = microtime(true);
         $batchResetCount = 0;
-        $batchErrors = [];
 
         if ($progressCallback) {
           $progressCallback([
@@ -318,13 +303,6 @@ class TrafficResetService
             'total_processed' => $totalProcessedCount,
           ]);
         }
-
-        Log::info("Processing batch #{$batchNumber}", [
-          'batch_number' => $batchNumber,
-          'batch_size' => $users->count(),
-          'total_processed' => $totalProcessedCount,
-          'id_range' => $users->first()->id . '-' . $users->last()->id,
-        ]);
 
         foreach ($users as $user) {
           try {
@@ -351,17 +329,6 @@ class TrafficResetService
             $lastProcessedId = $user->id;
           }
         }
-
-        $batchDuration = round(microtime(true) - $batchStartTime, 2);
-
-        Log::info("Batch #{$batchNumber} processing complete", [
-          'batch_number' => $batchNumber,
-          'processed_count' => $users->count(),
-          'reset_count' => $batchResetCount,
-          'error_count' => count($batchErrors),
-          'duration' => $batchDuration,
-          'last_processed_id' => $lastProcessedId,
-        ]);
 
         $batchNumber++;
 
@@ -406,8 +373,6 @@ class TrafficResetService
       'last_processed_id' => $lastProcessedId,
       'completed_at' => now()->toDateTimeString(),
     ];
-
-    Log::info('Batch traffic reset task completed', $result);
 
     return $result;
   }

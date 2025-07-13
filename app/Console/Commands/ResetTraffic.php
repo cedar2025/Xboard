@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use App\Services\TrafficResetService;
 use App\Utils\Helper;
 use Carbon\Carbon;
@@ -53,8 +54,6 @@ class ResetTraffic extends Command
 
     // 设置最大执行时间
     set_time_limit($maxTime);
-
-    $startTime = microtime(true);
 
     try {
       if ($dryRun) {
@@ -129,7 +128,7 @@ class ResetTraffic extends Command
   {
     $this->info("🔍 扫描需要重置的用户...");
 
-    $totalUsers = \App\Models\User::where('next_reset_at', '<=', time())
+    $totalUsers = User::where('next_reset_at', '<=', time())
       ->whereNotNull('next_reset_at')
       ->where(function ($query) {
         $query->where('expired_at', '>', time())
@@ -160,7 +159,7 @@ class ResetTraffic extends Command
 
     // 显示前几个用户的详情作为示例
     if ($this->option('verbose') || $totalUsers <= 20) {
-      $sampleUsers = \App\Models\User::where('next_reset_at', '<=', time())
+      $sampleUsers = User::where('next_reset_at', '<=', time())
         ->whereNotNull('next_reset_at')
         ->where(function ($query) {
           $query->where('expired_at', '>', time())
