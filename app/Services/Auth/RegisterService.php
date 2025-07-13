@@ -102,27 +102,27 @@ class RegisterService
      * 处理邀请码
      *
      * @param string $inviteCode 邀请码
-     * @return array [邀请人ID或成功状态, 错误消息]
+     * @return int|null 邀请人ID
      */
-    public function handleInviteCode(string $inviteCode): array
+    public function handleInviteCode(string $inviteCode): int|null
     {
         $inviteCodeModel = InviteCode::where('code', $inviteCode)
-            ->where('status', 0)
+            ->where('status', InviteCode::STATUS_UNUSED)
             ->first();
 
         if (!$inviteCodeModel) {
             if ((int) admin_setting('invite_force', 0)) {
-                return [false, [400, __('Invalid invitation code')]];
+                throw new \Exception(__('Invalid invitation code'));
             }
-            return [null, null];
+            return null;
         }
 
         if (!(int) admin_setting('invite_never_expire', 0)) {
-            $inviteCodeModel->status = true;
+            $inviteCodeModel->status = InviteCode::STATUS_USED;
             $inviteCodeModel->save();
         }
 
-        return [$inviteCodeModel->user_id, null];
+        return $inviteCodeModel->user_id;
     }
 
 
@@ -148,11 +148,7 @@ class RegisterService
         // 处理邀请码获取邀请人ID
         $inviteUserId = null;
         if ($inviteCode) {
-            [$inviteSuccess, $inviteError] = $this->handleInviteCode($inviteCode);
-            if (!$inviteSuccess) {
-                return [false, $inviteError];
-            }
-            $inviteUserId = $inviteSuccess;
+            $inviteUserId = $this->handleInviteCode($inviteCode);
         }
 
         // 创建用户
