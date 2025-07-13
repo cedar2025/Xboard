@@ -286,6 +286,13 @@ class SingBox extends AbstractProtocol
                 'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
                 'headers' => data_get($protocol_settings, 'network_settings.headers')
             ],
+            'xhttp' => [
+                'type' => 'xhttp',
+                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
+                'mode' => data_get($protocol_settings, 'network_settings.mode')
+                'extra' => data_get($protocol_settings, 'network_settings.extra')
+            ],
             default => null
         };
 
