@@ -13,4 +13,7 @@ class InviteCode extends Model
         'updated_at' => 'timestamp',
         'status' => 'boolean',
     ];
+
+    const STATUS_UNUSED = 0;
+    const STATUS_USED = 1;
 }
