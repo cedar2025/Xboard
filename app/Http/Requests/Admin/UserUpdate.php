@@ -14,7 +14,8 @@ class UserUpdate extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email:strict',
+            'id' => 'required|integer',
+            'email' => 'email:strict',
             'password' => 'nullable|min:8',
             'transfer_enable' => 'numeric',
             'expired_at' => 'nullable|integer',
