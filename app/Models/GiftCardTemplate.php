@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Dflydev\DotAccessData\Data;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -200,7 +201,7 @@ class GiftCardTemplate extends Model
 
             if (isset($festivalConfig['start_time']) && isset($festivalConfig['end_time'])) {
                 if ($now >= $festivalConfig['start_time'] && $now <= $festivalConfig['end_time']) {
-                    $bonus = (float) ($festivalConfig['festival_bonus'] ?? 1.0);
+                    $bonus = data_get($festivalConfig, 'festival_bonus', 1.0);
                     if ($bonus > 1.0) {
                         foreach ($actualRewards as $key => &$value) {
                             if (is_numeric($value)) {
@@ -240,7 +241,7 @@ class GiftCardTemplate extends Model
                 ->orderBy('created_at', 'desc')
                 ->first();
 
-            if ($lastUsage) {
+            if ($lastUsage && isset($lastUsage->created_at)) {
                 $cooldownTime = $lastUsage->created_at + ($conditions['cooldown_hours'] * 3600);
                 if (time() < $cooldownTime) {
                     return false;

@@ -9,6 +9,7 @@ use App\Models\GiftCardUsage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class GiftCardController extends Controller
 {
@@ -62,10 +63,17 @@ class GiftCardController extends Controller
                 'codes_count' => $template->codes()->count(),
                 'used_count' => $template->usages()->count(),
             ];
-        });
+        })->values();
 
-        $templates->setCollection($data);
-        return $this->paginate($templates);
+        return response()->json([
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $templates->currentPage(),
+                'last_page' => $templates->lastPage(),
+                'per_page' => $templates->perPage(),
+                'total' => $templates->total(),
+            ],
+        ]);
     }
 
     /**
@@ -287,15 +295,7 @@ class GiftCardController extends Controller
                         $templateType = $template->type ?? '';
                         $templateRewards = $template->rewards ? json_encode($template->rewards, JSON_UNESCAPED_UNICODE) : '';
                         // 状态判断
-                        if ($code->disabled) {
-                            $status = '已禁用';
-                        } elseif ($code->used_at) {
-                            $status = '已使用';
-                        } elseif ($code->expires_at && $code->expires_at < time()) {
-                            $status = '已过期';
-                        } else {
-                            $status = '未使用';
-                        }
+                        $status = $code->status_name;
                         $usedBy = $code->user_id ?? '';
                         $usedAt = $code->used_at ? date('Y-m-d H:i:s', $code->used_at) : '';
                         $remark = $code->remark ?? '';
@@ -376,23 +376,30 @@ class GiftCardController extends Controller
             return [
                 'id' => $code->id,
                 'template_id' => $code->template_id,
-                'template_name' => $code->template->name,
+                'template_name' => $code->template->name ?? '',
                 'code' => $code->code,
                 'batch_id' => $code->batch_id,
                 'status' => $code->status,
                 'status_name' => $code->status_name,
                 'user_id' => $code->user_id,
-                'user_email' => $code->user ? substr($code->user->email, 0, 3) . '***@***' : null,
+                'user_email' => $code->user ? (substr($code->user->email ?? '', 0, 3) . '***@***') : null,
                 'used_at' => $code->used_at,
                 'expires_at' => $code->expires_at,
                 'usage_count' => $code->usage_count,
                 'max_usage' => $code->max_usage,
                 'created_at' => $code->created_at,
             ];
-        });
+        })->values();
 
-        $codes->setCollection($data);
-        return $this->paginate($codes);
+        return response()->json([
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $codes->currentPage(),
+                'last_page' => $codes->lastPage(),
+                'per_page' => $codes->perPage(),
+                'total' => $codes->total(),
+            ],
+        ]);
     }
 
     /**
@@ -476,18 +483,16 @@ class GiftCardController extends Controller
         $data = $usages->getCollection()->map(function ($usage) {
             return [
                 'id' => $usage->id,
-                'code' => $usage->code->code,
-                'template_name' => $usage->template->name,
-                'user_email' => $usage->user->email,
-                'invite_user_email' => $usage->inviteUser ? substr($usage->inviteUser->email, 0, 3) . '***@***' : null,
+                'code' => $usage->code->code ?? '',
+                'template_name' => $usage->template->name ?? '',
+                'user_email' => $usage->user->email ?? '',
+                'invite_user_email' => $usage->inviteUser ? (substr($usage->inviteUser->email ?? '', 0, 3) . '***@***') : null,
                 'rewards_given' => $usage->rewards_given,
                 'invite_rewards' => $usage->invite_rewards,
                 'multiplier_applied' => $usage->multiplier_applied,
-                // 'ip_address' => $usage->ip_address,
                 'created_at' => $usage->created_at,
             ];
-        });
-
+        })->values();
         return response()->json([
             'data' => $data,
             'pagination' => [
@@ -522,7 +527,7 @@ class GiftCardController extends Controller
         ];
 
         // 每日使用统计
-        $driver = GiftCardUsage::query()->getConnection()->getDriverName();
+        $driver = DB::connection()->getDriverName();
         $dateExpression = "date(created_at, 'unixepoch')"; // Default for SQLite
         if ($driver === 'mysql') {
             $dateExpression = 'DATE(FROM_UNIXTIME(created_at))';
@@ -543,9 +548,9 @@ class GiftCardController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'template_name' => $item->template->name,
-                    'type_name' => $item->template->type_name,
-                    'count' => $item->count,
+                    'template_name' => $item->template->name ?? '',
+                    'type_name' => $item->template->type_name ?? '',
+                    'count' => $item->count ?? 0,
                 ];
             });
 
