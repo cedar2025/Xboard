@@ -172,7 +172,8 @@ class GiftCardCode extends Model
     public static function generateCode(string $prefix = 'GC'): string
     {
         do {
-            $code = $prefix . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 12));
+            $safePrefix = (string) $prefix;
+            $code = $safePrefix . strtoupper(substr(md5(uniqid($safePrefix . mt_rand(), true)), 0, 12));
         } while (self::where('code', $code)->exists());
 
         return $code;
