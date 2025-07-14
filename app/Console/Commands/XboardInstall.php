@@ -266,9 +266,9 @@ class XboardInstall extends Command
     /**
      * 配置 MySQL 数据库
      *
-     * @return array|null
+     * @return array
      */
-    private function configureMysql(): ?array
+    private function configureMysql(): array
     {
         while (true) {
             $envConfig = [
@@ -312,9 +312,9 @@ class XboardInstall extends Command
     /**
      * 配置 PostgreSQL 数据库
      *
-     * @return array|null
+     * @return array
      */
-    private function configurePostgresql(): ?array
+    private function configurePostgresql(): array
     {
         while (true) {
             $envConfig = [

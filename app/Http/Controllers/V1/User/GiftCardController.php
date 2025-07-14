@@ -111,22 +111,30 @@ class GiftCardController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
-        $data = $usages->getCollection()->map(function ($usage) {
+        $data = $usages->getCollection()->map(function (GiftCardUsage $usage) {
             return [
                 'id' => $usage->id,
-                'code' => substr($usage->code->code, 0, 8) . '****', // 脱敏处理
-                'template_name' => $usage->template->name,
-                'template_type' => $usage->template->type,
-                'template_type_name' => $usage->template->type_name,
+                'code' => ($usage->code instanceof \App\Models\GiftCardCode && $usage->code->code)
+                    ? (substr($usage->code->code, 0, 8) . '****')
+                    : '',
+                'template_name' => $usage->template->name ?? '',
+                'template_type' => $usage->template->type ?? '',
+                'template_type_name' => $usage->template->type_name ?? '',
                 'rewards_given' => $usage->rewards_given,
                 'invite_rewards' => $usage->invite_rewards,
                 'multiplier_applied' => $usage->multiplier_applied,
                 'created_at' => $usage->created_at,
             ];
-        });
-        $usages->setCollection($data);
-
-        return $this->paginate($usages);
+        })->values();
+        return response()->json([
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $usages->currentPage(),
+                'last_page' => $usages->lastPage(),
+                'per_page' => $usages->perPage(),
+                'total' => $usages->total(),
+            ],
+        ]);
     }
 
     /**
@@ -149,20 +157,20 @@ class GiftCardController extends Controller
 
         return $this->success([
             'id' => $usage->id,
-            'code' => $usage->code->code,
+            'code' => $usage->code->code ?? '',
             'template' => [
-                'name' => $usage->template->name,
-                'description' => $usage->template->description,
-                'type' => $usage->template->type,
-                'type_name' => $usage->template->type_name,
-                'icon' => $usage->template->icon,
-                'theme_color' => $usage->template->theme_color,
+                'name' => $usage->template->name ?? '',
+                'description' => $usage->template->description ?? '',
+                'type' => $usage->template->type ?? '',
+                'type_name' => $usage->template->type_name ?? '',
+                'icon' => $usage->template->icon ?? '',
+                'theme_color' => $usage->template->theme_color ?? '',
             ],
             'rewards_given' => $usage->rewards_given,
             'invite_rewards' => $usage->invite_rewards,
             'invite_user' => $usage->inviteUser ? [
-                'id' => $usage->inviteUser->id,
-                'email' => substr($usage->inviteUser->email, 0, 3) . '***@***',
+                'id' => $usage->inviteUser->id ?? '',
+                'email' => isset($usage->inviteUser->email) ? (substr($usage->inviteUser->email, 0, 3) . '***@***') : '',
             ] : null,
             'user_level_at_use' => $usage->user_level_at_use,
             'plan_id_at_use' => $usage->plan_id_at_use,
