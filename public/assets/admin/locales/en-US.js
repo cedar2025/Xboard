@@ -2310,6 +2310,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "commission": "Commission",
       "register_time": "Register Time",
       "actions": "Actions",
+      "next_reset_at": "Next Reset At",
       "device_limit": {
         "unlimited": "No device limit",
         "limited": "Maximum {{count}} devices allowed"

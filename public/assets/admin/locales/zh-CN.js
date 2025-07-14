@@ -2383,6 +2383,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "commission": "佣金",
       "register_time": "注册时间",
       "actions": "操作",
+      "next_reset_at": "下次重置时间",
       "device_limit": {
         "unlimited": "无设备数限制",
         "limited": "最多可同时在线 {{count}} 台设备"
