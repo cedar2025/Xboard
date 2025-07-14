@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\ThemeService;
 use App\Services\UpdateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -46,6 +47,8 @@ class XboardUpdate extends Command
         Artisan::call('horizon:terminate');
         $updateService = new UpdateService();
         $updateService->updateVersionCache();
+        $themeService = app(ThemeService::class);
+        $themeService->switch(admin_setting('current_theme'));
         $this->info('更新完毕，队列服务已重启，你无需进行任何操作。');
     }
 }
