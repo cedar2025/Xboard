@@ -156,7 +156,21 @@ class ThemeService
 
             $targetPath = $userThemePath . $config['name'];
             if (File::exists($targetPath)) {
-                throw new Exception('主题已存在');
+                $oldConfigFile = $targetPath . '/config.json';
+                if (!File::exists($oldConfigFile)) {
+                    throw new Exception('已存在主题缺少配置文件');
+                }
+                $oldConfig = json_decode(File::get($oldConfigFile), true);
+                $oldVersion = $oldConfig['version'] ?? '0.0.0';
+                $newVersion = $config['version'] ?? '0.0.0';
+                if (version_compare($newVersion, $oldVersion, '>')) {
+                    File::deleteDirectory($targetPath);
+                    File::copyDirectory($sourcePath, $targetPath);
+                    $this->initConfig($config['name']);
+                    return true;
+                } else {
+                    throw new Exception('主题已存在且不是新版本');
+                }
             }
 
             File::copyDirectory($sourcePath, $targetPath);
@@ -180,9 +194,6 @@ class ThemeService
     public function switch(string $theme): bool
     {
         $currentTheme = admin_setting('current_theme');
-        if ($theme === $currentTheme) {
-            return true;
-        }
 
         try {
             // 验证主题是否存在
@@ -196,18 +207,18 @@ class ThemeService
                 throw new Exception('主题视图文件不存在');
             }
 
-            // 复制主题文件到public目录
-            $targetPath = public_path('theme/' . $theme);
-            if (!File::copyDirectory($themePath, $targetPath)) {
-                throw new Exception('复制主题文件失败');
-            }
-
             // 清理旧主题文件
             if ($currentTheme) {
                 $oldPath = public_path('theme/' . $currentTheme);
                 if (File::exists($oldPath)) {
                     File::deleteDirectory($oldPath);
                 }
+            }
+
+            // 复制主题文件到public目录
+            $targetPath = public_path('theme/' . $theme);
+            if (!File::copyDirectory($themePath, $targetPath)) {
+                throw new Exception('复制主题文件失败');
             }
 
             admin_setting(['current_theme' => $theme]);

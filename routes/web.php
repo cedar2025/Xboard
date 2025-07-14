@@ -30,7 +30,6 @@ Route::get('/', function (Request $request) {
     $themeService = new ThemeService();
 
     try {
-        // 检查主题是否存在，不存在则尝试切换到默认主题
         if (!$themeService->exists($theme)) {
             if ($theme !== 'Xboard') {
                 Log::warning('Theme not found, switching to default theme', ['theme' => $theme]);
@@ -40,12 +39,10 @@ Route::get('/', function (Request $request) {
             $themeService->switch($theme);
         }
 
-        // 检查主题视图文件是否存在
         if (!$themeService->getThemeViewPath($theme)) {
             throw new Exception('主题视图文件不存在');
         }
 
-        // 检查主题是否已复制到public目录
         $publicThemePath = public_path('theme/' . $theme);
         if (!File::exists($publicThemePath)) {
             $themePath = $themeService->getThemePath($theme);
