@@ -191,8 +191,12 @@ class ThemeService
     /**
      * 切换主题
      */
-    public function switch(string $theme): bool
+    public function switch(string|null $theme): bool
     {
+        if ($theme === null) {
+            return true;
+        }
+
         $currentTheme = admin_setting('current_theme');
 
         try {
