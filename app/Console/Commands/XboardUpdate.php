@@ -48,7 +48,8 @@ class XboardUpdate extends Command
         $updateService = new UpdateService();
         $updateService->updateVersionCache();
         $themeService = app(ThemeService::class);
-        $themeService->switch(admin_setting('current_theme'));
+        $currentTheme = admin_setting('current_theme');
+        if(!empty($currentTheme)) $themeService->switch($currentTheme);
         $this->info('更新完毕，队列服务已重启，你无需进行任何操作。');
     }
 }
