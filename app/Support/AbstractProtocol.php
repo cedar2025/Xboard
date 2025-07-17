@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Services\Plugin\HookManager;
+
 abstract class AbstractProtocol
 {
     /**
@@ -48,9 +50,7 @@ abstract class AbstractProtocol
         $this->servers = $servers;
         $this->clientName = $clientName;
         $this->clientVersion = $clientVersion;
-
-        // 服务器过滤逻辑
-        $this->servers = $this->filterServersByVersion();
+        $this->servers = HookManager::filter('protocol.servers.filtered', $this->filterServersByVersion());
     }
 
     /**
