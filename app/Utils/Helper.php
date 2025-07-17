@@ -211,4 +211,14 @@ class Helper
         }
         return $suffix;
     }
+    
+    /**
+     * convert the transfer_enable to GB
+     * @param int $transfer_enable
+     * @return int
+     */
+    public static function transferToGB(int $transfer_enable): int
+    {
+        return $transfer_enable / 1073741824;
+    }
 }
