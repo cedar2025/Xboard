@@ -26,9 +26,7 @@ class Loon extends AbstractProtocol
         $uri = '';
 
         foreach ($servers as $item) {
-            if (
-                $item['type'] === 'shadowsocks'
-            ) {
+            if ($item['type'] === 'shadowsocks') {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
             if ($item['type'] === 'vmess') {
