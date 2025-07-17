@@ -88,63 +88,55 @@ class OrderService
         });
     }
 
-    public function open()
+    public function open(): void
     {
         $order = $this->order;
-        HookManager::call('order.before_open', $order);
         $this->user = User::find($order->user_id);
         $plan = Plan::find($order->plan_id);
 
-        if ($order->refund_amount) {
-            $this->user->balance = $this->user->balance + $order->refund_amount;
-        }
-        try {
-            DB::beginTransaction();
-            if ($order->surplus_order_ids) {
-                Order::whereIn('id', $order->surplus_order_ids)->update([
-                    'status' => Order::STATUS_DISCOUNTED
-                ]);
-            }
-            switch ((string) $order->period) {
-                case Plan::PERIOD_ONETIME:
-                    $this->buyByOneTime($plan);
-                    break;
-                case Plan::PERIOD_RESET_TRAFFIC:
-                    app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
-                    break;
-                default:
-                    $this->buyByPeriod($order, $plan);
+        HookManager::call('order.before_open', $order);
+
+        DB::transaction(function () use ($order, $plan) {
+            if ($order->refund_amount) {
+                $this->user->balance += $order->refund_amount;
             }
 
-            switch ((int) $order->type) {
-                case Order::STATUS_PROCESSING:
-                    $this->openEvent(admin_setting('new_order_event_id', 0));
-                    break;
-                case Order::TYPE_RENEWAL:
-                    $this->openEvent(admin_setting('renew_order_event_id', 0));
-                    break;
-                case Order::TYPE_UPGRADE:
-                    $this->openEvent(admin_setting('change_order_event_id', 0));
-                    break;
+            if ($order->surplus_order_ids) {
+                Order::whereIn('id', $order->surplus_order_ids)
+                    ->update(['status' => Order::STATUS_DISCOUNTED]);
             }
+
+            match ((string) $order->period) {
+                Plan::PERIOD_ONETIME => $this->buyByOneTime($plan),
+                Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
+                default => $this->buyByPeriod($order, $plan),
+            };
 
             $this->setSpeedLimit($plan->speed_limit);
             $this->setDeviceLimit($plan->device_limit);
 
             if (!$this->user->save()) {
-                throw new \Exception('用户信息保存失败');
+                throw new \RuntimeException('用户信息保存失败');
             }
+
             $order->status = Order::STATUS_COMPLETED;
             if (!$order->save()) {
-                throw new \Exception('订单信息保存失败');
+                throw new \RuntimeException('订单信息保存失败');
             }
-            DB::commit();
-            HookManager::call('order.after_open', $order);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error($e);
-            throw new ApiException('开通失败');
+        });
+
+        $eventId = match ((int) $order->type) {
+            Order::STATUS_PROCESSING => admin_setting('new_order_event_id', 0),
+            Order::TYPE_RENEWAL => admin_setting('renew_order_event_id', 0),
+            Order::TYPE_UPGRADE => admin_setting('change_order_event_id', 0),
+            default => 0,
+        };
+
+        if ($eventId) {
+            $this->openEvent($eventId);
         }
+
+        HookManager::call('order.after_open', $order);
     }
 
 
@@ -274,9 +266,13 @@ class OrderService
             $remainTraffic = max(0, $totalTraffic - $usedTraffic);
             $trafficRatio = $totalTraffic > 0 ? $remainTraffic / $totalTraffic : 0;
 
-            $minRatio = min($cycleRatio, $trafficRatio);
+            $ratio = $cycleRatio;
+            if (admin_setting('change_order_event_id', 0) == 1) {
+                $ratio = min($cycleRatio, $trafficRatio);
+            }
 
-            $order->surplus_amount = (int) max(0, $orderAmountSum * $minRatio);
+
+            $order->surplus_amount = (int) max(0, $orderAmountSum * $ratio);
             $order->surplus_order_ids = $orders->pluck('id')->all();
         }
     }
