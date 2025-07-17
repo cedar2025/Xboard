@@ -12,6 +12,8 @@ use App\Services\Plugin\HookManager;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use App\Services\PlanService;
 
 class OrderService
 {
@@ -71,7 +73,7 @@ class OrderService
 
             $orderService->setVipDiscount($user);
             $orderService->setOrderType($user);
-            $orderService->setInvite($user);
+            $orderService->setInvite(user: $user);
 
             if ($user->balance && $order->total_amount > 0) {
                 $orderService->handleUserBalance($user, $userService);
@@ -89,6 +91,7 @@ class OrderService
     public function open()
     {
         $order = $this->order;
+        HookManager::call('order.before_open', $order);
         $this->user = User::find($order->user_id);
         $plan = Plan::find($order->plan_id);
 
@@ -136,6 +139,7 @@ class OrderService
                 throw new \Exception('订单信息保存失败');
             }
             DB::commit();
+            HookManager::call('order.after_open', $order);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error($e);
@@ -212,76 +216,69 @@ class OrderService
     private function haveValidOrder(User $user): Order|null
     {
         return Order::where('user_id', $user->id)
-            ->whereNotIn('status', [0, 2])
+            ->whereNotIn('status', [Order::STATUS_PENDING, Order::STATUS_CANCELLED])
             ->first();
     }
 
     private function getSurplusValue(User $user, Order $order)
     {
         if ($user->expired_at === NULL) {
-            $this->getSurplusValueByOneTime($user, $order);
+            $lastOneTimeOrder = Order::where('user_id', $user->id)
+                ->where('period', Plan::PERIOD_ONETIME)
+                ->where('status', Order::STATUS_COMPLETED)
+                ->orderBy('id', 'DESC')
+                ->first();
+            if (!$lastOneTimeOrder)
+                return;
+            $nowUserTraffic = Helper::transferToGB($user->transfer_enable);
+            if (!$nowUserTraffic)
+                return;
+            $paidTotalAmount = ($lastOneTimeOrder->total_amount + $lastOneTimeOrder->balance_amount);
+            if (!$paidTotalAmount)
+                return;
+            $trafficUnitPrice = $paidTotalAmount / $nowUserTraffic;
+            $notUsedTraffic = $nowUserTraffic - Helper::transferToGB($user->u + $user->d);
+            $result = $trafficUnitPrice * $notUsedTraffic;
+            $order->surplus_amount = (int) ($result > 0 ? $result : 0);
+            $order->surplus_order_ids = Order::where('user_id', $user->id)
+                ->where('period', '!=', Plan::PERIOD_RESET_TRAFFIC)
+                ->where('status', Order::STATUS_COMPLETED)
+                ->pluck('id')
+                ->all();
         } else {
-            $this->getSurplusValueByPeriod($user, $order);
+            $orders = Order::query()
+                ->where('user_id', $user->id)
+                ->whereNotIn('period', [Plan::PERIOD_RESET_TRAFFIC, Plan::PERIOD_ONETIME])
+                ->where('status', Order::STATUS_COMPLETED)
+                ->get();
+
+            if ($orders->isEmpty()) {
+                $order->surplus_amount = 0;
+                $order->surplus_order_ids = [];
+                return;
+            }
+
+            $orderAmountSum = $orders->sum(fn($item) => $item->total_amount + $item->balance_amount + $item->surplus_amount - $item->refund_amount);
+            $orderMonthSum = $orders->sum(fn($item) => self::STR_TO_TIME[PlanService::getPeriodKey($item->period)] ?? 0);
+            $firstOrderAt = $orders->min('created_at');
+            $expiredAt = Carbon::createFromTimestamp($firstOrderAt)->addMonths($orderMonthSum);
+
+            $now = now();
+            $totalSeconds = $expiredAt->timestamp - $firstOrderAt;
+            $remainSeconds = max(0, $expiredAt->timestamp - $now->timestamp);
+            $cycleRatio = $totalSeconds > 0 ? $remainSeconds / $totalSeconds : 0;
+
+            $plan = Plan::find($user->plan_id);
+            $totalTraffic = $plan?->transfer_enable * $orderMonthSum;
+            $usedTraffic = Helper::transferToGB($user->u + $user->d);
+            $remainTraffic = max(0, $totalTraffic - $usedTraffic);
+            $trafficRatio = $totalTraffic > 0 ? $remainTraffic / $totalTraffic : 0;
+
+            $minRatio = min($cycleRatio, $trafficRatio);
+
+            $order->surplus_amount = (int) max(0, $orderAmountSum * $minRatio);
+            $order->surplus_order_ids = $orders->pluck('id')->all();
         }
-    }
-
-
-    private function getSurplusValueByOneTime(User $user, Order $order)
-    {
-        $lastOneTimeOrder = Order::where('user_id', $user->id)
-            ->where('period', Plan::PERIOD_ONETIME)
-            ->where('status', Order::STATUS_COMPLETED)
-            ->orderBy('id', 'DESC')
-            ->first();
-        if (!$lastOneTimeOrder)
-            return;
-        $nowUserTraffic = $user->transfer_enable / 1073741824;
-        if (!$nowUserTraffic)
-            return;
-        $paidTotalAmount = ($lastOneTimeOrder->total_amount + $lastOneTimeOrder->balance_amount);
-        if (!$paidTotalAmount)
-            return;
-        $trafficUnitPrice = $paidTotalAmount / $nowUserTraffic;
-        $notUsedTraffic = $nowUserTraffic - (($user->u + $user->d) / 1073741824);
-        $result = $trafficUnitPrice * $notUsedTraffic;
-        $orderModel = Order::where('user_id', $user->id)->where('period', '!=', Plan::PERIOD_RESET_TRAFFIC)->where('status', Order::STATUS_COMPLETED);
-        $order->surplus_amount = (int) ($result > 0 ? $result : 0);
-        $order->surplus_order_ids = array_column($orderModel->get()->toArray(), 'id');
-    }
-
-    private function getSurplusValueByPeriod(User $user, Order $order)
-    {
-        $orders = Order::where('user_id', $user->id)
-            ->whereNotIn('period', [Plan::PERIOD_RESET_TRAFFIC, Plan::PERIOD_ONETIME])
-            ->where('status', Order::STATUS_COMPLETED)
-            ->get()
-            ->toArray();
-        if (!$orders)
-            return;
-        $orderAmountSum = 0;
-        $orderMonthSum = 0;
-        $lastValidateAt = 0;
-        foreach ($orders as $item) {
-            $period = self::STR_TO_TIME[PlanService::getPeriodKey($item['period'])];
-            if (strtotime("+{$period} month", $item['created_at']) < time())
-                continue;
-            $lastValidateAt = $item['created_at'];
-            $orderMonthSum = $period + $orderMonthSum;
-            $orderAmountSum = $orderAmountSum + ($item['total_amount'] + $item['balance_amount'] + $item['surplus_amount'] - $item['refund_amount']);
-        }
-        if (!$lastValidateAt)
-            return;
-        $expiredAtByOrder = strtotime("+{$orderMonthSum} month", $lastValidateAt);
-        if ($expiredAtByOrder < time())
-            return;
-        $orderSurplusSecond = $expiredAtByOrder - time();
-        $orderRangeSecond = $expiredAtByOrder - $lastValidateAt;
-        $avgPrice = $orderAmountSum / $orderRangeSecond;
-        $orderSurplusAmount = $avgPrice * $orderSurplusSecond;
-        if (!$orderSurplusSecond || !$orderSurplusAmount)
-            return;
-        $order->surplus_amount = (int) ($orderSurplusAmount > 0 ? $orderSurplusAmount : 0);
-        $order->surplus_order_ids = array_column($orders, 'id');
     }
 
     public function paid(string $callbackNo)
@@ -344,11 +341,8 @@ class OrderService
             $this->user->expired_at = time();
         }
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
-        // 从一次性转换到循环
-        if ($this->user->expired_at === NULL)
-            app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
-        // 新购
-        if ($order->type === Order::TYPE_NEW_PURCHASE)
+        // 从一次性转换到循环或者新购的时候，重置流量
+        if ($this->user->expired_at === NULL || $order->type === Order::TYPE_NEW_PURCHASE)
             app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
@@ -364,26 +358,24 @@ class OrderService
         $this->user->expired_at = NULL;
     }
 
-    private function getTime($str, $timestamp)
+    /**
+     * 计算套餐到期时间
+     * @param string $periodKey
+     * @param int $timestamp
+     * @return int
+     * @throws ApiException
+     */
+    private function getTime(string $periodKey, ?int $timestamp = null): int
     {
-        if ($timestamp < time()) {
-            $timestamp = time();
+        $timestamp = $timestamp < time() ? time() : $timestamp;
+        $periodKey = PlanService::getPeriodKey($periodKey);
+
+        if (isset(self::STR_TO_TIME[$periodKey])) {
+            $months = self::STR_TO_TIME[$periodKey];
+            return Carbon::createFromTimestamp($timestamp)->addMonths($months)->timestamp;
         }
-        $str = PlanService::getPeriodKey($str);
-        switch ($str) {
-            case Plan::PERIOD_MONTHLY:
-                return strtotime('+1 month', $timestamp);
-            case Plan::PERIOD_QUARTERLY:
-                return strtotime('+3 month', $timestamp);
-            case Plan::PERIOD_HALF_YEARLY:
-                return strtotime('+6 month', $timestamp);
-            case Plan::PERIOD_YEARLY:
-                return strtotime('+12 month', $timestamp);
-            case Plan::PERIOD_TWO_YEARLY:
-                return strtotime('+24 month', $timestamp);
-            case Plan::PERIOD_THREE_YEARLY:
-                return strtotime('+36 month', $timestamp);
-        }
+
+        throw new ApiException('无效的套餐周期');
     }
 
     private function openEvent($eventId)
@@ -406,6 +398,12 @@ class OrderService
         $this->order->coupon_id = $couponService->getId();
     }
 
+    /**
+     * Summary of handleUserBalance
+     * @param User $user
+     * @param UserService $userService
+     * @return void
+     */
     protected function handleUserBalance(User $user, UserService $userService): void
     {
         $remainingBalance = $user->balance - $this->order->total_amount;
