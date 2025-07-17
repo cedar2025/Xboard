@@ -53,6 +53,7 @@ class OrderService
         $planService = new PlanService($plan);
 
         $planService->validatePurchase($user, $period);
+        HookManager::call('order.create.before', [$user, $plan, $period, $couponCode]);
 
         return DB::transaction(function () use ($user, $plan, $period, $couponCode, $userService) {
             $newPeriod = PlanService::getPeriodKey($period);
@@ -82,6 +83,9 @@ class OrderService
             if (!$order->save()) {
                 throw new ApiException(__('Failed to create order'));
             }
+
+            HookManager::call('order.create.after', $order);
+            // 兼容旧钩子
             HookManager::call('order.after_create', $order);
 
             return $order;
@@ -94,7 +98,8 @@ class OrderService
         $this->user = User::find($order->user_id);
         $plan = Plan::find($order->plan_id);
 
-        HookManager::call('order.before_open', $order);
+        HookManager::call('order.open.before', $order);
+
 
         DB::transaction(function () use ($order, $plan) {
             if ($order->refund_amount) {
@@ -136,7 +141,7 @@ class OrderService
             $this->openEvent($eventId);
         }
 
-        HookManager::call('order.after_open', $order);
+        HookManager::call('order.open.after', $order);
     }
 
 
