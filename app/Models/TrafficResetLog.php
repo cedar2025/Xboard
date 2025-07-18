@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TrafficResetLog extends Model
 {
     protected $table = 'v2_traffic_reset_logs';
-    
+
     protected $fillable = [
         'user_id',
         'reset_type',
@@ -64,6 +64,8 @@ class TrafficResetLog extends Model
     public const SOURCE_API = 'api';
     public const SOURCE_CRON = 'cron';
     public const SOURCE_USER_ACCESS = 'user_access';
+    public const SOURCE_ORDER = 'order';
+    public const SOURCE_GIFT_CARD = 'gift_card';
 
     /**
      * 获取重置类型的多语言名称
@@ -139,9 +141,9 @@ class TrafficResetLog extends Model
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
-        
+
         $bytes /= (1 << (10 * $pow));
-        
+
         return round($bytes, 2) . ' ' . $units[$pow];
     }
-} 
+}

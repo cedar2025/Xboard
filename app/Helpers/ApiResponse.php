@@ -16,7 +16,7 @@ trait ApiResponse
      * @param array $codeResponse
      * @return JsonResponse
      */
-    public function success($data = null, $codeResponse=ResponseEnum::HTTP_OK): JsonResponse
+    public function success($data = null, $codeResponse = ResponseEnum::HTTP_OK): JsonResponse
     {
         return $this->jsonResponse('success', $codeResponse, $data, null);
     }
@@ -28,7 +28,7 @@ trait ApiResponse
      * @param mixed $error
      * @return JsonResponse
      */
-    public function fail($codeResponse=ResponseEnum::HTTP_ERROR, $data = null, $error=null): JsonResponse
+    public function fail($codeResponse = ResponseEnum::HTTP_ERROR, $data = null, $error = null): JsonResponse
     {
         return $this->jsonResponse('fail', $codeResponse, $data, $error);
     }
@@ -46,49 +46,24 @@ trait ApiResponse
         list($code, $message) = $codeResponse;
         return response()
             ->json([
-            'status'  => $status,
-            // 'code'    => $code,
-            'message' => $message,
-            'data'    => $data ?? null,
-            'error'  => $error,
-            ],(int)substr(((string) $code),0,3));
+                'status' => $status,
+                // 'code'    => $code,
+                'message' => $message,
+                'data' => $data ?? null,
+                'error' => $error,
+            ], (int) substr(((string) $code), 0, 3));
     }
 
-    /**
-     * 成功分页返回
-     * @param $page
-     * @return JsonResponse
-     */
-    protected function successPaginate($page): JsonResponse
-    {
-        return $this->success($this->paginate($page));
-    }
 
-    private function paginate($page)
+    public function paginate(LengthAwarePaginator $page)
     {
-        if ($page instanceof LengthAwarePaginator){
-            return [
-                'total'  => $page->total(),
-                'page'   => $page->currentPage(),
-                'limit'  => $page->perPage(),
-                'pages'  => $page->lastPage(),
-                'list'   => $page->items()
-            ];
-        }
-        if ($page instanceof Collection){
-            $page = $page->toArray();
-        }
-        if (!is_array($page) && !is_object($page)){
-            return $page;
-        }
-        $total = count($page);
-        return [
-            'total'  => $total, //数据总数
-            'page'   => 1, // 当前页码
-            'limit'  => $total, // 每页的数据条数
-            'pages'  => 1, // 最后一页的页码
-            'list'   => $page // 数据
-        ];
+        return response()->json([
+            'total' => $page->total(),
+            'current_page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'last_page' => $page->lastPage(),
+            'data' => $page->items()
+        ]);
     }
 
     /**
@@ -97,7 +72,7 @@ trait ApiResponse
      * @param string $info
      * @throws BusinessException
      */
-    public function throwBusinessException(array $codeResponse=ResponseEnum::HTTP_ERROR, string $info = '')
+    public function throwBusinessException(array $codeResponse = ResponseEnum::HTTP_ERROR, string $info = '')
     {
         throw new BusinessException($codeResponse, $info);
     }

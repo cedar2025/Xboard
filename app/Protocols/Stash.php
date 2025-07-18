@@ -6,14 +6,26 @@ use Symfony\Component\Yaml\Yaml;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class Stash extends AbstractProtocol
 {
     public $flags = ['stash'];
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_VLESS,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_TROJAN,
+        Server::TYPE_TUIC,
+            // Server::TYPE_ANYTLS,
+        Server::TYPE_SOCKS,
+        Server::TYPE_HTTP,
+    ];
     protected $protocolRequirements = [
         'stash' => [
             'anytls' => [
-                'base_version' => '3.1.0'
+                'base_version' => '9.9.9'
             ],
             'vless' => [
                 'protocol_settings.tls' => [
@@ -80,36 +92,36 @@ class Stash extends AbstractProtocol
         $proxies = [];
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks') {
+            if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'vmess') {
-                array_push($proxy, self::buildVmess($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_VMESS) {
+                array_push($proxy, self::buildVmess($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'vless') {
-                array_push($proxy, $this->buildVless($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_VLESS) {
+                array_push($proxy, $this->buildVless($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'hysteria') {
-                array_push($proxy, self::buildHysteria($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
+                array_push($proxy, self::buildHysteria($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'trojan') {
-                array_push($proxy, self::buildTrojan($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_TROJAN) {
+                array_push($proxy, self::buildTrojan($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'tuic') {
-                array_push($proxy, self::buildTuic($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_TUIC) {
+                array_push($proxy, self::buildTuic($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'socks') {
-                array_push($proxy, self::buildSocks5($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_SOCKS) {
+                array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'http') {
-                array_push($proxy, self::buildHttp($user['uuid'], $item));
+            if ($item['type'] === Server::TYPE_HTTP) {
+                array_push($proxy, self::buildHttp($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
         }

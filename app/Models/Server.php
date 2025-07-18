@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $network 网络类型
  * @property int|null $parent_id 父节点ID
  * @property float|null $rate 倍率
+ * @property array|null $rate_time_ranges 倍率时间范围
  * @property int|null $sort 排序
  * @property array|null $protocol_settings 协议设置
  * @property int $created_at
@@ -113,7 +114,9 @@ class Server extends Model
         'last_push_at' => 'integer',
         'show' => 'boolean',
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'rate_time_ranges' => 'array',
+        'rate_time_enable' => 'boolean',
     ];
 
     private const PROTOCOL_CONFIGURATIONS = [
@@ -269,7 +272,7 @@ class Server extends Model
         $this->attributes['protocol_settings'] = json_encode($castedSettings);
     }
 
-    public function generateShadowsocksPassword(User $user): string
+    public function generateServerPassword(User $user): string
     {
         if ($this->type !== self::TYPE_SHADOWSOCKS) {
             return $user->uuid;
@@ -426,32 +429,15 @@ class Server extends Model
         );
     }
 
-    /**
-     * 用户负载百分比访问器
-     */
-    protected function loadUsers(): Attribute
+    public function getCurrentRate(): float
     {
-        return Attribute::make(
-            get: function () {
-                // Get online users for this server
-                $serverOnlineUsers = $this->online;
-                
-                if ($serverOnlineUsers === 0) {
-                    return 0;
-                }
-                
-                // Cache total online users for 1 minute to improve performance
-                $totalOnlineUsers = Cache::remember('total_online_users', 60, function () {
-                    return User::where('t', '>=', time() - 600)->count();
-                });
-                
-                if ($totalOnlineUsers === 0) {
-                    return 0;
-                }
-                
-                // Calculate percentage (rounded to 2 decimal places)
-                return round(($serverOnlineUsers / $totalOnlineUsers) * 100, 2);
+        $now = date('H:i');
+        $ranges = $this->rate_time_ranges ?? [];
+        foreach ($ranges as $range) {
+            if ($now >= $range['start'] && $now <= $range['end']) {
+                return (float) $range['rate'];
             }
-        );
+        }
+        return (float) $this->rate;
     }
 }

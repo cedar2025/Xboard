@@ -169,10 +169,7 @@ class UserController extends Controller
             return self::transformUserData($user);
         });
 
-        return response([
-            'data' => $users->items(),
-            'total' => $users->total()
-        ]);
+        return $this->paginate($users);
     }
 
     /**
@@ -209,9 +206,10 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400202, '用户不存在']);
         }
-        // 检查邮箱是否被使用
-        if (User::whereRaw('LOWER(email) = ?', [strtolower($params['email'])])->first() && $user->email !== $params['email']) {
-            return $this->fail([400201, '邮箱已被使用']);
+        if (isset($params['email'])) {
+            if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
+                return $this->fail([400201, '邮箱已被使用']);
+            }
         }
         // 处理密码
         if (isset($params['password'])) {
@@ -226,7 +224,6 @@ class UserController extends Controller
             if (!$plan) {
                 return $this->fail([400202, '订阅计划不存在']);
             }
-            // return json_encode($plan);
             $params['group_id'] = $plan->group_id;
         }
         // 处理邀请用户

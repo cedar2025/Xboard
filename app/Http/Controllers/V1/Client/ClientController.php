@@ -43,7 +43,18 @@ class ClientController extends Controller
         $userService = new UserService();
 
         if (!$userService->isAvailable($user)) {
-            return response()->json(['message' => 'Account unavailable'], 403);
+            HookManager::call('client.subscribe.unavailable');
+            return response('', 200, ['Content-Type' => 'text/plain']);
+        }
+
+        return $this->doSubscribe($request, $user);
+    }
+
+    public function doSubscribe(Request $request, $user, $servers = null)
+    {
+        if ($servers === null) {
+            $servers = ServerService::getAvailableServers($user);
+            $servers = HookManager::filter('client.subscribe.servers', $servers, $user, $request);
         }
 
         $clientInfo = $this->getClientInfo($request);
@@ -53,8 +64,6 @@ class ClientController extends Controller
 
         $protocolClassName = app('protocols.manager')->matchProtocolClassName($clientInfo['flag'])
             ?? General::class;
-
-        $servers = ServerService::getAvailableServers($user);
 
         $serversFiltered = $this->filterServers(
             servers: $servers,
@@ -81,7 +90,7 @@ class ClientController extends Controller
      */
     private function parseRequestedTypes(?string $typeInputString): array
     {
-        if (blank($typeInputString)) {
+        if (blank($typeInputString) || $typeInputString === 'all') {
             return Server::VALID_TYPES;
         }
 

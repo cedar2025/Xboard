@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
 
@@ -51,13 +52,15 @@ class PluginManager
         if (!class_exists($pluginClass)) {
             $pluginFile = $this->getPluginPath($pluginCode) . '/Plugin.php';
             if (!File::exists($pluginFile)) {
-                throw new \Exception("Plugin class file not found: {$pluginFile}");
+                Log::error("Plugin class file not found: {$pluginFile}");
+                return null;
             }
             require_once $pluginFile;
         }
 
         if (!class_exists($pluginClass)) {
-            throw new \Exception("Plugin class not found: {$pluginClass}");
+            Log::error("Plugin class not found: {$pluginClass}");
+            return null;
         }
 
         $plugin = new $pluginClass($pluginCode);
@@ -265,6 +268,7 @@ class PluginManager
         $plugin = $this->loadPlugin($pluginCode);
 
         if (!$plugin) {
+            Plugin::where('code', $pluginCode)->delete();
             throw new \Exception('Plugin not found: ' . $pluginCode);
         }
 
@@ -424,8 +428,22 @@ class PluginManager
 
         $targetPath = $this->pluginPath . '/' . Str::studly($config['code']);
         if (File::exists($targetPath)) {
-            File::deleteDirectory($extractPath);
-            throw new \Exception('插件已存在');
+            $installedConfigPath = $targetPath . '/config.json';
+            if (!File::exists($installedConfigPath)) {
+                throw new \Exception('已安装插件缺少配置文件，无法判断是否可升级');
+            }
+            $installedConfig = json_decode(File::get($installedConfigPath), true);
+
+            $oldVersion = $installedConfig['version'] ?? null;
+            $newVersion = $config['version'] ?? null;
+            if (!$oldVersion || !$newVersion) {
+                throw new \Exception('插件缺少版本号，无法判断是否可升级');
+            }
+            if (version_compare($newVersion, $oldVersion, '<=')) {
+                throw new \Exception('上传插件版本不高于已安装版本，无法升级');
+            }
+
+            File::deleteDirectory($targetPath);
         }
 
         File::copyDirectory($pluginPath, $targetPath);

@@ -55,7 +55,7 @@ class ShadowsocksTidalabController extends Controller
         foreach ($data as $item) {
             $formatData[$item['user_id']] = [$item['u'], $item['d']];
         }
-        $userService->trafficFetch($server->toArray(), 'shadowsocks', $formatData);
+        $userService->trafficFetch($server, 'shadowsocks', $formatData);
 
         return response([
             'ret' => 1,

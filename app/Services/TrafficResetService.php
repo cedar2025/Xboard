@@ -60,14 +60,6 @@ class TrafficResetService
         ]);
 
         $this->clearUserCache($user);
-
-        Log::info(__('traffic_reset.reset_success'), [
-          'user_id' => $user->id,
-          'email' => $user->email,
-          'old_traffic' => $oldTotal,
-          'trigger_source' => $triggerSource,
-        ]);
-
         return true;
       });
     } catch (\Exception $e) {
@@ -90,7 +82,8 @@ class TrafficResetService
     if (
       !$user->plan
       || $user->plan->reset_traffic_method === Plan::RESET_TRAFFIC_NEVER
-      || ($user->plan->reset_traffic_method === Plan::RESET_TRAFFIC_FOLLOW_SYSTEM && (int) admin_setting('reset_traffic_method', Plan::RESET_TRAFFIC_MONTHLY) === Plan::RESET_TRAFFIC_NEVER)
+      || ($user->plan->reset_traffic_method === Plan::RESET_TRAFFIC_FOLLOW_SYSTEM
+        && (int) admin_setting('reset_traffic_method', Plan::RESET_TRAFFIC_MONTHLY) === Plan::RESET_TRAFFIC_NEVER)
       || $user->expired_at === NULL
     ) {
       return null;
@@ -102,7 +95,7 @@ class TrafficResetService
       $resetMethod = (int) admin_setting('reset_traffic_method', Plan::RESET_TRAFFIC_MONTHLY);
     }
 
-    $now = Carbon::now();
+    $now = Carbon::now(config('app.timezone'));
 
     return match ($resetMethod) {
       Plan::RESET_TRAFFIC_FIRST_DAY_MONTH => $this->getNextMonthFirstDay($now),
@@ -132,38 +125,20 @@ class TrafficResetService
    */
   private function getNextMonthlyReset(User $user, Carbon $from): Carbon
   {
-    $expiredAt = Carbon::createFromTimestamp($user->expired_at);
+    $expiredAt = Carbon::createFromTimestamp($user->expired_at, config('app.timezone'));
     $resetDay = $expiredAt->day;
-
-    return $this->getNextResetByDay($from, $resetDay);
-  }
-
-  /**
-   * Get the next reset time based on a specific day of the month.
-   */
-  private function getNextResetByDay(Carbon $from, int $targetDay): Carbon
-  {
-    $currentMonthTarget = $this->getValidDayInMonth($from->copy(), $targetDay);
+    $resetTime = [$expiredAt->hour, $expiredAt->minute, $expiredAt->second];
+    // 当前月目标时间
+    $currentMonthTarget = $from->copy()->day($resetDay)
+      ->setTime(...$resetTime);
     if ($currentMonthTarget->timestamp > $from->timestamp) {
       return $currentMonthTarget;
     }
-
+    // 下月目标时间
     $nextMonth = $from->copy()->addMonth();
-    return $this->getValidDayInMonth($nextMonth, $targetDay);
-  }
-
-  /**
-   * Get a valid day in a given month, handling non-existent dates.
-   */
-  private function getValidDayInMonth(Carbon $month, int $targetDay): Carbon
-  {
-    $lastDayOfMonth = $month->copy()->endOfMonth()->day;
-
-    if ($targetDay > $lastDayOfMonth) {
-      return $month->endOfMonth()->startOfDay();
-    }
-
-    return $month->day($targetDay)->startOfDay();
+    $lastDayOfNextMonth = $nextMonth->copy()->endOfMonth()->day;
+    $targetDay = min($resetDay, $lastDayOfNextMonth);
+    return $nextMonth->copy()->day($targetDay)->setTime(...$resetTime);
   }
 
   /**
@@ -185,30 +160,21 @@ class TrafficResetService
    */
   private function getNextYearlyReset(User $user, Carbon $from): Carbon
   {
-    $expiredAt = Carbon::createFromTimestamp($user->expired_at);
+    $expiredAt = Carbon::createFromTimestamp($user->expired_at, config('app.timezone'));
+    $resetMonth = $expiredAt->month;
+    $resetDay = $expiredAt->day;
+    $resetTime = [$expiredAt->hour, $expiredAt->minute, $expiredAt->second];
 
-    $currentYearTarget = $this->getValidYearDate($from->copy(), $expiredAt);
-
+    $currentYearTarget = $from->copy()->month($resetMonth)->day($resetDay)->setTime(...$resetTime);
     if ($currentYearTarget->timestamp > $from->timestamp) {
       return $currentYearTarget;
     }
-
-    return $this->getValidYearDate($from->copy()->addYear(), $expiredAt);
+    $nextYear = $from->copy()->addYear();
+    $lastDayOfMonth = $nextYear->copy()->month($resetMonth)->endOfMonth()->day;
+    $targetDay = min($resetDay, $lastDayOfMonth);
+    return $nextYear->copy()->month($resetMonth)->day($targetDay)->setTime(...$resetTime);
   }
 
-  /**
-   * Get a valid date in a given year, handling leap year cases for Feb 29th.
-   */
-  private function getValidYearDate(Carbon $year, Carbon $expiredAt): Carbon
-  {
-    $target = $year->month($expiredAt->month)->day($expiredAt->day)->startOfDay();
-
-    if ($expiredAt->month === 2 && $expiredAt->day === 29 && !$target->isLeapYear()) {
-      $target->day(28);
-    }
-
-    return $target;
-  }
 
   /**
    * Record the traffic reset log.
@@ -283,11 +249,6 @@ class TrafficResetService
     $errors = [];
     $lastProcessedId = 0;
 
-    Log::info('Starting batch traffic reset task.', [
-      'batch_size' => $batchSize,
-      'start_time' => now()->toDateTimeString(),
-    ]);
-
     try {
       do {
         $users = User::where('next_reset_at', '<=', time())
@@ -307,9 +268,7 @@ class TrafficResetService
           break;
         }
 
-        $batchStartTime = microtime(true);
         $batchResetCount = 0;
-        $batchErrors = [];
 
         if ($progressCallback) {
           $progressCallback([
@@ -318,13 +277,6 @@ class TrafficResetService
             'total_processed' => $totalProcessedCount,
           ]);
         }
-
-        Log::info("Processing batch #{$batchNumber}", [
-          'batch_number' => $batchNumber,
-          'batch_size' => $users->count(),
-          'total_processed' => $totalProcessedCount,
-          'id_range' => $users->first()->id . '-' . $users->last()->id,
-        ]);
 
         foreach ($users as $user) {
           try {
@@ -351,17 +303,6 @@ class TrafficResetService
             $lastProcessedId = $user->id;
           }
         }
-
-        $batchDuration = round(microtime(true) - $batchStartTime, 2);
-
-        Log::info("Batch #{$batchNumber} processing complete", [
-          'batch_number' => $batchNumber,
-          'processed_count' => $users->count(),
-          'reset_count' => $batchResetCount,
-          'error_count' => count($batchErrors),
-          'duration' => $batchDuration,
-          'last_processed_id' => $lastProcessedId,
-        ]);
 
         $batchNumber++;
 
@@ -406,8 +347,6 @@ class TrafficResetService
       'last_processed_id' => $lastProcessedId,
       'completed_at' => now()->toDateTimeString(),
     ];
-
-    Log::info('Batch traffic reset task completed', $result);
 
     return $result;
   }

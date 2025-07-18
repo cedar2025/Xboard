@@ -7,6 +7,7 @@ use App\Jobs\StatUserJob;
 use App\Jobs\TrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
+use App\Models\Server;
 use App\Models\User;
 use App\Services\Plugin\HookManager;
 use App\Services\TrafficResetService;
@@ -113,13 +114,14 @@ class UserService
         return true;
     }
 
-    public function trafficFetch(array $server, string $protocol, array $data)
+    public function trafficFetch(Server $server, string $protocol, array $data)
     {
-        list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [
-            $server,
-            $protocol,
-            $data
-        ]);
+        $server->rate = $server->getCurrentRate();
+        $server = $server->toArray();
+
+        list($server, $protocol, $data) = HookManager::filter('traffic.process.before', [$server, $protocol, $data]);
+        // Compatible with legacy hook
+        list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [$server, $protocol, $data]);
 
         $timestamp = strtotime(date('Y-m-d'));
         collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol) {
@@ -225,6 +227,44 @@ class UserService
         if ($expiredAt) {
             $user->expired_at = $expiredAt;
         }
+    }
+
+    /**
+     * 为用户分配一个新套餐或续费现有套餐
+     *
+     * @param User $user 用户模型
+     * @param Plan $plan 套餐模型
+     * @param int $validityDays 购买天数
+     * @return User 更新后的用户模型
+     */
+    public function assignPlan(User $user, Plan $plan, int $validityDays): User
+    {
+        $user->plan_id = $plan->id;
+        $user->group_id = $plan->group_id;
+        $user->transfer_enable = $plan->transfer_enable * 1073741824;
+        $user->speed_limit = $plan->speed_limit;
+
+        if ($validityDays > 0) {
+            $user = $this->extendSubscription($user, $validityDays);
+        }
+
+        $user->save();
+        return $user;
+    }
+
+    /**
+     * 延长用户的订阅有效期
+     *
+     * @param User $user 用户模型
+     * @param int $days 延长天数
+     * @return User 更新后的用户模型
+     */
+    public function extendSubscription(User $user, int $days): User
+    {
+        $currentExpired = $user->expired_at ?? time();
+        $user->expired_at = max($currentExpired, time()) + ($days * 86400);
+
+        return $user;
     }
 
     /**

@@ -3,10 +3,15 @@
 namespace App\Protocols;
 
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class Shadowsocks extends AbstractProtocol
 {
     public $flags = ['shadowsocks'];
+
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+    ];
 
     public function handle()
     {
@@ -47,7 +52,7 @@ class Shadowsocks extends AbstractProtocol
             "remarks" => $server['name'],
             "server" => $server['host'],
             "server_port" => $server['port'],
-            "password" => $user['uuid'],
+            "password" => $server['password'],
             "method" => data_get($server, 'protocol_settings.cipher')
         ];
         return $config;

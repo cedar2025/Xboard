@@ -54,13 +54,13 @@ class OrderController extends Controller
                 page: $current
             );
 
-        $paginatedResults->getCollection()->transform(function($order) {
+        $paginatedResults->getCollection()->transform(function ($order) {
             $orderArray = $order->toArray();
             $orderArray['period'] = PlanService::getLegacyPeriod((string) $order->period);
             return $orderArray;
         });
 
-        return response()->json($paginatedResults);
+        return $this->paginate($paginatedResults);
     }
 
     private function applyFiltersAndSorts(Request $request, Builder $builder): void

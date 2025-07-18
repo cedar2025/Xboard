@@ -20,3 +20,7 @@ php artisan xboard:update
 if [ -f "/etc/init.d/bt" ] || [ -f "/.dockerenv" ]; then
   chown -R www:www $(pwd);
 fi
+
+if [ -d ".docker/.data" ]; then
+  chmod -R 777 .docker/.data
+fi
