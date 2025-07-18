@@ -5,6 +5,7 @@ namespace App\Protocols;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class Surge extends AbstractProtocol
 {
@@ -12,14 +13,14 @@ class Surge extends AbstractProtocol
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surge.conf';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surge.conf';
 
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_HYSTERIA,
+    ];
     protected $protocolRequirements = [
-        'surge' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '2398'
-                ],
-            ],
-        ],
+        'surge.hysteria.protocol_settings.version' => [2 => '2398'],
     ];
 
     public function handle()
@@ -34,7 +35,7 @@ class Surge extends AbstractProtocol
 
         foreach ($servers as $item) {
             if (
-                $item['type'] === 'shadowsocks'
+                $item['type'] === Server::TYPE_SHADOWSOCKS
                 && in_array(data_get($item, 'protocol_settings.cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
@@ -45,15 +46,15 @@ class Surge extends AbstractProtocol
                 $proxies .= self::buildShadowsocks($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 $proxies .= self::buildVmess($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 $proxies .= self::buildTrojan($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
-            if ($item['type'] === 'hysteria') {
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
                 $proxies .= self::buildHysteria($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }

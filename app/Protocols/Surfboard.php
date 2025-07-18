@@ -5,10 +5,16 @@ namespace App\Protocols;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class Surfboard extends AbstractProtocol
 {
     public $flags = ['surfboard'];
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+    ];
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surfboard.conf';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surfboard.conf';
 
@@ -25,7 +31,7 @@ class Surfboard extends AbstractProtocol
 
         foreach ($servers as $item) {
             if (
-                $item['type'] === 'shadowsocks'
+                $item['type'] === Server::TYPE_SHADOWSOCKS
                 && in_array(data_get($item, 'protocol_settings.cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
@@ -38,13 +44,13 @@ class Surfboard extends AbstractProtocol
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 // [Proxy]
                 $proxies .= self::buildVmess($item['password'], $item);
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 // [Proxy]
                 $proxies .= self::buildTrojan($item['password'], $item);
                 // [Proxy Group]
