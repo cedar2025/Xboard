@@ -119,11 +119,9 @@ class UserService
         $server->rate = $server->getCurrentRate();
         $server = $server->toArray();
 
-        list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [
-            $server,
-            $protocol,
-            $data
-        ]);
+        list($server, $protocol, $data) = HookManager::filter('traffic.process.before', [$server, $protocol, $data]);
+        // Compatible with legacy hook
+        list($server, $protocol, $data) = HookManager::filter('traffic.before_process', [$server, $protocol, $data]);
 
         $timestamp = strtotime(date('Y-m-d'));
         collect($data)->chunk(1000)->each(function ($chunk) use ($timestamp, $server, $protocol) {
