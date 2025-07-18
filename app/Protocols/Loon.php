@@ -3,19 +3,21 @@
 namespace App\Protocols;
 
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class Loon extends AbstractProtocol
 {
     public $flags = ['loon'];
 
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_HYSTERIA,
+    ];
+
     protected $protocolRequirements = [
-        'loon' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '637'
-                ],
-            ],
-        ],
+        'loon.hysteria.protocol_settings.version' => [2 => '637'],
     ];
 
     public function handle()
@@ -27,17 +29,17 @@ class Loon extends AbstractProtocol
 
         foreach ($servers as $item) {
             if (
-                $item['type'] === 'shadowsocks'
+                $item['type'] === Server::TYPE_SHADOWSOCKS
             ) {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 $uri .= self::buildVmess($item['password'], $item);
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 $uri .= self::buildTrojan($item['password'], $item);
             }
-            if ($item['type'] === 'hysteria') {
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
                 $uri .= self::buildHysteria($item['password'], $item, $user);
             }
         }

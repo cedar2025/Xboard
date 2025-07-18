@@ -2,7 +2,7 @@
 use App\Support\Setting;
 use Illuminate\Support\Facades\App;
 
-if (! function_exists('admin_setting')) {
+if (!function_exists('admin_setting')) {
     /**
      * 获取或保存配置参数.
      *
@@ -13,7 +13,7 @@ if (! function_exists('admin_setting')) {
     function admin_setting($key = null, $default = null)
     {
         $setting = app(Setting::class);
-        
+
         if ($key === null) {
             return $setting->toArray();
         }
@@ -22,13 +22,13 @@ if (! function_exists('admin_setting')) {
             $setting->save($key);
             return '';
         }
-        
-        $default = config('v2board.'. $key) ?? $default;
+
+        $default = config('v2board.' . $key) ?? $default;
         return $setting->get($key) ?? $default;
     }
 }
 
-if (! function_exists('admin_settings_batch')) {
+if (!function_exists('admin_settings_batch')) {
     /**
      * 批量获取配置参数，性能优化版本
      *
@@ -38,5 +38,20 @@ if (! function_exists('admin_settings_batch')) {
     function admin_settings_batch(array $keys): array
     {
         return app(Setting::class)->getBatch($keys);
+    }
+}
+
+if (!function_exists('origin_url')) {
+    /**
+     * 根据 HTTP_ORIGIN 拼接完整 URL
+     * @param string $path
+     * @return string
+     */
+    function origin_url(string $path = ''): string
+    {
+        $origin = request()->getSchemeAndHttpHost(); // 自动带端口
+        $origin = rtrim($origin, '/');
+        $path = ltrim($path, '/');
+        return $origin . '/' . $path;
     }
 }

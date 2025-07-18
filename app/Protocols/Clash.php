@@ -2,6 +2,7 @@
 
 namespace App\Protocols;
 
+use App\Models\Server;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
 use App\Support\AbstractProtocol;
@@ -12,6 +13,13 @@ class Clash extends AbstractProtocol
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
 
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_SOCKS,
+        Server::TYPE_HTTP,
+    ];
     public function handle()
     {
         $servers = $this->servers;
@@ -30,7 +38,7 @@ class Clash extends AbstractProtocol
         foreach ($servers as $item) {
 
             if (
-                $item['type'] === 'shadowsocks'
+                $item['type'] === Server::TYPE_SHADOWSOCKS
                 && in_array(data_get($item['protocol_settings'], 'cipher'), [
                     'aes-128-gcm',
                     'aes-192-gcm',
@@ -41,19 +49,19 @@ class Clash extends AbstractProtocol
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 array_push($proxy, self::buildVmess($item['password'], $item));
-                array_push($proxies, $item['name']);    
+                array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 array_push($proxy, self::buildTrojan($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'socks') {
+            if ($item['type'] === Server::TYPE_SOCKS) {
                 array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'http') {
+            if ($item['type'] === Server::TYPE_HTTP) {
                 array_push($proxy, self::buildHttp($item['password'], $item));
                 array_push($proxies, $item['name']);
             }

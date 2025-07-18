@@ -3,10 +3,16 @@
 namespace App\Protocols;
 
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class QuantumultX extends AbstractProtocol
 {
     public $flags = ['quantumult%20x', 'quantumult-x'];
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+    ];
 
     public function handle()
     {
@@ -14,13 +20,13 @@ class QuantumultX extends AbstractProtocol
         $user = $this->user;
         $uri = '';
         foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks') {
+            if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 $uri .= self::buildVmess($item['password'], $item);
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 $uri .= self::buildTrojan($item['password'], $item);
             }
         }

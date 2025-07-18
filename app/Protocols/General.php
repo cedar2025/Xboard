@@ -2,6 +2,7 @@
 
 namespace App\Protocols;
 
+use App\Models\Server;
 use App\Utils\Helper;
 use Illuminate\Support\Arr;
 use App\Support\AbstractProtocol;
@@ -10,21 +11,18 @@ class General extends AbstractProtocol
 {
     public $flags = ['general', 'v2rayn', 'v2rayng', 'passwall', 'ssrplus', 'sagernet'];
 
+    public $allowedProtocols = [
+        Server::TYPE_VMESS,
+        Server::TYPE_VLESS,
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_SOCKS,
+    ];
+
     protected $protocolRequirements = [
-        'v2rayng' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '1.9.5'
-                ],
-            ],
-        ],
-        'v2rayN' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '6.31'
-                ],
-            ],
-        ],
+        'v2rayng.hysteria.protocol_settings.version' => [2 => '1.9.5'],
+        'v2rayn.hysteria.protocol_settings.version' => [2 => '6.31'],
     ];
 
     public function handle()
@@ -34,24 +32,15 @@ class General extends AbstractProtocol
         $uri = '';
 
         foreach ($servers as $item) {
-            if ($item['type'] === 'vmess') {
-                $uri .= self::buildVmess($item['password'], $item);
-            }
-            if ($item['type'] === 'vless') {
-                $uri .= self::buildVless($item['password'], $item);
-            }
-            if ($item['type'] === 'shadowsocks') {
-                $uri .= self::buildShadowsocks($item['password'], $item);
-            }
-            if ($item['type'] === 'trojan') {
-                $uri .= self::buildTrojan($item['password'], $item);
-            }
-            if ($item['type'] === 'hysteria') {
-                $uri .= self::buildHysteria($item['password'], $item);
-            }
-            if ($item['type'] === 'socks') {
-                $uri .= self::buildSocks($item['password'], $item);
-            }
+            $uri .= match ($item['type']) {
+                Server::TYPE_VMESS => self::buildVmess($item['password'], $item),
+                Server::TYPE_VLESS => self::buildVless($item['password'], $item),
+                Server::TYPE_SHADOWSOCKS => self::buildShadowsocks($item['password'], $item),
+                Server::TYPE_TROJAN => self::buildTrojan($item['password'], $item),
+                Server::TYPE_HYSTERIA => self::buildHysteria($item['password'], $item),
+                Server::TYPE_SOCKS => self::buildSocks($item['password'], $item),
+                default => '',
+            };
         }
         return response(base64_encode($uri))->header('content-type', 'text/plain');
     }

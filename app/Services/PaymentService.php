@@ -17,9 +17,12 @@ class PaymentService
     {
         $this->method = $method;
         $this->class = '\\App\\Payments\\' . $this->method;
-        if (!class_exists($this->class)) throw new ApiException('gate is not found');
-        if ($id) $payment = Payment::find($id)->toArray();
-        if ($uuid) $payment = Payment::where('uuid', $uuid)->first()->toArray();
+        if (!class_exists($this->class))
+            throw new ApiException('gate is not found');
+        if ($id)
+            $payment = Payment::find($id)->toArray();
+        if ($uuid)
+            $payment = Payment::where('uuid', $uuid)->first()->toArray();
         $this->config = [];
         if (isset($payment)) {
             $this->config = $payment['config'];
@@ -27,13 +30,15 @@ class PaymentService
             $this->config['id'] = $payment['id'];
             $this->config['uuid'] = $payment['uuid'];
             $this->config['notify_domain'] = $payment['notify_domain'];
-        };
+        }
+        ;
         $this->payment = new $this->class($this->config);
     }
 
     public function notify($params)
     {
-        if (!$this->config['enable']) throw new ApiException('gate is not enable');
+        if (!$this->config['enable'])
+            throw new ApiException('gate is not enable');
         return $this->payment->notify($params);
     }
 
@@ -45,10 +50,10 @@ class PaymentService
             $parseUrl = parse_url($notifyUrl);
             $notifyUrl = $this->config['notify_domain'] . $parseUrl['path'];
         }
-        
+
         return $this->payment->pay([
             'notify_url' => $notifyUrl,
-            'return_url' => url('/#/order/' . $order['trade_no']),
+            'return_url' => origin_url('/#/order/' . $order['trade_no']),
             'trade_no' => $order['trade_no'],
             'total_amount' => $order['total_amount'],
             'user_id' => $order['user_id'],

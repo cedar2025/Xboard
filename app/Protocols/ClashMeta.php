@@ -2,6 +2,7 @@
 
 namespace App\Protocols;
 
+use App\Models\Server;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
@@ -13,49 +14,48 @@ class ClashMeta extends AbstractProtocol
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clashmeta.yaml';
     const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_VMESS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_VLESS,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_TUIC,
+        Server::TYPE_ANYTLS,
+        Server::TYPE_SOCKS,
+        Server::TYPE_HTTP,
+        Server::TYPE_MIERU,
+    ];
 
     protected $protocolRequirements = [
-        'nekobox' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '1.2.7'
-                ],
+        '*.vless.protocol_settings.network' => [
+            'whitelist' => [
+                'tcp' => '0.0.0',
+                'ws' => '0.0.0',
+                'grpc' => '0.0.0',
+                'http' => '0.0.0',
+                'h2' => '0.0.0',
             ],
+            'strict' => true,
         ],
-        'clashmetaforandroid' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '2.9.0'
-                ],
-            ],
+        'nekobox.hysteria.protocol_settings.version' => [
+            1 => '0.0.0',
+            2 => '1.2.7',
         ],
-        'nekoray' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '3.24'
-                ],
-            ],
+        'clashmetaforandroid.hysteria.protocol_settings.version' => [
+            2 => '2.9.0',
         ],
-        'verge' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '1.3.8'
-                ],
-            ],
+        'nekoray.hysteria.protocol_settings.version' => [
+            2 => '3.24',
         ],
-        'ClashX Meta' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '1.3.5'
-                ],
-            ],
+        'verge.hysteria.protocol_settings.version' => [
+            2 => '1.3.8',
         ],
-        'flclash' => [
-            'hysteria' => [
-                'protocol_settings.version' => [
-                    '2' => '0.8.0'
-                ],
-            ],
+        'ClashX Meta.hysteria.protocol_settings.version' => [
+            2 => '1.3.5',
+        ],
+        'flclash.hysteria.protocol_settings.version' => [
+            2 => '0.8.0',
         ],
     ];
 
@@ -78,47 +78,43 @@ class ClashMeta extends AbstractProtocol
         $proxies = [];
 
         foreach ($servers as $item) {
-            $protocol_settings = $item['protocol_settings'];
-            if ($item['type'] === 'shadowsocks') {
+            if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 array_push($proxy, self::buildVmess($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 array_push($proxy, self::buildTrojan($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if (
-                $item['type'] === 'vless'
-                && in_array(data_get($protocol_settings, 'network'), ['tcp', 'ws', 'grpc', 'http', 'h2'])
-            ) {
+            if ($item['type'] === Server::TYPE_VLESS) {
                 array_push($proxy, self::buildVless($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'hysteria') {
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
                 array_push($proxy, self::buildHysteria($item['password'], $item, $user));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'tuic') {
+            if ($item['type'] === Server::TYPE_TUIC) {
                 array_push($proxy, self::buildTuic($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'anytls') {
+            if ($item['type'] === Server::TYPE_ANYTLS) {
                 array_push($proxy, self::buildAnyTLS($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'socks') {
+            if ($item['type'] === Server::TYPE_SOCKS) {
                 array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'http') {
+            if ($item['type'] === Server::TYPE_HTTP) {
                 array_push($proxy, self::buildHttp($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'mieru') {
+            if ($item['type'] === Server::TYPE_MIERU) {
                 array_push($proxy, self::buildMieru($item['password'], $item));
                 array_push($proxies, $item['name']);
             }

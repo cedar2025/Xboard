@@ -37,6 +37,11 @@ abstract class AbstractProtocol
     protected $protocolRequirements = [];
 
     /**
+     * @var array 允许的协议类型（白名单） 为空则不进行过滤
+     */
+    protected $allowedProtocols = [];
+
+    /**
      * 构造函数
      *
      * @param array $user 用户信息
@@ -50,6 +55,7 @@ abstract class AbstractProtocol
         $this->servers = $servers;
         $this->clientName = $clientName;
         $this->clientVersion = $clientVersion;
+        $this->protocolRequirements = $this->normalizeProtocolRequirements($this->protocolRequirements);
         $this->servers = HookManager::filter('protocol.servers.filtered', $this->filterServersByVersion());
     }
 
@@ -77,19 +83,22 @@ abstract class AbstractProtocol
      */
     protected function filterServersByVersion()
     {
-        // 如果没有客户端信息，直接返回所有服务器
-        if (empty($this->clientName) || empty($this->clientVersion)) {
+        $this->filterByAllowedProtocols();
+        $hasGlobalConfig = isset($this->protocolRequirements['*']);
+        $hasClientConfig = isset($this->protocolRequirements[$this->clientName]);
+
+        if ((blank($this->clientName) || blank($this->clientVersion)) && !$hasGlobalConfig) {
             return $this->servers;
         }
 
-        // 检查当前客户端是否有特殊配置
-        if (!isset($this->protocolRequirements[$this->clientName])) {
+        if (!$hasGlobalConfig && !$hasClientConfig) {
             return $this->servers;
         }
 
-        return collect($this->servers)->filter(function ($server) {
-            return $this->isCompatible($server);
-        })->values()->all();
+        return collect($this->servers)
+            ->filter(fn($server) => $this->isCompatible($server))
+            ->values()
+            ->all();
     }
 
     /**
@@ -101,30 +110,73 @@ abstract class AbstractProtocol
     protected function isCompatible($server)
     {
         $serverType = $server['type'] ?? null;
-        // 如果该协议没有特定要求，则认为兼容
+        if (isset($this->protocolRequirements['*'][$serverType])) {
+            $globalRequirements = $this->protocolRequirements['*'][$serverType];
+            if (!$this->checkRequirements($globalRequirements, $server)) {
+                return false;
+            }
+        }
+
         if (!isset($this->protocolRequirements[$this->clientName][$serverType])) {
             return true;
         }
 
         $requirements = $this->protocolRequirements[$this->clientName][$serverType];
+        return $this->checkRequirements($requirements, $server);
+    }
 
-        if (isset($requirements['base_version']) && version_compare($this->clientVersion, $requirements['base_version'], '<')) {
-            return false;
-        }
+    /**
+     * 检查版本要求
+     *
+     * @param array $requirements 要求配置
+     * @param array $server 服务器信息
+     * @return bool
+     */
+    private function checkRequirements(array $requirements, array $server): bool
+    {
+        foreach ($requirements as $field => $filterRule) {
+            if (in_array($field, ['base_version', 'incompatible'])) {
+                continue;
+            }
 
-        // 检查每个路径的版本要求
-        foreach ($requirements as $path => $valueRequirements) {
-            $actualValue = data_get($server, $path);
+            $actualValue = data_get($server, $field);
+
+            if (is_array($filterRule) && isset($filterRule['whitelist'])) {
+                $allowedValues = $filterRule['whitelist'];
+                $strict = $filterRule['strict'] ?? false;
+                if ($strict) {
+                    if ($actualValue === null) {
+                        return false;
+                    }
+                    if (!is_string($actualValue) && !is_int($actualValue)) {
+                        return false;
+                    }
+                    if (!isset($allowedValues[$actualValue])) {
+                        return false;
+                    }
+                    $requiredVersion = $allowedValues[$actualValue];
+                    if ($requiredVersion !== '0.0.0' && version_compare($this->clientVersion, $requiredVersion, '<')) {
+                        return false;
+                    }
+                    continue;
+                }
+            } else {
+                $allowedValues = $filterRule;
+                $strict = false;
+            }
 
             if ($actualValue === null) {
                 continue;
             }
-
-            if (isset($valueRequirements[$actualValue])) {
-                $requiredVersion = $valueRequirements[$actualValue];
-                if (version_compare($this->clientVersion, $requiredVersion, '<')) {
-                    return false;
-                }
+            if (!is_string($actualValue) && !is_int($actualValue)) {
+                continue;
+            }
+            if (!isset($allowedValues[$actualValue])) {
+                continue;
+            }
+            $requiredVersion = $allowedValues[$actualValue];
+            if ($requiredVersion !== '0.0.0' && version_compare($this->clientVersion, $requiredVersion, '<')) {
+                return false;
             }
         }
 
@@ -159,5 +211,45 @@ abstract class AbstractProtocol
         }
 
         return true;
+    }
+
+    /**
+     * 根据白名单过滤服务器
+     *
+     * @return void
+     */
+    protected function filterByAllowedProtocols(): void
+    {
+        if (!empty($this->allowedProtocols)) {
+            $this->servers = collect($this->servers)
+                ->filter(fn($server) => in_array($server['type'], $this->allowedProtocols))
+                ->values()
+                ->all();
+        }
+    }
+
+    /**
+     * 将平铺的协议需求转换为树形结构
+     *
+     * @param array $flat 平铺的协议需求
+     * @return array 树形结构的协议需求
+     */
+    protected function normalizeProtocolRequirements(array $flat): array
+    {
+        $result = [];
+        foreach ($flat as $key => $value) {
+            if (!str_contains($key, '.')) {
+                $result[$key] = $value;
+                continue;
+            }
+            $segments = explode('.', $key, 3);
+            if (count($segments) < 3) {
+                $result[$segments[0]][$segments[1] ?? '*'][''] = $value;
+                continue;
+            }
+            [$client, $type, $field] = $segments;
+            $result[$client][$type][$field] = $value;
+        }
+        return $result;
     }
 }

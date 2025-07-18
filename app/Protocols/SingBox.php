@@ -4,12 +4,23 @@ namespace App\Protocols;
 use App\Utils\Helper;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 use App\Support\AbstractProtocol;
+use App\Models\Server;
 
 class SingBox extends AbstractProtocol
 {
     public $flags = ['sing-box', 'hiddify', 'sfm'];
+    public $allowedProtocols = [
+        Server::TYPE_SHADOWSOCKS,
+        Server::TYPE_TROJAN,
+        Server::TYPE_VMESS,
+        Server::TYPE_VLESS,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_TUIC,
+        Server::TYPE_ANYTLS,
+        Server::TYPE_SOCKS,
+        Server::TYPE_HTTP,
+    ];
     private $config;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.sing-box.json';
@@ -85,42 +96,42 @@ class SingBox extends AbstractProtocol
         $proxies = [];
         foreach ($this->servers as $item) {
             $protocol_settings = $item['protocol_settings'];
-            if ($item['type'] === 'shadowsocks') {
+            if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 $ssConfig = $this->buildShadowsocks($item['password'], $item);
                 $proxies[] = $ssConfig;
             }
-            if ($item['type'] === 'trojan') {
+            if ($item['type'] === Server::TYPE_TROJAN) {
                 $trojanConfig = $this->buildTrojan($this->user['uuid'], $item);
                 $proxies[] = $trojanConfig;
             }
-            if ($item['type'] === 'vmess') {
+            if ($item['type'] === Server::TYPE_VMESS) {
                 $vmessConfig = $this->buildVmess($this->user['uuid'], $item);
                 $proxies[] = $vmessConfig;
             }
             if (
-                $item['type'] === 'vless'
+                $item['type'] === Server::TYPE_VLESS
                 && in_array(data_get($protocol_settings, 'network'), ['tcp', 'ws', 'grpc', 'http', 'quic', 'httpupgrade'])
             ) {
                 $vlessConfig = $this->buildVless($this->user['uuid'], $item);
                 $proxies[] = $vlessConfig;
             }
-            if ($item['type'] === 'hysteria') {
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
                 $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item);
                 $proxies[] = $hysteriaConfig;
             }
-            if ($item['type'] === 'tuic') {
+            if ($item['type'] === Server::TYPE_TUIC) {
                 $tuicConfig = $this->buildTuic($this->user['uuid'], $item);
                 $proxies[] = $tuicConfig;
             }
-            if ($item['type'] === 'anytls') {
+            if ($item['type'] === Server::TYPE_ANYTLS) {
                 $anytlsConfig = $this->buildAnyTLS($this->user['uuid'], $item);
                 $proxies[] = $anytlsConfig;
             }
-            if ($item['type'] === 'socks') {
+            if ($item['type'] === Server::TYPE_SOCKS) {
                 $socksConfig = $this->buildSocks($this->user['uuid'], $item);
                 $proxies[] = $socksConfig;
             }
-            if ($item['type'] === 'http') {
+            if ($item['type'] === Server::TYPE_HTTP) {
                 $httpConfig = $this->buildHttp($this->user['uuid'], $item);
                 $proxies[] = $httpConfig;
             }
