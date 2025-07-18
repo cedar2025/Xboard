@@ -63,6 +63,7 @@ class Server extends Model
     public const TYPE_NAIVE = 'naive';
     public const TYPE_HTTP = 'http';
     public const TYPE_MIERU = 'mieru';
+    public const TYPE_ANYTLS = 'anytls';
     public const STATUS_OFFLINE = 0;
     public const STATUS_ONLINE_NO_PUSH = 1;
     public const STATUS_ONLINE = 2;
@@ -100,6 +101,7 @@ class Server extends Model
         self::TYPE_NAIVE,
         self::TYPE_HTTP,
         self::TYPE_MIERU,
+        self::TYPE_ANYTLS,
     ];
 
     protected $table = 'v2_server';
@@ -439,5 +441,34 @@ class Server extends Model
             }
         }
         return (float) $this->rate;
+    }
+
+    /**
+     * 用户负载百分比访问器
+     */
+    protected function loadUsers(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                // Get online users for this server
+                $serverOnlineUsers = $this->online;
+                
+                if ($serverOnlineUsers === 0) {
+                    return 0;
+                }
+                
+                // Cache total online users for 1 minute to improve performance
+                $totalOnlineUsers = Cache::remember('total_online_users', 60, function () {
+                    return User::where('t', '>=', time() - 600)->count();
+                });
+                
+                if ($totalOnlineUsers === 0) {
+                    return 0;
+                }
+                
+                // Calculate percentage (rounded to 2 decimal places)
+                return round(($serverOnlineUsers / $totalOnlineUsers) * 100, 2);
+            }
+        );
     }
 }
