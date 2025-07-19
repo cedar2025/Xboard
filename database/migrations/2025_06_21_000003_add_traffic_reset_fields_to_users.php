@@ -3,10 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Models\User;
-use App\Services\TrafficResetService;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Artisan;
 
 class AddTrafficResetFieldsToUsers extends Migration
 {
@@ -25,66 +22,8 @@ class AddTrafficResetFieldsToUsers extends Migration
             });
         }
 
-        // 为现有用户设置初始重置时间
-        $this->migrateExistingUsers();
-    }
-
-    /**
-     * 为现有用户迁移流量重置数据
-     */
-    private function migrateExistingUsers(): void
-    {
-        try {
-            // 获取所有需要迁移的用户ID，避免查询条件变化
-            $userIds = User::whereNotNull('plan_id')
-                ->where('banned', 0)
-                ->whereNull('next_reset_at')
-                ->pluck('id')
-                ->toArray();
-
-            $totalUsers = count($userIds);
-            if ($totalUsers === 0) {
-                return;
-            }
-
-            echo "开始迁移 {$totalUsers} 个用户的流量重置数据...\n";
-            $trafficResetService = app(TrafficResetService::class);
-            $processedCount = 0;
-            $failedCount = 0;
-
-            // 分批处理用户ID
-            $chunks = array_chunk($userIds, 200);
-
-            foreach ($chunks as $chunkIds) {
-                $users = User::whereIn('id', $chunkIds)
-                    ->with('plan:id,reset_traffic_method')
-                    ->get();
-
-                foreach ($users as $user) {
-                    try {
-                        $trafficResetService->setInitialResetTime($user);
-                        $processedCount++;
-                    } catch (\Exception $e) {
-                        $failedCount++;
-                        Log::error('迁移用户流量重置时间失败', [
-                            'user_id' => $user->id,
-                            'email' => $user->email,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-
-                    // 每 100 个用户显示一次进度
-                    if (($processedCount + $failedCount) % 100 === 0 || ($processedCount + $failedCount) === $totalUsers) {
-                        $currentTotal = $processedCount + $failedCount;
-                        $percentage = round(($currentTotal / $totalUsers) * 100, 1);
-                        echo "进度: {$currentTotal}/{$totalUsers} ({$percentage}%) [成功: {$processedCount}, 失败: {$failedCount}]\n";
-                    }
-                }
-            }
-
-            echo "迁移完成！总计 {$totalUsers} 个用户，成功: {$processedCount}，失败: {$failedCount}\n";
-        } catch (\Exception $e) {
-        }
+        // Set initial reset time for existing users
+        Artisan::call('reset:traffic', ['--fix-null' => true]);
     }
 
     /**
