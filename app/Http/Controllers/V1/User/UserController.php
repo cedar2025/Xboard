@@ -138,7 +138,10 @@ class UserController extends Controller
                 'd',
                 'transfer_enable',
                 'email',
-                'uuid'
+                'uuid',
+                'device_limit',
+                'speed_limit',
+                'next_reset_at'
             ])
             ->first();
         if (!$user) {
