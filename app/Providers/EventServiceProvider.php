@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Models\User;
 use App\Observers\UserObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -24,7 +23,6 @@ class EventServiceProvider extends ServiceProvider
     {
         parent::boot();
 
-        // 注册用户模型观察者
         User::observe(UserObserver::class);
     }
 }

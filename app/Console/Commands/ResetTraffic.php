@@ -3,70 +3,36 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\TrafficResetLog;
 use App\Services\TrafficResetService;
-use App\Utils\Helper;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ResetTraffic extends Command
 {
-  /**
-   * The name and signature of the console command.
-   */
-  protected $signature = 'reset:traffic {--batch-size=100 : 分批处理的批次大小} {--dry-run : 预演模式，不实际执行重置} {--max-time=300 : 最大执行时间（秒）}';
+  protected $signature = 'reset:traffic {--fix-null : 修正模式，重新计算next_reset_at为null的用户}';
 
-  /**
-   * The console command description.
-   */
-  protected $description = '流量重置 - 分批处理所有需要重置的用户';
+  protected $description = '流量重置 - 处理所有需要重置的用户';
 
-  /**
-   * 流量重置服务
-   */
-  private TrafficResetService $trafficResetService;
-
-  /**
-   * Create a new command instance.
-   */
-  public function __construct(TrafficResetService $trafficResetService)
-  {
+  public function __construct(
+    private readonly TrafficResetService $trafficResetService
+  ) {
     parent::__construct();
-    $this->trafficResetService = $trafficResetService;
   }
 
-  /**
-   * Execute the console command.
-   */
   public function handle(): int
   {
-    $batchSize = (int) $this->option('batch-size');
-    $dryRun = $this->option('dry-run');
-    $maxTime = (int) $this->option('max-time');
+    $fixNull = $this->option('fix-null');
 
     $this->info('🚀 开始执行流量重置任务...');
-    $this->info("批次大小: {$batchSize} 用户/批");
-    $this->info("最大执行时间: {$maxTime} 秒");
 
-    if ($dryRun) {
-      $this->warn('⚠️  预演模式 - 不会实际执行重置操作');
+    if ($fixNull) {
+      $this->warn('🔧 修正模式 - 将重新计算next_reset_at为null的用户');
     }
 
-    // 设置最大执行时间
-    set_time_limit($maxTime);
-
     try {
-      if ($dryRun) {
-        $result = $this->performDryRun($batchSize);
-      } else {
-        // 使用游标分页和进度回调
-        $result = $this->trafficResetService->batchCheckReset($batchSize, function ($progress) {
-          $this->info("📦 处理第 {$progress['batch_number']} 批 ({$progress['batch_size']} 用户) - 已处理: {$progress['total_processed']}");
-        });
-      }
-
-      $this->displayResults($result, $dryRun);
-
+      $result = $fixNull ? $this->performFix() : $this->performReset();
+      $this->displayResults($result, $fixNull);
       return self::SUCCESS;
 
     } catch (\Exception $e) {
@@ -75,131 +41,185 @@ class ResetTraffic extends Command
       Log::error('流量重置命令执行失败', [
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString(),
-        'options' => [
-          'batch_size' => $batchSize,
-          'dry_run' => $dryRun,
-          'max_time' => $maxTime,
-        ],
       ]);
 
       return self::FAILURE;
     }
   }
 
-  /**
-   * 显示执行结果
-   */
-  private function displayResults(array $result, bool $dryRun): void
+  private function displayResults(array $result, bool $fixNull): void
   {
-    $this->info("✅ 任务完成！");
-    $this->line('');
+    $this->info("✅ 任务完成！\n");
 
-    if ($dryRun) {
-      $this->info("📊 预演结果统计:");
-      $this->info("📋 待处理用户数: {$result['total_found']}");
-      $this->info("⏱️  预计处理时间: ~{$result['estimated_duration']} 秒");
-      $this->info("🗂️  预计批次数: {$result['estimated_batches']}");
+    if ($fixNull) {
+      $this->displayFixResults($result);
     } else {
-      $this->info("📊 执行结果统计:");
-      $this->info("👥 处理用户总数: {$result['total_processed']}");
-      $this->info("🔄 重置用户数量: {$result['total_reset']}");
-      $this->info("📦 处理批次数量: {$result['total_batches']}");
-      $this->info("⏱️  总执行时间: {$result['duration']} 秒");
-
-      if ($result['error_count'] > 0) {
-        $this->warn("⚠️  错误数量: {$result['error_count']}");
-        $this->warn("详细错误信息请查看日志");
-      } else {
-        $this->info("✨ 无错误发生");
-      }
-
-      // 显示性能指标
-      if ($result['total_processed'] > 0) {
-        $avgTime = round($result['duration'] / $result['total_processed'], 4);
-        $this->info("⚡ 平均处理速度: {$avgTime} 秒/用户");
-      }
+      $this->displayExecutionResults($result);
     }
   }
 
-  /**
-   * 执行预演模式
-   */
-  private function performDryRun(int $batchSize): array
+  private function displayFixResults(array $result): void
   {
-    $this->info("🔍 扫描需要重置的用户...");
+    $this->info("📊 修正结果统计:");
+    $this->info("🔍 发现用户总数: {$result['total_found']}");
+    $this->info("✅ 成功修正数量: {$result['total_fixed']}");
+    $this->info("⏱️  总执行时间: {$result['duration']} 秒");
 
-    $totalUsers = User::where('next_reset_at', '<=', time())
+    if ($result['error_count'] > 0) {
+      $this->warn("⚠️  错误数量: {$result['error_count']}");
+      $this->warn("详细错误信息请查看日志");
+    } else {
+      $this->info("✨ 无错误发生");
+    }
+
+    if ($result['total_found'] > 0) {
+      $avgTime = round($result['duration'] / $result['total_found'], 4);
+      $this->info("⚡ 平均处理速度: {$avgTime} 秒/用户");
+    }
+  }
+
+
+
+  private function displayExecutionResults(array $result): void
+  {
+    $this->info("📊 执行结果统计:");
+    $this->info("👥 处理用户总数: {$result['total_processed']}");
+    $this->info("🔄 重置用户数量: {$result['total_reset']}");
+    $this->info("⏱️  总执行时间: {$result['duration']} 秒");
+
+    if ($result['error_count'] > 0) {
+      $this->warn("⚠️  错误数量: {$result['error_count']}");
+      $this->warn("详细错误信息请查看日志");
+    } else {
+      $this->info("✨ 无错误发生");
+    }
+
+    if ($result['total_processed'] > 0) {
+      $avgTime = round($result['duration'] / $result['total_processed'], 4);
+      $this->info("⚡ 平均处理速度: {$avgTime} 秒/用户");
+    }
+  }
+
+  private function performReset(): array
+  {
+    $startTime = microtime(true);
+    $totalResetCount = 0;
+    $errors = [];
+
+    $users = $this->getResetQuery()->get();
+
+    if ($users->isEmpty()) {
+      $this->info("😴 当前没有需要重置的用户");
+      return [
+        'total_processed' => 0,
+        'total_reset' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
+    }
+
+    $this->info("找到 {$users->count()} 个需要重置的用户");
+
+    foreach ($users as $user) {
+      try {
+        $totalResetCount += (int) $this->trafficResetService->checkAndReset($user, TrafficResetLog::SOURCE_CRON);
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('用户流量重置失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    return [
+      'total_processed' => $users->count(),
+      'total_reset' => $totalResetCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
+
+  private function performFix(): array
+  {
+    $startTime = microtime(true);
+    $nullUsers = $this->getNullResetTimeUsers();
+
+    if ($nullUsers->isEmpty()) {
+      $this->info("✅ 没有发现next_reset_at为null的用户");
+      return [
+        'total_found' => 0,
+        'total_fixed' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
+    }
+
+    $this->info("🔧 发现 {$nullUsers->count()} 个next_reset_at为null的用户，开始修正...");
+
+    $fixedCount = 0;
+    $errors = [];
+
+    foreach ($nullUsers as $user) {
+      try {
+        $nextResetTime = $this->trafficResetService->calculateNextResetTime($user);
+        if ($nextResetTime) {
+          $user->next_reset_at = $nextResetTime->timestamp;
+          $user->save();
+          $fixedCount++;
+        }
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('修正用户next_reset_at失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    return [
+      'total_found' => $nullUsers->count(),
+      'total_fixed' => $fixedCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
+
+
+
+  private function getResetQuery()
+  {
+    return User::where('next_reset_at', '<=', time())
       ->whereNotNull('next_reset_at')
       ->where(function ($query) {
         $query->where('expired_at', '>', time())
           ->orWhereNull('expired_at');
       })
       ->where('banned', 0)
-      ->whereNotNull('plan_id')
-      ->count();
-
-    if ($totalUsers === 0) {
-      $this->info("😴 当前没有需要重置的用户");
-      return [
-        'total_found' => 0,
-        'estimated_duration' => 0,
-        'estimated_batches' => 0,
-      ];
-    }
-
-    $this->info("找到 {$totalUsers} 个需要重置的用户");
-
-    // 预计批次数
-    $estimatedBatches = ceil($totalUsers / $batchSize);
-
-    // 预计执行时间（基于经验值：每个用户平均0.1秒）
-    $estimatedDuration = round($totalUsers * 0.1, 1);
-
-    $this->info("将分 {$estimatedBatches} 个批次处理（每批 {$batchSize} 用户）");
-
-    // 显示前几个用户的详情作为示例
-    if ($this->option('verbose') || $totalUsers <= 20) {
-      $sampleUsers = User::where('next_reset_at', '<=', time())
-        ->whereNotNull('next_reset_at')
-        ->where(function ($query) {
-          $query->where('expired_at', '>', time())
-            ->orWhereNull('expired_at');
-        })
-        ->where('banned', 0)
-        ->whereNotNull('plan_id')
-        ->with('plan')
-        ->limit(min(20, $totalUsers))
-        ->get();
-
-      $table = [];
-      foreach ($sampleUsers as $user) {
-        $table[] = [
-          'ID' => $user->id,
-          '邮箱' => substr($user->email, 0, 20) . (strlen($user->email) > 20 ? '...' : ''),
-          '套餐' => $user->plan->name ?? 'N/A',
-          '下次重置' => Carbon::createFromTimestamp($user->next_reset_at)->format('Y-m-d H:i:s'),
-          '当前流量' => Helper::trafficConvert(($user->u ?? 0) + ($user->d ?? 0)),
-          '重置次数' => $user->reset_count,
-        ];
-      }
-
-      if (!empty($table)) {
-        $this->info("📋 示例用户列表" . ($totalUsers > 20 ? "（显示前20个）：" : "："));
-        $this->table([
-          'ID',
-          '邮箱',
-          '套餐',
-          '下次重置',
-          '当前流量',
-          '重置次数'
-        ], $table);
-      }
-    }
-
-    return [
-      'total_found' => $totalUsers,
-      'estimated_duration' => $estimatedDuration,
-      'estimated_batches' => $estimatedBatches,
-    ];
+      ->whereNotNull('plan_id');
   }
+
+
+
+  private function getNullResetTimeUsers()
+  {
+    return User::whereNull('next_reset_at')
+      ->whereNotNull('plan_id')
+      ->where(function ($query) {
+        $query->where('expired_at', '>', time())
+          ->orWhereNull('expired_at');
+      })
+      ->where('banned', 0)
+      ->with('plan:id,name,reset_traffic_method')
+      ->get();
+  }
+
 }

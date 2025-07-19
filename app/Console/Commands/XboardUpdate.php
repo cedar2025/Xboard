@@ -45,6 +45,7 @@ class XboardUpdate extends Command
         Artisan::call("migrate");
         $this->info(Artisan::output());
         Artisan::call('horizon:terminate');
+        Artisan::call('reset:traffic', ['--fix-null' => true]);
         $updateService = new UpdateService();
         $updateService->updateVersionCache();
         $themeService = app(ThemeService::class);
