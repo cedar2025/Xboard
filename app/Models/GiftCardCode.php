@@ -110,7 +110,7 @@ class GiftCardCode extends Model
     public function isAvailable(): bool
     {
         // 检查状态
-        if ($this->status !== self::STATUS_UNUSED) {
+        if (in_array($this->status, [self::STATUS_EXPIRED, self::STATUS_DISABLED])) {
             return false;
         }
 
