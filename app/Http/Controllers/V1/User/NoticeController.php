@@ -13,6 +13,7 @@ class NoticeController extends Controller
         $current = $request->input('current') ? $request->input('current') : 1;
         $pageSize = 5;
         $model = Notice::orderBy('sort', 'ASC')
+            ->orderBy('id', 'DESC')
             ->where('show', true);
         $total = $model->count();
         $res = $model->forPage($current, $pageSize)
