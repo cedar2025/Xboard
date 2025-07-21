@@ -222,27 +222,27 @@ class GiftCardTemplate extends Model
      */
     public function checkUsageLimit(User $user): bool
     {
-        $conditions = $this->conditions ?? [];
+        $limits = $this->limits ?? [];
 
         // 检查每用户最大使用次数
-        if (isset($conditions['max_use_per_user'])) {
+        if (isset($limits['max_use_per_user'])) {
             $usedCount = $this->usages()
                 ->where('user_id', $user->id)
                 ->count();
-            if ($usedCount >= $conditions['max_use_per_user']) {
+            if ($usedCount >= $limits['max_use_per_user']) {
                 return false;
             }
         }
 
         // 检查冷却时间
-        if (isset($conditions['cooldown_hours'])) {
+        if (isset($limits['cooldown_hours'])) {
             $lastUsage = $this->usages()
                 ->where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->first();
 
             if ($lastUsage && isset($lastUsage->created_at)) {
-                $cooldownTime = $lastUsage->created_at + ($conditions['cooldown_hours'] * 3600);
+                $cooldownTime = $lastUsage->created_at + ($limits['cooldown_hours'] * 3600);
                 if (time() < $cooldownTime) {
                     return false;
                 }
