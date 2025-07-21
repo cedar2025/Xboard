@@ -125,26 +125,19 @@ class Helper
     {
         $path = route('client.subscribe', ['token' => $token], false);
         
-        // 如果已提供订阅URL，直接处理并返回
         if ($subscribeUrl) {
             $finalUrl = rtrim($subscribeUrl, '/') . $path;
             return HookManager::filter('subscribe.url', $finalUrl);
         }
         
-        // 使用静态缓存避免重复查询配置
-        if (self::$subscribeUrlCache === null) {
-            $urlString = (string)admin_setting('subscribe_url', '');
-            self::$subscribeUrlCache = $urlString ? explode(',', $urlString) : [];
-        }
+        $urlString = (string)admin_setting('subscribe_url', '');
+        $subscribeUrlList = $urlString ? explode(',', $urlString) : [];
         
-        // 如果没有配置订阅URL，使用默认URL
-        if (empty(self::$subscribeUrlCache)) {
+        if (empty($subscribeUrlList)) {
             return HookManager::filter('subscribe.url', url($path));
         }
         
-        // 高效随机选择URL并处理
-        $randomIndex = array_rand(self::$subscribeUrlCache);
-        $selectedUrl = self::replaceByPattern(self::$subscribeUrlCache[$randomIndex]);
+        $selectedUrl = self::replaceByPattern(Arr::random($subscribeUrlList));
         $finalUrl = rtrim($selectedUrl, '/') . $path;
         
         return HookManager::filter('subscribe.url', $finalUrl);
