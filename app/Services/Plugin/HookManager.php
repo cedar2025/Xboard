@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\App;
 class HookManager
 {
     /**
-     * 存储动作钩子的容器
+     * Container for storing action hooks
      * 
-     * 使用request()存储周期内的钩子数据，避免Octane内存泄漏
+     * Uses request() to store hook data within the cycle to avoid Octane memory leaks
      */
-    protected static function getActions(): array
+    public static function getActions(): array
     {
         if (!App::has('hook.actions')) {
             App::instance('hook.actions', []);
@@ -22,9 +22,9 @@ class HookManager
     }
 
     /**
-     * 存储过滤器钩子的容器
+     * Container for storing filter hooks
      */
-    protected static function getFilters(): array
+    public static function getFilters(): array
     {
         if (!App::has('hook.filters')) {
             App::instance('hook.filters', []);
@@ -34,7 +34,7 @@ class HookManager
     }
 
     /**
-     * 设置动作钩子
+     * Set action hooks
      */
     protected static function setActions(array $actions): void
     {
@@ -42,7 +42,7 @@ class HookManager
     }
 
     /**
-     * 设置过滤器钩子
+     * Set filter hooks
      */
     protected static function setFilters(array $filters): void
     {
@@ -50,9 +50,38 @@ class HookManager
     }
 
     /**
-     * 拦截响应
+     * Generate unique identifier for callback
+     * 
+     * @param callable $callback
+     * @return string
+     */
+    protected static function getCallableId(callable $callback): string
+    {
+        if (is_object($callback)) {
+            return spl_object_hash($callback);
+        }
+
+        if (is_array($callback) && count($callback) === 2) {
+            [$class, $method] = $callback;
+
+            if (is_object($class)) {
+                return spl_object_hash($class) . '::' . $method;
+            } else {
+                return (string) $class . '::' . $method;
+            }
+        }
+
+        if (is_string($callback)) {
+            return $callback;
+        }
+
+        return 'callable_' . uniqid();
+    }
+
+    /**
+     * Intercept response
      *
-     * @param SymfonyResponse|string|array $response 新的响应内容
+     * @param SymfonyResponse|string|array $response New response content
      * @return never
      * @throws \Exception
      */
@@ -68,10 +97,10 @@ class HookManager
     }
 
     /**
-     * 触发动作钩子
+     * Trigger action hook
      *
-     * @param string $hook 钩子名称
-     * @param mixed $payload 传递给钩子的数据
+     * @param string $hook Hook name
+     * @param mixed $payload Data passed to hook
      * @return void
      */
     public static function call(string $hook, mixed $payload = null): void
@@ -82,7 +111,6 @@ class HookManager
             return;
         }
 
-        // 按优先级排序
         ksort($actions[$hook]);
 
         foreach ($actions[$hook] as $callbacks) {
@@ -93,11 +121,11 @@ class HookManager
     }
 
     /**
-     * 触发过滤器钩子
+     * Trigger filter hook
      *
-     * @param string $hook 钩子名称
-     * @param mixed $value 要过滤的值
-     * @param mixed ...$args 其他参数
+     * @param string $hook Hook name
+     * @param mixed $value Value to filter
+     * @param mixed ...$args Other parameters
      * @return mixed
      */
     public static function filter(string $hook, mixed $value, mixed ...$args): mixed
@@ -108,7 +136,6 @@ class HookManager
             return $value;
         }
 
-        // 按优先级排序
         ksort($filters[$hook]);
 
         $result = $value;
@@ -122,11 +149,11 @@ class HookManager
     }
 
     /**
-     * 注册动作钩子监听器
+     * Register action hook listener
      *
-     * @param string $hook 钩子名称
-     * @param callable $callback 回调函数
-     * @param int $priority 优先级
+     * @param string $hook Hook name
+     * @param callable $callback Callback function
+     * @param int $priority Priority
      * @return void
      */
     public static function register(string $hook, callable $callback, int $priority = 20): void
@@ -141,18 +168,17 @@ class HookManager
             $actions[$hook][$priority] = [];
         }
 
-        // 使用随机键存储回调，避免相同优先级覆盖
-        $actions[$hook][$priority][spl_object_hash($callback)] = $callback;
+        $actions[$hook][$priority][self::getCallableId($callback)] = $callback;
 
         self::setActions($actions);
     }
 
     /**
-     * 注册过滤器钩子
+     * Register filter hook
      *
-     * @param string $hook 钩子名称
-     * @param callable $callback 回调函数
-     * @param int $priority 优先级
+     * @param string $hook Hook name
+     * @param callable $callback Callback function
+     * @param int $priority Priority
      * @return void
      */
     public static function registerFilter(string $hook, callable $callback, int $priority = 20): void
@@ -167,17 +193,16 @@ class HookManager
             $filters[$hook][$priority] = [];
         }
 
-        // 使用随机键存储回调，避免相同优先级覆盖
-        $filters[$hook][$priority][spl_object_hash($callback)] = $callback;
+        $filters[$hook][$priority][self::getCallableId($callback)] = $callback;
 
         self::setFilters($filters);
     }
 
     /**
-     * 移除钩子监听器
+     * Remove hook listener
      *
-     * @param string $hook 钩子名称
-     * @param callable|null $callback 回调函数
+     * @param string $hook Hook name
+     * @param callable|null $callback Callback function
      * @return void
      */
     public static function remove(string $hook, ?callable $callback = null): void
@@ -185,7 +210,6 @@ class HookManager
         $actions = self::getActions();
         $filters = self::getFilters();
 
-        // 如果回调为null，直接移除整个钩子
         if ($callback === null) {
             if (isset($actions[$hook])) {
                 unset($actions[$hook]);
@@ -200,21 +224,17 @@ class HookManager
             return;
         }
 
-        // 移除特定回调
-        $callbackId = spl_object_hash($callback);
+        $callbackId = self::getCallableId($callback);
 
-        // 从actions中移除
         if (isset($actions[$hook])) {
             foreach ($actions[$hook] as $priority => $callbacks) {
                 if (isset($callbacks[$callbackId])) {
                     unset($actions[$hook][$priority][$callbackId]);
 
-                    // 如果优先级下没有回调了，删除该优先级
                     if (empty($actions[$hook][$priority])) {
                         unset($actions[$hook][$priority]);
                     }
 
-                    // 如果钩子下没有任何优先级了，删除该钩子
                     if (empty($actions[$hook])) {
                         unset($actions[$hook]);
                     }
@@ -223,18 +243,15 @@ class HookManager
             self::setActions($actions);
         }
 
-        // 从filters中移除
         if (isset($filters[$hook])) {
             foreach ($filters[$hook] as $priority => $callbacks) {
                 if (isset($callbacks[$callbackId])) {
                     unset($filters[$hook][$priority][$callbackId]);
 
-                    // 如果优先级下没有回调了，删除该优先级
                     if (empty($filters[$hook][$priority])) {
                         unset($filters[$hook][$priority]);
                     }
 
-                    // 如果钩子下没有任何优先级了，删除该钩子
                     if (empty($filters[$hook])) {
                         unset($filters[$hook]);
                     }
@@ -245,9 +262,9 @@ class HookManager
     }
 
     /**
-     * 检查是否存在钩子
+     * Check if hook exists
      *
-     * @param string $hook 钩子名称
+     * @param string $hook Hook name
      * @return bool
      */
     public static function hasHook(string $hook): bool
@@ -259,7 +276,7 @@ class HookManager
     }
 
     /**
-     * 清理所有钩子（在Octane重置时调用）
+     * Clear all hooks (called when Octane resets)
      */
     public static function reset(): void
     {

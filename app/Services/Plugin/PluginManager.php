@@ -3,6 +3,7 @@
 namespace App\Services\Plugin;
 
 use App\Models\Plugin;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
@@ -16,6 +17,7 @@ class PluginManager
 {
     protected string $pluginPath;
     protected array $loadedPlugins = [];
+    protected bool $pluginsInitialized = false;
 
     public function __construct()
     {
@@ -41,7 +43,7 @@ class PluginManager
     /**
      * 加载插件类
      */
-    protected function loadPlugin(string $pluginCode)
+    protected function loadPlugin(string $pluginCode): ?AbstractPlugin
     {
         if (isset($this->loadedPlugins[$pluginCode])) {
             return $this->loadedPlugins[$pluginCode];
@@ -298,9 +300,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
         // 初始化插件
-        if (method_exists($plugin, 'boot')) {
-            $plugin->boot();
-        }
+        $plugin->boot();
 
         return true;
     }
@@ -315,7 +315,6 @@ class PluginManager
             throw new \Exception('Plugin not found');
         }
 
-        // 更新数据库状态
         Plugin::query()
             ->where('code', $pluginCode)
             ->update([
@@ -323,10 +322,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
 
-        // 清理插件
-        if (method_exists($plugin, 'cleanup')) {
-            $plugin->cleanup();
-        }
+        $plugin->cleanup();
 
         return true;
     }
@@ -451,5 +447,92 @@ class PluginManager
         File::deleteDirectory($extractPath);
 
         return true;
+    }
+
+    /**
+     * Initializes all enabled plugins from the database.
+     * This method ensures that plugins are loaded, and their routes, views,
+     * and service providers are registered only once per request cycle.
+     */
+    public function initializeEnabledPlugins(): void
+    {
+        if ($this->pluginsInitialized) {
+            return;
+        }
+
+        $enabledPlugins = Plugin::where('is_enabled', true)->get();
+
+        foreach ($enabledPlugins as $dbPlugin) {
+            try {
+                $pluginCode = $dbPlugin->code;
+
+                $pluginInstance = $this->loadPlugin($pluginCode);
+                if (!$pluginInstance) {
+                    continue;
+                }
+
+                if (!empty($dbPlugin->config)) {
+                    $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                }
+
+                $this->registerServiceProvider($pluginCode);
+                $this->loadRoutes($pluginCode);
+                $this->loadViews($pluginCode);
+
+                $pluginInstance->boot();
+
+            } catch (\Exception $e) {
+                Log::error("Failed to initialize plugin '{$dbPlugin->code}': " . $e->getMessage());
+            }
+        }
+
+        $this->pluginsInitialized = true;
+    }
+
+    /**
+     * Register scheduled tasks for all enabled plugins.
+     * Called from Console Kernel. Only loads main plugin class and config for scheduling.
+     * Avoids full HTTP/plugin boot overhead.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     */
+    public function registerPluginSchedules(Schedule $schedule): void
+    {
+        Plugin::where('is_enabled', true)
+            ->get()
+            ->each(function ($dbPlugin) use ($schedule) {
+                try {
+                    $pluginInstance = $this->loadPlugin($dbPlugin->code);
+                    if (!$pluginInstance) {
+                        return;
+                    }
+                    if (!empty($dbPlugin->config)) {
+                        $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                    }
+                    $pluginInstance->schedule($schedule);
+
+                } catch (\Exception $e) {
+                    Log::error("Failed to register schedule for plugin '{$dbPlugin->code}': " . $e->getMessage());
+                }
+            });
+    }
+
+    /**
+     * Get all enabled plugin instances.
+     *
+     * This method ensures that all enabled plugins are initialized and then returns them.
+     * It's the central point for accessing active plugins.
+     *
+     * @return array<AbstractPlugin>
+     */
+    public function getEnabledPlugins(): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
     }
 }
