@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Services\Plugin\HookManager;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Cache;
@@ -70,6 +71,7 @@ class LoginService
         $user->last_login_at = time();
         $user->save();
 
+        HookManager::call('user.login.after', $user);
         return [true, $user];
     }
 
@@ -110,6 +112,8 @@ class LoginService
         if (!$user->save()) {
             return [false, [500, __('Reset failed')]];
         }
+
+        HookManager::call('user.password.reset.after', $user);
 
         // 清除邮箱验证码
         Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));

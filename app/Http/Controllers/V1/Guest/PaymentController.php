@@ -10,16 +10,21 @@ use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use App\Services\Plugin\HookManager;
 
 class PaymentController extends Controller
 {
     public function notify($method, $uuid, Request $request)
     {
+        HookManager::call('payment.notify.before', [$method, $uuid, $request]);
         try {
             $paymentService = new PaymentService($method, null, $uuid);
             $verify = $paymentService->notify($request->input());
-            if (!$verify)
+            if (!$verify) {
+                HookManager::call('payment.notify.failed', [$method, $uuid, $request]);
                 return $this->fail([422, 'verify error']);
+            }
+            HookManager::call('payment.notify.verified', $verify);
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
                 return $this->fail([400, 'handle error']);
             }

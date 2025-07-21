@@ -388,7 +388,7 @@ class ThemeService
 
         } catch (Exception $e) {
             Log::error('Failed to refresh current theme', [
-                'theme' => $currentTheme ?? 'unknown',
+                'theme' => $currentTheme,
                 'error' => $e->getMessage()
             ]);
             return false;
