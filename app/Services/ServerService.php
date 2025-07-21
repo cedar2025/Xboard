@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Server;
 use App\Models\ServerRoute;
 use App\Models\User;
+use App\Services\Plugin\HookManager;
 use App\Utils\Helper;
 use Illuminate\Support\Collection;
 
@@ -66,7 +67,7 @@ class ServerService
      */
     public static function getAvailableUsers(array $groupIds)
     {
-        return User::toBase()
+        $users = User::toBase()
             ->whereIn('group_id', $groupIds)
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
@@ -81,6 +82,7 @@ class ServerService
                 'device_limit'
             ])
             ->get();
+        return HookManager::filter('server.users.get', $users, $groupIds);
     }
 
     // 获取路由规则
