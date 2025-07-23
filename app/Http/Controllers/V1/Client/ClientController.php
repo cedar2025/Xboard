@@ -44,7 +44,7 @@ class ClientController extends Controller
 
         if (!$userService->isAvailable($user)) {
             HookManager::call('client.subscribe.unavailable');
-            return response('', 200, ['Content-Type' => 'text/plain']);
+            return response('', 403, ['Content-Type' => 'text/plain']);
         }
 
         return $this->doSubscribe($request, $user);
@@ -124,7 +124,7 @@ class ClientController extends Controller
     {
         return collect($servers)->filter(function ($server) use ($allowedTypes, $filterKeywords) {
             // Condition 1: Server type must be in the list of allowed types
-            if (!in_array($server['type'], $allowedTypes)) {
+            if ($allowedTypes && !in_array($server['type'], $allowedTypes)) {
                 return false; // Filter out (don't keep)
             }
 

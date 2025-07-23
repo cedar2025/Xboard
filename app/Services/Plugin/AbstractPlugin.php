@@ -129,7 +129,7 @@ abstract class AbstractPlugin
     /**
      * 插件卸载时调用
      */
-    public function uninstall(): void
+    public function cleanup(): void
     {
         // 插件卸载时的清理逻辑
     }
@@ -180,5 +180,16 @@ abstract class AbstractPlugin
     protected function getAssetsPath(): string
     {
         return $this->basePath . '/resources/assets';
+    }
+
+    /**
+     * Register plugin scheduled tasks. Plugins can override this method.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     * @return void
+     */
+    public function schedule(\Illuminate\Console\Scheduling\Schedule $schedule): void
+    {
+        // Plugin can override this method to register scheduled tasks
     }
 }

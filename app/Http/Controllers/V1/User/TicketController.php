@@ -14,6 +14,7 @@ use App\Services\TicketService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\Plugin\HookManager;
 
 class TicketController extends Controller
 {
@@ -65,6 +66,7 @@ class TicketController extends Controller
                 throw new \Exception(__('Failed to open ticket'));
             }
             DB::commit();
+            HookManager::call('ticket.create.after', $ticket);
             $this->sendNotify($ticket, $request->input('message'), $request->user()->id);
             return $this->success(true);
         }catch(\Exception $e){
@@ -103,6 +105,7 @@ class TicketController extends Controller
         )) {
             return $this->fail([400, __('Ticket reply failed')]);
         }
+        HookManager::call('ticket.reply.user.after', [$ticket, $this->getLastMessage($ticket->id)]);
         $this->sendNotify($ticket, $request->input('message'), $request->user()->id);
         return $this->success(true);
     }

@@ -9,6 +9,7 @@ use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Services\Plugin\HookManager;
 
 class TicketService {
     public function reply($ticket, $message, $userId)
@@ -60,6 +61,7 @@ class TicketService {
                 throw new ApiException('工单回复失败');
             }
             DB::commit();
+            HookManager::call('ticket.reply.admin.after', [$ticket, $ticketMessage]);
         }catch(\Exception $e){
             DB::rollBack();
             throw $e;

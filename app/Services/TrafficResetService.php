@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\Plugin\HookManager;
 
 /**
  * Service for handling traffic reset.
@@ -60,6 +61,7 @@ class TrafficResetService
         ]);
 
         $this->clearUserCache($user);
+        HookManager::call('traffic.reset.after', $user);
         return true;
       });
     } catch (\Exception $e) {

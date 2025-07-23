@@ -6,6 +6,7 @@ use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\CaptchaService;
+use App\Services\Plugin\HookManager;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Dict;
@@ -141,6 +142,8 @@ class RegisterService
             return [false, $error];
         }
 
+        HookManager::call('user.register.before', $request);
+
         $email = $request->input('email');
         $password = $request->input('password');
         $inviteCode = $request->input('invite_code');
@@ -163,6 +166,8 @@ class RegisterService
         if (!$user->save()) {
             return [false, [500, __('Register failed')]];
         }
+
+        HookManager::call('user.register.after', $user);
 
         // 清除邮箱验证码
         if ((int) admin_setting('email_verify', 0)) {

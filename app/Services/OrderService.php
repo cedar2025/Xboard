@@ -304,6 +304,7 @@ class OrderService
     public function cancel(): bool
     {
         $order = $this->order;
+        HookManager::call('order.cancel.before', $order);
         try {
             DB::beginTransaction();
             $order->status = Order::STATUS_CANCELLED;
@@ -317,6 +318,7 @@ class OrderService
                 }
             }
             DB::commit();
+            HookManager::call('order.cancel.after', $order);
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
