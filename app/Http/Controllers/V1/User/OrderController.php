@@ -147,10 +147,13 @@ class OrderController extends Controller
         $order->payment_id = $method;
         if (!$order->save())
             return $this->fail([400, __('Request failed, please try again later')]);
+        $plan = Plan::find($order->plan_id);
+        $plan_name = $plan->name;
         $result = $paymentService->pay([
             'trade_no' => $tradeNo,
             'total_amount' => isset($order->handling_amount) ? ($order->total_amount + $order->handling_amount) : $order->total_amount,
             'user_id' => $order->user_id,
+            'plan_name' => $plan_name,
             'stripe_token' => $request->input('token')
         ]);
         return response([
