@@ -85,6 +85,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "cancel": "取消",
         "submit": "提交"
       },
+      "sections": {
+        "payment_config": "支付配置"
+      },
       "messages": {
         "success": "保存成功"
       }
@@ -172,10 +175,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "search": {
       "placeholder": "搜索插件名称或描述..."
     },
-    "category": {
-      "placeholder": "选择分类",
-      "all": "全部",
-      "other": "其他"
+    "type": {
+      "placeholder": "选择插件类型",
+      "all": "全部类型"
     },
     "tabs": {
       "all": "所有插件",
@@ -184,14 +186,21 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     },
     "status": {
       "enabled": "已启用",
-      "disabled": "已禁用"
+      "disabled": "已禁用",
+      "not_installed": "未安装",
+      "protected": "受保护",
+      "filter_placeholder": "安装状态",
+      "all": "全部状态",
+      "installed": "已安装",
+      "available": "可安装"
     },
     "button": {
       "install": "安装",
       "config": "配置",
       "enable": "启用",
       "disable": "禁用",
-      "uninstall": "卸载"
+      "uninstall": "卸载",
+      "readme": "查看文档"
     },
     "upload": {
       "button": "上传插件",
@@ -220,6 +229,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "修改插件配置",
       "save": "保存",
       "cancel": "取消"
+    },
+    "readme": {
+      "title": "插件文档"
     },
     "author": "作者",
     "messages": {
@@ -687,8 +699,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "success": "Webhook 设置成功"
       },
       "bot_enable": {
-        "title": "启用机器人通知",
-        "description": "开启后机器人将向管理员和已绑定Telegram的用户发送基础通知。"
+        "title": "启用Telegram绑定引导",
+        "description": "开启后将在用户端显示Telegram绑定引导，帮助用户绑定Telegram账户以接收通知。"
       },
       "discuss_link": {
         "title": "群组链接",

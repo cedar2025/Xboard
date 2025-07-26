@@ -1,0 +1,8 @@
+{
+    "name": "EPay",
+    "code": "epay",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "EPay payment plugin",
+    "author": "XBoard Team"
+}
