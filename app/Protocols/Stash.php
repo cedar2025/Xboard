@@ -405,6 +405,7 @@ class Stash extends AbstractProtocol
             'heartbeat-interval' => 10000,
             'request-timeout' => 8000,
             'max-udp-relay-packet-size' => 1500,
+            'version' => data_get($protocol_settings, 'version', 5),
         ];
 
         $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
