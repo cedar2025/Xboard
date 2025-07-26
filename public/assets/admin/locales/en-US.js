@@ -85,6 +85,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "cancel": "Cancel",
         "submit": "Submit"
       },
+      "sections": {
+        "payment_config": "Payment Configuration"
+      },
       "messages": {
         "success": "Saved successfully"
       }
@@ -172,10 +175,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "search": {
       "placeholder": "Search plugin name or description..."
     },
-    "category": {
-      "placeholder": "Select Category",
-      "all": "All",
-      "other": "Other"
+    "type": {
+      "placeholder": "Select Plugin Type",
+      "all": "All Types"
     },
     "tabs": {
       "all": "All Plugins",
@@ -184,14 +186,21 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     },
     "status": {
       "enabled": "Enabled",
-      "disabled": "Disabled"
+      "disabled": "Disabled",
+      "not_installed": "Not Installed",
+      "protected": "Protected",
+      "filter_placeholder": "Install Status",
+      "all": "All Status",
+      "installed": "Installed",
+      "available": "Available"
     },
     "button": {
       "install": "Install",
       "config": "Configure",
       "enable": "Enable",
       "disable": "Disable",
-      "uninstall": "Uninstall"
+      "uninstall": "Uninstall",
+      "readme": "View Documentation"
     },
     "upload": {
       "button": "Upload Plugin",
@@ -220,6 +229,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "description": "Modify plugin configuration",
       "save": "Save",
       "cancel": "Cancel"
+    },
+    "readme": {
+      "title": "Plugin Documentation"
     },
     "author": "Author",
     "messages": {
@@ -767,8 +779,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "success": "Webhook set successfully"
       },
       "bot_enable": {
-        "title": "Enable Bot Notifications",
-        "description": "When enabled, the bot will send basic notifications to administrators and users who have bound their Telegram accounts."
+        "title": "Enable Telegram Binding Guide",
+        "description": "When enabled, a Telegram binding guide will be displayed on the user side to help users bind their Telegram accounts for notifications."
       },
       "discuss_link": {
         "title": "Group Link",

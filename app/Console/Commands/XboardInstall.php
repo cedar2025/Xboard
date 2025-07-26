@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Plugin\PluginManager;
 use Illuminate\Console\Command;
 use Illuminate\Encryption\Encrypter;
 use App\Models\User;
@@ -15,6 +16,8 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\note;
 use function Laravel\Prompts\select;
+use App\Models\Plugin;
+use Illuminate\Support\Str;
 
 class XboardInstall extends Command
 {
@@ -157,6 +160,11 @@ class XboardInstall extends Command
             if (!self::registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
             }
+            self::restoreProtectedPlugins($this);
+            $this->info('正在安装默认插件...');
+            PluginManager::installDefaultPlugins();
+            $this->info('默认插件安装完成');
+
             $this->info('🎉：一切就绪');
             $this->info("管理员邮箱：{$email}");
             $this->info("管理员密码：{$password}");
@@ -354,6 +362,66 @@ class XboardInstall extends Command
                 $this->error("PostgreSQL数据库连接失败：" . $e->getMessage());
                 $this->info("请重新输入PostgreSQL数据库配置");
             }
+        }
+    }
+
+    /**
+     * 还原内置受保护插件（可在安装和更新时调用）
+     */
+    public static function restoreProtectedPlugins(Command $console = null)
+    {
+        exec("git config core.filemode false", $output, $returnVar);
+        $cmd = "git status --porcelain plugins/ 2>/dev/null";
+        exec($cmd, $output, $returnVar);
+        if (!empty($output)) {
+            $hasNonNewFiles = false;
+            foreach ($output as $line) {
+                $status = trim(substr($line, 0, 2));
+                if ($status !== 'A') {
+                    $hasNonNewFiles = true;
+                    break;
+                }
+            }
+            if ($hasNonNewFiles) {
+                if ($console)
+                    $console->info("检测到 plugins 目录有变更，正在还原...");
+
+                foreach ($output as $line) {
+                    $status = trim(substr($line, 0, 2));
+                    $filePath = trim(substr($line, 3));
+
+                    if (strpos($filePath, 'plugins/') === 0 && $status !== 'A') {
+                        $relativePath = substr($filePath, 8);
+                        if ($console) {
+                            $action = match ($status) {
+                                'M' => '修改',
+                                'D' => '删除',
+                                'R' => '重命名',
+                                'C' => '复制',
+                                default => '变更'
+                            };
+                            $console->info("还原插件文件 [{$relativePath}] ({$action})");
+                        }
+
+                        $cmd = "git checkout HEAD -- {$filePath}";
+                        exec($cmd, $gitOutput, $gitReturnVar);
+
+                        if ($gitReturnVar === 0) {
+                            if ($console)
+                                $console->info("插件文件 [{$relativePath}] 已还原。");
+                        } else {
+                            if ($console)
+                                $console->error("插件文件 [{$relativePath}] 还原失败。");
+                        }
+                    }
+                }
+            } else {
+                if ($console)
+                    $console->info("plugins 目录状态正常，无需还原。");
+            }
+        } else {
+            if ($console)
+                $console->info("plugins 目录状态正常，无需还原。");
         }
     }
 }

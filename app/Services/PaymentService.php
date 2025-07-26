@@ -2,36 +2,57 @@
 
 namespace App\Services;
 
-
 use App\Exceptions\ApiException;
 use App\Models\Payment;
+use App\Services\Plugin\PluginManager;
+use App\Services\Plugin\HookManager;
 
 class PaymentService
 {
     public $method;
-    protected $class;
     protected $config;
     protected $payment;
+    protected $pluginManager;
+    protected $class;
 
     public function __construct($method, $id = NULL, $uuid = NULL)
     {
         $this->method = $method;
-        $this->class = '\\App\\Payments\\' . $this->method;
-        if (!class_exists($this->class))
-            throw new ApiException('gate is not found');
-        if ($id)
+        $this->pluginManager = app(PluginManager::class);
+
+        if ($method === 'temp') {
+            return;
+        }
+
+        if ($id) {
             $payment = Payment::find($id)->toArray();
-        if ($uuid)
+        }
+        if ($uuid) {
             $payment = Payment::where('uuid', $uuid)->first()->toArray();
+        }
+
         $this->config = [];
         if (isset($payment)) {
-            $this->config = $payment['config'];
+            $this->config = is_string($payment['config']) ? json_decode($payment['config'], true) : $payment['config'];
             $this->config['enable'] = $payment['enable'];
             $this->config['id'] = $payment['id'];
             $this->config['uuid'] = $payment['uuid'];
-            $this->config['notify_domain'] = $payment['notify_domain'];
+            $this->config['notify_domain'] = $payment['notify_domain'] ?? '';
         }
-        ;
+
+        $paymentMethods = $this->getAvailablePaymentMethods();
+        if (isset($paymentMethods[$this->method])) {
+            $pluginCode = $paymentMethods[$this->method]['plugin_code'];
+            $paymentPlugins = $this->pluginManager->getEnabledPaymentPlugins();
+            foreach ($paymentPlugins as $plugin) {
+                if ($plugin->getPluginCode() === $pluginCode) {
+                    $plugin->setConfig($this->config);
+                    $this->payment = $plugin;
+                    return;
+                }
+            }
+        }
+
         $this->payment = new $this->class($this->config);
     }
 
@@ -64,18 +85,43 @@ class PaymentService
     public function form()
     {
         $form = $this->payment->form();
-        $keys = array_keys($form);
+        $result = [];
         foreach ($form as $key => $field) {
-            $form[$key] = [
-                'label' => $field['label'],
-                'field_name' => $key,
-                'field_type' => $field['type'],
+            $result[$key] = [
                 'type' => $field['type'],
+                'label' => $field['label'] ?? '',
                 'placeholder' => $field['placeholder'] ?? '',
-                'value' => $this->config[$key] ?? '',
-                'select_options' => $field['select_options'] ?? [],
+                'description' => $field['description'] ?? '',
+                'value' => $this->config[$key] ?? $field['default'] ?? '',
+                'options' => $field['select_options'] ?? $field['options'] ?? []
             ];
         }
-        return $form;
+        return $result;
+    }
+
+    /**
+     * 获取所有可用的支付方式
+     */
+    public function getAvailablePaymentMethods(): array
+    {
+        $methods = [];
+
+        $methods = HookManager::filter('available_payment_methods', $methods);
+
+        return $methods;
+    }
+
+    /**
+     * 获取所有支付方式名称列表（用于管理后台）
+     */
+    public static function getAllPaymentMethodNames(): array
+    {
+        $pluginManager = app(PluginManager::class);
+        $pluginManager->initializeEnabledPlugins();
+
+        $instance = new self('temp');
+        $methods = $instance->getAvailablePaymentMethods();
+
+        return array_keys($methods);
     }
 }

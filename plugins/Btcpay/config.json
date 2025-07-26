@@ -1,0 +1,8 @@
+{
+    "name": "BTCPay",
+    "code": "btcpay",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "BTCPay payment plugin",
+    "author": "XBoard Team"
+} 
