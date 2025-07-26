@@ -137,32 +137,32 @@ class PluginManager
      */
     public function install(string $pluginCode): bool
     {
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$this->validateConfig($config)) {
+            throw new \Exception('Invalid plugin config');
+        }
+
+        // 检查插件是否已安装
+        if (Plugin::where('code', $pluginCode)->exists()) {
+            throw new \Exception('Plugin already installed');
+        }
+
+        // 检查依赖
+        if (!$this->checkDependencies($config['require'] ?? [])) {
+            throw new \Exception('Dependencies not satisfied');
+        }
+
+        // 运行数据库迁移
+        $this->runMigrations(pluginCode: $pluginCode);
+
         DB::beginTransaction();
         try {
-            $configFile = $this->getPluginPath($pluginCode) . '/config.json';
-
-            if (!File::exists($configFile)) {
-                throw new \Exception('Plugin config file not found');
-            }
-
-            $config = json_decode(File::get($configFile), true);
-            if (!$this->validateConfig($config)) {
-                throw new \Exception('Invalid plugin config');
-            }
-
-            // 检查插件是否已安装
-            if (Plugin::where('code', $pluginCode)->exists()) {
-                throw new \Exception('Plugin already installed');
-            }
-
-            // 检查依赖
-            if (!$this->checkDependencies($config['require'] ?? [])) {
-                throw new \Exception('Dependencies not satisfied');
-            }
-
-            // 运行数据库迁移
-            $this->runMigrations($pluginCode);
-
             // 提取配置默认值
             $defaultValues = $this->extractDefaultConfig($config);
 
@@ -170,7 +170,7 @@ class PluginManager
             $plugin = $this->loadPlugin($pluginCode);
 
             // 注册到数据库
-            $dbPlugin = Plugin::create([
+            Plugin::create([
                 'code' => $pluginCode,
                 'name' => $config['name'],
                 'version' => $config['version'],
@@ -191,7 +191,9 @@ class PluginManager
             DB::commit();
             return true;
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $e;
         }
     }
@@ -223,7 +225,22 @@ class PluginManager
 
         if (File::exists($migrationsPath)) {
             Artisan::call('migrate', [
-                '--path' => "plugins/{$pluginCode}/database/migrations",
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
+                '--force' => true
+            ]);
+        }
+    }
+
+    /**
+     * 回滚插件数据库迁移
+     */
+    protected function runMigrationsRollback(string $pluginCode): void
+    {
+        $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
+
+        if (File::exists($migrationsPath)) {
+            Artisan::call('migrate:rollback', [
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
                 '--force' => true
             ]);
         }
@@ -352,10 +369,8 @@ class PluginManager
      */
     public function uninstall(string $pluginCode): bool
     {
-        // 先禁用插件
         $this->disable($pluginCode);
-
-        // 删除数据库记录
+        $this->runMigrationsRollback($pluginCode);
         Plugin::query()->where('code', $pluginCode)->delete();
 
         return true;
@@ -397,6 +412,62 @@ class PluginManager
                 // 实现版本比较逻辑
             }
         }
+        return true;
+    }
+
+    /**
+     * 升级插件
+     *
+     * @param string $pluginCode
+     * @return bool
+     * @throws \Exception
+     */
+    public function update(string $pluginCode): bool
+    {
+        $dbPlugin = Plugin::where('code', $pluginCode)->first();
+        if (!$dbPlugin) {
+            throw new \Exception('Plugin not installed: ' . $pluginCode);
+        }
+
+        // 获取插件配置文件中的最新版本
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$config || !isset($config['version'])) {
+            throw new \Exception('Invalid plugin config or missing version');
+        }
+
+        $newVersion = $config['version'];
+        $oldVersion = $dbPlugin->version;
+
+        if (version_compare($newVersion, $oldVersion, '<=')) {
+            throw new \Exception('Plugin is already up to date');
+        }
+
+        $this->disable($pluginCode);
+        $this->runMigrations($pluginCode);
+
+        $plugin = $this->loadPlugin($pluginCode);
+        if ($plugin) {
+            if (!empty($dbPlugin->config)) {
+                $plugin->setConfig(json_decode($dbPlugin->config, true));
+            }
+
+            if (method_exists($plugin, 'update')) {
+                $plugin->update($oldVersion, $newVersion);
+            }
+        }
+
+        $dbPlugin->update([
+            'version' => $newVersion,
+            'updated_at' => now(),
+        ]);
+
+        $this->enable($pluginCode);
+
         return true;
     }
 
@@ -465,6 +536,10 @@ class PluginManager
         File::copyDirectory($pluginPath, $targetPath);
         File::deleteDirectory($pluginPath);
         File::deleteDirectory($extractPath);
+
+        if (Plugin::where('code', $config['code'])->exists()) {
+            return $this->update($config['code']);
+        }
 
         return true;
     }

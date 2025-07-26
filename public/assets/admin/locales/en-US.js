@@ -196,6 +196,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     },
     "button": {
       "install": "Install",
+      "upgrade": "Upgrade",
       "config": "Configure",
       "enable": "Enable",
       "disable": "Disable",
@@ -224,6 +225,11 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "description": "Are you sure you want to uninstall this plugin? Plugin data will be cleared after uninstallation.",
       "button": "Uninstall"
     },
+    "upgrade": {
+      "title": "Upgrade Plugin",
+      "description": "Are you sure you want to upgrade this plugin? The plugin will be temporarily unavailable during the upgrade process.",
+      "button": "Upgrade"
+    },
     "config": {
       "title": "Configuration",
       "description": "Modify plugin configuration",
@@ -237,6 +243,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "messages": {
       "installSuccess": "Plugin installed successfully",
       "installError": "Failed to install plugin",
+      "upgradeSuccess": "Plugin upgraded successfully",
+      "upgradeError": "Failed to upgrade plugin",
       "uninstallSuccess": "Plugin uninstalled successfully",
       "uninstallError": "Failed to uninstall plugin",
       "enableSuccess": "Plugin enabled successfully",
@@ -2033,8 +2041,31 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "shadowsocks": {
         "cipher": {
           "label": "Encryption Method",
-          "placeholder": "Select encryption method"
+          "placeholder": "Select encryption method",
+          "search_placeholder": "Search or enter custom encryption method...",
+          "description": "Select preset encryption method or enter custom encryption method",
+          "preset_group": "Preset Encryption Methods",
+          "custom_group": "Custom Encryption Method",
+          "current_value": "Current Value",
+          "use_custom": "Use",
+          "no_results": "No matching encryption method found",
+          "custom_hint": "You can directly enter a custom encryption method, such as: aes-256-cfb",
+          "custom_label": "Custom"
         },
+        "plugin": {
+          "label": "Plugin",
+          "placeholder": "Select plugin",
+          "obfs_hint": "Hint: Configuration format like obfs=http;obfs-host=www.bing.com;path=/",
+          "v2ray_hint": "Hint: WebSocket mode format is mode=websocket;host=mydomain.me;path=/;tls=true, QUIC mode format is mode=quic;host=mydomain.me"
+        },
+        "plugin_opts": {
+          "label": "Plugin Options",
+          "description": "Enter plugin options in key=value;key2=value2 format",
+          "placeholder": "Example: mode=tls;host=bing.com"
+        },
+        "client_fingerprint": "Client Fingerprint",
+        "client_fingerprint_placeholder": "Select client fingerprint",
+        "client_fingerprint_description": "Client spoofing fingerprint to reduce detection risk",
         "obfs": {
           "label": "Obfuscation",
           "placeholder": "Select obfuscation method",
@@ -2676,6 +2707,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "three_yearly": "Three Years",
           "onetime": "One Time",
           "reset_traffic": "Reset Traffic",
+          "no_price": "No Price",
           "unit": {
             "month": "/month",
             "quarter": "/quarter",

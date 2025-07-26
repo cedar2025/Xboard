@@ -162,7 +162,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "orderManagement": "주문 관리",
     "couponManagement": "쿠폰 관리",
     "userManagement": "사용자 관리",
-    "trafficResetLogs": "트래픽 재설정 로그",
     "ticketManagement": "티켓 관리"
   },
   "plugin": {
@@ -414,42 +413,20 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "description": "허용된 이메일 접미사를 한 줄에 하나씩 입력하세요"
           }
         },
-        "captcha": {
+        "recaptcha": {
           "enable": {
-            "label": "캡차 활성화",
-            "description": "활성화하면 사용자는 등록 시 캡차 인증을 통과해야 합니다."
+            "label": "reCAPTCHA 활성화",
+            "description": "활성화하면 사용자는 등록 시 reCAPTCHA 인증을 통과해야 합니다."
           },
-          "type": {
-            "label": "캡차 유형",
-            "description": "사용할 캡차 서비스 유형을 선택하세요",
-            "options": {
-              "recaptcha": "Google reCAPTCHA v2",
-              "turnstile": "Cloudflare Turnstile"
-            }
+          "key": {
+            "label": "reCAPTCHA 키",
+            "placeholder": "reCAPTCHA 키 입력",
+            "description": "reCAPTCHA 키를 입력하세요"
           },
-          "recaptcha": {
-            "key": {
-              "label": "reCAPTCHA 키",
-              "placeholder": "reCAPTCHA 키 입력",
-              "description": "reCAPTCHA 키를 입력하세요"
-            },
-            "siteKey": {
-              "label": "reCAPTCHA 사이트 키",
-              "placeholder": "reCAPTCHA 사이트 키 입력",
-              "description": "reCAPTCHA 사이트 키를 입력하세요"
-            }
-          },
-          "turnstile": {
-            "secretKey": {
-              "label": "Turnstile 키",
-              "placeholder": "Turnstile 키 입력",
-              "description": "Cloudflare Turnstile 키를 입력하세요"
-            },
-            "siteKey": {
-              "label": "Turnstile 사이트 키",
-              "placeholder": "Turnstile 사이트 키 입력",
-              "description": "Cloudflare Turnstile 사이트 키를 입력하세요"
-            }
+          "siteKey": {
+            "label": "reCAPTCHA 사이트 키",
+            "placeholder": "reCAPTCHA 사이트 키 입력",
+            "description": "reCAPTCHA 사이트 키를 입력하세요"
           }
         },
         "registerLimit": {
@@ -464,8 +441,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           },
           "expire": {
             "label": "제한 기간",
-            "placeholder": "제한 기간을 분 단위로 입력",
-            "description": "등록 제한 기간(분)"
+            "placeholder": "제한 기간을 시간 단위로 입력",
+            "description": "등록 제한 기간(시간)"
           }
         },
         "passwordLimit": {
@@ -480,8 +457,8 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
           },
           "expire": {
             "label": "잠금 기간",
-            "placeholder": "잠금 기간을 분 단위로 입력",
-            "description": "계정 잠금 기간(분)"
+            "placeholder": "잠금 기간을 시간 단위로 입력",
+            "description": "계정 잠금 기간(시간)"
           }
         }
       }
@@ -819,10 +796,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "surge": {
         "title": "Surge 템플릿",
         "description": "Surge의 구독 템플릿 형식 설정"
-      },
-      "surfboard": {
-        "title": "Surfboard 템플릿",
-        "description": "Surfboard의 구독 템플릿 형식 설정"
       }
     }
   },
@@ -887,7 +860,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
     "save": "저장",
     "cancel": "취소",
     "confirm": "확인",
-    "close": "닫기",
     "delete": {
       "success": "삭제되었습니다",
       "failed": "삭제에 실패했습니다"
@@ -1050,21 +1022,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "result": "결과",
         "duration": "소요 시간",
         "attempts": "시도 횟수",
-        "nextRetry": "다음 재시도",
-        "failedJobsDetailTitle": "실패한 작업 세부 정보",
-        "viewFailedJobs": "실패한 작업 보기",
-        "jobDetailTitle": "작업 세부 정보",
-        "time": "시간",
-        "queue": "대기열",
-        "name": "작업 이름",
-        "exception": "예외",
-        "noFailedJobs": "실패한 작업 없음",
-        "connection": "연결",
-        "payload": "작업 페이로드",
-        "viewDetail": "세부 정보 보기",
-        "action": "작업",
-        "noRecentOrder": "최근 주문 없음",
-        "viewAll": "모두 보기"
+        "nextRetry": "다음 재시도"
       },
       "actions": {
         "retry": "재시도",
@@ -1074,86 +1032,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "empty": "대기열에 작업 없음",
       "loading": "대기열 상태 로딩 중...",
-      "error": "대기열 상태 로드 실패",
-      "recentOrders": {
-        "title": "최근 주문"
-      },
-      "jobs": {
-        "title": "작업 현황",
-        "failedJobsDetailTitle": "실패한 작업 세부 정보",
-        "viewFailedJobs": "실패한 작업 보기",
-        "jobDetailTitle": "작업 세부 정보",
-        "time": "시간",
-        "queue": "대기열",
-        "name": "작업 이름",
-        "exception": "예외",
-        "noFailedJobs": "실패한 작업 없음",
-        "connection": "연결",
-        "payload": "작업 페이로드",
-        "viewDetail": "세부 정보 보기",
-        "action": "작업"
-      }
-    },
-    "systemLog": {
-      "title": "시스템 로그",
-      "description": "시스템 운영 로그 조회",
-      "viewAll": "모두 보기",
-      "level": "레벨",
-      "time": "시간",
-      "message": "메시지",
-      "logTitle": "제목",
-      "method": "요청 방법",
-      "action": "작업",
-      "context": "컨텍스트",
-      "search": "로그 검색...",
-      "noLogs": "로그 없음",
-      "noInfoLogs": "정보 로그 없음",
-      "noWarningLogs": "경고 로그 없음",
-      "noErrorLogs": "오류 로그 없음",
-      "noSearchResults": "일치하는 로그가 없습니다",
-      "detailTitle": "로그 세부 정보",
-      "viewDetail": "세부 정보 보기",
-      "host": "호스트",
-      "ip": "IP 주소",
-      "uri": "URI",
-      "requestData": "요청 데이터",
-      "exception": "예외",
-      "totalLogs": "총 로그 수",
-      "tabs": {
-        "all": "전체",
-        "info": "정보",
-        "warning": "경고",
-        "error": "오류"
-      },
-      "filter": {
-        "searchAndLevel": "필터 결과: \\\"{{keyword}}\\\"를 포함하고 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
-        "searchOnly": "검색 결과: \\\"{{keyword}}\\\"를 포함하는 로그 {{count}}개",
-        "levelOnly": "필터 결과: 레벨이 \\\"{{level}}\\\"인 로그 {{count}}개",
-        "reset": "필터 초기화"
-      },
-      "clearLogs": "로그 삭제",
-      "clearDays": "삭제 일수",
-      "clearDaysDesc": "며칠 전 로그를 삭제할지 (0-365일, 0은 오늘)",
-      "clearLevel": "로그 레벨",
-      "clearLimit": "배치 제한",
-      "clearLimitDesc": "배치 삭제 수량 제한 (100-10000건)",
-      "clearPreview": "삭제 미리보기",
-      "getStats": "통계 가져오기",
-      "cutoffDate": "마감일",
-      "willClear": "삭제 예정",
-      "logsUnit": "개 로그",
-      "clearWarning": "이 작업은 되돌릴 수 없습니다. 신중하게 진행해 주세요!",
-      "clearing": "삭제 중...",
-      "confirmClear": "삭제 확인",
-      "clearSuccess": "삭제 완료! {{count}}개 로그 삭제됨",
-      "clearFailed": "삭제 실패",
-      "getStatsFailed": "삭제 통계 가져오기 실패",
-      "clearLogsFailed": "로그 삭제 실패"
-    },
-    "common": {
-      "refresh": "새로고침",
-      "close": "닫기",
-      "pagination": "{{current}}/{{total}} 페이지, 총 {{count}}개 항목"
+      "error": "대기열 상태 로드 실패"
     },
     "search": {
       "placeholder": "메뉴 및 기능 검색...",
@@ -1273,8 +1152,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "basicInfo": "기본 정보",
       "amountInfo": "금액 정보",
       "timeInfo": "시간 정보",
-      "commissionInfo": "수수료 정보",
-      "commissionStatusActive": "활성",
       "addOrder": "주문 추가",
       "assignOrder": "주문 할당",
       "fields": {
@@ -1288,12 +1165,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "refundAmount": "환불 금액",
         "deductionAmount": "차감 금액",
         "createdAt": "생성 시간",
-        "updatedAt": "업데이트 시간",
-        "commissionStatus": "수수료 상태",
-        "commissionAmount": "수수료 금액",
-        "actualCommissionAmount": "실제 수수료",
-        "inviteUser": "초대자",
-        "inviteUserId": "초대자 ID"
+        "updatedAt": "업데이트 시간"
       },
       "placeholders": {
         "email": "사용자 이메일을 입력해주세요",
@@ -1410,17 +1282,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "error": {
         "saveFailed": "쿠폰 저장 실패"
-      },
-      "timeRange": {
-        "quickSet": "빠른 설정",
-        "presets": {
-          "1week": "1주",
-          "2weeks": "2주",
-          "1month": "1개월",
-          "3months": "3개월",
-          "6months": "6개월",
-          "1year": "1년"
-        }
       }
     },
     "period": {
@@ -1645,17 +1506,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "tooltip": "이 노드를 구독할 수 있는 그룹",
         "empty": "--"
       },
-      "loadStatus": {
-        "title": "부하 상태",
-        "tooltip": "서버 리소스 사용량",
-        "noData": "데이터 없음",
-        "details": "시스템 부하 세부정보",
-        "cpu": "CPU 사용률",
-        "memory": "메모리 사용량",
-        "swap": "스왑 사용량",
-        "disk": "디스크 사용량",
-        "lastUpdate": "마지막 업데이트"
-      },
       "type": "유형",
       "actions": "작업",
       "copyAddress": "연결 주소 복사",
@@ -1698,9 +1548,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "rate": {
         "label": "요금",
-        "error": "요금은 필수입니다",
-        "error_numeric": "요금은 숫자여야 합니다",
-        "error_gte_zero": "요금은 0보다 크거나 같아야 합니다"
+        "error": "올바른 요금을 입력해주세요"
       },
       "code": {
         "label": "사용자 지정 노드 ID",
@@ -1719,21 +1567,18 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       },
       "host": {
         "label": "노드 주소",
-        "placeholder": "도메인 또는 IP를 입력해주세요",
-        "error": "노드 주소는 필수입니다"
+        "placeholder": "도메인 또는 IP를 입력해주세요"
       },
       "port": {
         "label": "연결 포트",
         "placeholder": "사용자 연결 포트",
         "tooltip": "사용자가 실제로 연결하는 포트로, 클라이언트 설정에 입력해야 하는 포트 번호입니다. 중계 또는 터널을 사용하는 경우 서버가 실제로 수신하는 포트와 다를 수 있습니다.",
-        "sync": "서버 포트와 동기화",
-        "error": "연결 포트는 필수입니다"
+        "sync": "서버 포트와 동기화"
       },
       "server_port": {
         "label": "서버 포트",
-        "placeholder": "서버 포트 입력",
-        "error": "서버 포트는 필수입니다",
-        "tooltip": "서버의 실제 수신 포트입니다."
+        "placeholder": "서버 수신 포트",
+        "tooltip": "서버가 실제로 수신하는 포트로, 서버에서 실제로 열린 포트입니다. 중계 또는 터널을 사용하는 경우 사용자 연결 포트와 다를 수 있습니다."
       },
       "parent": {
         "label": "상위 노드",
@@ -1895,83 +1740,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
             "empty": "사용 가능한 ALPN 프로토콜이 없습니다"
           }
         }
-      },
-      "socks": {
-        "version": {
-          "label": "프로토콜 버전",
-          "placeholder": "SOCKS 버전 선택"
-        },
-        "tls": {
-          "label": "TLS",
-          "placeholder": "보안을 선택해주세요",
-          "disabled": "비활성화",
-          "enabled": "활성화"
-        },
-        "tls_settings": {
-          "server_name": {
-            "label": "서버 이름 표시(SNI)",
-            "placeholder": "사용하지 않는 경우 비워두세요"
-          },
-          "allow_insecure": "안전하지 않은 연결 허용?"
-        },
-        "network": {
-          "label": "전송 프로토콜",
-          "placeholder": "전송 프로토콜 선택"
-        }
-      },
-      "naive": {
-        "tls_settings": {
-          "server_name": {
-            "label": "서버 이름 표시(SNI)",
-            "placeholder": "사용하지 않는 경우 비워두세요"
-          },
-          "allow_insecure": "안전하지 않은 연결 허용?"
-        },
-        "tls": {
-          "label": "TLS",
-          "placeholder": "보안을 선택해주세요",
-          "disabled": "비활성화",
-          "enabled": "활성화",
-          "server_name": {
-            "label": "서버 이름 표시(SNI)",
-            "placeholder": "노드 주소와 인증서가 다를 때 인증서 확인에 사용"
-          },
-          "allow_insecure": "안전하지 않은 연결 허용"
-        }
-      },
-      "http": {
-        "tls_settings": {
-          "server_name": {
-            "label": "서버 이름 표시(SNI)",
-            "placeholder": "사용하지 않는 경우 비워두세요"
-          },
-          "allow_insecure": "안전하지 않은 연결 허용?"
-        },
-        "tls": {
-          "label": "TLS",
-          "placeholder": "보안을 선택해주세요",
-          "disabled": "비활성화",
-          "enabled": "활성화",
-          "server_name": {
-            "label": "서버 이름 표시(SNI)",
-            "placeholder": "노드 주소와 인증서가 다를 때 인증서 확인에 사용"
-          },
-          "allow_insecure": "안전하지 않은 연결 허용"
-        }
-      },
-      "mieru": {
-        "transport": {
-          "label": "전송 프로토콜",
-          "placeholder": "전송 프로토콜 선택"
-        },
-        "multiplexing": {
-          "label": "다중화",
-          "placeholder": "다중화 수준 선택",
-          "MULTIPLEXING_OFF": "비활성화",
-          "MULTIPLEXING_LOW": "낮음",
-          "MULTIPLEXING_MIDDLE": "중간",
-          "MULTIPLEXING_HIGH": "높음"
-        }
       }
     }
   },
@@ -2028,7 +1796,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "orders": "주문 내역",
         "invites": "초대 내역",
         "traffic_records": "트래픽 기록",
-        "reset_traffic": "트래픽 재설정",
         "delete": "삭제",
         "delete_confirm_title": "사용자 삭제 확인",
         "delete_confirm_description": "이 작업은 사용자 {{email}}와 관련된 모든 데이터(주문, 쿠폰, 트래픽 기록, 지원 티켓 등)를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다. 계속하시겠습니까?"
@@ -2105,8 +1872,7 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "generate_count_placeholder": "일괄 생성할 수량 입력",
         "cancel": "취소",
         "submit": "생성",
-        "success": "생성 완료",
-        "download_csv": "CSV 파일로 내보내기"
+        "success": "생성 완료"
       }
     },
     "edit": {
@@ -2165,7 +1931,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
       "title": "작업",
       "send_email": "이메일 보내기",
       "export_csv": "CSV 내보내기",
-      "traffic_reset_stats": "트래픽 재설정 통계",
       "batch_ban": "일괄 차단",
       "confirm_ban": {
         "title": "일괄 차단 확인",
@@ -2191,117 +1956,6 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "success": "이메일 전송 성공",
         "failed": "이메일 전송 실패",
         "required_fields": "모든 필수 항목을 입력해주세요"
-      }
-    },
-    "traffic_reset": {
-      "title": "트래픽 재설정",
-      "description": "사용자 {{email}}의 트래픽 사용량 재설정",
-      "tabs": {
-        "reset": "트래픽 재설정",
-        "history": "재설정 기록"
-      },
-      "user_info": "사용자 정보",
-      "warning": {
-        "title": "중요 안내",
-        "irreversible": "트래픽 재설정 작업은 되돌릴 수 없습니다. 신중하게 진행해주세요",
-        "reset_to_zero": "재설정 후 사용자의 업로드 및 다운로드 트래픽이 0으로 초기화됩니다",
-        "logged": "모든 재설정 작업은 시스템 로그에 기록됩니다"
-      },
-      "reason": {
-        "label": "재설정 사유",
-        "placeholder": "트래픽 재설정 사유를 입력해주세요 (선택사항)",
-        "optional": "이 필드는 선택사항이며 재설정 사유를 기록하는 데 사용됩니다"
-      },
-      "confirm_reset": "재설정 확인",
-      "resetting": "재설정 중...",
-      "reset_success": "트래픽 재설정 성공",
-      "reset_failed": "트래픽 재설정 실패",
-      "history": {
-        "summary": "재설정 개요",
-        "reset_count": "재설정 횟수",
-        "last_reset": "마지막 재설정",
-        "next_reset": "다음 재설정",
-        "never": "재설정된 적 없음",
-        "no_schedule": "예약된 재설정 없음",
-        "records": "재설정 기록",
-        "recent_records": "최근 10번의 재설정 기록",
-        "no_records": "재설정 기록이 없습니다",
-        "reset_time": "재설정 시간",
-        "traffic_cleared": "삭제된 트래픽"
-      },
-      "stats": {
-        "title": "트래픽 재설정 통계",
-        "description": "시스템 트래픽 재설정 통계 정보 보기",
-        "time_range": "통계 시간 범위",
-        "total_resets": "총 재설정 횟수",
-        "auto_resets": "자동 재설정",
-        "manual_resets": "수동 재설정",
-        "cron_resets": "예약 재설정",
-        "in_period": "최근 {{days}}일",
-        "breakdown": "재설정 유형별 분석",
-        "breakdown_description": "다양한 재설정 작업 유형의 백분율 분석",
-        "auto_percentage": "자동 재설정 비율",
-        "manual_percentage": "수동 재설정 비율",
-        "cron_percentage": "예약 재설정 비율",
-        "days_options": {
-          "week": "지난 주",
-          "month": "지난 달",
-          "quarter": "지난 분기",
-          "year": "지난 해"
-        }
-      }
-    },
-    "traffic_reset_logs": {
-      "title": "트래픽 재설정 로그",
-      "description": "시스템의 모든 트래픽 재설정 작업에 대한 상세 기록 보기",
-      "columns": {
-        "id": "로그 ID",
-        "user": "사용자",
-        "reset_type": "재설정 유형",
-        "trigger_source": "트리거 소스",
-        "cleared_traffic": "삭제된 트래픽",
-        "cleared": "삭제됨",
-        "upload": "업로드",
-        "download": "다운로드",
-        "reset_time": "재설정 시간",
-        "log_time": "로그 시간"
-      },
-      "filters": {
-        "search_user": "사용자 이메일 검색...",
-        "reset_type": "재설정 유형",
-        "trigger_source": "트리거 소스",
-        "all_types": "모든 유형",
-        "all_sources": "모든 소스",
-        "start_date": "시작 날짜",
-        "end_date": "종료 날짜",
-        "apply_date": "필터 적용",
-        "reset": "필터 초기화",
-        "filter_title": "필터 옵션",
-        "filter_description": "특정 트래픽 재설정 기록을 찾기 위한 필터 조건을 설정하세요",
-        "reset_types": {
-          "monthly": "월별 재설정",
-          "first_day_month": "매월 1일 재설정",
-          "yearly": "연별 재설정",
-          "first_day_year": "매년 1월 1일 재설정",
-          "manual": "수동 재설정"
-        },
-        "trigger_sources": {
-          "auto": "자동 트리거",
-          "manual": "수동 트리거",
-          "cron": "예약 작업"
-        }
-      },
-      "actions": {
-        "export": "로그 내보내기",
-        "exporting": "내보내는 중...",
-        "export_success": "내보내기 성공",
-        "export_failed": "내보내기 실패"
-      },
-      "trigger_descriptions": {
-        "manual": "관리자가 수동으로 실행한 트래픽 재설정",
-        "cron": "시스템 예약 작업에 의한 자동 실행",
-        "auto": "시스템이 조건에 따라 자동 트리거",
-        "other": "기타 방법으로 트리거"
       }
     },
     "send_mail": {
