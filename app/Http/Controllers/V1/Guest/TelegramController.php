@@ -4,121 +4,123 @@ namespace App\Http\Controllers\V1\Guest;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\Plugin\HookManager;
 use App\Services\TelegramService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 
 class TelegramController extends Controller
 {
-    protected $msg;
-    protected $commands = [];
-    protected $telegramService;
+    protected ?object $msg = null;
+    protected TelegramService $telegramService;
+    protected UserService $userService;
 
-    public function __construct(TelegramService $telegramService)
+    public function __construct(TelegramService $telegramService, UserService $userService)
     {
         $this->telegramService = $telegramService;
+        $this->userService = $userService;
     }
 
-    public function webhook(Request $request)
+    public function webhook(Request $request): void
     {
-        if ($request->input('access_token') !== md5(admin_setting('telegram_bot_token'))) {
+        $expectedToken = md5(admin_setting('telegram_bot_token'));
+        if ($request->input('access_token') !== $expectedToken) {
             throw new ApiException('access_token is error', 401);
         }
-        $data = json_decode(request()->getContent(),true);
+
+        $data = $request->json()->all();
+
         $this->formatMessage($data);
         $this->formatChatJoinRequest($data);
         $this->handle();
     }
 
-    private function handle()
+    private function handle(): void
     {
-        if (!$this->msg) return;
+        if (!$this->msg)
+            return;
         $msg = $this->msg;
-        $commandName = explode('@', $msg->command);
-
-        // To reduce request, only commands contains @ will get the bot name
-        if (count($commandName) == 2) {
-            $botName = $this->getBotName();
-            if ($commandName[1] === $botName){
-                $msg->command = $commandName[0];
-            }
-        }
-
+        $this->processBotName($msg);
         try {
-            foreach (glob(base_path('app//Plugins//Telegram//Commands') . '/*.php') as $file) {
-                $command = basename($file, '.php');
-                $class = '\\App\\Plugins\\Telegram\\Commands\\' . $command;
-                if (!class_exists($class)) continue;
-                $instance = new $class();
-                if ($msg->message_type === 'message') {
-                    if (!isset($instance->command)) continue;
-                    if ($msg->command !== $instance->command) continue;
-                    $instance->handle($msg);
-                    return;
-                }
-                if ($msg->message_type === 'reply_message') {
-                    if (!isset($instance->regex)) continue;
-                    if (!preg_match($instance->regex, $msg->reply_text, $match)) continue;
-                    $instance->handle($msg, $match);
-                    return;
-                }
+            HookManager::call('telegram.message.before', [$msg]);
+            $handled = HookManager::filter('telegram.message.handle', false, [$msg]);
+            if (!$handled) {
+                HookManager::call('telegram.message.unhandled', [$msg]);
             }
+            HookManager::call('telegram.message.after', [$msg]);
         } catch (\Exception $e) {
+            HookManager::call('telegram.message.error', [$msg, $e]);
             $this->telegramService->sendMessage($msg->chat_id, $e->getMessage());
         }
     }
 
-    private function getBotName()
+    private function processBotName(object $msg): void
+    {
+        $commandParts = explode('@', $msg->command);
+
+        if (count($commandParts) === 2) {
+            $botName = $this->getBotName();
+            if ($commandParts[1] === $botName) {
+                $msg->command = $commandParts[0];
+            }
+        }
+    }
+
+    private function getBotName(): string
     {
         $response = $this->telegramService->getMe();
         return $response->result->username;
     }
 
-    private function formatMessage(array $data)
+    private function formatMessage(array $data): void
     {
-        if (!isset($data['message'])) return;
-        if (!isset($data['message']['text'])) return;
-        $obj = new \StdClass();
-        $text = explode(' ', $data['message']['text']);
-        $obj->command = $text[0];
-        $obj->args = array_slice($text, 1);
-        $obj->chat_id = $data['message']['chat']['id'];
-        $obj->message_id = $data['message']['message_id'];
-        $obj->message_type = 'message';
-        $obj->text = $data['message']['text'];
-        $obj->is_private = $data['message']['chat']['type'] === 'private';
-        if (isset($data['message']['reply_to_message']['text'])) {
-            $obj->message_type = 'reply_message';
-            $obj->reply_text = $data['message']['reply_to_message']['text'];
+        if (!isset($data['message']['text']))
+            return;
+
+        $message = $data['message'];
+        $text = explode(' ', $message['text']);
+
+        $this->msg = (object) [
+            'command' => $text[0],
+            'args' => array_slice($text, 1),
+            'chat_id' => $message['chat']['id'],
+            'message_id' => $message['message_id'],
+            'message_type' => 'message',
+            'text' => $message['text'],
+            'is_private' => $message['chat']['type'] === 'private',
+        ];
+
+        if (isset($message['reply_to_message']['text'])) {
+            $this->msg->message_type = 'reply_message';
+            $this->msg->reply_text = $message['reply_to_message']['text'];
         }
-        $this->msg = $obj;
     }
 
-    private function formatChatJoinRequest(array $data)
+    private function formatChatJoinRequest(array $data): void
     {
-        if (!isset($data['chat_join_request'])) return;
-        if (!isset($data['chat_join_request']['from']['id'])) return;
-        if (!isset($data['chat_join_request']['chat']['id'])) return;
-        $user = \App\Models\User::where('telegram_id', $data['chat_join_request']['from']['id'])
-            ->first();
+        $joinRequest = $data['chat_join_request'] ?? null;
+        if (!$joinRequest)
+            return;
+
+        $chatId = $joinRequest['chat']['id'] ?? null;
+        $userId = $joinRequest['from']['id'] ?? null;
+
+        if (!$chatId || !$userId)
+            return;
+
+        $user = User::where('telegram_id', $userId)->first();
+
         if (!$user) {
-            $this->telegramService->declineChatJoinRequest(
-                $data['chat_join_request']['chat']['id'],
-                $data['chat_join_request']['from']['id']
-            );
+            $this->telegramService->declineChatJoinRequest($chatId, $userId);
             return;
         }
-        $userService = new \App\Services\UserService();
-        if (!$userService->isAvailable($user)) {
-            $this->telegramService->declineChatJoinRequest(
-                $data['chat_join_request']['chat']['id'],
-                $data['chat_join_request']['from']['id']
-            );
+
+        if (!$this->userService->isAvailable($user)) {
+            $this->telegramService->declineChatJoinRequest($chatId, $userId);
             return;
         }
-        $userService = new \App\Services\UserService();
-        $this->telegramService->approveChatJoinRequest(
-            $data['chat_join_request']['chat']['id'],
-            $data['chat_join_request']['from']['id']
-        );
+
+        $this->telegramService->approveChatJoinRequest($chatId, $userId);
     }
 }

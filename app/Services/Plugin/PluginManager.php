@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Symfony\Component\Finder\Finder;
 
 class PluginManager
 {
@@ -114,10 +113,22 @@ class PluginManager
      */
     protected function loadViews(string $pluginCode): void
     {
-        $viewsPath = $this->getPluginPath($pluginCode) . '/resources/views';
-
+        $viewsPath = $this->getPluginPath($pluginCode) . '/views';
         if (File::exists($viewsPath)) {
             View::addNamespace(Str::studly($pluginCode), $viewsPath);
+        }
+    }
+
+    /**
+     * 注册插件命令
+     */
+    protected function registerPluginCommands(string $pluginCode, AbstractPlugin $pluginInstance): void
+    {
+        try {
+            // 调用插件的命令注册方法
+            $pluginInstance->registerCommands();
+        } catch (\Exception $e) {
+            Log::error("Failed to register commands for plugin '{$pluginCode}': " . $e->getMessage());
         }
     }
 
@@ -163,6 +174,7 @@ class PluginManager
                 'code' => $pluginCode,
                 'name' => $config['name'],
                 'version' => $config['version'],
+                'type' => $config['type'] ?? Plugin::TYPE_FEATURE,
                 'is_enabled' => false,
                 'config' => json_encode($defaultValues),
                 'installed_at' => now(),
@@ -257,6 +269,14 @@ class PluginManager
         // 验证版本号格式
         if (!preg_match('/^\d+\.\d+\.\d+$/', $config['version'])) {
             return false;
+        }
+
+        // 验证插件类型
+        if (isset($config['type'])) {
+            $validTypes = ['feature', 'payment'];
+            if (!in_array($config['type'], $validTypes)) {
+                return false;
+            }
         }
 
         return true;
@@ -478,6 +498,7 @@ class PluginManager
                 $this->registerServiceProvider($pluginCode);
                 $this->loadRoutes($pluginCode);
                 $this->loadViews($pluginCode);
+                $this->registerPluginCommands($pluginCode, $pluginInstance);
 
                 $pluginInstance->boot();
 
@@ -534,5 +555,43 @@ class PluginManager
             ->all();
 
         return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled plugins by type
+     */
+    public function getEnabledPluginsByType(string $type): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->byType($type)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled payment plugins
+     */
+    public function getEnabledPaymentPlugins(): array
+    {
+        return $this->getEnabledPluginsByType('payment');
+    }
+
+    /**
+     * install default plugins
+     */
+    public static function installDefaultPlugins(): void
+    {
+        foreach (Plugin::PROTECTED_PLUGINS as $pluginCode) {
+            if (!Plugin::where('code', $pluginCode)->exists()) {
+                $pluginManager = app(self::class);
+                $pluginManager->install($pluginCode);
+                $pluginManager->enable($pluginCode);
+                Log::info("Installed and enabled default plugin: {$pluginCode}");
+            }
+        }
     }
 }

@@ -1,16 +1,26 @@
 <?php
 
-namespace App\Payments;
+namespace Plugin\CoinPayments;
 
+use App\Services\Plugin\AbstractPlugin;
 use App\Contracts\PaymentInterface;
 use App\Exceptions\ApiException;
 
-class CoinPayments implements PaymentInterface
+class Plugin extends AbstractPlugin implements PaymentInterface
 {
-    protected $config;
-    public function __construct($config)
+    public function boot(): void
     {
-        $this->config = $config;
+        $this->filter('available_payment_methods', function($methods) {
+            if ($this->getConfig('enabled', true)) {
+                $methods['CoinPayments'] = [
+                    'name' => $this->getConfig('display_name', 'CoinPayments'),
+                    'icon' => $this->getConfig('icon', '💰'),
+                    'plugin_code' => $this->getPluginCode(),
+                    'type' => 'plugin'
+                ];
+            }
+            return $methods;
+        });
     }
 
     public function form(): array
@@ -18,26 +28,27 @@ class CoinPayments implements PaymentInterface
         return [
             'coinpayments_merchant_id' => [
                 'label' => 'Merchant ID',
-                'description' => '商户 ID，填写您在 Account Settings 中得到的 ID',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => '商户 ID，填写您在 Account Settings 中得到的 ID'
             ],
             'coinpayments_ipn_secret' => [
                 'label' => 'IPN Secret',
-                'description' => '通知密钥，填写您在 Merchant Settings 中自行设置的值',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => '通知密钥，填写您在 Merchant Settings 中自行设置的值'
             ],
             'coinpayments_currency' => [
                 'label' => '货币代码',
-                'description' => '填写您的货币代码（大写），建议与 Merchant Settings 中的值相同',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => '填写您的货币代码（大写），建议与 Merchant Settings 中的值相同'
             ]
         ];
     }
 
     public function pay($order): array
     {
-
-        // IPN notifications are slow, when the transaction is successful, we should return to the user center to avoid user confusion
         $parseUrl = parse_url($order['return_url']);
         $port = isset($parseUrl['port']) ? ":{$parseUrl['port']}" : '';
         $successUrl = "{$parseUrl['scheme']}://{$parseUrl['host']}{$port}";
@@ -45,11 +56,11 @@ class CoinPayments implements PaymentInterface
         $params = [
             'cmd' => '_pay_simple',
             'reset' => 1,
-            'merchant' => $this->config['coinpayments_merchant_id'],
+            'merchant' => $this->getConfig('coinpayments_merchant_id'),
             'item_name' => $order['trade_no'],
             'item_number' => $order['trade_no'],
             'want_shipping' => 0,
-            'currency' => $this->config['coinpayments_currency'],
+            'currency' => $this->getConfig('coinpayments_currency'),
             'amountf' => sprintf('%.2f', $order['total_amount'] / 100),
             'success_url' => $successUrl,
             'cancel_url' => $order['return_url'],
@@ -59,15 +70,14 @@ class CoinPayments implements PaymentInterface
         $params_string = http_build_query($params);
 
         return [
-            'type' => 1, // Redirect to url
+            'type' => 1,
             'data' => 'https://www.coinpayments.net/index.php?' . $params_string
         ];
     }
 
-    public function notify($params)
+    public function notify($params): array|string
     {
-
-        if (!isset($params['merchant']) || $params['merchant'] != trim($this->config['coinpayments_merchant_id'])) {
+        if (!isset($params['merchant']) || $params['merchant'] != trim($this->getConfig('coinpayments_merchant_id'))) {
             throw new ApiException('No or incorrect Merchant ID passed');
         }
 
@@ -80,31 +90,23 @@ class CoinPayments implements PaymentInterface
         $headerName = 'Hmac';
         $signHeader = isset($headers[$headerName]) ? $headers[$headerName] : '';
 
-        $hmac = hash_hmac("sha512", $request, trim($this->config['coinpayments_ipn_secret']));
-
-        // if ($hmac != $signHeader) { <-- Use this if you are running a version of PHP below 5.6.0 without the hash_equals function
-        //     throw new ApiException(400, 'HMAC signature does not match');
-        // }
+        $hmac = hash_hmac("sha512", $request, trim($this->getConfig('coinpayments_ipn_secret')));
 
         if (!hash_equals($hmac, $signHeader)) {
             throw new ApiException('HMAC signature does not match', 400);
         }
 
-        // HMAC Signature verified at this point, load some variables.
         $status = $params['status'];
         if ($status >= 100 || $status == 2) {
-            // payment is complete or queued for nightly payout, success
             return [
                 'trade_no' => $params['item_number'],
                 'callback_no' => $params['txn_id'],
                 'custom_result' => 'IPN OK'
             ];
         } else if ($status < 0) {
-            //payment error, this is usually final but payments will sometimes be reopened if there was no exchange rate conversion or with seller consent
             throw new ApiException('Payment Timed Out or Error');
         } else {
-            //payment is pending, you can optionally add a note to the order page
-            return ('IPN OK: pending');
+            return 'IPN OK: pending';
         }
     }
-}
+} 
