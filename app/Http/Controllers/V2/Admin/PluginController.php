@@ -38,7 +38,7 @@ class PluginController extends Controller
                 ],
                 [
                     'value' => Plugin::TYPE_PAYMENT,
-                    'label' => '支付方式', 
+                    'label' => '支付方式',
                     'description' => '提供支付接口的插件，如支付宝、微信支付等',
                     'icon' => '💳'
                 ]
@@ -52,14 +52,14 @@ class PluginController extends Controller
     public function index(Request $request)
     {
         $type = $request->query('type');
-        
-        $installedPlugins = Plugin::when($type, function($query) use ($type) {
-                return $query->byType($type);
-            })
+
+        $installedPlugins = Plugin::when($type, function ($query) use ($type) {
+            return $query->byType($type);
+        })
             ->get()
             ->keyBy('code')
             ->toArray();
-            
+
         $pluginPath = base_path('plugins');
         $plugins = [];
 
@@ -72,19 +72,26 @@ class PluginController extends Controller
                     $config = json_decode(File::get($configFile), true);
                     $code = $config['code'];
                     $pluginType = $config['type'] ?? Plugin::TYPE_FEATURE;
-                    
+
                     // 如果指定了类型，过滤插件
                     if ($type && $pluginType !== $type) {
                         continue;
                     }
-                    
+
                     $installed = isset($installedPlugins[$code]);
                     $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
                     $readmeFile = collect(['README.md', 'readme.md'])
                         ->map(fn($f) => $directory . '/' . $f)
                         ->first(fn($path) => File::exists($path));
                     $readmeContent = $readmeFile ? File::get($readmeFile) : '';
-
+                    $needUpgrade = false;
+                    if ($installed) {
+                        $installedVersion = $installedPlugins[$code]['version'] ?? null;
+                        $localVersion = $config['version'] ?? null;
+                        if ($installedVersion && $localVersion && version_compare($localVersion, $installedVersion, '>')) {
+                            $needUpgrade = true;
+                        }
+                    }
                     $plugins[] = [
                         'code' => $config['code'],
                         'name' => $config['name'],
@@ -98,6 +105,7 @@ class PluginController extends Controller
                         'can_be_deleted' => !in_array($code, Plugin::PROTECTED_PLUGINS),
                         'config' => $pluginConfig,
                         'readme' => $readmeContent,
+                        'need_upgrade' => $needUpgrade,
                     ];
                 }
             }
@@ -138,14 +146,42 @@ class PluginController extends Controller
             'code' => 'required|string'
         ]);
 
+        $code = $request->input('code');
+        $plugin = Plugin::where('code', $code)->first();
+        if ($plugin && $plugin->is_enabled) {
+            return response()->json([
+                'message' => '请先禁用插件后再卸载'
+            ], 400);
+        }
+
         try {
-            $this->pluginManager->uninstall($request->input('code'));
+            $this->pluginManager->uninstall($code);
             return response()->json([
                 'message' => '插件卸载成功'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => '插件卸载失败：' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * 升级插件
+     */
+    public function upgrade(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+        try {
+            $this->pluginManager->update($request->input('code'));
+            return response()->json([
+                'message' => '插件升级成功'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '插件升级失败：' . $e->getMessage()
             ], 400);
         }
     }

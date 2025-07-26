@@ -257,6 +257,7 @@ class AdminRoute
                 $router->post('disable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'disable']);
                 $router->get('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'getConfig']);
                 $router->post('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'updateConfig']);
+                $router->post('upgrade', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upgrade']);
             });
 
             // 流量重置管理

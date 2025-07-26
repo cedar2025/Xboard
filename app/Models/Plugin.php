@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
  * @property string $requires
  * @property string $config
  * @property string $type
+ * @property boolean $is_enabled    
  */
 class Plugin extends Model
 {
