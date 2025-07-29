@@ -56,7 +56,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     {
         $params = [
             'money' => $order['total_amount'] / 100,
-            'name' => $order['trade_no'],
+            'name' => $order['plan_name'],
             'notify_url' => $order['notify_url'],
             'return_url' => $order['return_url'],
             'out_trade_no' => $order['trade_no'],
