@@ -1,85 +1,160 @@
 <?php
+
 namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Jobs\SendTelegramJob;
 use App\Models\User;
-use \Curl\Curl;
+use App\Services\Plugin\HookManager;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
-class TelegramService {
-    protected $api;
+class TelegramService
+{
+    protected PendingRequest $http;
+    protected string $apiUrl;
 
-    public function __construct($token = '')
+    public function __construct(?string $token = null)
     {
-        $this->api = 'https://api.telegram.org/bot' . admin_setting('telegram_bot_token', $token) . '/';
+        $botToken = admin_setting('telegram_bot_token', $token);
+        $this->apiUrl = "https://api.telegram.org/bot{$botToken}/";
+
+        $this->http = Http::timeout(30)
+            ->retry(3, 1000)
+            ->withHeaders([
+                'Accept' => 'application/json',
+            ]);
     }
 
-    public function sendMessage(int $chatId, string $text, string $parseMode = '')
+    public function sendMessage(int $chatId, string $text, string $parseMode = ''): void
     {
-        if ($parseMode === 'markdown') {
-            $text = str_replace('_', '\_', $text);
-        }
+        $text = $parseMode === 'markdown' ? str_replace('_', '\_', $text) : $text;
+
         $this->request('sendMessage', [
             'chat_id' => $chatId,
             'text' => $text,
-            'parse_mode' => $parseMode
+            'parse_mode' => $parseMode ?: null,
         ]);
     }
 
-    public function approveChatJoinRequest(int $chatId, int $userId)
+    public function approveChatJoinRequest(int $chatId, int $userId): void
     {
         $this->request('approveChatJoinRequest', [
             'chat_id' => $chatId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
     }
 
-    public function declineChatJoinRequest(int $chatId, int $userId)
+    public function declineChatJoinRequest(int $chatId, int $userId): void
     {
         $this->request('declineChatJoinRequest', [
             'chat_id' => $chatId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
     }
 
-    public function getMe()
+    public function getMe(): object
     {
         return $this->request('getMe');
     }
 
-    public function setWebhook(string $url)
+    public function setWebhook(string $url): object
     {
-        return $this->request('setWebhook', [
-            'url' => $url
-        ]);
+        $result = $this->request('setWebhook', ['url' => $url]);
+        return $result;
     }
 
-    private function request(string $method, array $params = [])
+    /**
+     * 注册 Bot 命令列表
+     */
+    public function registerBotCommands(): void
     {
-        $curl = new Curl();
-        $curl->get($this->api . $method . '?' . http_build_query($params));
-        $response = $curl->response;
-        $curl->close();
-        if (!isset($response->ok)) throw new ApiException('请求失败');
-        if (!$response->ok) {
-            throw new ApiException('来自TG的错误：' . $response->description);
-        }
-        return $response;
-    }
+        try {
+            $commands = HookManager::filter('telegram.bot.commands', []);
 
-    public function sendMessageWithAdmin($message, $isStaff = false)
-    {
-        if (!admin_setting('telegram_bot_enable', 0)) return;
-        $users = User::where(function ($query) use ($isStaff) {
-            $query->where('is_admin', 1);
-            if ($isStaff) {
-                $query->orWhere('is_staff', 1);
+            if (empty($commands)) {
+                Log::warning('没有找到任何 Telegram Bot 命令');
+                return;
             }
-        })
-            ->where('telegram_id', '!=', NULL)
-            ->get();
+
+            $this->request('setMyCommands', [
+                'commands' => json_encode($commands),
+                'scope' => json_encode(['type' => 'default'])
+            ]);
+
+            Log::info('Telegram Bot 命令注册成功', [
+                'commands_count' => count($commands),
+                'commands' => $commands
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Telegram Bot 命令注册失败', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * 获取当前注册的命令列表
+     */
+    public function getMyCommands(): object
+    {
+        return $this->request('getMyCommands');
+    }
+
+    /**
+     * 删除所有命令
+     */
+    public function deleteMyCommands(): object
+    {
+        return $this->request('deleteMyCommands');
+    }
+
+    public function sendMessageWithAdmin(string $message, bool $isStaff = false): void
+    {
+        $query = User::where('telegram_id', '!=', null);
+        $query->where(
+            fn($q) => $q->where('is_admin', 1)
+                ->when($isStaff, fn($q) => $q->orWhere('is_staff', 1))
+        );
+        $users = $query->get();
         foreach ($users as $user) {
             SendTelegramJob::dispatch($user->telegram_id, $message);
+        }
+    }
+
+    protected function request(string $method, array $params = []): object
+    {
+        try {
+            $response = $this->http->get($this->apiUrl . $method, $params);
+
+            if (!$response->successful()) {
+                throw new ApiException("HTTP 请求失败: {$response->status()}");
+            }
+
+            $data = $response->object();
+
+            if (!isset($data->ok)) {
+                throw new ApiException('无效的 Telegram API 响应');
+            }
+
+            if (!$data->ok) {
+                $description = $data->description ?? '未知错误';
+                throw new ApiException("Telegram API 错误: {$description}");
+            }
+
+            return $data;
+
+        } catch (\Exception $e) {
+            Log::error('Telegram API 请求失败', [
+                'method' => $method,
+                'params' => $params,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new ApiException("Telegram 服务错误: {$e->getMessage()}");
         }
     }
 }

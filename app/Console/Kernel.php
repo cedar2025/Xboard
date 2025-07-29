@@ -64,6 +64,10 @@ class Kernel extends ConsoleKernel
     {
         $this->load(__DIR__ . '/Commands');
 
+        try {
+            app(PluginManager::class)->initializeEnabledPlugins();
+        } catch (\Exception $e) {
+        }
         require base_path('routes/console.php');
     }
 }

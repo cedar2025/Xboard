@@ -7,8 +7,6 @@ use Illuminate\Support\Arr;
 
 class Helper
 {
-    private static $subscribeUrlCache = null;
-
     public static function uuidToBase64($uuid, $length)
     {
         return base64_encode(substr($uuid, 0, $length));

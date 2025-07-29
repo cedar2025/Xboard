@@ -100,6 +100,35 @@ abstract class AbstractPlugin
     }
 
     /**
+     * 注册 Artisan 命令
+     */
+    protected function registerCommand(string $commandClass): void
+    {
+        if (class_exists($commandClass)) {
+            app('Illuminate\Contracts\Console\Kernel')->registerCommand(new $commandClass());
+        }
+    }
+
+    /**
+     * 注册插件命令目录
+     */
+    public function registerCommands(): void
+    {
+        $commandsPath = $this->basePath . '/Commands';
+        if (File::exists($commandsPath)) {
+            $files = File::glob($commandsPath . '/*.php');
+            foreach ($files as $file) {
+                $className = pathinfo($file, PATHINFO_FILENAME);
+                $commandClass = $this->namespace . '\\Commands\\' . $className;
+                
+                if (class_exists($commandClass)) {
+                    $this->registerCommand($commandClass);
+                }
+            }
+        }
+    }
+
+    /**
      * 中断当前请求并返回新的响应
      *
      * @param Response|string|array $response

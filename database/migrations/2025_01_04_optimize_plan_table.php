@@ -52,7 +52,7 @@ return new class extends Migration {
             $table->unsignedInteger('speed_limit')->nullable()
                 ->comment('Speed limit in Mbps, 0 for unlimited')->change();
             $table->integer('reset_traffic_method')->nullable()->default(0)
-                ->comment('重置流量方式:0跟随系统设置、1每月1号、2按月重置、3不重置、4每年1月1日、5按年重置')->change();
+                ->comment('重置流量方式:null跟随系统设置、0每月1号、1按月重置、2不重置、3每年1月1日、4按年重置')->change();
             $table->unsignedInteger('capacity_limit')->nullable()->default(0)
                 ->comment('0 for unlimited')->change();
         });

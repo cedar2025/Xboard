@@ -24,13 +24,42 @@ class PluginController extends Controller
     }
 
     /**
+     * 获取所有插件类型
+     */
+    public function types()
+    {
+        return response()->json([
+            'data' => [
+                [
+                    'value' => Plugin::TYPE_FEATURE,
+                    'label' => '功能',
+                    'description' => '提供功能扩展的插件，如Telegram登录、邮件通知等',
+                    'icon' => '🔧'
+                ],
+                [
+                    'value' => Plugin::TYPE_PAYMENT,
+                    'label' => '支付方式',
+                    'description' => '提供支付接口的插件，如支付宝、微信支付等',
+                    'icon' => '💳'
+                ]
+            ]
+        ]);
+    }
+
+    /**
      * 获取插件列表
      */
-    public function index()
+    public function index(Request $request)
     {
-        $installedPlugins = Plugin::get()
+        $type = $request->query('type');
+
+        $installedPlugins = Plugin::when($type, function ($query) use ($type) {
+            return $query->byType($type);
+        })
+            ->get()
             ->keyBy('code')
             ->toArray();
+
         $pluginPath = base_path('plugins');
         $plugins = [];
 
@@ -42,24 +71,41 @@ class PluginController extends Controller
                 if (File::exists($configFile)) {
                     $config = json_decode(File::get($configFile), true);
                     $code = $config['code'];
+                    $pluginType = $config['type'] ?? Plugin::TYPE_FEATURE;
+
+                    // 如果指定了类型，过滤插件
+                    if ($type && $pluginType !== $type) {
+                        continue;
+                    }
+
                     $installed = isset($installedPlugins[$code]);
-                    // 使用配置服务获取配置
                     $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
                     $readmeFile = collect(['README.md', 'readme.md'])
                         ->map(fn($f) => $directory . '/' . $f)
                         ->first(fn($path) => File::exists($path));
                     $readmeContent = $readmeFile ? File::get($readmeFile) : '';
-
+                    $needUpgrade = false;
+                    if ($installed) {
+                        $installedVersion = $installedPlugins[$code]['version'] ?? null;
+                        $localVersion = $config['version'] ?? null;
+                        if ($installedVersion && $localVersion && version_compare($localVersion, $installedVersion, '>')) {
+                            $needUpgrade = true;
+                        }
+                    }
                     $plugins[] = [
                         'code' => $config['code'],
                         'name' => $config['name'],
                         'version' => $config['version'],
                         'description' => $config['description'],
                         'author' => $config['author'],
+                        'type' => $pluginType,
                         'is_installed' => $installed,
                         'is_enabled' => $installed ? $installedPlugins[$code]['is_enabled'] : false,
+                        'is_protected' => in_array($code, Plugin::PROTECTED_PLUGINS),
+                        'can_be_deleted' => !in_array($code, Plugin::PROTECTED_PLUGINS),
                         'config' => $pluginConfig,
                         'readme' => $readmeContent,
+                        'need_upgrade' => $needUpgrade,
                     ];
                 }
             }
@@ -100,14 +146,42 @@ class PluginController extends Controller
             'code' => 'required|string'
         ]);
 
+        $code = $request->input('code');
+        $plugin = Plugin::where('code', $code)->first();
+        if ($plugin && $plugin->is_enabled) {
+            return response()->json([
+                'message' => '请先禁用插件后再卸载'
+            ], 400);
+        }
+
         try {
-            $this->pluginManager->uninstall($request->input('code'));
+            $this->pluginManager->uninstall($code);
             return response()->json([
                 'message' => '插件卸载成功'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => '插件卸载失败：' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * 升级插件
+     */
+    public function upgrade(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+        try {
+            $this->pluginManager->update($request->input('code'));
+            return response()->json([
+                'message' => '插件升级成功'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '插件升级失败：' . $e->getMessage()
             ], 400);
         }
     }
@@ -236,8 +310,17 @@ class PluginController extends Controller
             'code' => 'required|string'
         ]);
 
+        $code = $request->input('code');
+
+        // 检查是否为受保护的插件
+        if (in_array($code, Plugin::PROTECTED_PLUGINS)) {
+            return response()->json([
+                'message' => '该插件为系统默认插件，不允许删除'
+            ], 403);
+        }
+
         try {
-            $this->pluginManager->delete($request->input('code'));
+            $this->pluginManager->delete($code);
             return response()->json([
                 'message' => '插件删除成功'
             ]);
