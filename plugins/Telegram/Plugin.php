@@ -11,6 +11,7 @@ use App\Services\TelegramService;
 use App\Services\TicketService;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\SendTelegramJob;
 
 class Plugin extends AbstractPlugin
 {
@@ -65,13 +66,16 @@ class Plugin extends AbstractPlugin
     $this->telegramService->sendMessageWithAdmin($message, true);
   }
 
-  public function sendTicketNotify(array $data): void
+  public function sendTicketNotify(Ticket $ticket): void
   {
     if (!$this->getConfig('enable_ticket_notify', true)) {
       return;
     }
 
-    [$ticket, $message] = $data;
+    $message = $ticket->message()->orderBy('id', 'desc')->first();
+    if (!$message) {
+        return;
+    }
     $user = User::find($ticket->user_id);
     if (!$user)
       return;
@@ -125,7 +129,7 @@ class Plugin extends AbstractPlugin
    */
   protected function sendMessage(object $msg, string $message): void
   {
-    $this->telegramService->sendMessage($msg->chat_id, $message, 'markdown');
+    SendTelegramJob::dispatch($msg->chat_id, $message);
   }
 
   /**
@@ -173,7 +177,15 @@ class Plugin extends AbstractPlugin
     $welcomeText .= "\n\n" . $footer;
     $welcomeText = str_replace('\\n', "\n", $welcomeText);
 
-    $this->sendMessage($msg, $welcomeText);
+    try {
+      $this->sendMessage($msg, $welcomeText);
+    } catch (\App\Exceptions\ApiException $e) {
+      if (strpos($e->getMessage(), 'Forbidden: bot was blocked by the user') !== false) {
+        \Log::warning('Telegram bot was blocked by user: ' . $msg->chat_id);
+      } else {
+        throw $e;
+      }
+    }
   }
 
   public function handleMessage(bool $handled, array $data): bool
