@@ -1,16 +1,26 @@
 <?php
 
-namespace App\Payments;
+namespace Plugin\Coinbase;
 
+use App\Services\Plugin\AbstractPlugin;
 use App\Contracts\PaymentInterface;
 use App\Exceptions\ApiException;
 
-class Coinbase implements PaymentInterface
+class Plugin extends AbstractPlugin implements PaymentInterface
 {
-    protected $config;
-    public function __construct($config)
+    public function boot(): void
     {
-        $this->config = $config;
+        $this->filter('available_payment_methods', function($methods) {
+            if ($this->getConfig('enabled', true)) {
+                $methods['Coinbase'] = [
+                    'name' => $this->getConfig('display_name', 'Coinbase'),
+                    'icon' => $this->getConfig('icon', '🪙'),
+                    'plugin_code' => $this->getPluginCode(),
+                    'type' => 'plugin'
+                ];
+            }
+            return $methods;
+        });
     }
 
     public function form(): array
@@ -18,25 +28,27 @@ class Coinbase implements PaymentInterface
         return [
             'coinbase_url' => [
                 'label' => '接口地址',
-                'description' => '',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Coinbase Commerce API地址'
             ],
             'coinbase_api_key' => [
                 'label' => 'API KEY',
-                'description' => '',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Coinbase Commerce API密钥'
             ],
             'coinbase_webhook_key' => [
                 'label' => 'WEBHOOK KEY',
-                'description' => '',
-                'type' => 'input',
+                'type' => 'string',
+                'required' => true,
+                'description' => 'Webhook签名验证密钥'
             ],
         ];
     }
 
     public function pay($order): array
     {
-
         $params = [
             'name' => '订阅套餐',
             'description' => '订单号 ' . $order['trade_no'],
@@ -51,14 +63,13 @@ class Coinbase implements PaymentInterface
         ];
 
         $params_string = http_build_query($params);
-
-        $ret_raw = self::_curlPost($this->config['coinbase_url'], $params_string);
-
+        $ret_raw = $this->curlPost($this->getConfig('coinbase_url'), $params_string);
         $ret = @json_decode($ret_raw, true);
 
         if (empty($ret['data']['hosted_url'])) {
             throw new ApiException("error!");
         }
+        
         return [
             'type' => 1,
             'data' => $ret['data']['hosted_url'],
@@ -67,32 +78,29 @@ class Coinbase implements PaymentInterface
 
     public function notify($params): array
     {
-
         $payload = trim(request()->getContent());
         $json_param = json_decode($payload, true);
-
 
         $headerName = 'X-Cc-Webhook-Signature';
         $headers = getallheaders();
         $signatureHeader = isset($headers[$headerName]) ? $headers[$headerName] : '';
-        $computedSignature = \hash_hmac('sha256', $payload, $this->config['coinbase_webhook_key']);
+        $computedSignature = \hash_hmac('sha256', $payload, $this->getConfig('coinbase_webhook_key'));
 
-        if (!self::hashEqual($signatureHeader, $computedSignature)) {
+        if (!$this->hashEqual($signatureHeader, $computedSignature)) {
             throw new ApiException('HMAC signature does not match', 400);
         }
 
         $out_trade_no = $json_param['event']['data']['metadata']['outTradeNo'];
         $pay_trade_no = $json_param['event']['id'];
+        
         return [
             'trade_no' => $out_trade_no,
             'callback_no' => $pay_trade_no
         ];
     }
 
-
-    private function _curlPost($url, $params = false)
+    private function curlPost($url, $params = false)
     {
-
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HEADER, false);
@@ -102,20 +110,14 @@ class Coinbase implements PaymentInterface
         curl_setopt(
             $ch,
             CURLOPT_HTTPHEADER,
-            array('X-CC-Api-Key:' . $this->config['coinbase_api_key'], 'X-CC-Version: 2018-03-22')
+            array('X-CC-Api-Key:' . $this->getConfig('coinbase_api_key'), 'X-CC-Version: 2018-03-22')
         );
         $result = curl_exec($ch);
         curl_close($ch);
         return $result;
     }
 
-
-    /**
-     * @param string $str1
-     * @param string $str2
-     * @return bool
-     */
-    public function hashEqual($str1, $str2)
+    private function hashEqual($str1, $str2)
     {
         if (function_exists('hash_equals')) {
             return \hash_equals($str1, $str2);
@@ -133,4 +135,4 @@ class Coinbase implements PaymentInterface
             return !$ret;
         }
     }
-}
+} 

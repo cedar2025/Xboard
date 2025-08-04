@@ -247,6 +247,7 @@ class AdminRoute
             $router->group([
                 'prefix' => 'plugin'
             ], function ($router) {
+                $router->get('/types', [\App\Http\Controllers\V2\Admin\PluginController::class, 'types']);
                 $router->get('/getPlugins', [\App\Http\Controllers\V2\Admin\PluginController::class, 'index']);
                 $router->post('/upload', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upload']);
                 $router->post('/delete', [\App\Http\Controllers\V2\Admin\PluginController::class, 'delete']);
@@ -256,6 +257,7 @@ class AdminRoute
                 $router->post('disable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'disable']);
                 $router->get('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'getConfig']);
                 $router->post('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'updateConfig']);
+                $router->post('upgrade', [\App\Http\Controllers\V2\Admin\PluginController::class, 'upgrade']);
             });
 
             // 流量重置管理

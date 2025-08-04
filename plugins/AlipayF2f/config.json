@@ -1,0 +1,8 @@
+{
+    "name": "AlipayF2F",
+    "code": "alipay_f2f",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "AlipayF2F payment plugin",
+    "author": "XBoard Team"
+} 

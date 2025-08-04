@@ -134,9 +134,7 @@ class Setting
      */
     private function flush(): void
     {
-        // 清除共享的Redis缓存
         $this->cache->forget(self::CACHE_KEY);
-        // 清除当前请求的实例内存缓存
         $this->loadedSettings = null;
     }
 }

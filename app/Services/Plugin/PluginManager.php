@@ -3,6 +3,7 @@
 namespace App\Services\Plugin;
 
 use App\Models\Plugin;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
@@ -10,12 +11,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Symfony\Component\Finder\Finder;
 
 class PluginManager
 {
     protected string $pluginPath;
     protected array $loadedPlugins = [];
+    protected bool $pluginsInitialized = false;
 
     public function __construct()
     {
@@ -41,7 +42,7 @@ class PluginManager
     /**
      * 加载插件类
      */
-    protected function loadPlugin(string $pluginCode)
+    protected function loadPlugin(string $pluginCode): ?AbstractPlugin
     {
         if (isset($this->loadedPlugins[$pluginCode])) {
             return $this->loadedPlugins[$pluginCode];
@@ -112,10 +113,22 @@ class PluginManager
      */
     protected function loadViews(string $pluginCode): void
     {
-        $viewsPath = $this->getPluginPath($pluginCode) . '/resources/views';
-
+        $viewsPath = $this->getPluginPath($pluginCode) . '/views';
         if (File::exists($viewsPath)) {
             View::addNamespace(Str::studly($pluginCode), $viewsPath);
+        }
+    }
+
+    /**
+     * 注册插件命令
+     */
+    protected function registerPluginCommands(string $pluginCode, AbstractPlugin $pluginInstance): void
+    {
+        try {
+            // 调用插件的命令注册方法
+            $pluginInstance->registerCommands();
+        } catch (\Exception $e) {
+            Log::error("Failed to register commands for plugin '{$pluginCode}': " . $e->getMessage());
         }
     }
 
@@ -124,32 +137,32 @@ class PluginManager
      */
     public function install(string $pluginCode): bool
     {
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$this->validateConfig($config)) {
+            throw new \Exception('Invalid plugin config');
+        }
+
+        // 检查插件是否已安装
+        if (Plugin::where('code', $pluginCode)->exists()) {
+            throw new \Exception('Plugin already installed');
+        }
+
+        // 检查依赖
+        if (!$this->checkDependencies($config['require'] ?? [])) {
+            throw new \Exception('Dependencies not satisfied');
+        }
+
+        // 运行数据库迁移
+        $this->runMigrations(pluginCode: $pluginCode);
+
         DB::beginTransaction();
         try {
-            $configFile = $this->getPluginPath($pluginCode) . '/config.json';
-
-            if (!File::exists($configFile)) {
-                throw new \Exception('Plugin config file not found');
-            }
-
-            $config = json_decode(File::get($configFile), true);
-            if (!$this->validateConfig($config)) {
-                throw new \Exception('Invalid plugin config');
-            }
-
-            // 检查插件是否已安装
-            if (Plugin::where('code', $pluginCode)->exists()) {
-                throw new \Exception('Plugin already installed');
-            }
-
-            // 检查依赖
-            if (!$this->checkDependencies($config['require'] ?? [])) {
-                throw new \Exception('Dependencies not satisfied');
-            }
-
-            // 运行数据库迁移
-            $this->runMigrations($pluginCode);
-
             // 提取配置默认值
             $defaultValues = $this->extractDefaultConfig($config);
 
@@ -157,10 +170,11 @@ class PluginManager
             $plugin = $this->loadPlugin($pluginCode);
 
             // 注册到数据库
-            $dbPlugin = Plugin::create([
+            Plugin::create([
                 'code' => $pluginCode,
                 'name' => $config['name'],
                 'version' => $config['version'],
+                'type' => $config['type'] ?? Plugin::TYPE_FEATURE,
                 'is_enabled' => false,
                 'config' => json_encode($defaultValues),
                 'installed_at' => now(),
@@ -177,7 +191,9 @@ class PluginManager
             DB::commit();
             return true;
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $e;
         }
     }
@@ -209,7 +225,22 @@ class PluginManager
 
         if (File::exists($migrationsPath)) {
             Artisan::call('migrate', [
-                '--path' => "plugins/{$pluginCode}/database/migrations",
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
+                '--force' => true
+            ]);
+        }
+    }
+
+    /**
+     * 回滚插件数据库迁移
+     */
+    protected function runMigrationsRollback(string $pluginCode): void
+    {
+        $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
+
+        if (File::exists($migrationsPath)) {
+            Artisan::call('migrate:rollback', [
+                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
                 '--force' => true
             ]);
         }
@@ -257,6 +288,14 @@ class PluginManager
             return false;
         }
 
+        // 验证插件类型
+        if (isset($config['type'])) {
+            $validTypes = ['feature', 'payment'];
+            if (!in_array($config['type'], $validTypes)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -298,9 +337,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
         // 初始化插件
-        if (method_exists($plugin, 'boot')) {
-            $plugin->boot();
-        }
+        $plugin->boot();
 
         return true;
     }
@@ -315,7 +352,6 @@ class PluginManager
             throw new \Exception('Plugin not found');
         }
 
-        // 更新数据库状态
         Plugin::query()
             ->where('code', $pluginCode)
             ->update([
@@ -323,10 +359,7 @@ class PluginManager
                 'updated_at' => now(),
             ]);
 
-        // 清理插件
-        if (method_exists($plugin, 'cleanup')) {
-            $plugin->cleanup();
-        }
+        $plugin->cleanup();
 
         return true;
     }
@@ -336,10 +369,8 @@ class PluginManager
      */
     public function uninstall(string $pluginCode): bool
     {
-        // 先禁用插件
         $this->disable($pluginCode);
-
-        // 删除数据库记录
+        $this->runMigrationsRollback($pluginCode);
         Plugin::query()->where('code', $pluginCode)->delete();
 
         return true;
@@ -381,6 +412,62 @@ class PluginManager
                 // 实现版本比较逻辑
             }
         }
+        return true;
+    }
+
+    /**
+     * 升级插件
+     *
+     * @param string $pluginCode
+     * @return bool
+     * @throws \Exception
+     */
+    public function update(string $pluginCode): bool
+    {
+        $dbPlugin = Plugin::where('code', $pluginCode)->first();
+        if (!$dbPlugin) {
+            throw new \Exception('Plugin not installed: ' . $pluginCode);
+        }
+
+        // 获取插件配置文件中的最新版本
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+        if (!File::exists($configFile)) {
+            throw new \Exception('Plugin config file not found');
+        }
+
+        $config = json_decode(File::get($configFile), true);
+        if (!$config || !isset($config['version'])) {
+            throw new \Exception('Invalid plugin config or missing version');
+        }
+
+        $newVersion = $config['version'];
+        $oldVersion = $dbPlugin->version;
+
+        if (version_compare($newVersion, $oldVersion, '<=')) {
+            throw new \Exception('Plugin is already up to date');
+        }
+
+        $this->disable($pluginCode);
+        $this->runMigrations($pluginCode);
+
+        $plugin = $this->loadPlugin($pluginCode);
+        if ($plugin) {
+            if (!empty($dbPlugin->config)) {
+                $plugin->setConfig(json_decode($dbPlugin->config, true));
+            }
+
+            if (method_exists($plugin, 'update')) {
+                $plugin->update($oldVersion, $newVersion);
+            }
+        }
+
+        $dbPlugin->update([
+            'version' => $newVersion,
+            'updated_at' => now(),
+        ]);
+
+        $this->enable($pluginCode);
+
         return true;
     }
 
@@ -450,6 +537,136 @@ class PluginManager
         File::deleteDirectory($pluginPath);
         File::deleteDirectory($extractPath);
 
+        if (Plugin::where('code', $config['code'])->exists()) {
+            return $this->update($config['code']);
+        }
+
         return true;
+    }
+
+    /**
+     * Initializes all enabled plugins from the database.
+     * This method ensures that plugins are loaded, and their routes, views,
+     * and service providers are registered only once per request cycle.
+     */
+    public function initializeEnabledPlugins(): void
+    {
+        if ($this->pluginsInitialized) {
+            return;
+        }
+
+        $enabledPlugins = Plugin::where('is_enabled', true)->get();
+
+        foreach ($enabledPlugins as $dbPlugin) {
+            try {
+                $pluginCode = $dbPlugin->code;
+
+                $pluginInstance = $this->loadPlugin($pluginCode);
+                if (!$pluginInstance) {
+                    continue;
+                }
+
+                if (!empty($dbPlugin->config)) {
+                    $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                }
+
+                $this->registerServiceProvider($pluginCode);
+                $this->loadRoutes($pluginCode);
+                $this->loadViews($pluginCode);
+                $this->registerPluginCommands($pluginCode, $pluginInstance);
+
+                $pluginInstance->boot();
+
+            } catch (\Exception $e) {
+                Log::error("Failed to initialize plugin '{$dbPlugin->code}': " . $e->getMessage());
+            }
+        }
+
+        $this->pluginsInitialized = true;
+    }
+
+    /**
+     * Register scheduled tasks for all enabled plugins.
+     * Called from Console Kernel. Only loads main plugin class and config for scheduling.
+     * Avoids full HTTP/plugin boot overhead.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     */
+    public function registerPluginSchedules(Schedule $schedule): void
+    {
+        Plugin::where('is_enabled', true)
+            ->get()
+            ->each(function ($dbPlugin) use ($schedule) {
+                try {
+                    $pluginInstance = $this->loadPlugin($dbPlugin->code);
+                    if (!$pluginInstance) {
+                        return;
+                    }
+                    if (!empty($dbPlugin->config)) {
+                        $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                    }
+                    $pluginInstance->schedule($schedule);
+
+                } catch (\Exception $e) {
+                    Log::error("Failed to register schedule for plugin '{$dbPlugin->code}': " . $e->getMessage());
+                }
+            });
+    }
+
+    /**
+     * Get all enabled plugin instances.
+     *
+     * This method ensures that all enabled plugins are initialized and then returns them.
+     * It's the central point for accessing active plugins.
+     *
+     * @return array<AbstractPlugin>
+     */
+    public function getEnabledPlugins(): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled plugins by type
+     */
+    public function getEnabledPluginsByType(string $type): array
+    {
+        $this->initializeEnabledPlugins();
+
+        $enabledPluginCodes = Plugin::where('is_enabled', true)
+            ->byType($type)
+            ->pluck('code')
+            ->all();
+
+        return array_intersect_key($this->loadedPlugins, array_flip($enabledPluginCodes));
+    }
+
+    /**
+     * Get enabled payment plugins
+     */
+    public function getEnabledPaymentPlugins(): array
+    {
+        return $this->getEnabledPluginsByType('payment');
+    }
+
+    /**
+     * install default plugins
+     */
+    public static function installDefaultPlugins(): void
+    {
+        foreach (Plugin::PROTECTED_PLUGINS as $pluginCode) {
+            if (!Plugin::where('code', $pluginCode)->exists()) {
+                $pluginManager = app(self::class);
+                $pluginManager->install($pluginCode);
+                $pluginManager->enable($pluginCode);
+                Log::info("Installed and enabled default plugin: {$pluginCode}");
+            }
+        }
     }
 }

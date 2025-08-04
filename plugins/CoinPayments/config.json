@@ -1,0 +1,8 @@
+{
+    "name": "CoinPayments",
+    "code": "coin_payments",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "CoinPayments payment plugin",
+    "author": "XBoard Team"
+} 

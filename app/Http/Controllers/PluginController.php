@@ -11,13 +11,16 @@ use App\Traits\HasPluginConfig;
  */
 abstract class PluginController extends Controller
 {
-  use HasPluginConfig;
+    use HasPluginConfig;
 
-  /**
-   * 执行插件操作前的检查
-   */
-  protected function beforePluginAction(): ?array
-  {
-    return null;
-  }
+    /**
+     * 执行插件操作前的检查
+     */
+    protected function beforePluginAction(): ?array
+    {
+        if (!$this->isPluginEnabled()) {
+            return [400, '插件未启用'];
+        }
+        return null;
+    }
 }

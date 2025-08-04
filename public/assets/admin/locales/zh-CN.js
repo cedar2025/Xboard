@@ -85,6 +85,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "cancel": "取消",
         "submit": "提交"
       },
+      "sections": {
+        "payment_config": "支付配置"
+      },
       "messages": {
         "success": "保存成功"
       }
@@ -172,10 +175,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     "search": {
       "placeholder": "搜索插件名称或描述..."
     },
-    "category": {
-      "placeholder": "选择分类",
-      "all": "全部",
-      "other": "其他"
+    "type": {
+      "placeholder": "选择插件类型",
+      "all": "全部类型"
     },
     "tabs": {
       "all": "所有插件",
@@ -184,14 +186,22 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
     },
     "status": {
       "enabled": "已启用",
-      "disabled": "已禁用"
+      "disabled": "已禁用",
+      "not_installed": "未安装",
+      "protected": "受保护",
+      "filter_placeholder": "安装状态",
+      "all": "全部状态",
+      "installed": "已安装",
+      "available": "可安装"
     },
     "button": {
       "install": "安装",
+      "upgrade": "升级",
       "config": "配置",
       "enable": "启用",
       "disable": "禁用",
-      "uninstall": "卸载"
+      "uninstall": "卸载",
+      "readme": "查看文档"
     },
     "upload": {
       "button": "上传插件",
@@ -215,16 +225,26 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "description": "确定要卸载此插件吗？卸载后插件数据将被清除。",
       "button": "卸载"
     },
+    "upgrade": {
+      "title": "升级插件",
+      "description": "确定要升级此插件吗？升级过程中插件将暂时不可用。",
+      "button": "升级"
+    },
     "config": {
       "title": "配置",
       "description": "修改插件配置",
       "save": "保存",
       "cancel": "取消"
     },
+    "readme": {
+      "title": "插件文档"
+    },
     "author": "作者",
     "messages": {
       "installSuccess": "插件安装成功",
       "installError": "插件安装失败",
+      "upgradeSuccess": "插件升级成功",
+      "upgradeError": "插件升级失败",
       "uninstallSuccess": "插件卸载成功",
       "uninstallError": "插件卸载失败",
       "enableSuccess": "插件启用成功",
@@ -687,8 +707,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "success": "Webhook 设置成功"
       },
       "bot_enable": {
-        "title": "启用机器人通知",
-        "description": "开启后机器人将向管理员和已绑定Telegram的用户发送基础通知。"
+        "title": "启用Telegram绑定引导",
+        "description": "开启后将在用户端显示Telegram绑定引导，帮助用户绑定Telegram账户以接收通知。"
       },
       "discuss_link": {
         "title": "群组链接",
@@ -2094,8 +2114,31 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       "shadowsocks": {
         "cipher": {
           "label": "加密算法",
-          "placeholder": "选择加密算法"
+          "placeholder": "选择加密算法",
+          "search_placeholder": "搜索或输入自定义加密方式...",
+          "description": "选择预设加密方式或输入自定义加密方式",
+          "preset_group": "预设加密方式",
+          "custom_group": "自定义加密方式",
+          "current_value": "当前值",
+          "use_custom": "使用",
+          "no_results": "未找到匹配的加密方式",
+          "custom_hint": "你可以直接输入自定义的加密方式，如：aes-256-cfb",
+          "custom_label": "自定义"
         },
+        "plugin": {
+          "label": "插件",
+          "placeholder": "选择插件",
+          "obfs_hint": "提示：配置格式如 obfs=http;obfs-host=www.bing.com;path=/",
+          "v2ray_hint": "提示：WebSocket模式格式为 mode=websocket;host=mydomain.me;path=/;tls=true，QUIC模式格式为 mode=quic;host=mydomain.me"
+        },
+        "plugin_opts": {
+          "label": "插件选项",
+          "description": "按照 key=value;key2=value2 格式输入插件选项",
+          "placeholder": "例如: mode=tls;host=bing.com"
+        },
+        "client_fingerprint": "客户端指纹",
+        "client_fingerprint_placeholder": "选择客户端指纹",
+        "client_fingerprint_description": "客户端伪装指纹，用于降低被识别风险",
         "obfs": {
           "label": "混淆",
           "placeholder": "选择混淆方式",
@@ -2737,6 +2780,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "three_yearly": "三年付",
           "onetime": "流量包",
           "reset_traffic": "重置包",
+          "no_price": "无价格",
           "unit": {
             "month": "元/月",
             "quarter": "元/季",

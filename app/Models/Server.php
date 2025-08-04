@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property string|null $network 网络类型
  * @property int|null $parent_id 父节点ID
  * @property float|null $rate 倍率
+ * @property boolean $rate_time_enable 是否启用时间范围功能
  * @property array|null $rate_time_ranges 倍率时间范围
  * @property int|null $sort 排序
  * @property array|null $protocol_settings 协议设置
@@ -455,13 +456,15 @@ class Server extends Model
 
     public function getCurrentRate(): float
     {
-        $now = date('H:i');
-        $ranges = $this->rate_time_ranges ?? [];
-        foreach ($ranges as $range) {
-            if ($now >= $range['start'] && $now <= $range['end']) {
-                return (float) $range['rate'];
-            }
+        if (!$this->rate_time_enable) {
+            return (float) $this->rate;
         }
-        return (float) $this->rate;
+
+        $now = now()->format('H:i');
+        $ranges = $this->rate_time_ranges ?? [];
+        $matchedRange = collect($ranges)
+            ->first(fn($range) => $now >= $range['start'] && $now <= $range['end']);
+        
+        return $matchedRange ? (float) $matchedRange['rate'] : (float) $this->rate;
     }
 }

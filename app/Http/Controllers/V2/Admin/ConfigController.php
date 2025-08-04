@@ -71,7 +71,6 @@ class ConfigController extends Controller
 
     public function setTelegramWebhook(Request $request)
     {
-        // 判断站点网址
         $app_url = admin_setting('app_url');
         if (blank($app_url))
             return $this->fail([422, '请先设置站点网址']);
@@ -81,17 +80,14 @@ class ConfigController extends Controller
         $telegramService = new TelegramService($request->input('telegram_bot_token'));
         $telegramService->getMe();
         $telegramService->setWebhook($hookUrl);
+        $telegramService->registerBotCommands();
         return $this->success(true);
     }
 
     public function fetch(Request $request)
     {
         $key = $request->input('key');
-
-        // 构建配置数据映射
         $configMappings = $this->getConfigMappings();
-
-        // 如果请求特定分组，直接返回
         if ($key && isset($configMappings[$key])) {
             return $this->success([$key => $configMappings[$key]]);
         }

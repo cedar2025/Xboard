@@ -41,17 +41,33 @@ if (!function_exists('admin_settings_batch')) {
     }
 }
 
-if (!function_exists('origin_url')) {
+if (!function_exists('source_base_url')) {
     /**
-     * 根据 HTTP_ORIGIN 拼接完整 URL
+     * 获取来源基础URL，优先Referer，其次Host
      * @param string $path
      * @return string
      */
-    function origin_url(string $path = ''): string
+    function source_base_url(string $path = ''): string
     {
-        $origin = request()->getSchemeAndHttpHost(); // 自动带端口
-        $origin = rtrim($origin, '/');
+        $baseUrl = '';
+        $referer = request()->header('Referer');
+
+        if ($referer) {
+            $parsedUrl = parse_url($referer);
+            if (isset($parsedUrl['scheme']) && isset($parsedUrl['host'])) {
+                $baseUrl = $parsedUrl['scheme'] . '://' . $parsedUrl['host'];
+                if (isset($parsedUrl['port'])) {
+                    $baseUrl .= ':' . $parsedUrl['port'];
+                }
+            }
+        }
+
+        if (!$baseUrl) {
+            $baseUrl = request()->getSchemeAndHttpHost();
+        }
+
+        $baseUrl = rtrim($baseUrl, '/');
         $path = ltrim($path, '/');
-        return $origin . '/' . $path;
+        return $baseUrl . '/' . $path;
     }
 }

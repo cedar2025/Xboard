@@ -2,30 +2,33 @@
 
 namespace App\Http\Controllers\V1\Guest;
 
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Payment;
 use App\Services\OrderService;
 use App\Services\PaymentService;
-use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Services\Plugin\HookManager;
 
 class PaymentController extends Controller
 {
     public function notify($method, $uuid, Request $request)
     {
+        HookManager::call('payment.notify.before', [$method, $uuid, $request]);
         try {
             $paymentService = new PaymentService($method, null, $uuid);
             $verify = $paymentService->notify($request->input());
-            if (!$verify)
+            if (!$verify) {
+                HookManager::call('payment.notify.failed', [$method, $uuid, $request]);
                 return $this->fail([422, 'verify error']);
+            }
+            HookManager::call('payment.notify.verified', $verify);
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
                 return $this->fail([400, 'handle error']);
             }
             return (isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, 'fail']);
         }
     }
@@ -43,22 +46,7 @@ class PaymentController extends Controller
             return false;
         }
 
-        $payment = Payment::where('id', $order->payment_id)->first();
-        $telegramService = new TelegramService();
-        $message = sprintf(
-            "💰成功收款%s元\n" .
-            "———————————————\n" .
-            "支付接口：%s\n" .
-            "支付渠道：%s\n" .
-            "本站订单：`%s`"
-            ,
-            $order->total_amount / 100,
-            $payment->payment,
-            $payment->name,
-            $order->trade_no
-        );
-        
-        $telegramService->sendMessageWithAdmin($message);
+        HookManager::call('payment.notify.success', $order);
         return true;
     }
 }
