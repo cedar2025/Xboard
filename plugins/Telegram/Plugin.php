@@ -65,13 +65,13 @@ class Plugin extends AbstractPlugin
     $this->telegramService->sendMessageWithAdmin($message, true);
   }
 
-  public function sendTicketNotify(array $data): void
+  public function sendTicketNotify(Ticket $ticket): void
   {
     if (!$this->getConfig('enable_ticket_notify', true)) {
       return;
     }
 
-    [$ticket, $message] = $data;
+    $message = $ticket->messages()->latest()->first();
     $user = User::find($ticket->user_id);
     if (!$user)
       return;
