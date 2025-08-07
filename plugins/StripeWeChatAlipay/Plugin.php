@@ -95,9 +95,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'options' => [
                     ['value' => 'wechat_pay', 'label' => '微信支付 (WeChat Pay)'],
                     ['value' => 'alipay', 'label' => '支付宝 (Alipay)'],
-                    ['value' => 'card', 'label' => '信用卡/借记卡 (Card)'],
-                    ['value' => 'wechat_alipay', 'label' => '微信支付 + 支付宝'],
-                    ['value' => 'card_wechat_alipay', 'label' => '信用卡 + 微信支付 + 支付宝']
+                    ['value' => 'card', 'label' => '信用卡/借记卡 (Card)']
                 ],
                 'default' => 'card_wechat_alipay',
                 'description' => '选择支持的支付方式'
