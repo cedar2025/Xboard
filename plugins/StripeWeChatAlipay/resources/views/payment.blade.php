@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe 微信支付/支付宝 - 支付处理</title>
+    <title>Stripe 微信支付/支付宝/信用卡/借记卡 - 支付处理</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
@@ -172,7 +172,7 @@
             <h3>订单信息</h3>
             <p><strong>订单号：</strong><span id="order-id">{{ $order['trade_no'] ?? '' }}</span></p>
             <p><strong>金额：</strong><span id="amount">{{ number_format(($order['total_amount'] ?? 0) / 100, 2) }}</span> <span id="currency">{{ $paymentData['currency'] ?? 'CNY' }}</span></p>
-            <p><strong>商品：</strong><span id="description">订阅服务</span></p>
+            <p><strong>商品：</strong><span id="description">PremiumLinks</span></p>
         </div>
 
         <div class="payment-methods" id="payment-methods">
