@@ -219,7 +219,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             'payment_method_types' => $paymentMethodTypes,
             'confirmation_method' => 'automatic',
             'confirm' => false, // 不立即确认，让前端处理
-            'statement_descriptor_suffix' => 'XBoard',
+            'statement_descriptor_suffix' => 'PremiumLinks',
             'description' => $this->getConfig('product_description', '订阅服务'),
             'metadata' => [
                 'user_id' => $order['user_id'],
