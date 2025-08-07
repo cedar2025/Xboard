@@ -41,6 +41,12 @@ class Plugin extends AbstractPlugin implements PaymentInterface
      */
     private function registerRoutes(): void
     {
+        // 手动加载控制器类
+        $controllerFile = $this->getBasePath() . '/Controllers/PaymentController.php';
+        if (file_exists($controllerFile)) {
+            require_once $controllerFile;
+        }
+        
         $routeFile = $this->getBasePath() . '/routes/web.php';
         if (file_exists($routeFile)) {
             include $routeFile;
@@ -89,9 +95,11 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'options' => [
                     ['value' => 'wechat_pay', 'label' => '微信支付 (WeChat Pay)'],
                     ['value' => 'alipay', 'label' => '支付宝 (Alipay)'],
-                    ['value' => 'both', 'label' => '微信支付 + 支付宝']
+                    ['value' => 'card', 'label' => '信用卡/借记卡 (Card)'],
+                    ['value' => 'wechat_alipay', 'label' => '微信支付 + 支付宝'],
+                    ['value' => 'card_wechat_alipay', 'label' => '信用卡 + 微信支付 + 支付宝']
                 ],
-                'default' => 'both',
+                'default' => 'card_wechat_alipay',
                 'description' => '选择支持的支付方式'
             ],
             'currency' => [
@@ -195,11 +203,14 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     {
         // 根据支付方式设置可用的支付方法
         $paymentMethodTypes = [];
-        if ($paymentMethod === 'wechat_pay' || $paymentMethod === 'both') {
+        if ($paymentMethod === 'wechat_pay' || $paymentMethod === 'wechat_alipay' || $paymentMethod === 'card_wechat_alipay') {
             $paymentMethodTypes[] = 'wechat_pay';
         }
-        if ($paymentMethod === 'alipay' || $paymentMethod === 'both') {
+        if ($paymentMethod === 'alipay' || $paymentMethod === 'wechat_alipay' || $paymentMethod === 'card_wechat_alipay') {
             $paymentMethodTypes[] = 'alipay';
+        }
+        if ($paymentMethod === 'card' || $paymentMethod === 'card_wechat_alipay') {
+            $paymentMethodTypes[] = 'card';
         }
 
         $params = [
@@ -252,6 +263,31 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     private function confirmPaymentForSingleMethod($paymentIntent, $paymentMethodType, $order): array
     {
         try {
+            // Card支付特殊处理：返回支付页面URL，让用户进入card支付流程
+            if ($paymentMethodType === 'card') {
+                Log::info('Card支付返回支付页面URL', [
+                    'payment_intent_id' => $paymentIntent->id,
+                    'trade_no' => $order['trade_no']
+                ]);
+                
+                $paymentPageUrl = url("/plugins/stripe-wechat-alipay/payment") . '?' . http_build_query([
+                    'client_secret' => $paymentIntent->client_secret,
+                    'payment_intent_id' => $paymentIntent->id,
+                    'publishable_key' => $this->getConfig('stripe_publishable_key'),
+                    'payment_methods' => 'card',
+                    'return_url' => $order['return_url'],
+                    'trade_no' => $order['trade_no'],
+                    'currency' => strtoupper($this->getConfig('currency', 'CNY')),
+                    'amount' => $paymentIntent->amount
+                ]);
+                
+                return [
+                    'type' => 1, // 重定向类型，与现有前端兼容
+                    'data' => $paymentPageUrl
+                ];
+            }
+            
+            // WeChat Pay和Alipay的原有逻辑
             // 创建支付方法
             $paymentMethod = $this->stripe->paymentMethods->create([
                 'type' => $paymentMethodType,
@@ -310,6 +346,16 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                     return [
                         'type' => 1, // 重定向类型
                         'data' => $nextAction->alipay_handle_redirect->url
+                    ];
+                } elseif ($paymentMethodType === 'card' && isset($nextAction->use_stripe_sdk)) {
+                    // Card支付需要客户端确认
+                    return [
+                        'type' => 2, // 客户端确认类型
+                        'data' => [
+                            'client_secret' => $confirmedPaymentIntent->client_secret,
+                            'publishable_key' => $this->getConfig('stripe_publishable_key'),
+                            'payment_intent_id' => $confirmedPaymentIntent->id
+                        ]
                     ];
                 }
             }
