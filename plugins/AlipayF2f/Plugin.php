@@ -36,13 +36,13 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             ],
             'private_key' => [
                 'label' => '支付宝私钥',
-                'type' => 'textarea',
+                'type' => 'text',
                 'required' => true,
                 'description' => '应用私钥，用于签名'
             ],
             'public_key' => [
                 'label' => '支付宝公钥',
-                'type' => 'textarea',
+                'type' => 'text',
                 'required' => true,
                 'description' => '支付宝公钥，用于验签'
             ],
