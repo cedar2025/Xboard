@@ -173,11 +173,10 @@ class UserService
         // 默认设置
         $user->remind_expire = admin_setting('default_remind_expire', 1);
         $user->remind_traffic = admin_setting('default_remind_traffic', 1);
+        $user->expired_at = 0;
 
         // 可选字段
         $this->setOptionalFields($user, $data);
-
-        $user->expired_at = 0;
 
         // 处理计划
         if (isset($data['plan_id'])) {
