@@ -10,7 +10,7 @@ use App\Support\AbstractProtocol;
 
 class ClashMeta extends AbstractProtocol
 {
-    public $flags = ['meta', 'verge', 'flclash', 'nekobox', 'clashmetaforandroid'];
+    public $flags = ['meta', 'verge', 'flclash', 'nekobox', 'clashmetaforandroid', 'mihomo.party'];
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clashmeta.yaml';
     const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
@@ -56,6 +56,10 @@ class ClashMeta extends AbstractProtocol
         ],
         'flclash.hysteria.protocol_settings.version' => [
             2 => '0.8.0',
+        ],
+        'mihomo.party.hysteria.protocol_settings.version' => [
+            1 => '1.7.3',
+            2 => '1.7.3',
         ],
     ];
 
