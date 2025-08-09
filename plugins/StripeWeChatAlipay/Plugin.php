@@ -46,7 +46,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 } elseif ($paymentMethod === 'stripe_checkout') {
                     // 新增：Stripe Checkout 选项（包含所有支付方式）
                     $methods['StripeCheckout'] = [
-                        'name' => 'Stripe 支付 (Card/WeChat/Alipay)',
+                        'name' => 'Stripe 支付 (Card/WeChat/Alipay/Google Pay)',
                         'icon' => '🌟',
                         'plugin_code' => $this->getPluginCode(),
                         'type' => 'plugin'
@@ -327,6 +327,8 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 $paymentMethodTypes[] = 'card';
             }
             
+            // Google Pay 会由 Stripe 自动检测并显示，无需在 payment_method_types 中指定
+            
             // 如果没有匹配的支付方式，默认使用card
             if (empty($paymentMethodTypes)) {
                 $paymentMethodTypes = ['card'];
@@ -334,6 +336,26 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                     'currency' => $currency,
                     'payment_method' => $paymentMethod
                 ]);
+            }
+
+            // 获取用户邮箱信息
+            $userEmail = '';
+            $userName = '';
+            
+            if (!empty($order['user_id'])) {
+                try {
+                    $user = \App\Models\User::find($order['user_id']);
+                    if ($user && $user->email) {
+                        $userEmail = $user->email;
+                        // 提取邮箱@符号前的部分作为姓名
+                        $userName = strstr($userEmail, '@', true);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('获取用户邮箱失败', [
+                        'user_id' => $order['user_id'],
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             // 构建Checkout Session参数
@@ -374,12 +396,25 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'locale' => 'auto'
             ];
 
+            // 如果有用户邮箱，预填到Checkout页面
+            if ($userEmail) {
+                $sessionParams['customer_email'] = $userEmail;
+                
+                Log::info('Stripe Checkout 预填用户信息', [
+                    'user_email' => $userEmail,
+                    'user_name' => $userName,
+                    'trade_no' => $order['trade_no']
+                ]);
+            }
+
             // 如果包含 WeChat Pay，需要设置 payment_method_options
             if (in_array('wechat_pay', $paymentMethodTypes)) {
+                $wechatOptions = [
+                    'client' => 'web' // Checkout页面只支持web客户端
+                ];
+                
                 $sessionParams['payment_method_options'] = [
-                    'wechat_pay' => [
-                        'client' => 'web' // Checkout页面只支持web客户端
-                    ]
+                    'wechat_pay' => $wechatOptions
                 ];
             }
 
@@ -391,7 +426,8 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'amount' => $amount,
                 'currency' => $currency,
                 'payment_method_types' => $paymentMethodTypes,
-                'checkout_url' => $session->url
+                'checkout_url' => $session->url,
+                'supported_methods' => implode(', ', $paymentMethodTypes)
             ]);
 
             return [
