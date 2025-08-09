@@ -46,7 +46,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 } elseif ($paymentMethod === 'stripe_checkout') {
                     // 新增：Stripe Checkout 选项（包含所有支付方式）
                     $methods['StripeCheckout'] = [
-                        'name' => 'Stripe 支付 (Card/WeChat/Alipay)',
+                        'name' => 'Stripe 支付 (Card/WeChat/Alipay/Google Pay)',
                         'icon' => '🌟',
                         'plugin_code' => $this->getPluginCode(),
                         'type' => 'plugin'
@@ -327,6 +327,8 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 $paymentMethodTypes[] = 'card';
             }
             
+            // Google Pay 会由 Stripe 自动检测并显示，无需在 payment_method_types 中指定
+            
             // 如果没有匹配的支付方式，默认使用card
             if (empty($paymentMethodTypes)) {
                 $paymentMethodTypes = ['card'];
@@ -424,7 +426,8 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'amount' => $amount,
                 'currency' => $currency,
                 'payment_method_types' => $paymentMethodTypes,
-                'checkout_url' => $session->url
+                'checkout_url' => $session->url,
+                'supported_methods' => implode(', ', $paymentMethodTypes)
             ]);
 
             return [
