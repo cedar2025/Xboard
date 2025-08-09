@@ -19,12 +19,47 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     {
         $this->filter('available_payment_methods', function ($methods) {
             if ($this->getConfig('enabled', true)) {
-                $methods['StripeWeChatAlipay'] = [
-                    'name' => $this->getConfig('display_name', 'Stripe微信支付宝'),
-                    'icon' => $this->getConfig('icon', '💳'),
-                    'plugin_code' => $this->getPluginCode(),
-                    'type' => 'plugin'
-                ];
+                $paymentMethod = $this->getConfig('payment_method', 'card_wechat_alipay');
+                
+                // 根据配置注册不同的支付方式
+                if ($paymentMethod === 'wechat_pay') {
+                    $methods['StripeWeChatPay'] = [
+                        'name' => 'WeChat Pay (微信支付)',
+                        'icon' => '💬',
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                } elseif ($paymentMethod === 'alipay') {
+                    $methods['StripeAlipay'] = [
+                        'name' => 'Alipay (支付宝)',
+                        'icon' => '💙',
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                } elseif ($paymentMethod === 'card') {
+                    $methods['StripeCard'] = [
+                        'name' => 'Credit/Debit Card (信用卡)',
+                        'icon' => '💳',
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                } elseif ($paymentMethod === 'stripe_checkout') {
+                    // 新增：Stripe Checkout 选项（包含所有支付方式）
+                    $methods['StripeCheckout'] = [
+                        'name' => 'Stripe 支付 (Card/WeChat/Alipay)',
+                        'icon' => '🌟',
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                } else {
+                    // 兼容原有配置
+                    $methods['StripeWeChatAlipay'] = [
+                        'name' => $this->getConfig('display_name', 'Stripe微信支付宝'),
+                        'icon' => $this->getConfig('icon', '💳'),
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                }
             }
             return $methods;
         });
@@ -89,16 +124,18 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'placeholder' => 'whsec_...'
             ],
             'payment_method' => [
-                'label' => '支付方式',
+                'label' => '支付方式模式',
                 'type' => 'select',
                 'required' => true,
                 'options' => [
-                    ['value' => 'wechat_pay', 'label' => '微信支付 (WeChat Pay)'],
-                    ['value' => 'alipay', 'label' => '支付宝 (Alipay)'],
-                    ['value' => 'card', 'label' => '信用卡/借记卡 (Card)']
+                    ['value' => 'wechat_pay', 'label' => '微信支付 (WeChat Pay) - 传统自定义页面'],
+                    ['value' => 'alipay', 'label' => '支付宝 (Alipay) - 传统自定义页面'],
+                    ['value' => 'card', 'label' => '信用卡/借记卡 (Card) - 传统自定义页面'],
+                    ['value' => 'stripe_checkout', 'label' => 'Stripe 官方支付页面 - 支持 Card/WeChat/Alipay (推荐)'],
+                    ['value' => 'card_wechat_alipay', 'label' => '兼容模式 - 全部支付方式 (旧版配置兼容)']
                 ],
-                'default' => 'card_wechat_alipay',
-                'description' => '选择支持的支付方式'
+                'default' => 'stripe_checkout',
+                'description' => '推荐使用 "Stripe 官方支付页面"，用户在一个专业页面可选择所有支付方式。'
             ],
             'currency' => [
                 'label' => '货币类型',
@@ -199,7 +236,12 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     private function createPaymentIntent($order, $amount, $currency, $paymentMethod): array
     {
-        // 根据支付方式设置可用的支付方法
+        // 如果是 stripe_checkout 模式，直接使用 Checkout Session
+        if ($paymentMethod === 'stripe_checkout') {
+            return $this->createCheckoutSession($order, $amount, $currency, 'card_wechat_alipay');
+        }
+
+        // 传统模式：根据支付方式设置可用的支付方法
         $paymentMethodTypes = [];
         if ($paymentMethod === 'wechat_pay' || $paymentMethod === 'wechat_alipay' || $paymentMethod === 'card_wechat_alipay') {
             $paymentMethodTypes[] = 'wechat_pay';
@@ -211,6 +253,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             $paymentMethodTypes[] = 'card';
         }
 
+        // 使用传统的Payment Intent + 自定义页面逻辑
         $params = [
             'amount' => $amount,
             'currency' => strtolower($currency),
@@ -256,14 +299,125 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     }
 
     /**
+     * 创建Stripe Checkout会话（原生支付页面）
+     */
+    private function createCheckoutSession($order, $amount, $currency, $paymentMethod = 'card'): array
+    {
+        try {
+            // 根据配置的支付方式设置Checkout支持的支付方法
+            $paymentMethodTypes = [];
+            $currencyLower = strtolower($currency);
+            
+            // WeChat Pay 支持的货币检查
+            $wechatSupportedCurrencies = ['cny', 'usd', 'hkd', 'eur', 'gbp', 'jpy', 'sgd', 'aud', 'cad'];
+            if (($paymentMethod === 'wechat_pay' || $paymentMethod === 'wechat_alipay' || $paymentMethod === 'card_wechat_alipay') 
+                && in_array($currencyLower, $wechatSupportedCurrencies)) {
+                $paymentMethodTypes[] = 'wechat_pay';
+            }
+            
+            // Alipay 支持的货币检查  
+            $alipaySupportedCurrencies = ['cny', 'usd', 'hkd', 'eur', 'gbp', 'jpy', 'sgd', 'aud', 'cad', 'nzd'];
+            if (($paymentMethod === 'alipay' || $paymentMethod === 'wechat_alipay' || $paymentMethod === 'card_wechat_alipay')
+                && in_array($currencyLower, $alipaySupportedCurrencies)) {
+                $paymentMethodTypes[] = 'alipay';
+            }
+            
+            // Card 支持所有货币
+            if ($paymentMethod === 'card' || $paymentMethod === 'card_wechat_alipay') {
+                $paymentMethodTypes[] = 'card';
+            }
+            
+            // 如果没有匹配的支付方式，默认使用card
+            if (empty($paymentMethodTypes)) {
+                $paymentMethodTypes = ['card'];
+                Log::warning('没有支持的支付方式，默认使用Card', [
+                    'currency' => $currency,
+                    'payment_method' => $paymentMethod
+                ]);
+            }
+
+            // 构建Checkout Session参数
+            $sessionParams = [
+                'payment_method_types' => $paymentMethodTypes,
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => strtolower($currency),
+                            'product_data' => [
+                                'name' => $this->getConfig('product_description', '订阅服务'),
+                                'description' => 'PremiumLinks - 订单号: ' . $order['trade_no'],
+                            ],
+                            'unit_amount' => $amount,
+                        ],
+                        'quantity' => 1,
+                    ],
+                ],
+                'mode' => 'payment',
+                'success_url' => $order['return_url'] . '?session_id={CHECKOUT_SESSION_ID}&trade_no=' . $order['trade_no'],
+                'cancel_url' => $order['return_url'] . '?canceled=1&trade_no=' . $order['trade_no'],
+                'metadata' => [
+                    'user_id' => $order['user_id'],
+                    'out_trade_no' => $order['trade_no'],
+                    'order_amount' => $order['total_amount']
+                ],
+                'payment_intent_data' => [
+                    'metadata' => [
+                        'user_id' => $order['user_id'],
+                        'out_trade_no' => $order['trade_no'],
+                        'order_amount' => $order['total_amount']
+                    ],
+                    'statement_descriptor_suffix' => 'PremiumLinks',
+                    'capture_method' => ($this->getConfig('auto_capture', 'true') === 'true') ? 'automatic' : 'manual'
+                ],
+                'billing_address_collection' => 'auto',
+                'customer_creation' => 'always',
+                'locale' => 'auto'
+            ];
+
+            // 如果包含 WeChat Pay，需要设置 payment_method_options
+            if (in_array('wechat_pay', $paymentMethodTypes)) {
+                $sessionParams['payment_method_options'] = [
+                    'wechat_pay' => [
+                        'client' => 'web' // Checkout页面只支持web客户端
+                    ]
+                ];
+            }
+
+            $session = $this->stripe->checkout->sessions->create($sessionParams);
+
+            Log::info('Stripe Checkout会话创建成功', [
+                'session_id' => $session->id,
+                'trade_no' => $order['trade_no'],
+                'amount' => $amount,
+                'currency' => $currency,
+                'payment_method_types' => $paymentMethodTypes,
+                'checkout_url' => $session->url
+            ]);
+
+            return [
+                'type' => 1, // 重定向类型
+                'data' => $session->url // 直接跳转到Stripe Checkout页面
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('创建Stripe Checkout会话失败', [
+                'error' => $e->getMessage(),
+                'trade_no' => $order['trade_no'],
+                'payment_method' => $paymentMethod
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * 确认单一支付方式的支付
      */
     private function confirmPaymentForSingleMethod($paymentIntent, $paymentMethodType, $order): array
     {
         try {
-            // Card支付特殊处理：返回支付页面URL，让用户进入card支付流程
+            // Card支付处理（仅在使用自定义页面时）
             if ($paymentMethodType === 'card') {
-                Log::info('Card支付返回支付页面URL', [
+                Log::info('Card支付返回自定义支付页面URL', [
                     'payment_intent_id' => $paymentIntent->id,
                     'trade_no' => $order['trade_no']
                 ]);
@@ -471,7 +625,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     private function processUrlCallback($params): array|bool
     {
         // 检查必要的参数
-        if (empty($params['payment_intent']) && empty($params['trade_no'])) {
+        if (empty($params['payment_intent']) && empty($params['trade_no']) && empty($params['session_id'])) {
             Log::error('URL回调缺少必要参数', ['params' => $params]);
             return false;
         }
@@ -479,6 +633,12 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         try {
             $this->initializeStripe();
 
+            // 处理Stripe Checkout回调
+            if (!empty($params['session_id'])) {
+                return $this->processCheckoutCallback($params);
+            }
+
+            // 处理Payment Intent回调
             $paymentIntentId = $params['payment_intent'] ?? null;
             $tradeNo = $params['trade_no'] ?? null;
 
@@ -529,6 +689,59 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         }
     }
 
+    /**
+     * 处理Stripe Checkout回调
+     */
+    private function processCheckoutCallback($params): array|bool
+    {
+        $sessionId = $params['session_id'];
+        $tradeNo = $params['trade_no'] ?? null;
+
+        try {
+            // 检索Checkout Session
+            $session = $this->stripe->checkout->sessions->retrieve($sessionId);
+
+            if ($session->payment_status === 'paid') {
+                $tradeNo = $session->metadata->out_trade_no ?? $tradeNo;
+                
+                if (!$tradeNo) {
+                    Log::error('Checkout Session中缺少订单号', [
+                        'session_id' => $sessionId
+                    ]);
+                    return false;
+                }
+
+                Log::info('Stripe Checkout支付成功', [
+                    'session_id' => $sessionId,
+                    'payment_intent_id' => $session->payment_intent,
+                    'trade_no' => $tradeNo,
+                    'amount_total' => $session->amount_total,
+                    'currency' => $session->currency
+                ]);
+
+                return [
+                    'trade_no' => $tradeNo,
+                    'callback_no' => $session->payment_intent,
+                    'custom_result' => 'success'
+                ];
+            } else {
+                Log::warning('Checkout Session支付状态不是成功', [
+                    'session_id' => $sessionId,
+                    'payment_status' => $session->payment_status
+                ]);
+                return false;
+            }
+
+        } catch (\Exception $e) {
+            Log::error('处理Checkout回调失败', [
+                'error' => $e->getMessage(),
+                'session_id' => $sessionId,
+                'trade_no' => $tradeNo
+            ]);
+            return false;
+        }
+    }
+
     private function processWebhookEvent($event): array|bool
     {
         $eventType = $event->type;
@@ -553,6 +766,9 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                     'payment_intent_id' => $object->id
                 ]);
                 return false;
+
+            case 'checkout.session.completed':
+                return $this->handleCheckoutSessionCompleted($object);
 
             default:
                 Log::warning('未处理的 Stripe webhook 事件类型', [
@@ -605,6 +821,41 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             'last_payment_error' => $object->last_payment_error ?? 'unknown'
         ]);
         return false;
+    }
+
+    private function handleCheckoutSessionCompleted($object): array|bool
+    {
+        if ($object->payment_status !== 'paid') {
+            Log::warning('Checkout会话完成但支付状态不是已付款', [
+                'session_id' => $object->id,
+                'payment_status' => $object->payment_status
+            ]);
+            return false;
+        }
+
+        // 检查元数据中是否包含订单号
+        if (empty($object->metadata) || empty($object->metadata->out_trade_no)) {
+            Log::error('Checkout会话元数据中缺少订单号', [
+                'session_id' => $object->id,
+                'metadata' => $object->metadata ?? 'null'
+            ]);
+            return false;
+        }
+
+        $tradeNo = $object->metadata->out_trade_no;
+        Log::info('Checkout支付成功', [
+            'session_id' => $object->id,
+            'payment_intent_id' => $object->payment_intent,
+            'trade_no' => $tradeNo,
+            'amount_total' => $object->amount_total,
+            'currency' => $object->currency,
+            'user_id' => $object->metadata->user_id ?? 'unknown'
+        ]);
+
+        return [
+            'trade_no' => $tradeNo,
+            'callback_no' => $object->payment_intent
+        ];
     }
 
     private function getStripeSignatureHeader(): string
