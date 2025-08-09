@@ -336,6 +336,26 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 ]);
             }
 
+            // 获取用户邮箱信息
+            $userEmail = '';
+            $userName = '';
+            
+            if (!empty($order['user_id'])) {
+                try {
+                    $user = \App\Models\User::find($order['user_id']);
+                    if ($user && $user->email) {
+                        $userEmail = $user->email;
+                        // 提取邮箱@符号前的部分作为姓名
+                        $userName = strstr($userEmail, '@', true);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('获取用户邮箱失败', [
+                        'user_id' => $order['user_id'],
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
             // 构建Checkout Session参数
             $sessionParams = [
                 'payment_method_types' => $paymentMethodTypes,
@@ -374,12 +394,30 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'locale' => 'auto'
             ];
 
+            // 如果有用户邮箱，预填到Checkout页面
+            if ($userEmail) {
+                $sessionParams['customer_email'] = $userEmail;
+                
+                Log::info('Stripe Checkout 预填用户信息', [
+                    'user_email' => $userEmail,
+                    'user_name' => $userName,
+                    'trade_no' => $order['trade_no']
+                ]);
+            }
+
             // 如果包含 WeChat Pay，需要设置 payment_method_options
             if (in_array('wechat_pay', $paymentMethodTypes)) {
+                $wechatOptions = [
+                    'client' => 'web' // Checkout页面只支持web客户端
+                ];
+                
+                // 如果有用户姓名，设置为WeChat Pay的display name
+                if ($userName) {
+                    $wechatOptions['setup_future_usage'] = 'off_session';
+                }
+                
                 $sessionParams['payment_method_options'] = [
-                    'wechat_pay' => [
-                        'client' => 'web' // Checkout页面只支持web客户端
-                    ]
+                    'wechat_pay' => $wechatOptions
                 ];
             }
 
