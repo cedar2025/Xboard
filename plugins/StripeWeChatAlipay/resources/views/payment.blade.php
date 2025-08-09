@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe 微信支付/支付宝 - 支付处理</title>
+    <title>Stripe 微信支付/支付宝/信用卡/借记卡 - 支付处理</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
@@ -58,6 +58,14 @@
         }
         .payment-button.alipay:hover {
             background: #1677ff;
+            color: white;
+        }
+        .payment-button.card {
+            border-color: #6772e5;
+            color: #6772e5;
+        }
+        .payment-button.card:hover {
+            background: #6772e5;
             color: white;
         }
         .status {
@@ -116,6 +124,44 @@
             margin: 20px auto;
             max-width: 300px;
         }
+        .card-form {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            text-align: left;
+        }
+        #card-element {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 10px 0;
+            background: white;
+        }
+        #card-errors {
+            color: #d1242f;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .pay-button {
+            width: 100%;
+            padding: 15px;
+            background: #6772e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .pay-button:hover {
+            background: #5469d4;
+        }
+        .pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -126,7 +172,7 @@
             <h3>订单信息</h3>
             <p><strong>订单号：</strong><span id="order-id">{{ $order['trade_no'] ?? '' }}</span></p>
             <p><strong>金额：</strong><span id="amount">{{ number_format(($order['total_amount'] ?? 0) / 100, 2) }}</span> <span id="currency">{{ $paymentData['currency'] ?? 'CNY' }}</span></p>
-            <p><strong>商品：</strong><span id="description">订阅服务</span></p>
+            <p><strong>商品：</strong><span id="description">PremiumLinks</span></p>
         </div>
 
         <div class="payment-methods" id="payment-methods">
@@ -141,6 +187,12 @@
                 💙 支付宝
             </button>
             @endif
+            
+            @if(in_array('card', $paymentData['payment_methods'] ?? []))
+            <button class="payment-button card" onclick="showCardForm()">
+                💳 信用卡/借记卡
+            </button>
+            @endif
         </div>
 
         <div class="loading" id="loading">
@@ -153,6 +205,21 @@
             <div id="qr-code"></div>
             <p>扫码后请按提示完成支付</p>
         </div>
+        
+        <div class="card-form" id="card-form">
+            <h3>💳 信用卡/借记卡支付</h3>
+            <p>请输入您的银行卡信息：</p>
+            <div id="card-element">
+                <!-- Stripe Elements will create form elements here -->
+            </div>
+            <div id="card-errors" role="alert"></div>
+            <button class="pay-button" id="card-pay-button" onclick="processCardPayment()">
+                立即支付
+            </button>
+            <button class="payment-button" onclick="hideCardForm()" style="margin-top: 10px; background: #6c757d; color: white; border: none;">
+                返回选择其他支付方式
+            </button>
+        </div>
 
         <div class="status" id="status"></div>
     </div>
@@ -161,6 +228,20 @@
         const stripe = Stripe('{{ $paymentData["publishable_key"] ?? "" }}');
         const clientSecret = '{{ $paymentData["client_secret"] ?? "" }}';
         const returnUrl = '{{ $paymentData["return_url"] ?? "" }}';
+        
+        // 初始化Stripe Elements
+        const elements = stripe.elements();
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                        color: '#aab7c4',
+                    },
+                },
+            },
+        });
 
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status');
@@ -274,6 +355,79 @@
             }, 600000);
         }
 
+        // Card支付相关函数
+        function showCardForm() {
+            document.getElementById('payment-methods').style.display = 'none';
+            document.getElementById('card-form').style.display = 'block';
+            
+            // 挂载card element
+            cardElement.mount('#card-element');
+            
+            // 监听卡片输入错误
+            cardElement.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+        }
+        
+        function hideCardForm() {
+            document.getElementById('card-form').style.display = 'none';
+            document.getElementById('payment-methods').style.display = 'flex';
+            cardElement.unmount();
+        }
+        
+        async function processCardPayment() {
+            const payButton = document.getElementById('card-pay-button');
+            payButton.disabled = true;
+            payButton.textContent = '正在处理...';
+            
+            showStatus('正在处理银行卡支付...', 'processing');
+            
+            try {
+                const result = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement,
+                        billing_details: {
+                            name: 'Customer', // 可以根据需要动态设置
+                        },
+                    },
+                    return_url: returnUrl,
+                });
+                
+                if (result.error) {
+                    console.error('Card payment error:', result.error);
+                    showStatus('支付失败: ' + result.error.message, 'error');
+                    payButton.disabled = false;
+                    payButton.textContent = '立即支付';
+                } else {
+                    const paymentIntent = result.paymentIntent;
+                    
+                    if (paymentIntent.status === 'succeeded') {
+                        showStatus('支付成功！正在跳转...', 'success');
+                        setTimeout(() => {
+                            window.location.href = returnUrl + '&payment_intent=' + paymentIntent.id;
+                        }, 2000);
+                    } else if (paymentIntent.status === 'requires_action') {
+                        showStatus('需要进一步验证，请按提示操作', 'processing');
+                        // Stripe将自动处理3D Secure等额外验证
+                    } else {
+                        showStatus('支付状态: ' + paymentIntent.status, 'processing');
+                        payButton.disabled = false;
+                        payButton.textContent = '立即支付';
+                    }
+                }
+            } catch (error) {
+                console.error('Card payment processing error:', error);
+                showStatus('支付处理失败: ' + error.message, 'error');
+                payButton.disabled = false;
+                payButton.textContent = '立即支付';
+            }
+        }
+        
         // 页面加载时检查URL参数
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
