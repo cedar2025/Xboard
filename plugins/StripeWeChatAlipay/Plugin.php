@@ -411,11 +411,6 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                     'client' => 'web' // Checkout页面只支持web客户端
                 ];
                 
-                // 如果有用户姓名，设置为WeChat Pay的display name
-                if ($userName) {
-                    $wechatOptions['setup_future_usage'] = 'off_session';
-                }
-                
                 $sessionParams['payment_method_options'] = [
                     'wechat_pay' => $wechatOptions
                 ];
