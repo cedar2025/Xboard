@@ -68,13 +68,10 @@ class Plugin extends AbstractPlugin
   public function sendTicketNotify(Ticket $ticket): void
   {
     if (!$this->getConfig('enable_ticket_notify', true)) {
-        return;
+      return;
     }
 
     $message = $ticket->messages()->latest()->first();
-    if (!$message) {
-        return;
-    }
     $user = User::find($ticket->user_id);
     if (!$user)
       return;

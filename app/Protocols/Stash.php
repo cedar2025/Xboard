@@ -116,6 +116,10 @@ class Stash extends AbstractProtocol
                 array_push($proxy, self::buildTuic($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
+            // if ($item['type'] === 'anytls') {
+            //     array_push($proxy, self::buildAnyTLS($item['password'], $item));
+            //     array_push($proxies, $item['name']);
+            // }
             if ($item['type'] === Server::TYPE_SOCKS) {
                 array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
@@ -417,6 +421,23 @@ class Stash extends AbstractProtocol
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['sni'] = $serverName;
         }
+
+        return $array;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $array = [
+            'name' => $server['name'],
+            'type' => 'anytls',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'sni' => data_get($protocol_settings, 'tls_settings.server_name'),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+            'udp' => true,
+        ];
 
         return $array;
     }
