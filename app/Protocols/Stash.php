@@ -18,7 +18,7 @@ class Stash extends AbstractProtocol
         Server::TYPE_HYSTERIA,
         Server::TYPE_TROJAN,
         Server::TYPE_TUIC,
-            // Server::TYPE_ANYTLS,
+        // Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
@@ -249,6 +249,9 @@ class Stash extends AbstractProtocol
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
                 $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
+                    $array['http-opts']['headers']['Host'] = $host;
+                }
                 break;
             case 'ws':
                 $array['network'] = 'ws';
@@ -291,16 +294,24 @@ class Stash extends AbstractProtocol
                 break;
             case 2:
                 $array['tls'] = true;
-                $array['reality-opts']= [
+                if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
+                    $array['servername'] = $serverName;
+                    $array['sni'] = $serverName;
+                }
+                $array['flow'] = data_get($protocol_settings, 'flow');
+                $array['reality-opts'] = [
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
                     'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
                 ];
+                break;
         }
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                if ($headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp') != 'tcp') {
+                    $array['network'] = $headerType;
+                    $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                }
                 break;
             case 'ws':
                 $array['network'] = 'ws';
@@ -313,11 +324,11 @@ class Stash extends AbstractProtocol
                 $array['network'] = 'grpc';
                 $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
                 break;
-            // case 'h2':
-            //     $array['network'] = 'h2';
-            //     $array['h2-opts']['host'] = data_get($protocol_settings, 'network_settings.host');
-            //     $array['h2-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
-            //     break;
+                // case 'h2':
+                //     $array['network'] = 'h2';
+                //     $array['h2-opts']['host'] = data_get($protocol_settings, 'network_settings.host');
+                //     $array['h2-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
+                //     break;
         }
 
         return $array;
@@ -380,7 +391,6 @@ class Stash extends AbstractProtocol
                 break;
         }
         return $array;
-
     }
 
     public static function buildTuic($password, $server)

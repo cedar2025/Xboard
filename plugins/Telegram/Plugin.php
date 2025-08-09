@@ -71,7 +71,7 @@ class Plugin extends AbstractPlugin
         return;
     }
 
-    $message = $ticket->message()->orderBy('id', 'desc')->first();
+    $message = $ticket->messages()->latest()->first();
     if (!$message) {
         return;
     }

@@ -87,7 +87,7 @@ class TicketController extends Controller
         ) {
             return $this->fail([400, __('Ticket reply failed')]);
         }
-        HookManager::call('ticket.reply.user.after', [$ticket, $this->getLastMessage($ticket->id)]);
+        HookManager::call('ticket.reply.user.after', $ticket);
         return $this->success(true);
     }
 
