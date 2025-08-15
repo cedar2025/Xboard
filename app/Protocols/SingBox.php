@@ -193,10 +193,10 @@ class SingBox extends AbstractProtocol
         }
 
         $transport = match ($protocol_settings['network']) {
-            'tcp' => [
+            'tcp' => data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none' ? [
                 'type' => 'http',
                 'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
-            ],
+            ] : null,
             'ws' => [
                 'type' => 'ws',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
