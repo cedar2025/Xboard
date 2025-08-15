@@ -310,7 +310,7 @@ class SingBox extends AbstractProtocol
                 'insecure' => (bool) data_get($protocol_settings, 'allow_insecure', false),
             ]
         ];
-        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
             $array['tls']['server_name'] = $serverName;
         }
         $transport = match (data_get($protocol_settings, 'network')) {
@@ -353,7 +353,7 @@ class SingBox extends AbstractProtocol
             }
         }
 
-        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
         }
         $speedConfig = [
