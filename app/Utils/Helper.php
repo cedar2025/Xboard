@@ -205,10 +205,10 @@ class Helper
     
     /**
      * convert the transfer_enable to GB
-     * @param int $transfer_enable
-     * @return int
+     * @param float $transfer_enable
+     * @return float
      */
-    public static function transferToGB(int $transfer_enable): int
+    public static function transferToGB(float $transfer_enable): float
     {
         return $transfer_enable / 1073741824;
     }
