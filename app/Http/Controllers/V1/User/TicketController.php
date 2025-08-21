@@ -41,20 +41,16 @@ class TicketController extends Controller
 
     public function save(TicketSave $request)
     {
-        try {
-            $ticketService = new TicketService();
-            $ticket = $ticketService->createTicket(
-                $request->user()->id,
-                $request->input('subject'),
-                $request->input('level'),
-                $request->input('message')
-            );
-            HookManager::call('ticket.create.after', $ticket);
-            return $this->success(true);
-        } catch (\Exception $e) {
-            Log::error($e);
-            return $this->fail([400, $e->getMessage()]);
-        }
+        $ticketService = new TicketService();
+        $ticket = $ticketService->createTicket(
+            $request->user()->id,
+            $request->input('subject'),
+            $request->input('level'),
+            $request->input('message')
+        );
+        HookManager::call('ticket.create.after', $ticket);
+        return $this->success(true);
+
     }
 
     public function reply(Request $request)
