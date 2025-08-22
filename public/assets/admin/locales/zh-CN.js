@@ -972,6 +972,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "previousPage": "上一页",
         "nextPage": "下一页",
         "lastPage": "跳转到最后一页"
+      },
+      "viewOptions": {
+        "button": "显示列",
+        "label": "切换显示列"
       }
     },
     "update": {

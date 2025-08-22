@@ -967,6 +967,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "previousPage": "Previous page",
         "nextPage": "Next page",
         "lastPage": "Go to last page"
+      },
+      "viewOptions": {
+        "button": "Columns",
+        "label": "Toggle columns"
       }
     },
     "update": {
@@ -1198,62 +1202,74 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     }
   },
   "giftCard": {
-    "types": {
-      "1": "General Gift Card",
-      "2": "Plan-Specific Gift Card",
-      "3": "Mystery Box Reward",
-      "4": "Task Gift Card"
-    },
-    "status": {
-      "0": "Unused",
-      "1": "Used",
-      "2": "Disabled",
-      "3": "Expired"
+    "title": "Gift Card Management",
+    "description": "Manage gift card templates, redemption codes, and usage records.",
+    "tabs": {
+      "templates": "Template Management",
+      "codes": "Redemption Code Management",
+      "usages": "Usage Records",
+      "statistics": "Statistics"
     },
     "template": {
-      "title": "Gift Card Templates",
-      "add": "Add Template",
-      "search": "Search template name...",
+      "title": "Template Management",
+      "description": "Manage gift card templates, including creating, editing, and deleting templates.",
+      "table": {
+        "title": "Template List",
+        "columns": {
+          "id": "ID",
+          "name": "Name",
+          "type": "Type",
+          "status": "Status",
+          "sort": "Sort",
+          "rewards": "Rewards",
+          "created_at": "Created At",
+          "actions": "Actions",
+          "no_rewards": "No Rewards"
+        }
+      },
       "form": {
+        "add": "Add Template",
+        "edit": "Edit Template",
         "name": {
-          "label": "Name",
-          "placeholder": "Enter template name"
+          "label": "Template Name",
+          "placeholder": "Please enter template name",
+          "required": "Please enter template name"
         },
         "sort": {
           "label": "Sort",
-          "placeholder": "Smaller numbers come first"
+          "placeholder": "Smaller numbers appear first"
         },
         "type": {
           "label": "Type",
-          "placeholder": "Select gift card type"
+          "placeholder": "Please select gift card type"
         },
         "description": {
           "label": "Description",
-          "placeholder": "Enter gift card description"
+          "placeholder": "Please enter gift card description"
         },
         "status": {
           "label": "Status",
-          "description": "If disabled, this template cannot be used to generate or redeem new gift cards."
+          "description": "When disabled, this template cannot generate or redeem new gift cards."
         },
         "display": {
-          "title": "Display Settings"
+          "title": "Display Effect"
         },
         "theme_color": {
           "label": "Theme Color"
         },
         "icon": {
           "label": "Icon",
-          "placeholder": "Enter the URL of the icon"
+          "placeholder": "Please enter icon URL"
         },
         "background_image": {
           "label": "Background Image",
-          "placeholder": "Enter the URL of the background image"
+          "placeholder": "Please enter background image URL"
         },
         "conditions": {
           "title": "Usage Conditions",
           "new_user_max_days": {
-            "label": "New User Registration Day Limit",
-            "placeholder": "e.g., 7 (only for users registered within 7 days)"
+            "label": "New User Registration Days Limit",
+            "placeholder": "Example: 7 (Only for users registered within 7 days)"
           },
           "new_user_only": {
             "label": "New Users Only"
@@ -1262,15 +1278,15 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "label": "Paid Users Only"
           },
           "require_invite": {
-            "label": "Requires Invitation"
+            "label": "Require Invitation Relationship"
           },
           "allowed_plans": {
             "label": "Allowed Plans",
-            "placeholder": "Select allowed plans (leave empty for no restriction)"
+            "placeholder": "Select plans allowed for redemption (leave empty for no restriction)"
           },
           "disallowed_plans": {
             "label": "Disallowed Plans",
-            "placeholder": "Select disallowed plans (leave empty for no restriction)"
+            "placeholder": "Select plans forbidden for redemption (leave empty for no restriction)"
           }
         },
         "limits": {
@@ -1280,64 +1296,64 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "placeholder": "Leave empty for no limit"
           },
           "cooldown_hours": {
-            "label": "Cooldown for Same Type (Hours)",
+            "label": "Cooldown Hours for Same Type",
             "placeholder": "Leave empty for no limit"
           },
           "invite_reward_rate": {
             "label": "Inviter Reward Rate",
-            "placeholder": "e.g., 0.2 (for 20%)",
-            "description": "If the user has an inviter, the inviter's reward = balance reward * this rate"
+            "placeholder": "Example: 0.2 (represents 20%)",
+            "description": "When user has an inviter, inviter reward = balance reward × this rate"
           }
         },
         "rewards": {
-          "title": "Reward Content",
+          "title": "Rewards",
           "balance": {
-            "label": "Reward Amount (in Yuan)",
+            "label": "Reward Balance (Yuan)",
             "short_label": "Balance",
-            "placeholder": "Enter the reward amount in Yuan"
+            "placeholder": "Please enter reward amount (Yuan)"
           },
           "transfer_enable": {
-            "label": "Reward Traffic (in GB)",
+            "label": "Reward Traffic (GB)",
             "short_label": "Traffic",
-            "placeholder": "Enter the reward traffic in GB"
+            "placeholder": "Please enter reward traffic (GB)"
           },
           "expire_days": {
-            "label": "Extend Validity (in days)",
+            "label": "Extend Validity (Days)",
             "short_label": "Validity",
-            "placeholder": "Enter the number of days to extend"
+            "placeholder": "Please enter extension days"
           },
           "transfer": {
-            "label": "Reward Traffic (in bytes)",
-            "placeholder": "Enter the reward traffic in bytes"
+            "label": "Reward Traffic (Bytes)",
+            "placeholder": "Please enter reward traffic (bytes)"
           },
           "days": {
-            "label": "Extend Validity (in days)",
-            "placeholder": "Enter the number of days to extend"
+            "label": "Extend Validity (Days)",
+            "placeholder": "Please enter extension days"
           },
           "device_limit": {
-            "label": "Increase Device Limit",
+            "label": "Increase Device Count",
             "short_label": "Devices",
-            "placeholder": "Enter the number of devices to increase"
+            "placeholder": "Please enter increased device count"
           },
           "reset_package": {
             "label": "Reset Monthly Traffic",
-            "description": "If enabled, the user's current plan traffic usage will be reset to zero upon redemption."
+            "description": "When enabled, redemption will clear the user's current plan's used traffic."
           },
           "reset_count": {
-            "description": "This type of card will reset the user's traffic usage for the current month."
+            "description": "This type of card will reset the user's monthly traffic usage."
           },
           "task_card": {
-            "description": "The specific rewards for task gift cards will be configured in the task system."
+            "description": "Specific rewards for task gift cards will be configured in the task system."
           },
           "plan_id": {
-            "label": "Specify Plan",
+            "label": "Specified Plan",
             "short_label": "Plan",
-            "placeholder": "Select a plan"
+            "placeholder": "Please select a plan"
           },
           "plan_validity_days": {
-            "label": "Plan Validity (in days)",
+            "label": "Plan Validity (Days)",
             "short_label": "Plan Validity",
-            "placeholder": "Leave empty to use the plan's default validity"
+            "placeholder": "Leave empty to use plan default validity"
           },
           "random_rewards": {
             "label": "Random Reward Pool",
@@ -1349,87 +1365,182 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "title": "Special Configuration",
           "start_time": {
             "label": "Event Start Time",
-            "placeholder": "Pick a start date"
+            "placeholder": "Please select start date"
           },
           "end_time": {
             "label": "Event End Time",
-            "placeholder": "Pick an end date"
+            "placeholder": "Please select end date"
           },
           "festival_bonus": {
             "label": "Festival Reward Multiplier",
-            "placeholder": "e.g., 1.5 (for 1.5x)"
+            "placeholder": "Example: 1.5 (represents 1.5x)"
           }
+        },
+        "submit": {
+          "saving": "Saving...",
+          "save": "Save"
+        }
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": {
+          "title": "Confirm Delete",
+          "description": "This action will permanently delete this template. Are you sure you want to continue?",
+          "confirmText": "Delete"
         }
       }
     },
     "code": {
-      "title": "Code Management",
-      "add": "Generate Codes",
-      "search": "Search codes...",
+      "title": "Redemption Code Management",
       "form": {
+        "generate": "Generate Redemption Codes",
         "template_id": {
-          "label": "Gift Card Template",
-          "placeholder": "Select a template"
+          "label": "Select Template",
+          "placeholder": "Please select a template to generate redemption codes"
         },
         "count": {
-          "label": "Quantity to Generate",
-          "placeholder": "Enter the quantity to generate"
+          "label": "Generation Count"
         },
         "prefix": {
-          "label": "Code Prefix",
-          "placeholder": "Leave empty for default prefix GC"
+          "label": "Custom Prefix (Optional)"
         },
         "expires_hours": {
-          "label": "Validity (Hours)",
-          "placeholder": "From generation time, leave empty for no expiration"
+          "label": "Validity (Hours)"
         },
         "max_usage": {
-          "label": "Max Usage Count",
-          "placeholder": "Total times each code can be used"
+          "label": "Max Usage Count"
         },
-        "download_csv": "Export as CSV"
+        "download_csv": "Export CSV",
+        "submit": {
+          "generating": "Generating...",
+          "generate": "Generate Now"
+        }
+      },
+      "description": "Manage gift card redemption codes, including generation, viewing, and exporting codes.",
+      "generate": {
+        "title": "Generate Redemption Codes",
+        "template": "Select Template",
+        "count": "Generation Count",
+        "prefix": "Custom Prefix",
+        "expires_hours": "Validity (Hours)",
+        "max_usage": "Max Usage Count",
+        "submit": "Generate"
       },
       "table": {
-        "code": "Code",
-        "template": "Template",
-        "status": "Status",
-        "expires_at": "Expires At",
-        "used_at": "Used At",
-        "used_by": "Used By",
-        "max_usage": "Max Uses",
-        "usage_count": "Usage Count"
+        "title": "Redemption Code List",
+        "columns": {
+          "id": "ID",
+          "code": "Redemption Code",
+          "template_name": "Template Name",
+          "status": "Status",
+          "expires_at": "Expires At",
+          "usage_count": "Used Count",
+          "max_usage": "Available Count",
+          "created_at": "Created At"
+        }
       },
-      "messages": {
-        "generateSuccess": "Codes generated successfully",
-        "generateFailed": "Failed to generate codes",
-        "deleteConfirm": "Are you sure you want to delete this code? This action cannot be undone.",
-        "deleteSuccess": "Code deleted successfully",
-        "deleteFailed": "Failed to delete code"
+      "actions": {
+        "enable": "Enable",
+        "disable": "Disable",
+        "export": "Export",
+        "exportConfirm": {
+          "title": "Confirm Export",
+          "description": "This will export all redemption codes from the selected batch as a text file. Are you sure you want to continue?",
+          "confirmText": "Export"
+        }
+      },
+      "status": {
+        "0": "Unused",
+        "1": "Used",
+        "2": "Disabled",
+        "3": "Expired"
       }
     },
-    "messages": {
-      "formInvalid": "Form validation failed, please check your input.",
-      "templateCreated": "Template created successfully",
-      "templateUpdated": "Template updated successfully",
-      "createTemplateFailed": "Failed to create template",
-      "updateTemplateFailed": "Failed to update template",
-      "deleteConfirm": "Are you sure you want to delete this template? All codes under it will also be deleted.",
-      "deleteSuccess": "Template deleted successfully",
-      "deleteFailed": "Failed to delete template",
-      "codesGenerated": "Codes generated successfully"
-    },
-    "table": {
-      "columns": {
-        "no_rewards": "No Rewards"
+    "usage": {
+      "title": "Usage Records",
+      "description": "View gift card usage records and detailed information.",
+      "table": {
+        "columns": {
+          "id": "ID",
+          "code": "Redemption Code",
+          "template_name": "Template Name",
+          "user_email": "User Email",
+          "rewards_given": "Rewards Given",
+          "invite_rewards": "Invitation Rewards",
+          "multiplier_applied": "Multiplier Applied",
+          "ip_address": "IP Address",
+          "created_at": "Usage Time",
+          "actions": "Actions"
+        }
+      },
+      "actions": {
+        "view": "View Details"
       }
+    },
+    "statistics": {
+      "title": "Statistics",
+      "description": "View gift card statistics and usage analysis.",
+      "total": {
+        "title": "Overall Statistics",
+        "templates_count": "Total Templates",
+        "active_templates_count": "Active Templates",
+        "codes_count": "Total Redemption Codes",
+        "used_codes_count": "Used Redemption Codes",
+        "usages_count": "Usage Records"
+      },
+      "daily": {
+        "title": "Daily Usage",
+        "chart": "Usage Trend Chart"
+      },
+      "type": {
+        "title": "Type Statistics",
+        "chart": "Type Distribution Chart"
+      },
+      "dateRange": {
+        "label": "Date Range",
+        "start": "Start Date",
+        "end": "End Date"
+      }
+    },
+    "types": {
+      "1": "General Gift Card",
+      "2": "Plan Gift Card",
+      "3": "Mystery Gift Card",
+      "4": "Task Gift Card"
     },
     "common": {
-      "currency": {
-        "yuan": "Yuan"
-      },
-      "time": {
-        "day": "day"
-      }
+      "search": "Search gift cards...",
+      "reset": "Reset",
+      "filter": "Filter",
+      "export": "Export",
+      "refresh": "Refresh",
+      "back": "Back",
+      "close": "Close",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "loading": "Loading...",
+      "noData": "No Data",
+      "success": "Operation Successful",
+      "error": "Operation Failed"
+    },
+    "messages": {
+      "formInvalid": "Please check if the form input is correct",
+      "templateCreated": "Template created successfully",
+      "templateUpdated": "Template updated successfully",
+      "templateDeleted": "Template deleted successfully",
+      "codeGenerated": "Redemption codes generated successfully",
+      "generateCodeFailed": "Failed to generate redemption codes",
+      "codeStatusUpdated": "Redemption code status updated successfully",
+      "updateCodeStatusFailed": "Failed to update redemption code status",
+      "codesExported": "Redemption codes exported successfully",
+      "createTemplateFailed": "Failed to create template",
+      "updateTemplateFailed": "Failed to update template",
+      "deleteTemplateFailed": "Failed to delete template",
+      "loadDataFailed": "Failed to load data",
+      "codesGenerated": "Redemption codes generated successfully"
     }
   },
   "route": {
