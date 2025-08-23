@@ -113,9 +113,10 @@ class PluginManager
      */
     protected function loadViews(string $pluginCode): void
     {
-        $viewsPath = $this->getPluginPath($pluginCode) . '/views';
+        $viewsPath = $this->getPluginPath($pluginCode) . '/resources/views';
         if (File::exists($viewsPath)) {
             View::addNamespace(Str::studly($pluginCode), $viewsPath);
+            return;
         }
     }
 
@@ -456,9 +457,7 @@ class PluginManager
                 $plugin->setConfig(json_decode($dbPlugin->config, true));
             }
 
-            if (method_exists($plugin, 'update')) {
-                $plugin->update($oldVersion, $newVersion);
-            }
+            $plugin->update($oldVersion, $newVersion);
         }
 
         $dbPlugin->update([
