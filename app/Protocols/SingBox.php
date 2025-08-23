@@ -351,7 +351,7 @@ class SingBox extends AbstractProtocol
             'tag' => $server['name'],
             'tls' => [
                 'enabled' => true,
-                'insecure' => (bool) $protocol_settings['tls']['allow_insecure'],
+                'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
             ]
         ];
         // 支持 1.11.0 版本及以上 `server_ports` 和 `hop_interval` 配置
@@ -368,22 +368,22 @@ class SingBox extends AbstractProtocol
             $baseConfig['tls']['server_name'] = $serverName;
         }
         $speedConfig = [
-            'up_mbps' => $protocol_settings['bandwidth']['up'],
-            'down_mbps' => $protocol_settings['bandwidth']['down'],
+            'up_mbps' => data_get($protocol_settings, 'bandwidth.up'),
+            'down_mbps' => data_get($protocol_settings, 'bandwidth.down'),
         ];
         $versionConfig = match (data_get($protocol_settings, 'version', 1)) {
             2 => [
                 'type' => 'hysteria2',
                 'password' => $password,
-                'obfs' => $protocol_settings['obfs']['open'] ? [
-                    'type' => $protocol_settings['obfs']['type'],
-                    'password' => $protocol_settings['obfs']['password']
+                'obfs' => data_get($protocol_settings, 'obfs.open') ? [
+                    'type' => data_get($protocol_settings, 'obfs.type'),
+                    'password' => data_get($protocol_settings, 'obfs.password')
                 ] : null,
             ],
             default => [
                 'type' => 'hysteria',
                 'auth_str' => $password,
-                'obfs' => $protocol_settings['obfs']['password'],
+                'obfs' => data_get($protocol_settings, 'obfs.password'),
                 'disable_mtu_discovery' => true,
             ]
         };
