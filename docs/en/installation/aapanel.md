@@ -46,6 +46,7 @@ Required PHP extensions:
 - swoole
 - readline
 - event
+- mbstring
 
 #### 2.3 Enable Required PHP Functions
 Functions that need to be enabled:
