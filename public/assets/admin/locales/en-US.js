@@ -2491,6 +2491,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "actions_menu": {
         "edit": "Edit",
+        "view_details": "View Details",
         "assign_order": "Assign Order",
         "copy_url": "Copy Subscribe URL",
         "reset_secret": "Reset UUID & URL",
@@ -2631,36 +2632,13 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       }
     },
     "actions": {
-      "title": "Actions",
-      "send_email": "Send Email",
-      "export_csv": "Export CSV",
-      "traffic_reset_stats": "Traffic Reset Stats",
-      "batch_ban": "Batch Ban",
-      "confirm_ban": {
-        "title": "Confirm Batch Ban",
-        "filtered_description": "This action will ban all users that match your current filters. This action cannot be undone.",
-        "all_description": "This action will ban all users in the system. This action cannot be undone.",
-        "cancel": "Cancel",
-        "confirm": "Confirm Ban",
-        "banning": "Banning..."
-      }
+      "unbind": "Unbind",
+      "unbindTelegramTitle": "Confirm Unbind Telegram",
+      "unbindTelegramDescription": "This action will unbind the user's Telegram account. The user will need to rebind to receive notifications. Are you sure you want to continue?"
     },
     "messages": {
-      "success": "Success",
-      "error": "Error",
-      "export": {
-        "success": "Export successful",
-        "failed": "Export failed"
-      },
-      "batch_ban": {
-        "success": "Batch ban successful",
-        "failed": "Batch ban failed"
-      },
-      "send_mail": {
-        "success": "Email sent successfully",
-        "failed": "Failed to send email",
-        "required_fields": "Please fill in all required fields"
-      }
+      "telegramUnbound": "Telegram unbound successfully",
+      "telegramUnbindFailed": "Failed to unbind Telegram"
     },
     "traffic_reset": {
       "title": "Traffic Reset",
@@ -2780,6 +2758,56 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "content": "Content",
       "sending": "Sending...",
       "send": "Send"
+    },
+    "dialog": {
+      "title": "User Details",
+      "basicInfo": "Basic Information",
+      "subscriptionInfo": "Subscription Information",
+      "trafficInfo": "Traffic Information",
+      "financialInfo": "Financial Information",
+      "activityInfo": "Activity Information",
+      "inviteInfo": "Invitation Information",
+      "timeInfo": "Time Information",
+      "subscriptionUrl": "Subscription URL",
+      "fields": {
+        "userId": "User ID",
+        "email": "Email",
+        "uuid": "UUID",
+        "token": "Token",
+        "remarks": "Remarks",
+        "subscriptionPlan": "Subscription Plan",
+        "permissionGroup": "Permission Group",
+        "expiredAt": "Expired At",
+        "deviceLimit": "Device Limit",
+        "speedLimit": "Speed Limit",
+        "transferEnable": "Total Traffic",
+        "uploadUsed": "Upload Used",
+        "downloadUsed": "Download Used",
+        "totalUsed": "Total Used",
+        "lastResetAt": "Last Reset",
+        "nextResetAt": "Next Reset",
+        "resetCount": "Reset Count",
+        "balance": "Balance",
+        "commissionBalance": "Commission Balance",
+        "commissionType": "Commission Type",
+        "commissionRate": "Commission Rate",
+        "lastLoginAt": "Last Login",
+        "lastLoginIp": "Last Login IP",
+        "lastOnlineAt": "Last Online",
+        "onlineCount": "Online Devices",
+        "inviteUser": "Inviter",
+        "inviteUserId": "Inviter ID",
+        "createdAt": "Created At",
+        "updatedAt": "Updated At",
+        "subscribeUrl": "Subscription URL",
+        "telegramId": "Telegram ID"
+      }
+    },
+    "status": {
+      "normal": "Normal",
+      "banned": "Banned",
+      "admin": "Admin",
+      "staff": "Staff"
     }
   },
   "subscribe": {
