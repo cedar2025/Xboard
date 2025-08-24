@@ -205,7 +205,7 @@ class Clash extends AbstractProtocol
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $array['http-opts'] = [
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
+                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
                     ];
                 }
                 break;
