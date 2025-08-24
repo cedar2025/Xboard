@@ -92,8 +92,8 @@ class General extends AbstractProtocol
                     $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
                     $config['path'] = Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
                     $config['host'] =
-                        data_get($protocol_settings, 'network_settings.headers.Host')
-                        ? Arr::random(data_get($protocol_settings, 'network_settings.headers.Host', ['/']), )
+                        data_get($protocol_settings, 'network_settings.header.request.headers.Host')
+                        ? Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['/']), )
                         : null;
                 }
                 break;
