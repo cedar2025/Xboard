@@ -45,12 +45,9 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             ],
             'type' => [
                 'label' => '支付类型',
-                'type' => 'select',
-                'options' => [
-                    ['value' => 'alipay', 'label' => '支付宝'],
-                    ['value' => 'wxpay', 'label' => '微信支付'],
-                    ['value' => 'qqpay', 'label' => 'QQ钱包']
-                ]
+                'type' => 'string',
+                'required' => false,
+                'description' => '支付类型，如: alipay, wxpay, qqpay 等，可自定义'
             ],
         ];
     }
@@ -59,7 +56,7 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     {
         $params = [
             'money' => $order['total_amount'] / 100,
-            'name' => $order['trade_no'],
+            'name' => $order['plan_name'],
             'notify_url' => $order['notify_url'],
             'return_url' => $order['return_url'],
             'out_trade_no' => $order['trade_no'],
