@@ -200,7 +200,7 @@ class UniProxyController extends Controller
     public function alivelist(Request $request): JsonResponse
     {
         $node = $this->getNodeInfo($request);
-        $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
+        $deviceLimitUsers = ServerService::getAvailableUsers($node)
             ->where('device_limit', '>', 0);
         $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
         return response()->json(['alive' => (object) $alive]);
