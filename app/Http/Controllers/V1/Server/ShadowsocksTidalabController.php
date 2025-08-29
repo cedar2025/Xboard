@@ -23,7 +23,7 @@ class ShadowsocksTidalabController extends Controller
         ini_set('memory_limit', -1);
         $server = $request->input('node_info');
         Cache::put(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $server->id), time(), 3600);
-        $users = ServerService::getAvailableUsers($server->group_ids);
+        $users = ServerService::getAvailableUsers($server);
         $result = [];
         foreach ($users as $user) {
             array_push($result, [
