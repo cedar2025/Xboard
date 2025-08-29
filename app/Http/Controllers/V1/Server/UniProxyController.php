@@ -35,7 +35,7 @@ class UniProxyController extends Controller
         $nodeType = $node->type;
         $nodeId = $node->id;
         Cache::put(CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_CHECK_AT', $nodeId), time(), 3600);
-        $users = ServerService::getAvailableUsers($node->group_ids);
+        $users = ServerService::getAvailableUsers($node);
 
         $response['users'] = $users;
 
