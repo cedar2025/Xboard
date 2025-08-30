@@ -179,8 +179,6 @@ class UserService
         // 可选字段
         $this->setOptionalFields($user, $data);
 
-        $user->expired_at = null;
-
         // 处理计划
         if (isset($data['plan_id'])) {
             $this->setPlanForUser($user, $data['plan_id'], $data['expired_at'] ?? null);
