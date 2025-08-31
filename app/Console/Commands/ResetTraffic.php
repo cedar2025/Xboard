@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class ResetTraffic extends Command
 {
-  protected $signature = 'reset:traffic {--fix-null : 修正模式，重新计算next_reset_at为null的用户}';
+  protected $signature = 'reset:traffic {--fix-null : 修正模式，重新计算next_reset_at为null的用户} {--force : 强制模式，重新计算所有用户的重置时间}';
 
   protected $description = '流量重置 - 处理所有需要重置的用户';
 
@@ -23,16 +23,19 @@ class ResetTraffic extends Command
   public function handle(): int
   {
     $fixNull = $this->option('fix-null');
+    $force = $this->option('force');
 
     $this->info('🚀 开始执行流量重置任务...');
 
     if ($fixNull) {
       $this->warn('🔧 修正模式 - 将重新计算next_reset_at为null的用户');
+    } elseif ($force) {
+      $this->warn('⚡ 强制模式 - 将重新计算所有用户的重置时间');
     }
 
     try {
-      $result = $fixNull ? $this->performFix() : $this->performReset();
-      $this->displayResults($result, $fixNull);
+      $result = $fixNull ? $this->performFix() : ($force ? $this->performForce() : $this->performReset());
+      $this->displayResults($result, $fixNull || $force);
       return self::SUCCESS;
 
     } catch (\Exception $e) {
@@ -47,11 +50,11 @@ class ResetTraffic extends Command
     }
   }
 
-  private function displayResults(array $result, bool $fixNull): void
+  private function displayResults(array $result, bool $isSpecialMode): void
   {
     $this->info("✅ 任务完成！\n");
 
-    if ($fixNull) {
+    if ($isSpecialMode) {
       $this->displayFixResults($result);
     } else {
       $this->displayExecutionResults($result);
@@ -193,6 +196,55 @@ class ResetTraffic extends Command
     ];
   }
 
+  private function performForce(): array
+  {
+    $startTime = microtime(true);
+    $allUsers = $this->getAllUsers();
+
+    if ($allUsers->isEmpty()) {
+      $this->info("✅ 没有发现需要处理的用户");
+      return [
+        'total_found' => 0,
+        'total_fixed' => 0,
+        'error_count' => 0,
+        'duration' => round(microtime(true) - $startTime, 2),
+      ];
+    }
+
+    $this->info("⚡ 发现 {$allUsers->count()} 个用户，开始重新计算重置时间...");
+
+    $fixedCount = 0;
+    $errors = [];
+
+    foreach ($allUsers as $user) {
+      try {
+        $nextResetTime = $this->trafficResetService->calculateNextResetTime($user);
+        if ($nextResetTime) {
+          $user->next_reset_at = $nextResetTime->timestamp;
+          $user->save();
+          $fixedCount++;
+        }
+      } catch (\Exception $e) {
+        $errors[] = [
+          'user_id' => $user->id,
+          'email' => $user->email,
+          'error' => $e->getMessage(),
+        ];
+        Log::error('强制重新计算用户next_reset_at失败', [
+          'user_id' => $user->id,
+          'error' => $e->getMessage(),
+        ]);
+      }
+    }
+
+    return [
+      'total_found' => $allUsers->count(),
+      'total_fixed' => $fixedCount,
+      'error_count' => count($errors),
+      'duration' => round(microtime(true) - $startTime, 2),
+    ];
+  }
+
 
 
   private function getResetQuery()
@@ -213,6 +265,18 @@ class ResetTraffic extends Command
   {
     return User::whereNull('next_reset_at')
       ->whereNotNull('plan_id')
+      ->where(function ($query) {
+        $query->where('expired_at', '>', time())
+          ->orWhereNull('expired_at');
+      })
+      ->where('banned', 0)
+      ->with('plan:id,name,reset_traffic_method')
+      ->get();
+  }
+
+  private function getAllUsers()
+  {
+    return User::whereNotNull('plan_id')
       ->where(function ($query) {
         $query->where('expired_at', '>', time())
           ->orWhereNull('expired_at');
