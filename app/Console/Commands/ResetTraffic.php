@@ -122,7 +122,7 @@ class ResetTraffic extends Command
 
     foreach ($users as $user) {
       try {
-        $totalResetCount += (int) $this->trafficResetService->checkAndReset($user, TrafficResetLog::SOURCE_CRON);
+        $totalResetCount += (int) $this->trafficResetService->checkAndReset($user, TrafficResetLog::SOURCE_AUTO);
       } catch (\Exception $e) {
         $errors[] = [
           'user_id' => $user->id,

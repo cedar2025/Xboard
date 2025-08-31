@@ -104,6 +104,7 @@ class TrafficResetService
       Plan::RESET_TRAFFIC_MONTHLY => $this->getNextMonthlyReset($user, $now),
       Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => $this->getNextYearFirstDay($now),
       Plan::RESET_TRAFFIC_YEARLY => $this->getNextYearlyReset($user, $now),
+      Plan::RESET_TRAFFIC_PURCHASE => $this->getNextPurchaseDayReset($user, $now),
       default => null,
     };
   }
@@ -177,6 +178,34 @@ class TrafficResetService
     return $nextYear->copy()->month($resetMonth)->day($targetDay)->setTime(...$resetTime);
   }
 
+  /**
+   * Get the next purchase day reset time based on the user's subscription date.
+   *
+   * Logic:
+   * 1. Use the day of the user's subscription date (created_at) as the monthly reset day.
+   * 2. Prioritize the reset day in the current month if it has not passed yet.
+   * 3. Handle cases where the day does not exist in a month (e.g., 31st in February).
+   */
+  private function getNextPurchaseDayReset(User $user, Carbon $from): Carbon
+  {
+    $subscriptionDate = Carbon::createFromTimestamp($user->created_at, config('app.timezone'));
+    $resetDay = $subscriptionDate->day;
+    $resetTime = [$subscriptionDate->hour, $subscriptionDate->minute, $subscriptionDate->second];
+    
+    // 当前月目标时间
+    $currentMonthTarget = $from->copy()->day($resetDay)
+      ->setTime(...$resetTime);
+    if ($currentMonthTarget->timestamp > $from->timestamp) {
+      return $currentMonthTarget;
+    }
+    
+    // 下月目标时间
+    $nextMonth = $from->copy()->addMonth();
+    $lastDayOfNextMonth = $nextMonth->copy()->endOfMonth()->day;
+    $targetDay = min($resetDay, $lastDayOfNextMonth);
+    return $nextMonth->copy()->day($targetDay)->setTime(...$resetTime);
+  }
+
 
   /**
    * Record the traffic reset log.
@@ -218,6 +247,7 @@ class TrafficResetService
       Plan::RESET_TRAFFIC_MONTHLY => TrafficResetLog::TYPE_MONTHLY,
       Plan::RESET_TRAFFIC_FIRST_DAY_YEAR => TrafficResetLog::TYPE_FIRST_DAY_YEAR,
       Plan::RESET_TRAFFIC_YEARLY => TrafficResetLog::TYPE_YEARLY,
+      Plan::RESET_TRAFFIC_PURCHASE => TrafficResetLog::TYPE_PURCHASE,
       Plan::RESET_TRAFFIC_NEVER => TrafficResetLog::TYPE_MANUAL,
       default => TrafficResetLog::TYPE_MANUAL,
     };

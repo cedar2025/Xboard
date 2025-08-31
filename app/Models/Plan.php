@@ -47,6 +47,7 @@ class Plan extends Model
     public const RESET_TRAFFIC_NEVER = 2;            // 不重置
     public const RESET_TRAFFIC_FIRST_DAY_YEAR = 3;   // 每年1月1日
     public const RESET_TRAFFIC_YEARLY = 4;           // 按年重置
+    public const RESET_TRAFFIC_PURCHASE = 5;         // 购买日重置
 
     // 定义价格类型
     public const PRICE_TYPE_RESET_TRAFFIC = 'reset_traffic';  // 重置流量价格
