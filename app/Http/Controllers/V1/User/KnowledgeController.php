@@ -17,9 +17,13 @@ class KnowledgeController extends Controller
         if ($request->input('id')) {
             $knowledge = Knowledge::where('id', $request->input('id'))
                 ->where('show', 1)
-                ->first()
-                ->toArray();
-            if (!$knowledge) return $this->fail([500, __('Article does not exist')]);
+                ->first();
+            
+            if (!$knowledge) {
+                return $this->fail([500, __('Article does not exist')]);
+            }
+            
+            $knowledge = $knowledge->toArray();
             $user = User::find($request->user()->id);
             $userService = new UserService();
             if (!$userService->isAvailable($user)) {
