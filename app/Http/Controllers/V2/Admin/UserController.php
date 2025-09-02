@@ -16,7 +16,7 @@ use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Bus;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -443,7 +443,7 @@ class UserController extends Controller
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $builder = User::orderBy($sort, $sortType);
         $this->applyFiltersAndSorts($request, $builder);
-        
+
         $subject = $request->input('subject');
         $content = $request->input('content');
         $templateValue = [
@@ -451,29 +451,18 @@ class UserController extends Controller
             'url' => admin_setting('app_url'),
             'content' => $content
         ];
-        
+
         $chunkSize = 1000;
-        $totalProcessed = 0;
-        
+
         $builder->chunk($chunkSize, function ($users) use ($subject, $templateValue, &$totalProcessed) {
-            $jobs = [];
-            
             foreach ($users as $user) {
-                $jobs[] = new SendEmailJob([
+                dispatch(new SendEmailJob([
                     'email' => $user->email,
                     'subject' => $subject,
                     'template_name' => 'notify',
                     'template_value' => $templateValue
-                ], 'send_email_mass');
+                ], 'send_email_mass'));
             }
-            
-            if (!empty($jobs)) {
-                Bus::batch($jobs)
-                    ->allowFailures()
-                    ->dispatch();
-            }
-            
-            $totalProcessed += $users->count();
         });
 
         return $this->success(true);
