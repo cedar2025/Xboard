@@ -65,15 +65,7 @@ class GiftCardController extends Controller
             ];
         })->values();
 
-        return response()->json([
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $templates->currentPage(),
-                'last_page' => $templates->lastPage(),
-                'per_page' => $templates->perPage(),
-                'total' => $templates->total(),
-            ],
-        ]);
+        return $this->paginate( $templates);
     }
 
     /**
@@ -352,7 +344,7 @@ class GiftCardController extends Controller
             'batch_id' => 'string',
             'status' => 'integer|in:0,1,2,3',
             'page' => 'integer|min:1',
-            'per_page' => 'integer|min:1|max:100',
+            'per_page' => 'integer|min:1|max:500',
         ]);
 
         $query = GiftCardCode::with(['template', 'user']);
@@ -391,15 +383,7 @@ class GiftCardController extends Controller
             ];
         })->values();
 
-        return response()->json([
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $codes->currentPage(),
-                'last_page' => $codes->lastPage(),
-                'per_page' => $codes->perPage(),
-                'total' => $codes->total(),
-            ],
-        ]);
+        return $this->paginate($codes);
     }
 
     /**
@@ -464,7 +448,7 @@ class GiftCardController extends Controller
             'template_id' => 'integer|exists:v2_gift_card_template,id',
             'user_id' => 'integer|exists:v2_user,id',
             'page' => 'integer|min:1',
-            'per_page' => 'integer|min:1|max:100',
+            'per_page' => 'integer|min:1|max:500',
         ]);
 
         $query = GiftCardUsage::with(['template', 'code', 'user', 'inviteUser']);
@@ -480,7 +464,7 @@ class GiftCardController extends Controller
         $perPage = $request->input('per_page', 15);
         $usages = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        $data = $usages->getCollection()->map(function ($usage) {
+        $usages->transform(function ($usage) {
             return [
                 'id' => $usage->id,
                 'code' => $usage->code->code ?? '',
@@ -493,15 +477,7 @@ class GiftCardController extends Controller
                 'created_at' => $usage->created_at,
             ];
         })->values();
-        return response()->json([
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $usages->currentPage(),
-                'last_page' => $usages->lastPage(),
-                'per_page' => $usages->perPage(),
-                'total' => $usages->total(),
-            ],
-        ]);
+        return $this->paginate($usages);
     }
 
     /**

@@ -162,7 +162,7 @@ class OrderService
             } else {
                 $order->total_amount = (int) ($order->total_amount - $order->surplus_amount);
             }
-        } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) { // 用户订阅未过期且购买订阅与当前订阅相同 === 续费
+        } else if (($user->expired_at === null || $user->expired_at > time()) && $order->plan_id == $user->plan_id) { // 用户订阅未过期或按流量订阅 且购买订阅与当前订阅相同 === 续费
             $order->type = Order::TYPE_RENEWAL;
         } else { // 新购
             $order->type = Order::TYPE_NEW_PURCHASE;

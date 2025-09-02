@@ -137,7 +137,7 @@ class LoginService
      * @param string $redirect 重定向路径
      * @return string|null 快速登录URL
      */
-    public function generateQuickLoginUrl(User $user, string $redirect = 'dashboard'): ?string
+    public function generateQuickLoginUrl(User $user, ?string $redirect = null): ?string
     {
         if (!$user || !$user->exists) {
             return null;
@@ -148,7 +148,8 @@ class LoginService
 
         Cache::put($key, $user->id, 60);
 
-        $loginRedirect = '/#/login?verify=' . $code . '&redirect=' . $redirect;
+        $redirect = $redirect ?: 'dashboard';
+        $loginRedirect = '/#/login?verify=' . $code . '&redirect=' . rawurlencode($redirect);
 
         if (admin_setting('app_url')) {
             $url = admin_setting('app_url') . $loginRedirect;

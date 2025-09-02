@@ -130,17 +130,23 @@ class TrafficResetService
     $expiredAt = Carbon::createFromTimestamp($user->expired_at, config('app.timezone'));
     $resetDay = $expiredAt->day;
     $resetTime = [$expiredAt->hour, $expiredAt->minute, $expiredAt->second];
-    // 当前月目标时间
-    $currentMonthTarget = $from->copy()->day($resetDay)
-      ->setTime(...$resetTime);
+    
+    $currentMonthTarget = $from->copy()->day($resetDay)->setTime(...$resetTime);
     if ($currentMonthTarget->timestamp > $from->timestamp) {
       return $currentMonthTarget;
     }
-    // 下月目标时间
-    $nextMonth = $from->copy()->addMonth();
-    $lastDayOfNextMonth = $nextMonth->copy()->endOfMonth()->day;
-    $targetDay = min($resetDay, $lastDayOfNextMonth);
-    return $nextMonth->copy()->day($targetDay)->setTime(...$resetTime);
+    
+    $nextMonthTarget = $from->copy()->startOfMonth()->addMonths(1)->day($resetDay)->setTime(...$resetTime);
+    
+    if ($nextMonthTarget->month !== ($from->month % 12) + 1) {
+      $nextMonth = ($from->month % 12) + 1;
+      $nextYear = $from->year + ($from->month === 12 ? 1 : 0);
+      $lastDayOfNextMonth = Carbon::create($nextYear, $nextMonth, 1)->endOfMonth()->day;
+      $targetDay = min($resetDay, $lastDayOfNextMonth);
+      $nextMonthTarget = Carbon::create($nextYear, $nextMonth, $targetDay)->setTime(...$resetTime);
+    }
+    
+    return $nextMonthTarget;
   }
 
   /**
@@ -171,10 +177,17 @@ class TrafficResetService
     if ($currentYearTarget->timestamp > $from->timestamp) {
       return $currentYearTarget;
     }
-    $nextYear = $from->copy()->addYear();
-    $lastDayOfMonth = $nextYear->copy()->month($resetMonth)->endOfMonth()->day;
-    $targetDay = min($resetDay, $lastDayOfMonth);
-    return $nextYear->copy()->month($resetMonth)->day($targetDay)->setTime(...$resetTime);
+    
+    $nextYearTarget = $from->copy()->startOfYear()->addYears(1)->month($resetMonth)->day($resetDay)->setTime(...$resetTime);
+    
+    if ($nextYearTarget->month !== $resetMonth) {
+      $nextYear = $from->year + 1;
+      $lastDayOfMonth = Carbon::create($nextYear, $resetMonth, 1)->endOfMonth()->day;
+      $targetDay = min($resetDay, $lastDayOfMonth);
+      $nextYearTarget = Carbon::create($nextYear, $resetMonth, $targetDay)->setTime(...$resetTime);
+    }
+    
+    return $nextYearTarget;
   }
 
 

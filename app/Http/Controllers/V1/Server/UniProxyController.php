@@ -35,7 +35,7 @@ class UniProxyController extends Controller
         $nodeType = $node->type;
         $nodeId = $node->id;
         Cache::put(CacheKey::get('SERVER_' . strtoupper($nodeType) . '_LAST_CHECK_AT', $nodeId), time(), 3600);
-        $users = ServerService::getAvailableUsers($node->group_ids);
+        $users = ServerService::getAvailableUsers($node);
 
         $response['users'] = $users;
 
@@ -195,7 +195,7 @@ class UniProxyController extends Controller
     public function alivelist(Request $request): JsonResponse
     {
         $node = $this->getNodeInfo($request);
-        $deviceLimitUsers = ServerService::getAvailableUsers($node->group_ids)
+        $deviceLimitUsers = ServerService::getAvailableUsers($node)
             ->where('device_limit', '>', 0);
         $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
         return response()->json(['alive' => (object) $alive]);
