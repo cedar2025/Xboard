@@ -2632,13 +2632,36 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       }
     },
     "actions": {
-      "unbind": "Unbind",
-      "unbindTelegramTitle": "Confirm Unbind Telegram",
-      "unbindTelegramDescription": "This action will unbind the user's Telegram account. The user will need to rebind to receive notifications. Are you sure you want to continue?"
+      "title": "Actions",
+      "send_email": "Send Email",
+      "export_csv": "Export CSV",
+      "traffic_reset_stats": "Traffic Reset Stats",
+      "batch_ban": "Batch Ban",
+      "confirm_ban": {
+        "title": "Confirm Batch Ban",
+        "filtered_description": "This action will ban all users that match your current filters. This action cannot be undone.",
+        "all_description": "This action will ban all users in the system. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Confirm Ban",
+        "banning": "Banning..."
+      }
     },
     "messages": {
-      "telegramUnbound": "Telegram unbound successfully",
-      "telegramUnbindFailed": "Failed to unbind Telegram"
+      "success": "Success",
+      "error": "Error",
+      "export": {
+        "success": "Export successful",
+        "failed": "Export failed"
+      },
+      "batch_ban": {
+        "success": "Batch ban successful",
+        "failed": "Batch ban failed"
+      },
+      "send_mail": {
+        "success": "Email sent successfully",
+        "failed": "Failed to send email",
+        "required_fields": "Please fill in all required fields"
+      }
     },
     "traffic_reset": {
       "title": "Traffic Reset",
