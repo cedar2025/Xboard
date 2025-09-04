@@ -251,10 +251,15 @@ class Stash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
-                if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
-                    $array['http-opts']['headers']['Host'] = $host;
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                if ($headerType === 'tcp' || $headerType === '' || $headerType === 'none') {
+                    $array['network'] = 'tcp';
+                } elseif ($headerType === 'http') {
+                    $array['network'] = 'http';
+                    $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                    if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
+                        $array['http-opts']['headers']['Host'] = $host;
+                    }
                 }
                 break;
             case 'ws':
@@ -312,9 +317,15 @@ class Stash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                if ($headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp') != 'tcp') {
-                    $array['network'] = $headerType;
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                if ($headerType === 'tcp' || $headerType === '' || $headerType === 'none') {
+                    $array['network'] = 'tcp';
+                } elseif ($headerType === 'http') {
+                    $array['network'] = 'http';
                     $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                    if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
+                        $array['http-opts']['headers']['Host'] = $host;
+                    }
                 }
                 break;
             case 'ws':
