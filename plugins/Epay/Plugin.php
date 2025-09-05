@@ -46,7 +46,6 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             'type' => [
                 'label' => '支付类型',
                 'type' => 'string',
-                'required' => false,
                 'description' => '支付类型，如: alipay, wxpay, qqpay 等，可自定义'
             ],
         ];

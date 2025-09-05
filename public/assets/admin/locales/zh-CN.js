@@ -2598,9 +2598,19 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       }
     },
     "actions": {
-      "unbind": "解绑",
-      "unbindTelegramTitle": "确认解绑Telegram",
-      "unbindTelegramDescription": "此操作将解绑用户的Telegram账号，用户需要重新绑定才能接收通知。确定要继续吗？"
+      "title": "操作",
+      "send_email": "发送邮件",
+      "export_csv": "导出 CSV",
+      "traffic_reset_stats": "流量重置统计",
+      "batch_ban": "批量封禁",
+      "confirm_ban": {
+        "title": "确认批量封禁",
+        "filtered_description": "此操作将封禁所有符合当前筛选条件的用户。此操作无法撤销。",
+        "all_description": "此操作将封禁系统中的所有用户。此操作无法撤销。",
+        "cancel": "取消",
+        "confirm": "确认封禁",
+        "banning": "封禁中..."
+      }
     },
     "traffic_reset": {
       "title": "流量重置",
@@ -2714,8 +2724,21 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       }
     },
     "messages": {
-      "telegramUnbound": "Telegram解绑成功",
-      "telegramUnbindFailed": "Telegram解绑失败"
+      "success": "成功",
+      "error": "错误",
+      "export": {
+        "success": "导出成功",
+        "failed": "导出失败"
+      },
+      "batch_ban": {
+        "success": "批量封禁成功",
+        "failed": "批量封禁失败"
+      },
+      "send_mail": {
+        "success": "邮件发送成功",
+        "failed": "邮件发送失败",
+        "required_fields": "请填写所有必填字段"
+      }
     },
     "send_mail": {
       "title": "发送邮件",
