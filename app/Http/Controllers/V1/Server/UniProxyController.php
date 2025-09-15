@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\UpdateAliveDataJob;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
@@ -216,7 +217,7 @@ class UniProxyController extends Controller
                 'error' => 'Invalid online data'
             ], 400);
         }
-        $this->userOnlineService->updateAliveData($data, $node->type, $node->id);
+        UpdateAliveDataJob::dispatch($data, $node->type, $node->id);
         return response()->json(['data' => true]);
     }
 
