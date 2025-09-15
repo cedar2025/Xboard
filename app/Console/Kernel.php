@@ -46,10 +46,7 @@ class Kernel extends ConsoleKernel
         // if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
         //     $schedule->command('backup:database', ['true'])->daily()->onOneServer();
         // }
-        // 每分钟清理过期的在线状态
-        $schedule->call(function () {
-            app(UserOnlineService::class)->cleanExpiredOnlineStatus();
-        })->everyMinute()->name('cleanup:expired-online-status')->onOneServer();
+        $schedule->command('cleanup:expired-online-status')->everyMinute()->onOneServer()->withoutOverlapping(4);
 
         app(PluginManager::class)->registerPluginSchedules($schedule);
 
