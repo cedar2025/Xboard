@@ -45,16 +45,12 @@ class StatServerJob implements ShouldQueue
         $this->recordType = $recordType;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
         $recordAt = $this->recordType === 'm'
             ? strtotime(date('Y-m-01'))
             : strtotime(date('Y-m-d'));
 
-        // Aggregate traffic data
         $u = $d = 0;
         foreach ($this->data as $traffic) {
             $u += $traffic[0];
@@ -62,31 +58,72 @@ class StatServerJob implements ShouldQueue
         }
 
         try {
-            DB::transaction(function () use ($u, $d, $recordAt) {
-                $affected = StatServer::where([
-                    'record_at' => $recordAt,
-                    'server_id' => $this->server['id'],
-                    'server_type' => $this->protocol,
-                    'record_type' => $this->recordType,
-                ])->update([
-                    'u' => DB::raw('u + ' . $u),
-                    'd' => DB::raw('d + ' . $d),
-                ]);
-
-                if (!$affected) {
-                    StatServer::create([
-                        'record_at' => $recordAt,
-                        'server_id' => $this->server['id'],
-                        'server_type' => $this->protocol,
-                        'record_type' => $this->recordType,
-                        'u' => $u,
-                        'd' => $d,
-                    ]);
-                }
-            }, 3);
+            $this->processServerStat($u, $d, $recordAt);
         } catch (\Exception $e) {
             Log::error('StatServerJob failed for server ' . $this->server['id'] . ': ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    protected function processServerStat(int $u, int $d, int $recordAt): void
+    {
+        if (config('database.default') === 'sqlite') {
+            $this->processServerStatForSqlite($u, $d, $recordAt);
+        } else {
+            $this->processServerStatForOtherDatabases($u, $d, $recordAt);
+        }
+    }
+
+    protected function processServerStatForSqlite(int $u, int $d, int $recordAt): void
+    {
+        DB::transaction(function () use ($u, $d, $recordAt) {
+            $existingRecord = StatServer::where([
+                'record_at' => $recordAt,
+                'server_id' => $this->server['id'],
+                'server_type' => $this->protocol,
+                'record_type' => $this->recordType,
+            ])->first();
+
+            if ($existingRecord) {
+                $existingRecord->update([
+                    'u' => $existingRecord->u + $u,
+                    'd' => $existingRecord->d + $d,
+                    'updated_at' => time(),
+                ]);
+            } else {
+                StatServer::create([
+                    'record_at' => $recordAt,
+                    'server_id' => $this->server['id'],
+                    'server_type' => $this->protocol,
+                    'record_type' => $this->recordType,
+                    'u' => $u,
+                    'd' => $d,
+                    'created_at' => time(),
+                    'updated_at' => time(),
+                ]);
+            }
+        }, 3);
+    }
+
+    protected function processServerStatForOtherDatabases(int $u, int $d, int $recordAt): void
+    {
+        StatServer::upsert(
+            [
+                'record_at' => $recordAt,
+                'server_id' => $this->server['id'],
+                'server_type' => $this->protocol,
+                'record_type' => $this->recordType,
+                'u' => $u,
+                'd' => $d,
+                'created_at' => time(),
+                'updated_at' => time(),
+            ],
+            ['server_id', 'server_type', 'record_at', 'record_type'],
+            [
+                'u' => DB::raw("u + VALUES(u)"),
+                'd' => DB::raw("d + VALUES(d)"),
+                'updated_at' => time(),
+            ]
+        );
     }
 }
