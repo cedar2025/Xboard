@@ -340,6 +340,12 @@ class UserController extends Controller
     public function generate(UserGenerate $request)
     {
         if ($request->input('email_prefix')) {
+            // If generate_count is specified with email_prefix, generate multiple users with incremented emails
+            if ($request->input('generate_count')) {
+                return $this->multiGenerateWithPrefix($request);
+            }
+            
+            // Single user generation with email_prefix
             $email = $request->input('email_prefix') . '@' . $request->input('email_suffix');
 
             if (User::where('email', $email)->exists()) {
@@ -381,6 +387,87 @@ class UserController extends Controller
         }
 
 
+
+        try {
+            DB::beginTransaction();
+            $users = [];
+            foreach ($usersData as $userData) {
+                $user = $userService->createUser($userData);
+                $user->save();
+                $users[] = $user;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->fail([500, '生成失败']);
+        }
+
+        // 判断是否导出 CSV
+        if ($request->input('download_csv')) {
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="users.csv"',
+            ];
+            $callback = function () use ($users, $request) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
+                foreach ($users as $user) {
+                    $user = $user->refresh();
+                    $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
+                    $createDate = date('Y-m-d H:i:s', $user['created_at']);
+                    $password = $request->input('password') ?? $user['email'];
+                    $subscribeUrl = Helper::getSubscribeUrl($user['token']);
+                    fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
+                }
+                fclose($handle);
+            };
+            return response()->streamDownload($callback, 'users.csv', $headers);
+        }
+
+        // 默认返回 JSON
+        $data = collect($users)->map(function ($user) use ($request) {
+            return [
+                'email' => $user['email'],
+                'password' => $request->input('password') ?? $user['email'],
+                'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
+                'uuid' => $user['uuid'],
+                'created_at' => date('Y-m-d H:i:s', $user['created_at']),
+                'subscribe_url' => Helper::getSubscribeUrl($user['token']),
+            ];
+        });
+        return response()->json([
+            'code' => 0,
+            'message' => '批量生成成功',
+            'data' => $data,
+        ]);
+    }
+
+    private function multiGenerateWithPrefix(Request $request)
+    {
+        $userService = app(UserService::class);
+        $usersData = [];
+        $emailPrefix = $request->input('email_prefix');
+        $emailSuffix = $request->input('email_suffix');
+        $generateCount = $request->input('generate_count');
+
+        // Check if any of the emails with prefix already exist
+        for ($i = 1; $i <= $generateCount; $i++) {
+            $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
+            if (User::where('email', $email)->exists()) {
+                return $this->fail([400201, '邮箱 ' . $email . ' 已存在于系统中']);
+            }
+        }
+
+        // Generate user data for batch creation
+        for ($i = 1; $i <= $generateCount; $i++) {
+            $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
+            $usersData[] = [
+                'email' => $email,
+                'password' => $request->input('password') ?? $email,
+                'plan_id' => $request->input('plan_id'),
+                'expired_at' => $request->input('expired_at'),
+            ];
+        }
 
         try {
             DB::beginTransaction();
