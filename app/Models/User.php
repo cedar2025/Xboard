@@ -138,14 +138,6 @@ class User extends Authenticatable
     }
 
     /**
-     * 获取订阅链接属性
-     */
-    public function getSubscribeUrlAttribute(): string
-    {
-        return Helper::getSubscribeUrl($this->token);
-    }
-
-    /**
      * 检查用户是否处于活跃状态
      */
     public function isActive(): bool
