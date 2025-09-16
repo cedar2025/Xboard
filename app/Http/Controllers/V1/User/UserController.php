@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Auth\LoginService;
 use App\Services\AuthService;
+use App\Services\Plugin\HookManager;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
@@ -156,6 +157,7 @@ class UserController extends Controller
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
+        $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);
     }
 
