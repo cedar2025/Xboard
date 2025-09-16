@@ -3,12 +3,8 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use App\Jobs\SyncUserOnlineStatusJob;
 
 class UserOnlineService
 {
@@ -16,8 +12,6 @@ class UserOnlineService
      * 缓存相关常量
      */
     private const CACHE_PREFIX = 'ALIVE_IP_USER_';
-    private const CACHE_TTL = 120;
-    private const NODE_DATA_EXPIRY = 100;
 
     /**
      * 获取所有限制设备用户的在线数量
@@ -77,47 +71,6 @@ class UserOnlineService
         ];
     }
 
-    /**
-     * 更新用户在线数据
-     */
-    public function updateAliveData(array $data, string $nodeType, int $nodeId): void
-    {
-        $updateAt = now()->timestamp;
-        $nodeKey = $nodeType . $nodeId;
-        $userUpdates = [];
-
-        foreach ($data as $uid => $ips) {
-            $cacheKey = self::CACHE_PREFIX . $uid;
-            $ipsArray = cache()->get($cacheKey, []);
-            $ipsArray = [
-                ...collect($ipsArray)
-                    ->filter(
-                        fn(mixed $value): bool =>
-                        is_array($value) &&
-                        ($updateAt - ($value['lastupdateAt'] ?? 0) <= self::NODE_DATA_EXPIRY)
-                    ),
-                $nodeKey => [
-                    'aliveips' => $ips,
-                    'lastupdateAt' => $updateAt
-                ]
-            ];
-            $count = $this->calculateDeviceCount($ipsArray);
-            $ipsArray['alive_ip'] = $count;
-            cache()->put($cacheKey, $ipsArray, now()->addSeconds(self::CACHE_TTL));
-
-            $userUpdates[] = [
-                'id' => $uid,
-                'count' => $count,
-            ];
-        }
-
-        // 使用队列异步更新数据库
-        if (!empty($userUpdates)) {
-            dispatch(new SyncUserOnlineStatusJob($userUpdates))
-                ->onQueue('online_sync')
-                ->afterCommit();
-        }
-    }
 
     /**
      * 批量获取用户在线设备数
@@ -144,29 +97,13 @@ class UserOnlineService
     }
 
     /**
-     * 清理过期的在线记录
+     * 计算在线设备数量
      */
-    public function cleanExpiredOnlineStatus(): void
-    {
-        dispatch(function () {
-            User::query()
-                ->where('last_online_at', '<', now()->subMinutes(5))
-                ->update(['online_count' => 0]);
-        })->onQueue('online_sync');
-    }
-
-    /**
-     * Calculate the number of devices based on IPs array and device limit mode.
-     *
-     * @param array $ipsArray Array containing IP data
-     * @return int Number of devices
-     */
-    private function calculateDeviceCount(array $ipsArray): int
+    public static function calculateDeviceCount(array $ipsArray): int
     {
         $mode = (int) admin_setting('device_limit_mode', 0);
 
         return match ($mode) {
-            // Loose mode: Count unique IPs (ignoring suffixes after '_')
             1 => collect($ipsArray)
                 ->filter(fn(mixed $data): bool => is_array($data) && isset($data['aliveips']))
                 ->flatMap(
@@ -177,11 +114,9 @@ class UserOnlineService
                 )
                 ->unique()
                 ->count(),
-            // Strict mode: Sum total number of alive IPs
             0 => collect($ipsArray)
                 ->filter(fn(mixed $data): bool => is_array($data) && isset($data['aliveips']))
                 ->sum(fn(array $data): int => count($data['aliveips'])),
-            // Handle invalid modes
             default => throw new \InvalidArgumentException("Invalid device limit mode: $mode"),
         };
     }
