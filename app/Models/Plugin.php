@@ -36,7 +36,6 @@ class Plugin extends Model
         'coinbase',       // Coinbase
         'coin_payments',  // CoinPayments
         'mgate',          // MGate
-        'smogate',        // Smogate
         'telegram',       // Telegram
     ];
 
