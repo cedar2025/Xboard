@@ -67,8 +67,11 @@ class StatServerJob implements ShouldQueue
 
     protected function processServerStat(int $u, int $d, int $recordAt): void
     {
-        if (config('database.default') === 'sqlite') {
+        $driver = config('database.default');
+        if ($driver === 'sqlite') {
             $this->processServerStatForSqlite($u, $d, $recordAt);
+        } elseif ($driver === 'pgsql') {
+            $this->processServerStatForPostgres($u, $d, $recordAt);
         } else {
             $this->processServerStatForOtherDatabases($u, $d, $recordAt);
         }
@@ -125,5 +128,34 @@ class StatServerJob implements ShouldQueue
                 'updated_at' => time(),
             ]
         );
+    }
+
+    /**
+     * PostgreSQL upsert with arithmetic increments using ON CONFLICT ... DO UPDATE
+     */
+    protected function processServerStatForPostgres(int $u, int $d, int $recordAt): void
+    {
+        $table = (new StatServer())->getTable();
+        $now = time();
+
+        // Use parameter binding to avoid SQL injection and keep maintainability
+        $sql = "INSERT INTO {$table} (record_at, server_id, server_type, record_type, u, d, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (server_id, server_type, record_at)
+                DO UPDATE SET
+                    u = {$table}.u + EXCLUDED.u,
+                    d = {$table}.d + EXCLUDED.d,
+                    updated_at = EXCLUDED.updated_at";
+
+        DB::statement($sql, [
+            $recordAt,
+            $this->server['id'],
+            $this->protocol,
+            $this->recordType,
+            $u,
+            $d,
+            $now,
+            $now,
+        ]);
     }
 }
