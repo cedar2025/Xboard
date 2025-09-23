@@ -63,8 +63,11 @@ class StatUserJob implements ShouldQueue
 
     protected function processUserStat(int $uid, array $v, int $recordAt): void
     {
-        if (config('database.default') === 'sqlite') {
+        $driver = config('database.default');
+        if ($driver === 'sqlite') {
             $this->processUserStatForSqlite($uid, $v, $recordAt);
+        } elseif ($driver === 'pgsql') {
+            $this->processUserStatForPostgres($uid, $v, $recordAt);
         } else {
             $this->processUserStatForOtherDatabases($uid, $v, $recordAt);
         }
@@ -121,5 +124,35 @@ class StatUserJob implements ShouldQueue
                 'updated_at' => time(),
             ]
         );
+    }
+
+    /**
+     * PostgreSQL upsert with arithmetic increments using ON CONFLICT ... DO UPDATE
+     */
+    protected function processUserStatForPostgres(int $uid, array $v, int $recordAt): void
+    {
+        $table = (new StatUser())->getTable();
+        $now = time();
+        $u = ($v[0] * $this->server['rate']);
+        $d = ($v[1] * $this->server['rate']);
+
+        $sql = "INSERT INTO {$table} (user_id, server_rate, record_at, record_type, u, d, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (user_id, server_rate, record_at)
+                DO UPDATE SET
+                    u = {$table}.u + EXCLUDED.u,
+                    d = {$table}.d + EXCLUDED.d,
+                    updated_at = EXCLUDED.updated_at";
+
+        DB::statement($sql, [
+            $uid,
+            $this->server['rate'],
+            $recordAt,
+            $this->recordType,
+            $u,
+            $d,
+            $now,
+            $now,
+        ]);
     }
 }
