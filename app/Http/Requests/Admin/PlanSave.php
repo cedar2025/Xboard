@@ -82,10 +82,10 @@ class PlanSave extends FormRequest
                         "prices.{$period}", 
                         "价格必须是数字格式"
                     );
-                } elseif ($numericPrice <= 0) {
+                } elseif ($numericPrice < 0) {
                     $validator->errors()->add(
                         "prices.{$period}", 
-                        "价格必须大于 0（如不需要此周期请留空或设为 null）"
+                        "价格必须大于等于 0（如不需要此周期请留空）"
                     );
                 }
             }
