@@ -23,7 +23,7 @@ class TrojanTidalabController extends Controller
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
-        $server = $request->input('node_info');
+        $server = $request->attributes->get('node_info');
         if ($server->type !== 'trojan') {
             return $this->fail([400, '节点不存在']);
         }
@@ -50,7 +50,7 @@ class TrojanTidalabController extends Controller
     // 后端提交数据
     public function submit(Request $request)
     {
-        $server = $request->input('node_info');
+        $server = $request->attributes->get('node_info');
         if ($server->type !== 'trojan') {
             return $this->fail([400, '节点不存在']);
         }
@@ -73,7 +73,7 @@ class TrojanTidalabController extends Controller
     // 后端获取配置
     public function config(Request $request)
     {
-        $server = $request->input('node_info');
+        $server = $request->attributes->get('node_info');
         if ($server->type !== 'trojan') {
             return $this->fail([400, '节点不存在']);
         }

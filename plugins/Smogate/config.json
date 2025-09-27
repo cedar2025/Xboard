@@ -1,8 +1,0 @@
-{
-    "name": "Smogate",
-    "code": "smogate",
-    "type": "payment",
-    "version": "1.0.0",
-    "description": "Smogate payment plugin",
-    "author": "XBoard Team"
-}
