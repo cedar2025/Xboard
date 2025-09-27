@@ -209,13 +209,13 @@ class SingBox extends AbstractProtocol
                 'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/'])),
                 'host' => data_get($protocol_settings, 'network_settings.header.request.headers.Host', [])
             ] : null,
-            'ws' => [
+            'ws' => array_filter([
                 'type' => 'ws',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
                 'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
                 'max_early_data' => 2048,
                 'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ],
+            ]),
             'grpc' => [
                 'type' => 'grpc',
                 'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
@@ -330,13 +330,13 @@ class SingBox extends AbstractProtocol
                 'type' => 'grpc',
                 'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
             ],
-            'ws' => [
+            'ws' => array_filter([
                 'type' => 'ws',
                 'path' => data_get($protocol_settings, 'network_settings.path'),
                 'headers' => data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => [data_get($protocol_settings, 'network_settings.headers.Host')]] : null,
                 'max_early_data' => 2048,
                 'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ],
+            ]),
             default => null
         };
         $array['transport'] = $transport;

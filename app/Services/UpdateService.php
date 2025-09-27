@@ -24,8 +24,10 @@ class UpdateService
      */
     public function getCurrentVersion(): string
     {
-        $date = Cache::get(self::CACHE_VERSION_DATE, date('Ymd'));
-        $hash = Cache::get(self::CACHE_VERSION, $this->getCurrentCommit());
+        $date = Cache::get(self::CACHE_VERSION_DATE) ?? date('Ymd');
+        $hash = Cache::rememberForever(self::CACHE_VERSION, function () {
+            return $this->getCurrentCommit();
+        });
         return $date . '-' . $hash;
     }
 
@@ -49,8 +51,9 @@ class UpdateService
 
         // Fallback
         Cache::forever(self::CACHE_VERSION_DATE, date('Ymd'));
-        Cache::forever(self::CACHE_VERSION, $this->getCurrentCommit());
-        Log::info('Version cache updated (fallback): ' . date('Ymd') . '-' . $this->getCurrentCommit());
+        $fallbackHash = $this->getCurrentCommit();
+        Cache::forever(self::CACHE_VERSION, $fallbackHash);
+        Log::info('Version cache updated (fallback): ' . date('Ymd') . '-' . $fallbackHash);
     }
 
     public function checkForUpdates(): array

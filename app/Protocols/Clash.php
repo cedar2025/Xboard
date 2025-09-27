@@ -203,10 +203,12 @@ class Clash extends AbstractProtocol
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
-                    $array['http-opts'] = [
+                    if ($httpOpts = array_filter([
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
                         'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ];
+                    ])) {
+                        $array['http-opts'] = $httpOpts;
+                    }
                 }
                 break;
             case 'ws':
