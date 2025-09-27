@@ -1,7 +1,7 @@
 {
     "name": "Telegram Bot 集成",
     "code": "telegram",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Telegram Bot 消息处理和命令系统",
     "author": "XBoard Team",
     "require": {
