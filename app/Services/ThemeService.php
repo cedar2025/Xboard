@@ -148,6 +148,7 @@ class ThemeService
 
             $targetPath = $userThemePath . $config['name'];
             if (File::exists($targetPath)) {
+                $existingConfig = admin_setting(self::SETTING_PREFIX . $config['name']);
                 $oldConfigFile = $targetPath . '/config.json';
                 if (!File::exists($oldConfigFile)) {
                     throw new Exception('Existing theme missing config file');
@@ -159,7 +160,7 @@ class ThemeService
                     $this->cleanupThemeFiles($config['name']);
                     File::deleteDirectory($targetPath);
                     File::copyDirectory($sourcePath, $targetPath);
-                    $this->initConfig($config['name']);
+                    $this->initConfig($config['name'], is_array($existingConfig) ? $existingConfig : null);
                     return true;
                 } else {
                     throw new Exception('Theme exists and not a newer version');
@@ -398,7 +399,7 @@ class ThemeService
     /**
      * Initialize theme config
      */
-    private function initConfig(string $theme): void
+    private function initConfig(string $theme, ?array $existingConfig = null): void
     {
         $config = $this->readConfigFile($theme);
         if (!$config) {
@@ -408,6 +409,14 @@ class ThemeService
         $defaults = collect($config['configs'] ?? [])
             ->mapWithKeys(fn($col) => [$col['field_name'] => $col['default_value'] ?? ''])
             ->toArray();
+        if ($existingConfig) {
+            foreach ($defaults as $key => $value) {
+                if (array_key_exists($key, $existingConfig)) {
+                    $defaults[$key] = $existingConfig[$key];
+                }
+            }
+        }
+
         admin_setting([self::SETTING_PREFIX . $theme => $defaults]);
     }
 }
