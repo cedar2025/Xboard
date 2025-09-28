@@ -1,0 +1,8 @@
+{
+    "name": "Stripe微信支付宝",
+    "code": "stripe_wechat_alipay",
+    "type": "payment",
+    "version": "1.2.1",
+    "description": "Stripe WeChat Pay and Alipay payment plugin for Xboard",
+    "author": "Xboard Team"
+}
