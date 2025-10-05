@@ -76,28 +76,35 @@ class Plugin extends AbstractPlugin
     if (!$user)
       return;
     $user->load('plan');
-    $transfer_enable = Helper::transferToGB($user->transfer_enable);
-    $remaining_traffic = Helper::transferToGB($user->transfer_enable - $user->u - $user->d);
-    $u = Helper::transferToGB($user->u);
-    $d = Helper::transferToGB($user->d);
-    $expired_at = $user->expired_at ? date('Y-m-d H:i:s', $user->expired_at) : '';
+    $transfer_enable = $this->transferToGBString($user->transfer_enable);
+    $remaining_traffic = $this->transferToGBString($user->transfer_enable - $user->u - $user->d);
+    $u = $this->transferToGBString($user->u);
+    $d = $this->transferToGBString($user->d);
+    $expired_at = $user->expired_at ? date('Y-m-d H:i:s', $user->expired_at) : '长期有效';
     $money = $user->balance / 100;
     $affmoney = $user->commission_balance / 100;
     $plan = $user->plan;
     $ip = request()?->ip() ?? '';
     $region = $ip ? (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? (new \Ip2Region())->simple($ip) : 'NULL') : '';
-    $TGmessage = "📮工单提醒 #{$ticket->id}\n———————————————\n";
-    $TGmessage .= "邮箱: `{$user->email}`\n";
-    $TGmessage .= "用户位置: \n`{$region}`\n";
+    $TGmessage = "📮 *工单提醒* #{$ticket->id}\n";
+    $TGmessage .= "━━━━━━━━━━━━━━━━━━━━\n";
+    $TGmessage .= "📧 邮箱: `{$user->email}`\n";
+    $TGmessage .= "📍 位置: `{$region}`\n";
+
     if ($plan) {
-      $TGmessage .= "套餐与流量: \n`{$plan->name} {$transfer_enable}/{$remaining_traffic}`\n";
-      $TGmessage .= "上传/下载: \n`{$u}/{$d}`\n";
-      $TGmessage .= "到期时间: \n`{$expired_at}`\n";
+      $TGmessage .= "📦 套餐: `{$plan->name}`\n";
+      $TGmessage .= "📊 流量: `{$remaining_traffic}G / {$transfer_enable}G` (已用/总计)\n";
+      $TGmessage .= "⬆️⬇️ 已用: `{$u}G / {$d}G`\n";
+      $TGmessage .= "⏰ 到期: `{$expired_at}`\n";
     } else {
-      $TGmessage .= "套餐与流量: \n`未订购任何套餐`\n";
+      $TGmessage .= "📦 套餐: `未订购任何套餐`\n";
     }
-    $TGmessage .= "余额/佣金余额: \n`{$money}/{$affmoney}`\n";
-    $TGmessage .= "主题：\n`{$ticket->subject}`\n内容：\n`{$message->message}`\n";
+
+    $TGmessage .= "💰 余额: `{$money}元`\n";
+    $TGmessage .= "💸 佣金: `{$affmoney}元`\n";
+    $TGmessage .= "━━━━━━━━━━━━━━━━━━━━\n";
+    $TGmessage .= "📝 *主题*: `{$ticket->subject}`\n";
+    $TGmessage .= "💬 *内容*: `{$message->message}`";
     $this->telegramService->sendMessageWithAdmin($TGmessage, true);
   }
 
@@ -107,7 +114,7 @@ class Plugin extends AbstractPlugin
       $this->registerTelegramCommand($command, [$this, $config['handler']]);
     }
 
-    $this->registerReplyHandler('/(工单提醒 #?|工单ID: ?)(\\d+)/', [$this, 'handleTicketReply']);
+    $this->registerReplyHandler('/(📮.*?工单提醒.*?#?|工单ID: ?)(\\d+)/', [$this, 'handleTicketReply']);
   }
 
   public function registerTelegramCommand(string $command, callable $handler): void
@@ -330,10 +337,10 @@ class Plugin extends AbstractPlugin
     $usagePercentage = $transferTotal > 0 ? ($transferUsed / $transferTotal) * 100 : 0;
 
     $text = sprintf(
-      "📊 流量使用情况\n\n已用流量：%s\n总流量：%s\n剩余流量：%s\n使用率：%.2f%%",
-      Helper::transferToGB($transferUsed),
-      Helper::transferToGB($transferTotal),
-      Helper::transferToGB($transferRemaining),
+      "📊 流量使用情况\n\n已用流量：%sG\n总流量：%sG\n剩余流量：%sG\n使用率：%.2f%%",
+      $this->transferToGBString($transferUsed),
+      $this->transferToGBString($transferTotal),
+      $this->transferToGBString($transferRemaining),
       $usagePercentage
     );
 
@@ -420,6 +427,11 @@ class Plugin extends AbstractPlugin
     }
 
     return $commands;
+  }
+
+  private function transferToGBString(float $transfer_enable, int $decimals = 2): string
+  {
+    return number_format(Helper::transferToGB($transfer_enable), $decimals, '.', '');
   }
 
 }
