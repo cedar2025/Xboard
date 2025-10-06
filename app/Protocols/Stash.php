@@ -312,7 +312,8 @@ class Stash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                if ($headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp') != 'tcp') {
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                if ($headerType != 'tcp') {
                     $array['network'] = $headerType;
                     if ($httpOpts = array_filter([
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
