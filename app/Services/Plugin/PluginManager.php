@@ -17,6 +17,7 @@ class PluginManager
     protected string $pluginPath;
     protected array $loadedPlugins = [];
     protected bool $pluginsInitialized = false;
+    protected array $configTypesCache = [];
 
     public function __construct()
     {
@@ -319,7 +320,9 @@ class PluginManager
             ->first();
 
         if ($dbPlugin && !empty($dbPlugin->config)) {
-            $plugin->setConfig(json_decode($dbPlugin->config, true));
+            $values = json_decode($dbPlugin->config, true) ?: [];
+            $values = $this->castConfigValuesByType($pluginCode, $values);
+            $plugin->setConfig($values);
         }
 
         // 注册服务提供者
@@ -453,13 +456,15 @@ class PluginManager
         $this->runMigrations($pluginCode);
 
         $plugin = $this->loadPlugin($pluginCode);
-        if ($plugin) {
-            if (!empty($dbPlugin->config)) {
-                $plugin->setConfig(json_decode($dbPlugin->config, true));
-            }
+            if ($plugin) {
+                if (!empty($dbPlugin->config)) {
+                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = $this->castConfigValuesByType($pluginCode, $values);
+                    $plugin->setConfig($values);
+                }
 
-            $plugin->update($oldVersion, $newVersion);
-        }
+                $plugin->update($oldVersion, $newVersion);
+            }
 
         $dbPlugin->update([
             'version' => $newVersion,
@@ -567,7 +572,9 @@ class PluginManager
                 }
 
                 if (!empty($dbPlugin->config)) {
-                    $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = $this->castConfigValuesByType($pluginCode, $values);
+                    $pluginInstance->setConfig($values);
                 }
 
                 $this->registerServiceProvider($pluginCode);
@@ -603,7 +610,9 @@ class PluginManager
                         return;
                     }
                     if (!empty($dbPlugin->config)) {
-                        $pluginInstance->setConfig(json_decode($dbPlugin->config, true));
+                        $values = json_decode($dbPlugin->config, true) ?: [];
+                        $values = $this->castConfigValuesByType($dbPlugin->code, $values);
+                        $pluginInstance->setConfig($values);
                     }
                     $pluginInstance->schedule($schedule);
 
@@ -668,5 +677,51 @@ class PluginManager
                 Log::info("Installed and enabled default plugin: {$pluginCode}");
             }
         }
+    }
+
+    /**
+     * 根据 config.json 的类型信息对配置值进行类型转换（仅处理 type=json 键）。
+     */
+    protected function castConfigValuesByType(string $pluginCode, array $values): array
+    {
+        $types = $this->getConfigTypes($pluginCode);
+        foreach ($values as $key => $value) {
+            $type = $types[$key] ?? null;
+
+            if ($type === 'json') {
+                if (is_array($value)) {
+                    continue;
+                }
+                
+                if (is_string($value) && $value !== '') {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $values[$key] = $decoded;
+                    }
+                }
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * 读取并缓存插件 config.json 中的键类型映射。
+     */
+    protected function getConfigTypes(string $pluginCode): array
+    {
+        if (isset($this->configTypesCache[$pluginCode])) {
+            return $this->configTypesCache[$pluginCode];
+        }
+        $types = [];
+        $configFile = $this->getPluginPath($pluginCode) . '/config.json';
+        if (File::exists($configFile)) {
+            $config = json_decode(File::get($configFile), true);
+            $fields = $config['config'] ?? [];
+            foreach ($fields as $key => $meta) {
+                $types[$key] = is_array($meta) ? ($meta['type'] ?? 'string') : 'string';
+            }
+        }
+        $this->configTypesCache[$pluginCode] = $types;
+        return $types;
     }
 }

@@ -2,8 +2,6 @@
 
 namespace App\Services\Plugin;
 
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
