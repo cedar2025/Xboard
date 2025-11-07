@@ -159,7 +159,8 @@ class ThemeService
                     $this->cleanupThemeFiles($config['name']);
                     File::deleteDirectory($targetPath);
                     File::copyDirectory($sourcePath, $targetPath);
-                    $this->initConfig($config['name']);
+                    // 更新主题时保留用户配置
+                    $this->initConfig($config['name'], true);
                     return true;
                 } else {
                     throw new Exception('Theme exists and not a newer version');
@@ -397,8 +398,11 @@ class ThemeService
 
     /**
      * Initialize theme config
+     * 
+     * @param string $theme 主题名称
+     * @param bool $preserveExisting 是否保留现有配置（更新主题时使用）
      */
-    private function initConfig(string $theme): void
+    private function initConfig(string $theme, bool $preserveExisting = false): void
     {
         $config = $this->readConfigFile($theme);
         if (!$config) {
@@ -408,6 +412,13 @@ class ThemeService
         $defaults = collect($config['configs'] ?? [])
             ->mapWithKeys(fn($col) => [$col['field_name'] => $col['default_value'] ?? ''])
             ->toArray();
-        admin_setting([self::SETTING_PREFIX . $theme => $defaults]);
+
+        if ($preserveExisting) {
+            $existingConfig = admin_setting(self::SETTING_PREFIX . $theme) ?? [];
+            $mergedConfig = array_merge($defaults, $existingConfig);
+            admin_setting([self::SETTING_PREFIX . $theme => $mergedConfig]);
+        } else {
+            admin_setting([self::SETTING_PREFIX . $theme => $defaults]);
+        }
     }
 }
