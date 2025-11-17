@@ -100,6 +100,15 @@ class ServerService
      */
     public static function getServer($serverId, $serverType)
     {
+        if($serverType == 'v2node'){
+            return Server::query()
+            ->where(function ($query) use ($serverId) {
+                $query->where('code', $serverId)
+                    ->orWhere('id', $serverId);
+            })
+            ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$serverId])
+            ->first();
+        }
         return Server::query()
             ->where('type', Server::normalizeType($serverType))
             ->where(function ($query) use ($serverId) {
