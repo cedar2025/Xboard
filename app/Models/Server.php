@@ -317,14 +317,14 @@ class Server extends Model
         return "{$serverKey}:{$userKey}";
     }
 
-    public static function normalizeType(string $type): string
+    public static function normalizeType(?string $type): string | null
     {
-        return strtolower(self::TYPE_ALIASES[$type] ?? $type);
+        return $type ? strtolower(self::TYPE_ALIASES[$type] ?? $type) : null;
     }
-
-    public static function isValidType(string $type): bool
+    
+    public static function isValidType(?string $type): bool
     {
-        return in_array(self::normalizeType($type), self::VALID_TYPES, true);
+        return $type ? in_array(self::normalizeType($type), self::VALID_TYPES, true) : true;
     }
 
     public function getAvailableStatusAttribute(): int
