@@ -14,10 +14,11 @@ class Server
     public function handle(Request $request, Closure $next, ?string $nodeType = null)
     {
         $this->validateRequest($request);
-
+        $nodeType = $request->input('node_type', $nodeType);
+        $normalizedNodeType = ServerModel::normalizeType($nodeType);
         $serverInfo = ServerService::getServer(
             $request->input('node_id'),
-            $request->input('node_type') ?? $nodeType
+            $normalizedNodeType
         );
         if (!$serverInfo) {
             throw new ApiException('Server does not exist');
@@ -43,6 +44,9 @@ class Server
             'node_type' => [
                 'nullable',
                 function ($attribute, $value, $fail) use ($request) {
+                    if ($value === "v2node") {
+                        $value = null;
+                    }
                     if (!ServerModel::isValidType($value)) {
                         $fail("Invalid node type specified");
                         return;

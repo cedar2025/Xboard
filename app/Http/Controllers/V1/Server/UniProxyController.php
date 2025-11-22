@@ -95,6 +95,8 @@ class UniProxyController extends Controller
         $host = $node->host;
 
         $baseConfig = [
+            'protocol' => $nodeType,
+            'listen_ip' => '0.0.0.0',
             'server_port' => (int) $serverPort,
             'network' => data_get($protocolSettings, 'network'),
             'networkSettings' => data_get($protocolSettings, 'network_settings') ?: null,
@@ -132,6 +134,7 @@ class UniProxyController extends Controller
                         }
             ],
             'hysteria' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'version' => (int) $protocolSettings['version'],
                 'host' => $host,
@@ -148,6 +151,7 @@ class UniProxyController extends Controller
                     }
             ],
             'tuic' => [
+                ...$baseConfig,
                 'version' => (int) $protocolSettings['version'],
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
@@ -157,24 +161,29 @@ class UniProxyController extends Controller
                 'heartbeat' => "3s",
             ],
             'anytls' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
                 'padding_scheme' => $protocolSettings['padding_scheme'],
             ],
             'socks' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
             ],
             'naive' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'tls' => (int) $protocolSettings['tls'],
                 'tls_settings' => $protocolSettings['tls_settings']
             ],
             'http' => [
+                ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'tls' => (int) $protocolSettings['tls'],
                 'tls_settings' => $protocolSettings['tls_settings']
             ],
             'mieru' => [
+                ...$baseConfig,
                 'server_port' => (string) $serverPort,
                 'protocol' => (int) $protocolSettings['protocol'],
             ],
