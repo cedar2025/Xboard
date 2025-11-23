@@ -2037,6 +2037,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "disk": "Disk Usage",
         "lastUpdate": "Last Updated"
       },
+      "customId": "Custom ID",
+      "originalId": "Original ID",
       "type": "Type",
       "actions": "Actions",
       "copyAddress": "Copy Connection Address",
@@ -2081,7 +2083,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "label": "Base Rate",
         "error": "Base rate is required",
         "error_numeric": "Base rate must be a number",
-        "error_gte_zero": "Base rate must be greater than or equal to 0"
+        "error_gte_zero": "Base rate must be greater than or equal to 0",
+        "child_node_tooltip": "Child node's base rate is inherited from parent node and cannot be set separately",
+        "child_node_note": "Child node rate inherited from parent"
       },
       "dynamic_rate": {
         "section_title": "Dynamic Rate Configuration",

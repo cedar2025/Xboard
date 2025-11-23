@@ -2004,6 +2004,8 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "disk": "磁盘使用",
         "lastUpdate": "最后更新"
       },
+      "customId": "自定义ID",
+      "originalId": "原始ID",
       "type": "类型",
       "actions": "操作",
       "copyAddress": "复制连接地址",
@@ -2048,7 +2050,9 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "label": "基础倍率",
         "error": "基础倍率不能为空",
         "error_numeric": "基础倍率必须是数字",
-        "error_gte_zero": "基础倍率必须大于或等于0"
+        "error_gte_zero": "基础倍率必须大于或等于0",
+        "child_node_tooltip": "子节点的基础倍率继承自父节点，无法单独设置",
+        "child_node_note": "子节点倍率继承自父节点"
       },
       "dynamic_rate": {
         "section_title": "动态倍率配置",
