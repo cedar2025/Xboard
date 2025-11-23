@@ -93,7 +93,7 @@ class Plugin extends AbstractPlugin
 
     if ($plan) {
       $TGmessage .= "📦 套餐: `{$plan->name}`\n";
-      $TGmessage .= "📊 流量: `{$remaining_traffic}G / {$transfer_enable}G` (已用/总计)\n";
+      $TGmessage .= "📊 流量: `{$remaining_traffic}G / {$transfer_enable}G` (剩余/总计)\n";
       $TGmessage .= "⬆️⬇️ 已用: `{$u}G / {$d}G`\n";
       $TGmessage .= "⏰ 到期: `{$expired_at}`\n";
     } else {
