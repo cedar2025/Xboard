@@ -98,10 +98,12 @@ class ServerService
      * @param string $serverType
      * @return Server|null
      */
-    public static function getServer($serverId, $serverType)
+    public static function getServer($serverId, ?string $serverType)
     {
         return Server::query()
-            ->where('type', Server::normalizeType($serverType))
+            ->when($serverType, function ($query) use ($serverType) {
+                $query->where('type', Server::normalizeType($serverType));
+            })
             ->where(function ($query) use ($serverId) {
                 $query->where('code', $serverId)
                     ->orWhere('id', $serverId);
