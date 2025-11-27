@@ -6,6 +6,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\MailLog;
 use App\Models\User;
 use App\Utils\CacheKey;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -47,7 +48,8 @@ class MailService
             })
             ->where('banned', false)
             ->whereNotNull('email')
-            ->chunk($chunkSize, function ($users) use (&$statistics, $progressCallback) {
+            ->orderBy('id')
+            ->chunkById($chunkSize, function ($users) use (&$statistics, $progressCallback) {
                 $this->processUserChunk($users, $statistics);
 
                 if ($progressCallback) {
@@ -55,12 +57,59 @@ class MailService
                 }
 
                 // 定期清理内存
-                if ($statistics['processed_users'] % 2500 === 0) {
+                $flushInterval = (int) config('mail.bulk.memory_flush_interval', 2500);
+                if ($flushInterval > 0 && $statistics['processed_users'] % $flushInterval === 0) {
                     gc_collect_cycles();
                 }
             });
 
         return $statistics;
+    }
+
+    /**
+     * 批量派发邮件任务，用于超大规模邮件发送
+     */
+    public function dispatchBulkEmails(
+        Builder $builder,
+        array $payload,
+        ?int $chunkSize = null,
+        ?string $queue = null,
+        ?callable $chunkCallback = null
+    ): array {
+        $defaultChunk = (int) config('mail.bulk.chunk_size', 1000);
+        $maxChunk = max($defaultChunk, (int) config('mail.bulk.max_chunk_size', 5000));
+        $chunkSize = max(100, min($maxChunk, (int) ($chunkSize ?? $defaultChunk)));
+        $queue = $queue ?? config('mail.bulk.mass_queue', 'send_email_mass');
+
+        $dispatched = 0;
+        $query = clone $builder;
+        $query->select('id', 'email')
+            ->whereNotNull('email')
+            ->reorder()
+            ->orderBy('id')
+            ->chunkById($chunkSize, function ($users) use ($payload, $queue, $chunkCallback, &$dispatched) {
+                foreach ($users as $user) {
+                    $jobPayload = $payload;
+                    $jobPayload['email'] = $user->email;
+                    SendEmailJob::dispatch($jobPayload, $queue);
+                    $dispatched++;
+                }
+
+                if ($chunkCallback) {
+                    $chunkCallback(count($users), $dispatched);
+                }
+
+                $flushInterval = (int) config('mail.bulk.memory_flush_interval', 2500);
+                if ($flushInterval > 0 && $dispatched % $flushInterval === 0) {
+                    gc_collect_cycles();
+                }
+            });
+
+        return [
+            'queue' => $queue,
+            'chunk_size' => $chunkSize,
+            'dispatched_jobs' => $dispatched,
+        ];
     }
 
     /**

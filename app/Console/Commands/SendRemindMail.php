@@ -14,7 +14,7 @@ class SendRemindMail extends Command
      * @var string
      */
     protected $signature = 'send:remindMail 
-                            {--chunk-size=500 : 每批处理的用户数量}
+                            {--chunk-size= : 每批处理的用户数量}
                             {--force : 强制执行，跳过确认}';
 
     /**
@@ -36,7 +36,11 @@ class SendRemindMail extends Command
             return 0;
         }
 
-        $chunkSize = max(100, min(2000, (int) $this->option('chunk-size')));
+        $defaultChunk = (int) config('mail.bulk.chunk_size', 1000);
+        $maxChunk = (int) config('mail.bulk.max_chunk_size', 5000);
+        $option = $this->option('chunk-size');
+        $chunkSize = $option !== null ? (int) $option : $defaultChunk;
+        $chunkSize = max(100, min($maxChunk, $chunkSize));
         $mailService = new MailService();
 
         $totalUsers = $mailService->getTotalUsersNeedRemind();
