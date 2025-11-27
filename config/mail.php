@@ -133,4 +133,26 @@ return [
 
     'log_channel' => env('MAIL_LOG_CHANNEL'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bulk Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | These settings control the behaviour of the high-volume mail pipeline.
+    | Adjust them in your .env file when you need to tune how many records are
+    | read per chunk, choose which queue handles mass emails, or enforce a
+    | provider friendly rate limit.
+    |
+    */
+
+    'bulk' => [
+        'chunk_size' => env('MAIL_BULK_CHUNK_SIZE', 1000),
+        'max_chunk_size' => env('MAIL_BULK_MAX_CHUNK_SIZE', 5000),
+        'queue' => env('MAIL_BULK_QUEUE', 'send_email'),
+        'mass_queue' => env('MAIL_BULK_MASS_QUEUE', 'send_email_mass'),
+        'memory_flush_interval' => env('MAIL_BULK_MEMORY_FLUSH_INTERVAL', 2500),
+        'rate_limit_per_minute' => env('MAIL_BULK_RATE_PER_MINUTE', 0),
+        'rate_limit_backoff' => env('MAIL_BULK_RATE_LIMIT_BACKOFF', 5),
+    ],
+
 ];
