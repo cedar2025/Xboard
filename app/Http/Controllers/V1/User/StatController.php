@@ -14,13 +14,24 @@ class StatController extends Controller
     public function getTrafficLog(Request $request)
     {
         $startDate = now()->startOfMonth()->timestamp;
+        
+        // Aggregate per-node data into per-day entries for backward compatibility
         $records = StatUser::query()
+            ->select([
+                'user_id',
+                'server_rate',
+                'record_at',
+                'record_type',
+                DB::raw('SUM(u) as u'),
+                DB::raw('SUM(d) as d'),
+            ])
             ->where('user_id', $request->user()->id)
             ->where('record_at', '>=', $startDate)
+            ->groupBy(['user_id', 'server_rate', 'record_at', 'record_type'])
             ->orderBy('record_at', 'DESC')
             ->get();
 
-        $data = TrafficLogResource::collection(collect($records));
+        $data = TrafficLogResource::collection($records);
         return $this->success($data);
     }
 }
