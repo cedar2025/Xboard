@@ -255,7 +255,14 @@ class StatController extends Controller
         
         // Manual pagination for grouped query
         $total = (clone $query)->get()->count();
-        $data = $query->skip(($page - 1) * $pageSize)->take($pageSize)->get();
+        $data = $query->skip(($page - 1) * $pageSize)->take($pageSize)->get()
+            ->map(function ($item) {
+                $item->u = (int) $item->u;
+                $item->d = (int) $item->d;
+                $item->created_at = (int) $item->created_at;
+                $item->updated_at = (int) $item->updated_at;
+                return $item;
+            });
 
         return [
             'data' => $data,
