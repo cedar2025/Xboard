@@ -13,7 +13,6 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\StatisticalService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class StatController extends Controller
 {
@@ -235,30 +234,14 @@ class StatController extends Controller
         ]);
 
         $pageSize = $request->input('pageSize', 10);
-        $page = $request->input('page', 1);
-        
-        // Aggregate per-node data back to per-day format for backward compatibility
-        $query = StatUser::query()
-            ->select([
-                'user_id',
-                'server_rate',
-                'record_at',
-                'record_type',
-                DB::raw('SUM(u) as u'),
-                DB::raw('SUM(d) as d'),
-                DB::raw('MAX(created_at) as created_at'),
-                DB::raw('MAX(updated_at) as updated_at'),
-            ])
+        $records = StatUser::orderBy('record_at', 'DESC')
             ->where('user_id', $request->input('user_id'))
-            ->groupBy(['user_id', 'server_rate', 'record_at', 'record_type'])
-            ->orderBy('record_at', 'DESC');
-        
-        $total = $query->get()->count();
-        $data = $query->skip(($page - 1) * $pageSize)->take($pageSize)->get();
+            ->paginate($pageSize);
 
+        $data = $records->items();
         return [
             'data' => $data,
-            'total' => $total,
+            'total' => $records->total(),
         ];
     }
 
