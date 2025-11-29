@@ -29,7 +29,12 @@ class StatController extends Controller
             ->where('record_at', '>=', $startDate)
             ->groupBy(['user_id', 'server_rate', 'record_at', 'record_type'])
             ->orderBy('record_at', 'DESC')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->u = (int) $item->u;
+                $item->d = (int) $item->d;
+                return $item;
+            });
 
         $data = TrafficLogResource::collection($records);
         return $this->success($data);
