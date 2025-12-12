@@ -1,8 +1,10 @@
 <?php
 /**
  * Copy data from the `sqlite` connection to the `mysql` connection.
- *
- * Usage: php scripts/sqlite_to_mysql.php
+ * 
+ * Usage:
+ *  php artisan migrate:fresh --force
+ *  php scripts/sqlite_to_mysql.php
  */
 
 require __DIR__ . '/../vendor/autoload.php';
