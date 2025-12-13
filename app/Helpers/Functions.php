@@ -68,6 +68,9 @@ if (!function_exists('source_base_url')) {
                 if (isset($parsedUrl['port'])) {
                     $baseUrl .= ':' . $parsedUrl['port'];
                 }
+                if (isset($parsedUrl['path']) && $parsedUrl['path'] !== '/') {
+                     $baseUrl .= rtrim($parsedUrl['path'], '/');
+                }
             }
         }
 
