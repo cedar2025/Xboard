@@ -2104,6 +2104,14 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "error": "服务端口不能为空",
         "tooltip": "服务器上的实际监听端口。"
       },
+      "listen_address": {
+        "label": "监听地址",
+        "placeholder": "留空使用默认 (0.0.0.0)，或输入: 127.0.0.1, ::1 等",
+        "description": "指定服务器监听的 IP 地址。留空则使用默认地址 (0.0.0.0)，表示监听所有网络接口。可设置为 127.0.0.1 (仅本地) 或特定 IP 地址",
+        "show": "监听地址",
+        "hide": "隐藏监听地址",
+        "optional": "可选"
+      },
       "parent": {
         "label": "父级节点",
         "placeholder": "选择父节点",
@@ -2391,6 +2399,48 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
           "MULTIPLEXING_LOW": "低",
           "MULTIPLEXING_MIDDLE": "中",
           "MULTIPLEXING_HIGH": "高"
+        }
+      },
+      "cert_config": {
+        "title": "证书配置 (高级)",
+        "cert_mode": {
+          "label": "证书模式",
+          "placeholder": "选择证书申请方式",
+          "description": "选择证书申请方式，仅部分后端节点支持",
+          "http": "HTTP",
+          "self": "Self",
+          "dns": "DNS"
+        },
+        "cert_files": {
+          "label": "证书文件",
+          "description": "配置证书和私钥文件路径，留空将自动生成"
+        },
+        "cert_file": {
+          "label": "证书文件路径",
+          "placeholder": "留空将自动生成，或输入: /path/to/cert.pem",
+          "description": "证书公钥文件路径，留空时系统将根据证书模式自动生成",
+          "auto_generate_hint": "留空自动生成"
+        },
+        "key_file": {
+          "label": "私钥文件路径",
+          "placeholder": "留空将自动生成，或输入: /path/to/key.pem",
+          "description": "证书私钥文件路径，留空时系统将根据证书模式自动生成",
+          "auto_generate_hint": "留空自动生成"
+        },
+        "dns_config": {
+          "label": "DNS 配置",
+          "description": "配置 DNS 验证所需的提供商和环境变量"
+        },
+        "dns_provider": {
+          "label": "DNS 提供商",
+          "placeholder": "例如: cloudflare, alidns, route53",
+          "description": "输入 DNS 提供商名称，参考",
+          "doc_link": "DNS 提供商文档"
+        },
+        "dns_env": {
+          "label": "DNS 环境变量",
+          "placeholder": "例如:\nCLOUDFLARE_EMAIL=you@example.com\nCLOUDFLARE_API_KEY=your_api_key",
+          "description": "每行一个环境变量，格式: KEY=value。请根据所选 DNS 提供商的要求设置相应的环境变量"
         }
       }
     },
