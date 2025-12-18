@@ -78,6 +78,7 @@ class StatUserJob implements ShouldQueue
         DB::transaction(function () use ($uid, $v, $recordAt) {
             $existingRecord = StatUser::where([
                 'user_id' => $uid,
+                'server_id' => $this->server['id'],
                 'server_rate' => $this->server['rate'],
                 'record_at' => $recordAt,
                 'record_type' => $this->recordType,
@@ -92,6 +93,7 @@ class StatUserJob implements ShouldQueue
             } else {
                 StatUser::create([
                     'user_id' => $uid,
+                    'server_id' => $this->server['id'],
                     'server_rate' => $this->server['rate'],
                     'record_at' => $recordAt,
                     'record_type' => $this->recordType,
@@ -109,6 +111,7 @@ class StatUserJob implements ShouldQueue
         StatUser::upsert(
             [
                 'user_id' => $uid,
+                'server_id' => $this->server['id'],
                 'server_rate' => $this->server['rate'],
                 'record_at' => $recordAt,
                 'record_type' => $this->recordType,
@@ -117,7 +120,7 @@ class StatUserJob implements ShouldQueue
                 'created_at' => time(),
                 'updated_at' => time(),
             ],
-            ['user_id', 'server_rate', 'record_at', 'record_type'],
+            ['user_id', 'server_id', 'server_rate', 'record_at', 'record_type'],
             [
                 'u' => DB::raw("u + VALUES(u)"),
                 'd' => DB::raw("d + VALUES(d)"),
@@ -136,9 +139,9 @@ class StatUserJob implements ShouldQueue
         $u = ($v[0] * $this->server['rate']);
         $d = ($v[1] * $this->server['rate']);
 
-        $sql = "INSERT INTO {$table} (user_id, server_rate, record_at, record_type, u, d, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (user_id, server_rate, record_at)
+        $sql = "INSERT INTO {$table} (user_id, server_id, server_rate, record_at, record_type, u, d, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (user_id, server_id, server_rate, record_at)
                 DO UPDATE SET
                     u = {$table}.u + EXCLUDED.u,
                     d = {$table}.d + EXCLUDED.d,
@@ -146,6 +149,7 @@ class StatUserJob implements ShouldQueue
 
         DB::statement($sql, [
             $uid,
+            $this->server['id'],
             $this->server['rate'],
             $recordAt,
             $this->recordType,
