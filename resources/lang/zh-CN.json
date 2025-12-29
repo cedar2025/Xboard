@@ -142,6 +142,8 @@
     "traffic_reset.source.api": "API调用",
     "traffic_reset.source.cron": "定时任务",
     "traffic_reset.source.user_access": "用户访问",
+    "traffic_reset.source.order": "订单购买",
+    "traffic_reset.source.gift_card": "礼品卡",
     "traffic_reset.reset_success": "流量重置成功",
     "traffic_reset.reset_failed": "流量重置失败，请查看日志获取详细信息",
     "traffic_reset.user_cannot_reset": "该用户当前不能重置流量（用户未激活或无有效套餐）"
