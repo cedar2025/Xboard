@@ -1,267 +1,401 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Elephant Route - CONNECT THE UNSEEN</title>
-  <script>
-    // Redirect SPA routes (like /#/login) to the /app path
-    (function() {
-      if (window.location.hash && window.location.hash.length > 1) {
-        window.location.href = '/app' + window.location.hash;
-      }
-    })();
-  </script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root { --text-main: #000; --text-dim: #666; --border: #e0e0e0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      -webkit-font-smoothing: antialiased; overflow-x: hidden; background: #ffffff;
-    }
-    .landing-page { position: relative; min-height: 100vh; }
-    
-    .landing-page header {
-      position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0 40px; background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 100;
-    }
-    .landing-page .brand {
-      display: flex; align-items: center; font-size: 1.2rem;
-      font-weight: 700; color: var(--text-main);
-    }
-    .landing-page .header-buttons { display: flex; gap: 12px; }
-    .landing-page .btn-login, .landing-page .btn-primary {
-      padding: 8px 20px; border-radius: 4px; font-size: 0.85rem;
-      transition: all 0.3s; font-weight: 600; cursor: pointer;
-    }
-    .landing-page .btn-login {
-      border: 1px solid #e0e0e0; color: var(--text-main); background: transparent;
-    }
-    .landing-page .btn-login:hover {
-      background: var(--text-main); color: white; border-color: var(--text-main);
-    }
-    .landing-page .btn-primary {
-      border: 1px solid var(--text-main); background: var(--text-main); color: white;
-    }
-    .landing-page .btn-primary:hover {
-      background: #333; border-color: #333; transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .landing-page .hero {
-      height: 100vh; display: flex; flex-direction: column;
-      justify-content: center; align-items: center; text-align: center;
-      position: relative; overflow: hidden; background: #ffffff;
-    }
-    .landing-page .bg-grid {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background-image: linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-      background-size: 40px 40px; z-index: 1;
-      mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-      pointer-events: none;
-    }
-    .landing-page .hero h1 {
-      font-size: clamp(3rem, 8vw, 6rem); line-height: 0.9; letter-spacing: -0.04em;
-      font-weight: 800; margin: 0; color: var(--text-main);
-      background: linear-gradient(180deg, #000 0%, #555 100%);
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: fadeIn 1s ease-out; position: relative; z-index: 2;
-    }
-    .landing-page .hero p.subtitle {
-      font-size: 1.5rem; color: var(--text-dim); margin-top: 20px;
-      letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600;
-      animation: fadeIn 1s ease-out 0.2s backwards; position: relative; z-index: 2;
-    }
-    .landing-page .hero p.description {
-      max-width: 600px; color: var(--text-dim); margin-top: 30px;
-      line-height: 1.6; font-size: 1rem;
-      animation: fadeIn 1s ease-out 0.4s backwards; position: relative; z-index: 2;
-    }
-    .landing-page .hero .cta-btn {
-      margin-top: 50px; padding: 16px 48px; background: #000; color: #fff;
-      font-weight: 700; border: none; cursor: pointer; font-size: 1rem;
-      letter-spacing: 0.05em; border-radius: 2px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      animation: fadeIn 1s ease-out 0.6s backwards; position: relative; z-index: 2;
-    }
-    .landing-page .hero .cta-btn:hover {
-      transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    }
-    .landing-page footer {
-      text-align: center; padding: 40px; color: var(--text-dim);
-      font-size: 0.8rem; border-top: 1px solid var(--border);
-      background: #fafafa; position: relative; z-index: 10;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @media (max-width: 768px) {
-      .landing-page .hero h1 { font-size: 12vw; }
-      .landing-page header { padding: 0 20px; }
-    }
-    
-    /* Mouse Particles Canvas */
-    #particleCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
-    
-    /* Make brand clickable */
-    .landing-page .brand {
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .landing-page .brand:hover {
-      opacity: 0.8;
-    }
-  </style>
-</head>
-<body>
-  <div class="landing-page">
-    <header>
-      <div class="brand" id="brandLogo">
-        <img src="/landing/assets/elephant-route-logo.jpg" alt="Logo" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
-        Elephant Route
-      </div>
-      <div class="header-buttons">
-        <button class="btn-login" id="loginBtn">登录</button>
-        <button class="btn-primary" id="registerBtn">注册</button>
-      </div>
-    </header>
-
-    <section class="hero">
-      <div class="bg-grid"></div>
-      <h1>CONNECT THE UNSEEN</h1>
-      <p class="subtitle">极速 · 隐秘 · 无界</p>
-      <p class="description">专为极客打造的下一代全球网络加速服务。突破物理边界，重塑数字自由。</p>
-      <button class="cta-btn" id="ctaBtn">开始使用</button>
-    </section>
-
-    <footer>
-      <p>© 2024 Elephant Route Inc. All rights reserved.</p>
-    </footer>
-  </div>
-
-  <!-- Mouse Particle Canvas -->
-  <canvas id="particleCanvas"></canvas>
-
-  <script>
-    window.addEventListener('load', function() {
-      // Navigation buttons
-      document.getElementById('loginBtn').addEventListener('click', function() {
-        window.location.href = '/app#/login';
-      });
-      
-      document.getElementById('registerBtn').addEventListener('click', function() {
-        window.location.href = '/app#/register';
-      });
-      
-      document.getElementById('ctaBtn').addEventListener('click', function() {
-        window.location.href = '/app#/register';
-      });
-      
-      // Logo click - navigate to landing page
-      document.getElementById('brandLogo').addEventListener('click', function() {
-        window.location.href = '/landing/';
-      });
-      
-      // Mouse Particle Effect
-      const canvas = document.getElementById('particleCanvas');
-      const ctx = canvas.getContext('2d');
-      let particles = [];
-      let animationFrameId;
-      
-      // Resize canvas
-      function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-      
-      // Particle class
-      function createParticle(x, y) {
-        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD'];
-        return {
-          x: x,
-          y: y,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          life: 1,
-          size: Math.random() * 3 + 1,
-          color: colors[Math.floor(Math.random() * colors.length)]
-        };
-      }
-      
-      // Mouse move handler
-      window.addEventListener('mousemove', function(e) {
-        // Spawn 3 particles on mouse move
-        for (let i = 0; i < 3; i++) {
-          particles.push(createParticle(e.clientX, e.clientY));
-        }
-      });
-      
-      // Animation loop
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Update and draw particles
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= 0.02;
-          p.size *= 0.95;
-          
-          // Remove dead particles
-          if (p.life <= 0 || p.size < 0.1) {
-            particles.splice(i, 1);
-            continue;
-          }
-          
-          // Draw particle
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.globalAlpha = p.life;
-          ctx.fill();
-          ctx.globalAlpha = 1;
-        }
-        
-        // Connect particles with lines
-        ctx.strokeStyle = 'rgba(100, 100, 100, 0.1)';
-        ctx.lineWidth = 0.5;
-        
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < 100) {
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.stroke();
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>大象网络 - CONNECT THE UNSEEN</title>
+        <script>
+            // Redirect SPA routes (like /#/login) to the /app path
+            (function () {
+                if (window.location.hash && window.location.hash.length > 1) {
+                    window.location.href = "/app" + window.location.hash;
+                }
+            })();
+        </script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-          }
-        }
-        
-        animationFrameId = requestAnimationFrame(animate);
-      }
-      
-      animate();
-    });
-  </script>
-</body>
+            :root {
+                --text-main: #000;
+                --text-dim: #666;
+                --border: #e0e0e0;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    "Roboto", sans-serif;
+                -webkit-font-smoothing: antialiased;
+                overflow-x: hidden;
+                background: #ffffff;
+            }
+            .landing-page {
+                position: relative;
+                min-height: 100vh;
+            }
+
+            .landing-page header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 60px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 40px;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid var(--border);
+                z-index: 100;
+            }
+            .landing-page .brand {
+                display: flex;
+                align-items: center;
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: var(--text-main);
+            }
+            .landing-page .header-buttons {
+                display: flex;
+                gap: 12px;
+            }
+            .landing-page .btn-login,
+            .landing-page .btn-primary {
+                padding: 8px 20px;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                transition: all 0.3s;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .landing-page .btn-login {
+                border: 1px solid #e0e0e0;
+                color: var(--text-main);
+                background: transparent;
+            }
+            .landing-page .btn-login:hover {
+                background: var(--text-main);
+                color: white;
+                border-color: var(--text-main);
+            }
+            .landing-page .btn-primary {
+                border: 1px solid var(--text-main);
+                background: var(--text-main);
+                color: white;
+            }
+            .landing-page .btn-primary:hover {
+                background: #333;
+                border-color: #333;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .landing-page .hero {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+                background: #ffffff;
+            }
+            .landing-page .bg-grid {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: linear-gradient(
+                        rgba(0, 0, 0, 0.03) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(0, 0, 0, 0.03) 1px,
+                        transparent 1px
+                    );
+                background-size: 40px 40px;
+                z-index: 1;
+                mask-image: radial-gradient(
+                    circle at center,
+                    black 0%,
+                    transparent 80%
+                );
+                pointer-events: none;
+            }
+            .landing-page .hero h1 {
+                font-size: clamp(3rem, 8vw, 6rem);
+                line-height: 0.9;
+                letter-spacing: -0.04em;
+                font-weight: 800;
+                margin: 0;
+                color: var(--text-main);
+                background: linear-gradient(180deg, #000 0%, #555 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: fadeIn 1s ease-out;
+                position: relative;
+                z-index: 2;
+            }
+            .landing-page .hero p.subtitle {
+                font-size: 1.5rem;
+                color: var(--text-dim);
+                margin-top: 20px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                font-weight: 600;
+                animation: fadeIn 1s ease-out 0.2s backwards;
+                position: relative;
+                z-index: 2;
+            }
+            .landing-page .hero p.description {
+                max-width: 600px;
+                color: var(--text-dim);
+                margin-top: 30px;
+                line-height: 1.6;
+                font-size: 1rem;
+                animation: fadeIn 1s ease-out 0.4s backwards;
+                position: relative;
+                z-index: 2;
+            }
+            .landing-page .hero .cta-btn {
+                margin-top: 50px;
+                padding: 16px 48px;
+                background: #000;
+                color: #fff;
+                font-weight: 700;
+                border: none;
+                cursor: pointer;
+                font-size: 1rem;
+                letter-spacing: 0.05em;
+                border-radius: 2px;
+                transition: transform 0.2s, box-shadow 0.2s;
+                animation: fadeIn 1s ease-out 0.6s backwards;
+                position: relative;
+                z-index: 2;
+            }
+            .landing-page .hero .cta-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            }
+            .landing-page footer {
+                text-align: center;
+                padding: 40px;
+                color: var(--text-dim);
+                font-size: 0.8rem;
+                border-top: 1px solid var(--border);
+                background: #fafafa;
+                position: relative;
+                z-index: 10;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @media (max-width: 768px) {
+                .landing-page .hero h1 {
+                    font-size: 12vw;
+                }
+                .landing-page header {
+                    padding: 0 20px;
+                }
+            }
+
+            /* Mouse Particles Canvas */
+            #particleCanvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            /* Make brand clickable */
+            .landing-page .brand {
+                cursor: pointer;
+                transition: opacity 0.2s;
+            }
+            .landing-page .brand:hover {
+                opacity: 0.8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="landing-page">
+            <header>
+                <div class="brand" id="brandLogo">
+                    <img
+                        src="/landing/assets/elephant-route-logo.jpg"
+                        alt="Logo"
+                        style="
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            margin-right: 10px;
+                        "
+                    />
+                    大象网络
+                </div>
+                <div class="header-buttons">
+                    <button class="btn-login" id="loginBtn">登录</button>
+                    <button class="btn-primary" id="registerBtn">注册</button>
+                </div>
+            </header>
+
+            <section class="hero">
+                <div class="bg-grid"></div>
+                <h1>CONNECT THE UNSEEN</h1>
+                <p class="subtitle">极速 · 隐秘 · 无界</p>
+                <p class="description">
+                    专为极客打造的下一代全球网络加速服务。突破物理边界，重塑数字自由。
+                </p>
+                <button class="cta-btn" id="ctaBtn">开始使用</button>
+            </section>
+
+            <footer>
+                <p>© 2024 大象网络 Inc. All rights reserved.</p>
+            </footer>
+        </div>
+
+        <!-- Mouse Particle Canvas -->
+        <canvas id="particleCanvas"></canvas>
+
+        <script>
+            window.addEventListener("load", function () {
+                // Navigation buttons
+                document
+                    .getElementById("loginBtn")
+                    .addEventListener("click", function () {
+                        window.location.href = "/app#/login";
+                    });
+
+                document
+                    .getElementById("registerBtn")
+                    .addEventListener("click", function () {
+                        window.location.href = "/app#/register";
+                    });
+
+                document
+                    .getElementById("ctaBtn")
+                    .addEventListener("click", function () {
+                        window.location.href = "/app#/register";
+                    });
+
+                // Logo click - navigate to landing page
+                document
+                    .getElementById("brandLogo")
+                    .addEventListener("click", function () {
+                        window.location.href = "/landing/";
+                    });
+
+                // Mouse Particle Effect
+                const canvas = document.getElementById("particleCanvas");
+                const ctx = canvas.getContext("2d");
+                let particles = [];
+                let animationFrameId;
+
+                // Resize canvas
+                function resizeCanvas() {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                }
+                resizeCanvas();
+                window.addEventListener("resize", resizeCanvas);
+
+                // Particle class
+                function createParticle(x, y) {
+                    const colors = [
+                        "#FF6B6B",
+                        "#4ECDC4",
+                        "#45B7D1",
+                        "#96CEB4",
+                        "#FFEEAD",
+                    ];
+                    return {
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        life: 1,
+                        size: Math.random() * 3 + 1,
+                        color: colors[
+                            Math.floor(Math.random() * colors.length)
+                        ],
+                    };
+                }
+
+                // Mouse move handler
+                window.addEventListener("mousemove", function (e) {
+                    // Spawn 3 particles on mouse move
+                    for (let i = 0; i < 3; i++) {
+                        particles.push(createParticle(e.clientX, e.clientY));
+                    }
+                });
+
+                // Animation loop
+                function animate() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Update and draw particles
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= 0.02;
+                        p.size *= 0.95;
+
+                        // Remove dead particles
+                        if (p.life <= 0 || p.size < 0.1) {
+                            particles.splice(i, 1);
+                            continue;
+                        }
+
+                        // Draw particle
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = p.life;
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    // Connect particles with lines
+                    ctx.strokeStyle = "rgba(100, 100, 100, 0.1)";
+                    ctx.lineWidth = 0.5;
+
+                    for (let i = 0; i < particles.length; i++) {
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const dx = particles[i].x - particles[j].x;
+                            const dy = particles[i].y - particles[j].y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < 100) {
+                                ctx.beginPath();
+                                ctx.moveTo(particles[i].x, particles[i].y);
+                                ctx.lineTo(particles[j].x, particles[j].y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+
+                animate();
+            });
+        </script>
+    </body>
 </html>
