@@ -19,13 +19,20 @@ use Illuminate\Support\Facades\File;
 */
 
 
-// Root path - Smart routing based on hash
+// Root path - Serve SPA application (前端会处理路由跳转)
 Route::get('/', function (Request $request) {
-    // Check if this is a request for the SPA (has hash in referrer or is an API call)
-    // When user visits /#/login or /#/register, we need to serve the dashboard app
-    // But we can't detect hash on server side, so we serve landing page by default
-    // and let landing page redirect to /app if hash is present
+    // 检查管理员安全模式设置
+    if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
+        if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
+            abort(403);
+        }
+    }
     
+    return view('app');
+});
+
+// Landing Page - 访问 /welcome 查看产品介绍页
+Route::get('/welcome', function (Request $request) {
     $landingPagePath = public_path('landing/index.html');
     if (file_exists($landingPagePath)) {
         return response(file_get_contents($landingPagePath), 200)
@@ -34,10 +41,7 @@ Route::get('/', function (Request $request) {
     abort(404, 'Landing page not found');
 });
 
-// Keep /landing for backwards compatibility
-Route::get('/landing', function () {
-    return redirect('/');
-});
+
 
 // Dashboard/App Route - for SPA functionality (login, register, dashboard)
 Route::get('/app', function (Request $request) {
