@@ -76,7 +76,7 @@
         if (card && cardContent) {
           // Create anchor wrapper for native HTML navigation
           const logoLink = document.createElement('a');
-          logoLink.href = '/landing/';
+          logoLink.href = '/';
           logoLink.id = 'custom-login-logo-link';
           logoLink.style.display = 'block';
           logoLink.style.textDecoration = 'none';
@@ -168,8 +168,8 @@
           logo.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Logo clicked! Navigating to /landing/');
-            window.location.assign(window.location.origin + '/landing/');
+            console.log('Logo clicked! Navigating to home page');
+            window.location.assign(window.location.origin + '/');
           });
           
           logo.addEventListener('mouseenter', function() {
