@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\File;
 */
 
 
-// Root path - Serve SPA application (前端会处理路由跳转)
+// Root path - Serve Landing Page
 Route::get('/', function (Request $request) {
     // 检查管理员安全模式设置
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
@@ -28,6 +28,14 @@ Route::get('/', function (Request $request) {
         }
     }
     
+    // 返回 Landing Page
+    $landingPagePath = public_path('landing/index.html');
+    if (file_exists($landingPagePath)) {
+        return response(file_get_contents($landingPagePath), 200)
+            ->header('Content-Type', 'text/html; charset=utf-8');
+    }
+    
+    // 如果 Landing Page 不存在，返回 SPA 应用
     return view('app');
 });
 
