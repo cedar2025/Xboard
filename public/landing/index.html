@@ -232,14 +232,7 @@
                 z-index: 0;
             }
 
-            /* Make brand clickable */
-            .landing-page .brand {
-                cursor: pointer;
-                transition: opacity 0.2s;
-            }
-            .landing-page .brand:hover {
-                opacity: 0.8;
-            }
+
         </style>
     </head>
     <body>
@@ -303,12 +296,7 @@
                         window.location.href = "/app#/register";
                     });
 
-                // Logo click - navigate to landing page
-                document
-                    .getElementById("brandLogo")
-                    .addEventListener("click", function () {
-                        window.location.href = "/welcome";
-                    });
+
 
                 // Mouse Particle Effect
                 const canvas = document.getElementById("particleCanvas");
