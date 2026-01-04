@@ -2761,7 +2761,11 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "trigger_sources": {
           "auto": "自动触发",
           "manual": "手动触发",
-          "cron": "定时任务"
+          "api": "API调用",
+          "cron": "定时任务",
+          "user_access": "用户访问",
+          "order": "订单购买",
+          "gift_card": "礼品卡"
         }
       },
       "actions": {

@@ -93,6 +93,8 @@ class TrafficResetLog extends Model
             self::SOURCE_API => __('traffic_reset.source.api'),
             self::SOURCE_CRON => __('traffic_reset.source.cron'),
             self::SOURCE_USER_ACCESS => __('traffic_reset.source.user_access'),
+            self::SOURCE_ORDER => __('traffic_reset.source.order'),
+            self::SOURCE_GIFT_CARD => __('traffic_reset.source.gift_card'),
         ];
     }
 
