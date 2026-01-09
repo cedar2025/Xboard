@@ -68,6 +68,17 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                         'type' => 'plugin'
                     ];
                 }
+
+                // 兼容旧的支付方式名称（向后兼容）
+                if ($paymentMethod === 'card_wechat_alipay' || $paymentMethod === 'stripe_checkout' || $paymentMethod === 'stripe_checkout_crypto') {
+                    // 添加旧名称作为别名，指向同一个插件
+                    $methods['StripeWeChatAlipay'] = [
+                        'name' => 'Stripe 支付（旧版兼容）',
+                        'icon' => '💳',
+                        'plugin_code' => $this->getPluginCode(),
+                        'type' => 'plugin'
+                    ];
+                }
             }
             return $methods;
         });
@@ -239,17 +250,46 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         try {
             $this->initializeStripe();
 
-            $currency = strtoupper($this->getConfig('currency', 'CNY'));
-            $amount = $order['total_amount'];
+            $configCurrency = strtoupper($this->getConfig('currency', 'CNY'));
+            $amount = $order['total_amount']; // 订单原始金额（CNY 分）
             $paymentMethod = $this->getConfig('payment_method', 'both');
 
-            // 货币转换处理
-            if ($currency !== 'CNY') {
-                $exchangeRate = $this->getExchangeRate('CNY', $currency);
-                if (!$exchangeRate) {
-                    throw new ApiException('货币转换失败，请稍后重试');
+            // 检查是否启用多货币显示
+            $enableCurrencyConversion = $this->getConfig('enable_currency_conversion', 'false') === 'true';
+
+            // 决定主货币
+            if ($enableCurrencyConversion) {
+                // 启用多货币显示：根据用户 IP 智能选择主货币
+                $currency = $this->getSmartPrimaryCurrency($order);
+
+                // 如果智能选择的货币不是 CNY，需要转换金额
+                if ($currency !== 'CNY') {
+                    $exchangeRate = $this->getExchangeRate('CNY', $currency);
+                    if (!$exchangeRate) {
+                        throw new ApiException('货币转换失败，请稍后重试');
+                    }
+                    $amount = floor($amount * $exchangeRate);
                 }
-                $amount = floor($amount * $exchangeRate);
+
+                Log::info('启用多货币显示，根据用户IP智能选择主货币', [
+                    'original_currency' => 'CNY',
+                    'primary_currency' => $currency,
+                    'amount' => $amount,
+                    'user_ip' => request()->ip(),
+                    'trade_no' => $order['trade_no']
+                ]);
+            } else {
+                // 未启用多货币显示：使用配置的货币
+                $currency = $configCurrency;
+
+                // 货币转换处理
+                if ($currency !== 'CNY') {
+                    $exchangeRate = $this->getExchangeRate('CNY', $currency);
+                    if (!$exchangeRate) {
+                        throw new ApiException('货币转换失败，请稍后重试');
+                    }
+                    $amount = floor($amount * $exchangeRate);
+                }
             }
 
             // 检查最小金额限制
@@ -584,7 +624,6 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
             // 构建Checkout Session参数
             $sessionParams = [
-                'payment_method_types' => $paymentMethodTypes,
                 'line_items' => [$lineItem],
                 'mode' => 'payment',
                 'success_url' => $order['return_url'] . '?session_id={CHECKOUT_SESSION_ID}&trade_no=' . $order['trade_no'],
@@ -608,6 +647,19 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'customer_creation' => 'always',
                 'locale' => 'auto',
             ];
+
+            // 根据是否启用加密货币决定支付方式配置
+            if ($shouldEnableCrypto && $currencyLower === 'usd') {
+                // 启用加密货币：不指定 payment_method_types，让 Stripe 自动显示所有可用方式
+                // Stripe 会自动显示 Dashboard 中启用的所有支付方式（包括加密货币）
+                Log::info('使用自动支付方式检测（支持加密货币）', [
+                    'currency' => $currency,
+                    'trade_no' => $order['trade_no']
+                ]);
+            } else {
+                // 未启用加密货币：手动指定支付方式
+                $sessionParams['payment_method_types'] = $paymentMethodTypes;
+            }
 
             // 如果启用了发票生成功能，添加 invoice_creation 参数
             if ($enableInvoiceCreation) {
@@ -1305,6 +1357,141 @@ class Plugin extends AbstractPlugin implements PaymentInterface
     }
 
     /**
+     * 根据用户 IP 智能选择主货币
+     *
+     * @param array $order 订单信息
+     * @return string 主货币代码（CNY, USD, HKD 等）
+     */
+    private function getSmartPrimaryCurrency(array $order): string
+    {
+        // 获取用户 IP
+        $userIp = request()->ip();
+
+        try {
+            // 使用 Laravel 的 geoip 辅助函数（如果可用）
+            if (function_exists('geoip')) {
+                $geoData = geoip($userIp);
+                $countryCode = $geoData->iso_code ?? null;
+            } else {
+                // 备用方案：通过简单的 IP 段判断（不准确但能用）
+                $countryCode = $this->getCountryByIp($userIp);
+            }
+
+            // 根据国家代码选择主货币
+            $currencyMap = [
+                'CN' => 'CNY',  // 中国 → 人民币
+                'HK' => 'HKD',  // 香港 → 港币
+                'MO' => 'HKD',  // 澳门 → 港币
+                'TW' => 'CNY',  // 台湾 → 人民币
+                'US' => 'USD',  // 美国 → 美元
+                'GB' => 'GBP',  // 英国 → 英镑
+                'JP' => 'JPY',  // 日本 → 日元
+                'SG' => 'SGD',  // 新加坡 → 新币
+                'EU' => 'EUR',  // 欧盟 → 欧元
+                'DE' => 'EUR',  // 德国 → 欧元
+                'FR' => 'EUR',  // 法国 → 欧元
+            ];
+
+            $primaryCurrency = $currencyMap[$countryCode] ?? 'CNY'; // 默认人民币
+
+            Log::info('根据用户地理位置选择主货币', [
+                'user_ip' => $userIp,
+                'country_code' => $countryCode,
+                'primary_currency' => $primaryCurrency,
+                'trade_no' => $order['trade_no'] ?? 'unknown'
+            ]);
+
+            return $primaryCurrency;
+
+        } catch (\Exception $e) {
+            Log::warning('地理位置检测失败，使用默认货币', [
+                'error' => $e->getMessage(),
+                'user_ip' => $userIp
+            ]);
+
+            // 默认返回人民币
+            return 'CNY';
+        }
+    }
+
+    /**
+     * 通过 IP 地址简单判断国家（备用方案）
+     *
+     * @param string $ip IP 地址
+     * @return string|null 国家代码
+     */
+    private function getCountryByIp(string $ip): ?string
+    {
+        // 中国 IP 段（示例，实际应该用更完整的数据库）
+        $chinaRanges = [
+            ['1.0.1.0', '1.0.3.255'],
+            ['1.0.8.0', '1.0.15.255'],
+            // 可以添加更多中国 IP 段
+        ];
+
+        $ipLong = ip2long($ip);
+        if ($ipLong === false) {
+            return null;
+        }
+
+        foreach ($chinaRanges as $range) {
+            $start = ip2long($range[0]);
+            $end = ip2long($range[1]);
+            if ($ipLong >= $start && $ipLong <= $end) {
+                return 'CN';
+            }
+        }
+
+        // 私有 IP 或本地测试，默认中国
+        if ($this->isPrivateIp($ip)) {
+            return 'CN';
+        }
+
+        return null;
+    }
+
+    /**
+     * 判断是否是私有 IP
+     *
+     * @param string $ip IP 地址
+     * @return bool
+     */
+    private function isPrivateIp(string $ip): bool
+    {
+        $privateRanges = [
+            '127.0.0.0/8',
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+        ];
+
+        foreach ($privateRanges as $range) {
+            if ($this->ipInRange($ip, $range)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 判断 IP 是否在指定范围内
+     *
+     * @param string $ip IP 地址
+     * @param string $range CIDR 格式的 IP 范围
+     * @return bool
+     */
+    private function ipInRange(string $ip, string $range): bool
+    {
+        list($subnet, $bits) = explode('/', $range);
+        $ip = ip2long($ip);
+        $subnet = ip2long($subnet);
+        $mask = -1 << (32 - $bits);
+        $subnet &= $mask;
+        return ($ip & $mask) == $subnet;
+    }
+
+    /**
      * 获取货币选项（用于多货币显示功能）
      *
      * @param string $primaryCurrency 主货币（网站显示的货币）
@@ -1317,14 +1504,15 @@ class Plugin extends AbstractPlugin implements PaymentInterface
         $currencyOptions = [];
 
         // 定义货币组合：主货币 => 备选货币列表
+        // 策略：人民币总是作为备选货币（如果主货币不是人民币），美元作为通用备选货币
         $currencyPairs = [
-            'CNY' => ['USD', 'EUR', 'HKD'],  // 人民币可选美元、欧元、港币
-            'USD' => ['CNY', 'EUR'],          // 美元可选人民币、欧元
-            'EUR' => ['USD', 'CNY'],          // 欧元可选美元、人民币
-            'HKD' => ['CNY', 'USD'],          // 港币可选人民币、美元
-            'GBP' => ['USD', 'EUR'],          // 英镑可选美元、欧元
-            'JPY' => ['USD', 'CNY'],          // 日元可选美元、人民币
-            'SGD' => ['USD', 'CNY'],          // 新币可选美元、人民币
+            'CNY' => ['USD', 'HKD', 'EUR'],   // 人民币可选美元、港币、欧元
+            'USD' => ['CNY', 'EUR', 'HKD'],   // 美元可选人民币、欧元、港币
+            'EUR' => ['CNY', 'USD', 'GBP'],   // 欧元可选人民币、美元、英镑
+            'HKD' => ['CNY', 'USD', 'EUR'],   // 港币可选人民币、美元、欧元
+            'GBP' => ['CNY', 'USD', 'EUR'],   // 英镑可选人民币、美元、欧元
+            'JPY' => ['CNY', 'USD', 'HKD'],   // 日元可选人民币、美元、港币
+            'SGD' => ['CNY', 'USD', 'HKD'],   // 新币可选人民币、美元、港币
         ];
 
         // 如果主货币不在支持列表中，返回空
