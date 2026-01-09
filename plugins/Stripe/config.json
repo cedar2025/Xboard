@@ -1,0 +1,8 @@
+{
+    "name": "Stripe 支付",
+    "code": "stripe",
+    "type": "payment",
+    "version": "1.3.7",
+    "description": "Stripe payment plugin for Xboard. Supports Card, WeChat Pay, Alipay, and Cryptocurrency (USDC, USDT, Bitcoin).",
+    "author": "ZUANBIGMONKEY"
+}
