@@ -198,6 +198,17 @@ class ClashMeta extends AbstractProtocol
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
+            if (isset($config['proxy-groups'][$k]['filter'])) {
+                $pattern = $config['proxy-groups'][$k]['filter'];
+                if (strpos($pattern, '/') === false) {
+                    $pattern = '/' . $pattern . '/ui';
+                }
+                $config['proxy-groups'][$k]['proxies'] = array_values(array_filter($proxies, function ($proxy) use ($pattern) {
+                    return $this->isMatch($pattern, $proxy);
+                }));
+                continue;
+            }
+
             if (!is_array($config['proxy-groups'][$k]['proxies']))
                 $config['proxy-groups'][$k]['proxies'] = [];
             $isFilter = false;
@@ -353,9 +364,8 @@ class ClashMeta extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
-                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
-                if ($headerType === 'http') {
+                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     if (
                         $httpOpts = array_filter([
                             'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
