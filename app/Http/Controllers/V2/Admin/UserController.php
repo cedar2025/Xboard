@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserGenerate;
 use App\Http\Requests\Admin\UserSendMail;
 use App\Http\Requests\Admin\UserUpdate;
-use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\MailService;
 use App\Services\UserService;
 use App\Traits\QueryOperators;
 use App\Utils\Helper;
@@ -452,20 +452,22 @@ class UserController extends Controller
             'content' => $content
         ];
 
-        $chunkSize = 1000;
+        $chunkSize = (int) ($request->input('chunk_size') ?? config('mail.bulk.chunk_size', 1000));
+        $queue = $request->input('queue', config('mail.bulk.mass_queue', 'send_email_mass'));
 
-        $builder->chunk($chunkSize, function ($users) use ($subject, $templateValue, &$totalProcessed) {
-            foreach ($users as $user) {
-                dispatch(new SendEmailJob([
-                    'email' => $user->email,
-                    'subject' => $subject,
-                    'template_name' => 'notify',
-                    'template_value' => $templateValue
-                ], 'send_email_mass'));
-            }
-        });
+        $mailService = app(MailService::class);
+        $result = $mailService->dispatchBulkEmails(
+            $builder,
+            [
+                'subject' => $subject,
+                'template_name' => 'notify',
+                'template_value' => $templateValue,
+            ],
+            $chunkSize,
+            $queue
+        );
 
-        return $this->success(true);
+        return $this->success($result);
     }
 
     public function ban(Request $request)

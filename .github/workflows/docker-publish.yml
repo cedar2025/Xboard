@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  GHCR_REGISTRY: ghcr.io
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
   build:
@@ -21,12 +21,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1 
+          fetch-depth: 1
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: 'arm64,amd64'
+          platforms: "arm64,amd64"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,7 +47,7 @@ jobs:
       - name: Login to registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -55,7 +55,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.GHCR_IMAGE }}
           tags: |
             type=ref,event=branch
             type=sha,format=long
@@ -101,7 +101,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.4.0
         with:
-          cosign-release: 'v2.2.2'
+          cosign-release: "v2.2.2"
 
       - name: Sign image
         if: steps.build-and-push.outputs.digest != ''
