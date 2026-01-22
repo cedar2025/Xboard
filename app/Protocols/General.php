@@ -17,6 +17,7 @@ class General extends AbstractProtocol
         Server::TYPE_SHADOWSOCKS,
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
+        Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
     ];
 
@@ -38,6 +39,7 @@ class General extends AbstractProtocol
                 Server::TYPE_SHADOWSOCKS => self::buildShadowsocks($item['password'], $item),
                 Server::TYPE_TROJAN => self::buildTrojan($item['password'], $item),
                 Server::TYPE_HYSTERIA => self::buildHysteria($item['password'], $item),
+                Server::TYPE_ANYTLS => self::buildAnyTLS($item['password'], $item),
                 Server::TYPE_SOCKS => self::buildSocks($item['password'], $item),
                 default => '',
             };
@@ -255,6 +257,20 @@ class General extends AbstractProtocol
         return $uri;
     }
 
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $name = rawurlencode($server['name']);
+        $params = [
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+        ];
+        $query = http_build_query($params);
+        $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri .= "\r\n";
+        return $uri;
+    }
+    
     public static function buildSocks($password, $server)
     {
         $name = rawurlencode($server['name']);
