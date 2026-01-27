@@ -63,10 +63,17 @@ class UserController extends Controller
         collect($request->input('filter'))->each(function ($filter) use ($builder) {
             $field = $filter['id'];
             $value = $filter['value'];
+            $logic = strtolower($filter['logic'] ?? 'and');
 
-            $builder->where(function ($query) use ($field, $value) {
-                $this->buildFilterQuery($query, $field, $value);
-            });
+            if ($logic === 'or') {
+                $builder->orWhere(function ($query) use ($field, $value) {
+                    $this->buildFilterQuery($query, $field, $value);
+                });
+            } else {
+                $builder->where(function ($query) use ($field, $value) {
+                    $this->buildFilterQuery($query, $field, $value);
+                });
+            }
         });
     }
 
