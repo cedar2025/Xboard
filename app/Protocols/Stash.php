@@ -139,6 +139,52 @@ class Stash extends AbstractProtocol
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
+            // 自定义 FILTER:: 和 REGEX:: 前缀筛选逻辑
+            if (isset($config['proxy-groups'][$k]['proxies']) && is_array($config['proxy-groups'][$k]['proxies'])) {
+                $expandedProxies = [];
+                foreach ($config['proxy-groups'][$k]['proxies'] as $item) {
+                    // 检查是否是 FILTER:: 前缀（字符串包含匹配）
+                    if (is_string($item) && strpos($item, 'FILTER::') === 0) {
+                        // 提取关键词
+                        $keyword = substr($item, 8); // 去掉 "FILTER::" 前缀
+                        if (!empty($keyword)) {
+                            // 使用 mb_strpos 查找包含该关键词的所有节点
+                            foreach ($proxies as $proxyName) {
+                                if (mb_strpos($proxyName, $keyword) !== false) {
+                                    $expandedProxies[] = $proxyName;
+                                }
+                            }
+                        }
+                    }
+                    // 检查是否是 REGEX:: 前缀（正则表达式匹配）
+                    elseif (is_string($item) && strpos($item, 'REGEX::') === 0) {
+                        // 提取正则表达式模式
+                        $pattern = substr($item, 7); // 去掉 "REGEX::" 前缀
+                        if (!empty($pattern)) {
+                            // 自动添加定界符和 UTF-8 修饰符（如果用户未提供）
+                            if (strpos($pattern, '/') !== 0) {
+                                $pattern = '/' . $pattern . '/u';
+                            }
+                            // 使用正则表达式匹配节点名称
+                            foreach ($proxies as $proxyName) {
+                                try {
+                                    if (@preg_match($pattern, $proxyName) === 1) {
+                                        $expandedProxies[] = $proxyName;
+                                    }
+                                } catch (\Exception $e) {
+                                    // 忽略无效的正则表达式
+                                }
+                            }
+                        }
+                    } else {
+                        // 普通节点名，保留原样
+                        $expandedProxies[] = $item;
+                    }
+                }
+                // 去重并更新策略组的 proxies
+                $config['proxy-groups'][$k]['proxies'] = array_values(array_unique($expandedProxies));
+            }
+
             if (isset($config['proxy-groups'][$k]['filter'])) {
                 $pattern = $config['proxy-groups'][$k]['filter'];
                 if (strpos($pattern, '/') === false) {
