@@ -140,11 +140,13 @@ class Stash extends AbstractProtocol
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
             // 自定义 FILTER:: 和 REGEX:: 前缀筛选逻辑
+            $hasCustomFilter = false; // 标记是否使用了自定义筛选
             if (isset($config['proxy-groups'][$k]['proxies']) && is_array($config['proxy-groups'][$k]['proxies'])) {
                 $expandedProxies = [];
                 foreach ($config['proxy-groups'][$k]['proxies'] as $item) {
                     // 检查是否是 FILTER:: 前缀（字符串包含匹配）
                     if (is_string($item) && strpos($item, 'FILTER::') === 0) {
+                        $hasCustomFilter = true; // 使用了自定义筛选
                         // 提取关键词
                         $keyword = substr($item, 8); // 去掉 "FILTER::" 前缀
                         if (!empty($keyword)) {
@@ -158,6 +160,7 @@ class Stash extends AbstractProtocol
                     }
                     // 检查是否是 REGEX:: 前缀（正则表达式匹配）
                     elseif (is_string($item) && strpos($item, 'REGEX::') === 0) {
+                        $hasCustomFilter = true; // 使用了自定义筛选
                         // 提取正则表达式模式
                         $pattern = substr($item, 7); // 去掉 "REGEX::" 前缀
                         if (!empty($pattern)) {
@@ -183,6 +186,11 @@ class Stash extends AbstractProtocol
                 }
                 // 去重并更新策略组的 proxies
                 $config['proxy-groups'][$k]['proxies'] = array_values(array_unique($expandedProxies));
+            }
+
+            // 如果使用了自定义筛选，跳过后续的默认节点添加逻辑
+            if ($hasCustomFilter) {
+                continue;
             }
 
             if (isset($config['proxy-groups'][$k]['filter'])) {
