@@ -1,5 +1,7 @@
 # Xboard
 
+[English](README.md) | [简体中文](README_zh.md)
+
 <div align="center">
 
 [![Telegram](https://img.shields.io/badge/Telegram-Channel-blue)](https://t.me/XboardOfficial)
