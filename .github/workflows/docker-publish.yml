@@ -23,10 +23,12 @@ jobs:
         with:
           fetch-depth: 1 
 
+      # 1. 移除了 Set up QEMU (amd64 运行环境不需要模拟 ARM)
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          platforms: linux/amd64
+          platforms: linux/amd64 # 只保留 amd64
           driver-opts: |
             image=moby/buildkit:v0.20.0
             network=host
@@ -77,13 +79,14 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64 # 只构建 linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+            CACHEBUST=${{ github.sha }}
             REPO_URL=https://github.com/${{ github.repository }}
             BRANCH_NAME=${{ github.ref_name }}
           provenance: false
