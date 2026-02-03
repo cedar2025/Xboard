@@ -112,6 +112,7 @@ class Shadowrocket extends AbstractProtocol
                     $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
             }
         }
+        $config['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
@@ -201,9 +202,7 @@ class Shadowrocket extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['peer'] = $serverName;
                 }
-                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-                    $config['fp'] = $fp;
-                }
+                $config['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
                 break;
             case 2:
                 $config['tls'] = 1;
@@ -304,7 +303,7 @@ class Shadowrocket extends AbstractProtocol
                 }
                 break;
         }
-
+        $params['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
         switch (data_get($protocol_settings, 'network')) {
             case 'grpc':
                 $params['obfs'] = 'grpc';

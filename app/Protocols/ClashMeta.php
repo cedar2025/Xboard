@@ -647,6 +647,10 @@ class ClashMeta extends AbstractProtocol
                 break;
         }
 
+        if (data_get($protocol_settings, 'network') !== 'tcp' || data_get($protocol_settings, 'tls')) {
+            $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
+        }
+
         return $array;
     }
 

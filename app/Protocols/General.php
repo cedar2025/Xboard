@@ -88,7 +88,8 @@ class General extends AbstractProtocol
             "type" => "none",
             "host" => "",
             "path" => "",
-            "tls" => data_get($protocol_settings, 'tls') ? "tls" : "",
+            "tls" => $protocol_settings['tls'] ? "tls" : "",
+            "fp" => data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint())),
         ];
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $config['sni'] = $serverName;
@@ -179,9 +180,7 @@ class General extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['sni'] = $serverName;
                 }
-                if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
-                    $config['allowInsecure'] = '1';
-                }
+                $config['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
                 break;
             case 2: //reality
                 $config['security'] = "reality";
@@ -270,8 +269,8 @@ class General extends AbstractProtocol
                 }
                 break;
         }
-
-        switch (data_get($server, 'protocol_settings.network')) {
+        $array['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
+        switch ($server['protocol_settings']['network']) {
             case 'ws':
                 $array['type'] = 'ws';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))

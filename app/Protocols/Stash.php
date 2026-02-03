@@ -356,6 +356,11 @@ class Stash extends AbstractProtocol
             default:
                 break;
         }
+
+        if (data_get($protocol_settings, 'tls')) {
+            $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
+        }
+
         return $array;
     }
 
@@ -484,7 +489,11 @@ class Stash extends AbstractProtocol
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
         }
-
+        if ($serverName = data_get($protocol_settings, 'server_name')) {
+            $array['sni'] = $serverName;
+        }
+        $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
+        $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
         return $array;
     }
 
