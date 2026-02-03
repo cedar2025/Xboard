@@ -503,7 +503,7 @@ class ClashMeta extends AbstractProtocol
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
                     'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
                 ];
-                $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
+                $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint') ?? data_get($protocol_settings, 'network_settings.fingerprint') ?? Helper::getRandFingerprint();
                 break;
             default:
                 break;
@@ -648,7 +648,7 @@ class ClashMeta extends AbstractProtocol
         }
 
         if (data_get($protocol_settings, 'network') !== 'tcp' || data_get($protocol_settings, 'tls')) {
-            $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
+            $array['client-fingerprint'] = data_get($protocol_settings, 'fingerprint') ?? data_get($protocol_settings, 'network_settings.fingerprint') ?? Helper::getRandFingerprint();
         }
 
         return $array;
