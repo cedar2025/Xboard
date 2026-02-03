@@ -598,9 +598,11 @@ class SingBox extends AbstractProtocol
             $tlsMode = (int) data_get($protocol_settings, 'tls', 0);
             $tlsConfig = [
                 'enabled' => true,
-                'insecure' => $tlsMode === 2
-                    ? (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false)
-                    : (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+                'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
+                'utls' => [
+                    'enabled' => true,
+                    'fingerprint' => data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()))
+                ]
             ];
 
             $this->appendUtls($tlsConfig, $protocol_settings);

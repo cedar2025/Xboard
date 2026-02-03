@@ -190,9 +190,7 @@ class General extends AbstractProtocol
                 $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
                 $config['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
                 $config['spx'] = "/";
-                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-                    $config['fp'] = $fp;
-                }
+                $config['fp'] = data_get($protocol_settings, 'fingerprint', data_get($protocol_settings, 'network_settings.fingerprint', Helper::getRandFingerprint()));
                 break;
             default:
                 break;
