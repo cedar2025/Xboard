@@ -1,0 +1,26 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Abstract 'E' / Shield Container -->
+  <path 
+    d="M 78 28 
+       L 38 28 
+       C 28 28 24 32 24 42 
+       L 24 58 
+       C 24 68 28 72 38 72 
+       L 78 72" 
+    stroke-width="14" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" 
+    stroke="#0f172a"
+  />
+  
+  <!-- Central Connection Node -->
+  <path 
+    d="M 40 50 L 78 50" 
+    stroke-width="14" 
+    stroke-linecap="round" 
+    stroke="#10b981"
+  />
+  
+  <!-- Decorative dot for 'Network' feel -->
+  <circle cx="78" cy="50" r="7" fill="#10b981" stroke="none" />
+</svg>

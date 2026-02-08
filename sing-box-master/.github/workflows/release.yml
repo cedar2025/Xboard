@@ -1,0 +1,223 @@
+# GitHub Actions 工作流：自动化构建 Release APK
+# 触发条件：推送版本标签时自动构建、创建 Release 并上传 APK 文件
+
+name: Build Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'  # 匹配 v 开头的标签，如 v1.0.0, v1.1.0
+
+permissions:
+  contents: write  # 需要写入权限来创建 Release
+
+jobs:
+  build:
+    name: Build Release APKs
+    runs-on: ubuntu-latest
+
+    # 定义环境变量
+    env:
+      JAVA_VERSION: '17'
+      JAVA_DISTRIBUTION: 'temurin'
+
+    steps:
+      # 1. 检出代码（包含完整历史，用于获取标签信息）
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 获取版本信息
+      - name: Get version info
+        id: version
+        run: |
+          # 获取标签名称（如 v1.1.0）
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+
+          # 检出标签对应的代码
+          git checkout ${TAG_NAME}
+
+      # 3. 从 CHANGELOG.md 提取版本日志
+      - name: Extract changelog
+        id: changelog
+        run: |
+          CHANGELOG_FILE="docs/CHANGELOG.md"
+
+          if [ -f "$CHANGELOG_FILE" ]; then
+            # 提取当前版本的日志内容
+            # 匹配从版本标题到下一个版本标题或文件末尾的内容
+            VERSION="${{ steps.version.outputs.tag }}"
+            echo "Extracting changelog for version: $VERSION"
+
+            # 使用 awk 提取版本日志
+            NOTES=$(awk -v ver="$VERSION" '
+              BEGIN { found=0; content="" }
+              /^## / {
+                if (found) exit
+                if ($0 ~ "^## " ver) { found=1; next }
+              }
+              found { content=content $0 "\n" }
+              END { print content }
+            ' "$CHANGELOG_FILE")
+
+            # 如果没有找到，尝试匹配不带 v 的版本号
+            if [ -z "$NOTES" ]; then
+              VERSION_NO_V="${{ steps.version.outputs.version }}"
+              NOTES=$(awk -v ver="$VERSION_NO_V" '
+                BEGIN { found=0; content="" }
+                /^## / {
+                  if (found) exit
+                  if ($0 ~ "^## .*" ver) { found=1; next }
+                }
+                found { content=content $0 "\n" }
+                END { print content }
+              ' "$CHANGELOG_FILE")
+            fi
+
+            # 如果仍然为空，使用默认消息
+            if [ -z "$NOTES" ]; then
+              NOTES="### 更新内容\n\nRelease $VERSION\n\n请查看完整更新日志: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/master/docs/CHANGELOG.md)"
+            fi
+
+            # 保存到输出（使用 heredoc 处理多行内容）
+            {
+              echo 'notes<<EOF'
+              echo -e "$NOTES"
+              echo 'EOF'
+            } >> $GITHUB_OUTPUT
+
+            # 打印日志内容用于调试
+            echo "Extracted changelog:"
+            echo "$NOTES"
+          else
+            echo "CHANGELOG.md not found, using default message"
+            {
+              echo 'notes<<EOF'
+              echo "### Release ${{ steps.version.outputs.tag }}"
+              echo ""
+              echo "请查看完整更新日志: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/master/docs/CHANGELOG.md)"
+              echo 'EOF'
+            } >> $GITHUB_OUTPUT
+          fi
+
+      # 4. 设置 JDK 环境
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      # 5. 设置 Gradle 缓存（加快构建速度）
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # 6. 赋予 Gradle 执行权限
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 7. 构建 Release APK（所有架构）
+      - name: Build Release APKs
+        run: ./gradlew assembleRelease --stacktrace
+
+      # 8. 签名 APK（需要配置 GitHub Secrets）
+      - name: Sign APKs
+        if: vars.SIGNING_ENABLED == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          # 调试：检查环境变量
+          echo "KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
+          echo "KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:0:3}***"
+          echo "KEY_ALIAS: $KEY_ALIAS"
+
+          # 创建密钥存储（移除可能的空白字符）
+          echo "$KEYSTORE_BASE64" | tr -d ' \n\r' | base64 -d > release.keystore
+
+          # 验证密钥文件是否创建成功
+          if [ ! -s release.keystore ]; then
+            echo "错误: 密钥文件创建失败或为空！"
+            exit 1
+          fi
+
+          # 验证密钥文件
+          if ! keytool -list -keystore release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+            echo "错误: 密钥验证失败！"
+            echo "请检查 GitHub Secrets 配置是否正确"
+            exit 1
+          fi
+
+          # 签名各架构 APK
+          echo "开始签名 APK..."
+          find app/build/outputs/apk/release -name "*.apk" -print0 | while IFS= read -r -d '' apk; do
+            echo "签名: $apk"
+            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 \
+              -keystore release.keystore \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              "$apk" "$KEY_ALIAS"
+
+            # 使用 zipalign 优化 APK（可选）
+            if command -v zipalign &> /dev/null; then
+              SIGNED_FILE="${apk%.apk}-signed.apk"
+              zipalign -v 4 "$apk" "$SIGNED_FILE"
+              mv "$SIGNED_FILE" "$apk"
+            fi
+          done
+
+          # 清理密钥文件
+          rm -f release.keystore
+          echo "APK 签名完成！"
+
+      # 9. 创建 Release 并上传 APK
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          body: ${{ steps.changelog.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            app/build/outputs/apk/release/*.apk
+          generate_release_notes: false  # 使用我们自己的 changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 10. 上传构建产物（用于调试）
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks-${{ steps.version.outputs.tag }}
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      # 11. 构建摘要
+      - name: Build Summary
+        run: |
+          echo "## 构建完成 :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**版本**: ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**提交**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ vars.SIGNING_ENABLED }}" = "true" ]; then
+            echo "**签名状态**: :white_check_mark: 已签名" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**签名状态**: :warning: 未签名" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 生成的 APK 文件" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for apk in app/build/outputs/apk/release/*.apk; do
+            if [ -f "$apk" ]; then
+              NAME=$(basename "$apk")
+              SIZE=$(du -h "$apk" | cut -f1)
+              echo "- **$NAME** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done

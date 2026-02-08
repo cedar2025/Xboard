@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>软件下载 - 大象网络</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            slate: {
+                                850: "#1e293b",
+                                900: "#0f172a",
+                                950: "#020617",
+                            },
+                            emerald: {
+                                400: "#34d399",
+                                500: "#10b981",
+                                600: "#059669",
+                            },
+                        },
+                        animation: {
+                            "fade-in": "fadeIn 0.5s ease-out forwards",
+                            "slide-up": "slideUp 0.5s ease-out forwards",
+                        },
+                        keyframes: {
+                            fadeIn: {
+                                "0%": { opacity: "0" },
+                                "100%": { opacity: "1" },
+                            },
+                            slideUp: {
+                                "0%": {
+                                    transform: "translateY(20px)",
+                                    opacity: "0",
+                                },
+                                "100%": {
+                                    transform: "translateY(0)",
+                                    opacity: "1",
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            body {
+                font-family:
+                    "Inter",
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background-color: #ffffff;
+                color: #0f172a;
+            }
+            .download-card {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .download-card:hover {
+                transform: translateY(-5px);
+                box-shadow:
+                    0 20px 25px -5px rgb(0 0 0 / 0.1),
+                    0 8px 10px -6px rgb(0 0 0 / 0.1);
+                border-color: #10b981;
+            }
+            .bg-grid-slate-900 {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(203 213 225 / 0.5)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+                mask-image: linear-gradient(
+                    to bottom,
+                    transparent,
+                    black,
+                    transparent
+                );
+            }
+        </style>
+    </head>
+    <body
+        class="bg-white min-h-screen relative overflow-x-hidden flex flex-col"
+    >
+        <!-- Background Decoration -->
+        <div class="absolute inset-0 z-0 pointer-events-none">
+            <div
+                class="absolute inset-0 bg-grid-slate-900 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] opacity-20"
+            ></div>
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] mix-blend-screen pointer-events-none"
+            ></div>
+        </div>
+
+        <!-- Header -->
+        <header
+            class="relative z-10 w-full px-6 py-6 flex justify-between items-center max-w-7xl mx-auto"
+        >
+            <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <img
+                    src="/landing/assets/elephant-route-logo.jpg"
+                    alt="Logo"
+                    class="w-10 h-10 rounded-full"
+                />
+                <span
+                    class="text-2xl font-bold text-slate-900"
+                    >大象网络</span
+                >
+            </a>
+            <a
+                href="/"
+                class="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 group"
+            >
+                <span>返回首页</span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M5 12h14"></path>
+                    <path d="m12 5 7 7-7 7"></path>
+                </svg>
+            </a>
+        </header>
+
+        <!-- Main Content -->
+        <main
+            class="relative z-10 flex-grow flex flex-col justify-center items-center px-4 py-12 pb-24 md:pb-12"
+        >
+            <div class="text-center mb-16 animate-fade-in">
+                <h1
+                    class="text-4xl md:text-6xl font-bold text-slate-900 mb-6 tracking-tight"
+                >
+                    全平台<span class="text-emerald-400">高速</span>连接
+                </h1>
+                <p
+                    class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed"
+                >
+                    为您打造的下一代网络加速客户端，多端同步，一键连接。
+                    <br class="hidden md:block" />
+                    随时随地享受极速、稳定的网络体验。
+                </p>
+            </div>
+
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full px-4"
+            >
+                <!-- Android Card -->
+                <div
+                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
+                    style="animation-delay: 0.1s"
+                >
+                    <div
+                        class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-10 h-10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M3 17a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"
+                            ></path>
+                            <path
+                                d="M4 16V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"
+                            ></path>
+                            <line x1="8" y1="21" x2="8" y2="16"></line>
+                            <line x1="16" y1="21" x2="16" y2="16"></line>
+                            <line x1="9" y1="3" x2="9" y2="6"></line>
+                            <line x1="15" y1="3" x2="15" y2="6"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Android</h3>
+                    <p class="text-slate-500 mb-8 text-sm">
+                        适用于所有 Android 手机和平板
+                    </p>
+                    <a
+                        href="/download/Hiddify-Android-arm64.apk"
+                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-emerald-500/25"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        立即下载
+                    </a>
+                </div>
+
+                <!-- Windows Card -->
+                <div
+                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
+                    style="animation-delay: 0.2s"
+                >
+                    <div
+                        class="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-10 h-10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+                            ></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Windows</h3>
+                    <p class="text-slate-500 mb-8 text-sm">
+                        适用于 Win10 / Win11 系统
+                    </p>
+                    <a
+                        href="/download/Hiddify-Windows-Setup-x64.msix"
+                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/25"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        立即下载
+                    </a>
+                </div>
+
+                <!-- macOS Card -->
+                <div
+                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
+                    style="animation-delay: 0.3s"
+                >
+                    <div
+                        class="w-20 h-20 bg-zinc-100 text-zinc-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-10 h-10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect
+                                x="5"
+                                y="2"
+                                width="14"
+                                height="20"
+                                rx="2"
+                                ry="2"
+                            ></rect>
+                            <path d="M12 18h.01"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">macOS</h3>
+                    <p class="text-slate-500 mb-8 text-sm">
+                        支持 Intel 和 Apple Silicon (M1/M2)
+                    </p>
+                    <a
+                        href="/download/Hiddify-MacOS.dmg"
+                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-zinc-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-zinc-500/25"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        立即下载
+                    </a>
+                </div>
+
+                <!-- iOS Card -->
+                <div
+                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
+                    style="animation-delay: 0.4s"
+                >
+                    <div
+                        class="w-20 h-20 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-10 h-10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M12 20h.01"></path>
+                            <path d="M7 20h.01"></path>
+                            <path d="M17 20h.01"></path>
+                            <path d="M5 21a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">iOS</h3>
+                    <p class="text-slate-500 mb-8 text-sm">
+                        iPhone / iPad (App Store)
+                    </p>
+                    <a
+                        href="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
+                        target="_blank"
+                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-sky-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-sky-500/25"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        App Store
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer
+            class="relative z-10 w-full text-center py-6 text-slate-500 text-sm"
+        >
+            <p>&copy; 2024 大象网络 Inc. All rights reserved.</p>
+        </footer>
+    </body>
+</html>

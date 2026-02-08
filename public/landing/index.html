@@ -32,16 +32,21 @@
                 --text-dim: #666;
                 --border: #e0e0e0;
             }
+            /* Fix body scrolling */
+            /* Fix body scrolling */
             body {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
                     "Roboto", sans-serif;
                 -webkit-font-smoothing: antialiased;
-                overflow-x: hidden;
+                overflow-x: hidden; /* Prevent horizontal scroll only */
                 background: #ffffff;
+                min-height: 100vh; /* Allow growth */
             }
             .landing-page {
                 position: relative;
                 min-height: 100vh;
+                display: flex;
+                flex-direction: column;
             }
 
             .landing-page header {
@@ -59,13 +64,56 @@
                 border-bottom: 1px solid var(--border);
                 z-index: 100;
             }
+            /* ... (keep other header styles) ... */
+            
+            .landing-page .hero {
+                flex: 1; /* Allow hero to take available space */
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                position: relative;
+                background: transparent;
+                padding-bottom: 20px; /* Space from footer */
+            }
+            
+            .landing-page footer {
+                text-align: center;
+                padding: 20px;
+                color: var(--text-dim);
+                font-size: 0.8rem;
+                border-top: none;
+                background: transparent;
+                position: relative; /* Natural flow */
+                width: 100%;
+                z-index: 10;
+            }
+            
+            /* Mouse Particles Canvas */
+            #particleCanvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0; /* Behind hero content */
+            }
             .landing-page .brand {
                 display: flex;
                 align-items: center;
                 font-size: 1.2rem;
                 font-weight: 700;
                 color: var(--text-main);
+                cursor: pointer;
+                transition: opacity 0.2s;
             }
+            .landing-page .brand:hover {
+                opacity: 0.8;
+            }
+            
             .landing-page .header-buttons {
                 display: flex;
                 gap: 12px;
@@ -102,16 +150,18 @@
             }
 
             .landing-page .hero {
-                height: 100vh;
+                min-height: 100vh;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
                 position: relative;
-                overflow: hidden;
+                /* overflow: hidden; Removed to avoid cutting content on small screens */
                 background: #ffffff;
+                padding-bottom: 80px; /* Space for footer */
             }
+            /* Removed redundant .hero block since it is handled in previous chunk, but we need to ensure bg-grid stays */
             .landing-page .bg-grid {
                 position: absolute;
                 top: 0;
@@ -128,7 +178,7 @@
                         transparent 1px
                     );
                 background-size: 40px 40px;
-                z-index: 1;
+                z-index: 1; /* Above particles, below text */
                 mask-image: radial-gradient(
                     circle at center,
                     black 0%,
@@ -172,9 +222,21 @@
                 position: relative;
                 z-index: 2;
             }
-            .landing-page .hero .cta-btn {
+            .landing-page .cta-group {
+                display: flex;
+                gap: 20px;
+                justify-content: center;
                 margin-top: 50px;
-                padding: 16px 48px;
+                position: relative;
+                z-index: 2;
+                animation: fadeIn 1s ease-out 0.6s backwards;
+            }
+
+            .landing-page .hero .cta-btn,
+            .landing-page .btn-secondary {
+                margin-top: 0;
+                padding: 16px 0;
+                width: 200px;
                 background: #000;
                 color: #fff;
                 font-weight: 700;
@@ -184,34 +246,37 @@
                 letter-spacing: 0.05em;
                 border-radius: 2px;
                 transition: transform 0.2s, box-shadow 0.2s;
-                animation: fadeIn 1s ease-out 0.6s backwards;
-                position: relative;
-                z-index: 2;
             }
-            .landing-page .hero .cta-btn:hover {
+
+            .landing-page .hero .cta-btn {
+                 animation: none;
+            }
+            
+            .landing-page .btn-secondary {
+                border: 2px solid #000;
+                margin-left: 0;
+                animation: none;
+            }
+
+            .landing-page .hero .cta-btn:hover,
+            .landing-page .btn-secondary:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             }
             .landing-page footer {
                 text-align: center;
-                padding: 40px;
+                padding: 30px;
                 color: var(--text-dim);
                 font-size: 0.8rem;
-                border-top: 1px solid var(--border);
-                background: #fafafa;
-                position: relative;
+                border-top: none;
+                background: transparent;
+                position: absolute; /* Absolute position to sit at bottom of hero */
+                bottom: 0;
+                left: 0;
+                width: 100%;
                 z-index: 10;
             }
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
+
             @media (max-width: 768px) {
                 .landing-page .hero h1 {
                     font-size: 12vw;
@@ -219,17 +284,13 @@
                 .landing-page header {
                     padding: 0 20px;
                 }
-            }
-
-            /* Mouse Particles Canvas */
-            #particleCanvas {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-                z-index: 0;
+                /* Cleaned up old footer styles - replaced */
+                .landing-page .hero .cta-btn,
+                .landing-page .btn-secondary {
+                    padding: 14px 0;
+                    width: 160px;
+                    font-size: 0.9rem;
+                }
             }
 
 
@@ -238,18 +299,21 @@
     <body>
         <div class="landing-page">
             <header>
-                <div class="brand" id="brandLogo">
-                    <img
-                        src="/landing/assets/elephant-route-logo.jpg"
-                        alt="Logo"
-                        style="
-                            width: 40px;
-                            height: 40px;
-                            border-radius: 50%;
-                            margin-right: 10px;
-                        "
-                    />
-                    大象网络
+                <div style="display: flex; align-items: center; gap: 40px;">
+                    <a href="/" class="brand" id="brandLogo" style="text-decoration: none;">
+                        <img
+                            src="/landing/assets/elephant-route-logo.jpg"
+                            alt="Logo"
+                            style="
+                                width: 40px;
+                                height: 40px;
+                                border-radius: 50%;
+                                margin-right: 10px;
+                            "
+                        />
+                        大象网络
+                    </a>
+                    
                 </div>
                 <div class="header-buttons">
                     <button class="btn-login" id="loginBtn">登录</button>
@@ -264,7 +328,10 @@
                 <p class="description">
                     专为极客打造的下一代全球网络加速服务。突破物理边界，重塑数字自由。
                 </p>
-                <button class="cta-btn" id="ctaBtn">开始使用</button>
+                <div class="cta-group">
+                    <button class="cta-btn" id="ctaBtn">开始使用</button>
+                    <button class="btn-secondary" id="heroDownloadBtn">下载客户端</button>
+                </div>
             </section>
 
             <footer>
@@ -294,6 +361,12 @@
                     .getElementById("ctaBtn")
                     .addEventListener("click", function () {
                         window.location.href = "/app#/register";
+                    });
+
+                document
+                    .getElementById("heroDownloadBtn")
+                    .addEventListener("click", function () {
+                        window.location.href = "/download/index.html";
                     });
 
 
