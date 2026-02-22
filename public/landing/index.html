@@ -197,9 +197,35 @@
                 -webkit-background-clip: text;
                 background-clip: text;
                 -webkit-text-fill-color: transparent;
-                animation: fadeIn 1s ease-out;
                 position: relative;
                 z-index: 2;
+                min-height: 1.1em;
+            }
+            .landing-page .hero h1 .gradient-word {
+                background: radial-gradient(circle, #7182FF 0%, #3CFF52 100%);
+                background-size: 200% auto;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: textShine 3s ease-in-out infinite alternate;
+            }
+            @keyframes textShine {
+                0% { background-position: 0% 50%; }
+                100% { background-position: 100% 50%; }
+            }
+            .landing-page .hero h1 .cursor {
+                display: inline-block;
+                width: 3px;
+                height: 0.85em;
+                background: #000;
+                -webkit-text-fill-color: initial;
+                margin-left: 4px;
+                vertical-align: baseline;
+                animation: blink 0.6s step-end infinite;
+            }
+            @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0; }
             }
             .landing-page .hero p.subtitle {
                 font-size: 1.5rem;
@@ -208,9 +234,22 @@
                 letter-spacing: 0.2em;
                 text-transform: uppercase;
                 font-weight: 600;
-                animation: fadeIn 1s ease-out 0.2s backwards;
                 position: relative;
                 z-index: 2;
+                opacity: 0;
+                min-height: 1.6em;
+            }
+            .landing-page .hero p.subtitle.show {
+                opacity: 1;
+            }
+            .landing-page .hero p.subtitle .cursor {
+                display: inline-block;
+                width: 2px;
+                height: 0.85em;
+                background: #999;
+                margin-left: 2px;
+                vertical-align: baseline;
+                animation: blink 0.6s step-end infinite;
             }
             .landing-page .hero p.description {
                 max-width: 600px;
@@ -218,9 +257,13 @@
                 margin-top: 30px;
                 line-height: 1.6;
                 font-size: 1rem;
-                animation: fadeIn 1s ease-out 0.4s backwards;
                 position: relative;
                 z-index: 2;
+                opacity: 0;
+                min-height: 1.8em;
+            }
+            .landing-page .hero p.description.show {
+                opacity: 1;
             }
             .landing-page .cta-group {
                 display: flex;
@@ -229,7 +272,13 @@
                 margin-top: 50px;
                 position: relative;
                 z-index: 2;
-                animation: fadeIn 1s ease-out 0.6s backwards;
+                opacity: 0;
+                transform: translateY(15px);
+                transition: opacity 0.6s ease, transform 0.6s ease;
+            }
+            .landing-page .cta-group.show {
+                opacity: 1;
+                transform: translateY(0);
             }
 
             .landing-page .hero .cta-btn,
@@ -265,16 +314,390 @@
             }
             .landing-page footer {
                 text-align: center;
-                padding: 30px;
+                padding: 40px 30px;
                 color: var(--text-dim);
                 font-size: 0.8rem;
-                border-top: none;
-                background: transparent;
-                position: absolute; /* Absolute position to sit at bottom of hero */
-                bottom: 0;
-                left: 0;
+                border-top: 1px solid var(--border);
+                background: #fafafa;
+                position: relative;
                 width: 100%;
                 z-index: 10;
+            }
+
+            /* ===== 首屏滚动指示器 ===== */
+            .scroll-indicator {
+                position: absolute;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                animation: fadeIn 1s ease-out 1s backwards;
+                cursor: pointer;
+            }
+
+            .scroll-indicator .mouse {
+                width: 24px;
+                height: 40px;
+                border: 2px solid #bbb;
+                border-radius: 12px;
+                position: relative;
+            }
+
+            .scroll-indicator .mouse::after {
+                content: '';
+                position: absolute;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 4px;
+                height: 8px;
+                background: #999;
+                border-radius: 2px;
+                animation: scrollWheel 2s ease-in-out infinite;
+            }
+
+            @keyframes scrollWheel {
+                0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
+                100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            }
+
+            .scroll-indicator span {
+                font-size: 0.7rem;
+                color: #bbb;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                font-weight: 500;
+            }
+
+            /* ===== 侧边圆点导航 ===== */
+            .side-nav {
+                position: fixed;
+                right: 28px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 200;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+
+            .side-nav.visible {
+                opacity: 1;
+            }
+
+            .side-nav a {
+                display: block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #d0d0d0;
+                transition: all 0.3s ease;
+                position: relative;
+            }
+
+            .side-nav a:hover {
+                background: #888;
+                transform: scale(1.3);
+            }
+
+            .side-nav a.active {
+                background: #000;
+                transform: scale(1.3);
+            }
+
+            .side-nav a .tooltip {
+                position: absolute;
+                right: 22px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #000;
+                color: #fff;
+                font-size: 0.7rem;
+                padding: 4px 10px;
+                border-radius: 4px;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                font-weight: 500;
+            }
+
+            .side-nav a:hover .tooltip {
+                opacity: 1;
+            }
+
+            /* ===== 核心痛点区块 ===== */
+            .pain-section {
+                background: #f8f8f8;
+                padding: 120px 40px;
+                position: relative;
+            }
+
+            .pain-section .pain-header {
+                text-align: center;
+                margin-bottom: 90px;
+            }
+
+            .pain-section .pain-label {
+                display: inline-block;
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: #999;
+                border: 1px solid #ddd;
+                padding: 6px 18px;
+                border-radius: 999px;
+                margin-bottom: 24px;
+            }
+
+            .pain-section .pain-title {
+                font-size: clamp(2rem, 4vw, 3rem);
+                font-weight: 800;
+                color: #000;
+                line-height: 1.15;
+                letter-spacing: -0.03em;
+            }
+
+            .pain-section .pain-title span {
+                background: linear-gradient(90deg, #000 0%, #666 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .pain-items {
+                display: flex;
+                flex-direction: column;
+                gap: 100px;
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+
+            .pain-item {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 60px;
+                align-items: center;
+                opacity: 0;
+                transform: translateY(50px);
+                transition: opacity 0.8s ease, transform 0.8s ease;
+            }
+
+            .pain-item.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .pain-item.reverse {
+                direction: rtl;
+            }
+            .pain-item.reverse > * {
+                direction: ltr;
+            }
+
+            .pain-item-img {
+                border-radius: 24px;
+                overflow: hidden;
+                border: 1px solid #e8e8e8;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+                background: #fff;
+                aspect-ratio: 4/3;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .pain-item-img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                transition: transform 0.5s ease;
+            }
+
+            .pain-item-img:hover img {
+                transform: scale(1.03);
+            }
+
+            .pain-item-text {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+
+            .pain-item-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                color: #555;
+                background: #f0f0f0;
+                border: 1px solid #e0e0e0;
+                padding: 6px 14px;
+                border-radius: 999px;
+                width: fit-content;
+            }
+
+            .pain-item-badge::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #000;
+                flex-shrink: 0;
+            }
+
+            .pain-item-text h3 {
+                font-size: clamp(1.5rem, 2.5vw, 2rem);
+                font-weight: 800;
+                color: #000;
+                line-height: 1.3;
+                letter-spacing: -0.02em;
+            }
+
+            .pain-item-text p {
+                font-size: 1rem;
+                color: #666;
+                line-height: 1.8;
+            }
+
+            .pain-item-text p strong {
+                color: #333;
+                font-weight: 700;
+            }
+
+            .pain-item-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 4px;
+            }
+
+            .pain-item-tags span {
+                font-size: 0.8rem;
+                color: #888;
+                background: #fff;
+                border: 1px solid #e0e0e0;
+                padding: 5px 14px;
+                border-radius: 6px;
+                font-weight: 500;
+            }
+
+            /* ===== 用户评价区块 ===== */
+            .testimonials-section {
+                background: #fff;
+                padding: 120px 40px;
+                position: relative;
+            }
+
+            .testimonials-header {
+                text-align: center;
+                margin-bottom: 70px;
+            }
+
+            .testimonials-label {
+                display: inline-block;
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: #999;
+                border: 1px solid #ddd;
+                padding: 6px 18px;
+                border-radius: 999px;
+                margin-bottom: 24px;
+            }
+
+            .testimonials-title {
+                font-size: clamp(2rem, 4vw, 3rem);
+                font-weight: 800;
+                color: #000;
+                line-height: 1.15;
+                letter-spacing: -0.03em;
+            }
+
+            .testimonials-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 28px;
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            .testimonial-card {
+                background: #fafafa;
+                border: 1px solid #eee;
+                border-radius: 20px;
+                padding: 36px;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                opacity: 0;
+                transform: translateY(30px);
+                transition: opacity 0.7s ease, transform 0.7s ease;
+            }
+
+            .testimonial-card.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .testimonial-stars {
+                color: #000;
+                font-size: 0.9rem;
+                letter-spacing: 4px;
+            }
+
+            .testimonial-text {
+                font-size: 0.95rem;
+                color: #444;
+                line-height: 1.8;
+                flex: 1;
+            }
+
+            .testimonial-author {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                padding-top: 16px;
+                border-top: 1px solid #eee;
+            }
+
+            .testimonial-avatar {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #eee;
+            }
+
+            .testimonial-info {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .testimonial-name {
+                font-weight: 700;
+                font-size: 0.9rem;
+                color: #000;
+            }
+
+            .testimonial-role {
+                font-size: 0.75rem;
+                color: #999;
+                font-weight: 500;
             }
 
             @media (max-width: 768px) {
@@ -284,12 +707,40 @@
                 .landing-page header {
                     padding: 0 20px;
                 }
-                /* Cleaned up old footer styles - replaced */
                 .landing-page .hero .cta-btn,
                 .landing-page .btn-secondary {
                     padding: 14px 0;
                     width: 160px;
                     font-size: 0.9rem;
+                }
+                .pain-section {
+                    padding: 80px 24px;
+                }
+                .pain-items {
+                    gap: 70px;
+                }
+                .pain-item {
+                    grid-template-columns: 1fr;
+                    gap: 32px;
+                }
+                .pain-item.reverse {
+                    direction: ltr;
+                }
+                .testimonials-section {
+                    padding: 80px 20px;
+                }
+                .testimonials-grid {
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                }
+                .testimonial-card {
+                    padding: 28px;
+                }
+                .side-nav {
+                    display: none;
+                }
+                .scroll-indicator span {
+                    display: none;
                 }
             }
 
@@ -298,6 +749,7 @@
     </head>
     <body>
         <div class="landing-page">
+
             <header>
                 <div style="display: flex; align-items: center; gap: 40px;">
                     <a href="/" class="brand" id="brandLogo" style="text-decoration: none;">
@@ -321,16 +773,159 @@
                 </div>
             </header>
 
-            <section class="hero">
+            <section class="hero" id="hero">
                 <div class="bg-grid"></div>
-                <h1>CONNECT THE UNSEEN</h1>
-                <p class="subtitle">极速 · 隐秘 · 无界</p>
-                <p class="description">
-                    专为极客打造的下一代全球网络加速服务。突破物理边界，重塑数字自由。
-                </p>
-                <div class="cta-group">
+                <h1 id="heroTitle"></h1>
+                <p class="subtitle" id="heroSubtitle"></p>
+                <p class="description" id="heroDesc"></p>
+                <div class="cta-group" id="heroCta">
                     <button class="cta-btn" id="ctaBtn">开始使用</button>
                     <button class="btn-secondary" id="heroDownloadBtn">下载客户端</button>
+                </div>
+
+                <!-- 滚动指示器 -->
+                <div class="scroll-indicator" id="scrollIndicator">
+                    <div class="mouse"></div>
+                    <span>向下滚动</span>
+                </div>
+            </section>
+
+            <!-- 核心痛点区块 -->
+            <section class="pain-section">
+                <div class="pain-header">
+                    <div class="pain-label">为什么选择大象网络</div>
+                    <h2 class="pain-title">解决你的<span>每一个痛点</span></h2>
+                </div>
+
+                <div class="pain-items">
+
+                    <!-- 痛点 1：注册 Google 账号 -->
+                    <div class="pain-item" id="pain-1">
+                        <div class="pain-item-img">
+                            <img src="/landing/assets/pain-google-ip.png" alt="低风控IP注册Google账号" loading="lazy" />
+                        </div>
+                        <div class="pain-item-text">
+                            <div class="pain-item-badge">低风控 IP</div>
+                            <h3>注册 Google 账号，<br>不再被拦截</h3>
+                            <p>
+                                普通线路注册 Google 时，极易触发风控、验证码反复弹出甚至封号。
+                                大象网络提供<strong>纯净住宅级 IP</strong>，风控评分极低，
+                                轻松完成注册，账号更稳定长久。
+                            </p>
+                            <div class="pain-item-tags">
+                                <span>Gmail 注册</span>
+                                <span>Google Workspace</span>
+                                <span>YouTube Premium</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 痛点 2：AI 工具访问 -->
+                    <div class="pain-item reverse" id="pain-2">
+                        <div class="pain-item-img">
+                            <img src="/landing/assets/pain-ai-tools.png" alt="稳定访问ChatGPT Claude等AI工具" loading="lazy" />
+                        </div>
+                        <div class="pain-item-text">
+                            <div class="pain-item-badge">AI 工具直连</div>
+                            <h3>ChatGPT / Claude，<br>稳定连接不掉线</h3>
+                            <p>
+                                AI 时代，工具决定效率。大象网络针对 OpenAI、Anthropic 等
+                                主流 AI 平台进行专线优化，<strong>低延迟、零封锁</strong>，
+                                让你的工作流不再被中断。
+                            </p>
+                            <div class="pain-item-tags">
+                                <span>ChatGPT</span>
+                                <span>Claude</span>
+                                <span>Gemini</span>
+                                <span>Midjourney</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 痛点 3：流媒体解锁 -->
+                    <div class="pain-item" id="pain-3">
+                        <div class="pain-item-img">
+                            <img src="/landing/assets/pain-streaming.png" alt="解锁Netflix等主流流媒体" loading="lazy" />
+                        </div>
+                        <div class="pain-item-text">
+                            <div class="pain-item-badge">全球流媒体解锁</div>
+                            <h3>Netflix 4K，<br>想看就看</h3>
+                            <p>
+                                国际版 Netflix、Disney+、HBO Max……内容库是国内版的数倍。
+                                大象网络解锁<strong>主流流媒体完整内容库</strong>，
+                                支持 4K 高清，无缓冲畅享。
+                            </p>
+                            <div class="pain-item-tags">
+                                <span>Netflix</span>
+                                <span>Disney+</span>
+                                <span>HBO Max</span>
+                                <span>Hulu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 用户评价区块 -->
+            <section class="testimonials-section" id="testimonials">
+                <div class="testimonials-header">
+                    <div class="testimonials-label">用户评价</div>
+                    <h2 class="testimonials-title">他们都在用大象网络</h2>
+                </div>
+
+                <div class="testimonials-grid">
+                    <!-- 产品经理 -->
+                    <div class="testimonial-card">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p class="testimonial-text">“做海外 SaaS 产品调研，以前总担心 Google 账号被封。现在用大象的低风控住宅 IP，注册、登录一路畅通，再也没触发过验证码。每天用 ChatGPT 做竞品分析，连接稳定得像本地应用一样。”</p>
+                        <div class="testimonial-author">
+                            <img src="/landing/assets/avatar-pm.png" alt="李先生" class="testimonial-avatar" />
+                            <div class="testimonial-info">
+                                <span class="testimonial-name">李先生</span>
+                                <span class="testimonial-role">互联网产品经理 · 深圳</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TikTok 运营 -->
+                    <div class="testimonial-card">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p class="testimonial-text">“跑 TikTok 账号最怕网络不稳、IP 被标记。切到大象之后，直播推流不再掉线，视频发布秒传。美区、东南亚多个区域的节点都很快，对跨境电商和短视频运营太友好了。”</p>
+                        <div class="testimonial-author">
+                            <img src="/landing/assets/avatar-tiktok.png" alt="赵女士" class="testimonial-avatar" />
+                            <div class="testimonial-info">
+                                <span class="testimonial-name">赵女士</span>
+                                <span class="testimonial-role">TikTok 运营专员 · 广州</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 教育创作者 -->
+                    <div class="testimonial-card">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p class="testimonial-text">“我做英语教学视频，需要大量查阅 YouTube 和外网资料。大象的速度让我看 4K 视频零缓冲，用 Claude 写教案也绝不断开。老师们最看重的就是稳定，这点大象做得很好。”</p>
+                        <div class="testimonial-author">
+                            <img src="/landing/assets/avatar-educator.png" alt="王老师" class="testimonial-avatar" />
+                            <div class="testimonial-info">
+                                <span class="testimonial-name">王老师</span>
+                                <span class="testimonial-role">教育内容创作者 · 北京</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 自由职业者 -->
+                    <div class="testimonial-card">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p class="testimonial-text">“在咖啡厅远程办公，最受不了的就是网络不跟力。自从用了大象，Notion 同步、Figma 协作、Netflix 追剧全部丝滑。客户端一键连接，小白也能秒懂，性价比绝对是用过最高的。”</p>
+                        <div class="testimonial-author">
+                            <img src="/landing/assets/avatar-freelancer.png" alt="林同学" class="testimonial-avatar" />
+                            <div class="testimonial-info">
+                                <span class="testimonial-name">林同学</span>
+                                <span class="testimonial-role">自由职业设计师 · 成都</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -465,6 +1060,146 @@
                 }
 
                 animate();
+
+                // ===== 打字机效果 =====
+                function typeWriter(element, text, speed, callback) {
+                    let i = 0;
+                    // 添加光标
+                    const cursor = document.createElement('span');
+                    cursor.className = 'cursor';
+                    element.appendChild(cursor);
+
+                    function type() {
+                        if (i < text.length) {
+                            // 在光标前插入文字
+                            element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
+                            i++;
+                            setTimeout(type, speed);
+                        } else {
+                            // 打完后移除光标
+                            setTimeout(() => {
+                                cursor.remove();
+                                if (callback) callback();
+                            }, 400);
+                        }
+                    }
+                    type();
+                }
+
+                // 依次执行打字动画序列
+                const heroTitle = document.getElementById('heroTitle');
+                const heroSubtitle = document.getElementById('heroSubtitle');
+                const heroDesc = document.getElementById('heroDesc');
+                const heroCta = document.getElementById('heroCta');
+
+                // 延迟 300ms 开始打字
+                setTimeout(() => {
+                    typeWriter(heroTitle, 'CONNECT THE ', 60, () => {
+                        // 普通部分打完后，创建渐变 span 打 UNSEEN
+                        const gradientSpan = document.createElement('span');
+                        gradientSpan.className = 'gradient-word';
+                        heroTitle.appendChild(gradientSpan);
+                        typeWriter(gradientSpan, 'UNSEEN', 60, () => {
+                            // 标题完成后，打副标题
+                            heroSubtitle.classList.add('show');
+                            typeWriter(heroSubtitle, '极速 · 隐秘 · 无界', 80, () => {
+                                // 副标题完成后，描述文字淡入
+                                heroDesc.textContent = '专为极客打造的下一代全球网络加速服务。突破物理边界，重塑数字自由。';
+                                heroDesc.classList.add('show');
+                                // CTA 按钮滑入
+                                setTimeout(() => {
+                                    heroCta.classList.add('show');
+                                }, 300);
+                            });
+                        });
+                    });
+                }, 300);
+
+                // 滚动入场动画 - IntersectionObserver
+                const painItems = document.querySelectorAll('.pain-item');
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('visible');
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.15 }
+                );
+                painItems.forEach((item) => observer.observe(item));
+
+                // 评价卡片入场动画
+                const testimonialCards = document.querySelectorAll('.testimonial-card');
+                testimonialCards.forEach((card) => observer.observe(card));
+
+                // 滚动指示器 - 点击平滑滚动到痛点区块
+                const scrollIndicator = document.getElementById('scrollIndicator');
+                if (scrollIndicator) {
+                    scrollIndicator.addEventListener('click', function () {
+                        document.querySelector('.pain-section').scrollIntoView({ behavior: 'smooth' });
+                    });
+                }
+
+                // 首屏滚动后隐藏指示器
+                window.addEventListener('scroll', function () {
+                    if (scrollIndicator) {
+                        scrollIndicator.style.opacity = window.scrollY > 100 ? '0' : '1';
+                        scrollIndicator.style.pointerEvents = window.scrollY > 100 ? 'none' : 'auto';
+                    }
+                });
+
+                // 侧边圆点导航
+                const sideNav = document.getElementById('sideNav');
+                const navLinks = sideNav ? sideNav.querySelectorAll('a') : [];
+                const sections = ['hero', 'pain-1', 'pain-2', 'pain-3', 'testimonials'];
+
+                // 滚动超出首屏时显示侧边导航
+                const heroSection = document.getElementById('hero');
+                const navObserver = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (sideNav) {
+                                if (entry.isIntersecting) {
+                                    sideNav.classList.remove('visible');
+                                } else {
+                                    sideNav.classList.add('visible');
+                                }
+                            }
+                        });
+                    },
+                    { threshold: 0.5 }
+                );
+                if (heroSection) navObserver.observe(heroSection);
+
+                // 侧边导航高亮当前区块
+                const sectionObserver = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                navLinks.forEach((link) => link.classList.remove('active'));
+                                const activeLink = sideNav ? sideNav.querySelector('[data-section="' + entry.target.id + '"]') : null;
+                                if (activeLink) activeLink.classList.add('active');
+                            }
+                        });
+                    },
+                    { threshold: 0.3, rootMargin: '-10% 0px -60% 0px' }
+                );
+                sections.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) sectionObserver.observe(el);
+                });
+
+                // 侧边导航点击平滑滚动
+                navLinks.forEach((link) => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute('data-section');
+                        const target = document.getElementById(targetId);
+                        if (target) target.scrollIntoView({ behavior: 'smooth' });
+                    });
+                });
             });
         </script>
     </body>
