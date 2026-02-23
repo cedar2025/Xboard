@@ -583,6 +583,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "title": "Show Subscription Info in Nodes",
         "description": "When enabled, subscription information will be output when users subscribe to nodes."
       },
+      "subscription_encryption": {
+        "title": "Subscription Encryption",
+        "description": "When enabled, subscription content is encrypted with a key derived from the user login password; compatible with FlClash and other clients using the login password to decrypt."
+      },
       "show_protocol_to_server": {
         "title": "Show Protocol in Node Names",
         "description": "When enabled, subscription lines will include protocol names (e.g., [Hy2]Hong Kong)"

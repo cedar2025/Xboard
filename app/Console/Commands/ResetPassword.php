@@ -48,6 +48,7 @@ class ResetPassword extends Command
         $password = $password ?? Helper::guid(false);
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->password_algo = null;
+        $user->subscription_encryption_key = Helper::subscriptionEncryptionKeyFromPassword($password);
         if (!$user->save()) abort(500, '重置失败');
         $this->info("!!!重置成功!!!");
         $this->info("新密码为：{$password}，请尽快修改密码。");

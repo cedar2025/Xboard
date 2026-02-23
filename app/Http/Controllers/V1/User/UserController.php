@@ -76,9 +76,11 @@ class UserController extends Controller
         ) {
             return $this->fail([400, __('The old password is wrong')]);
         }
-        $user->password = password_hash($request->input('new_password'), PASSWORD_DEFAULT);
+        $newPass = $request->input('new_password');
+        $user->password = password_hash($newPass, PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
+        $user->subscription_encryption_key = Helper::subscriptionEncryptionKeyFromPassword($newPass);
         if (!$user->save()) {
             return $this->fail([400, __('Save failed')]);
         }

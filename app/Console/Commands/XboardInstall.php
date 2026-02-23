@@ -188,6 +188,7 @@ class XboardInstall extends Command
             abort(500, '管理员密码长度最小为8位字符');
         }
         $user->password = password_hash($password, PASSWORD_DEFAULT);
+        $user->subscription_encryption_key = Helper::subscriptionEncryptionKeyFromPassword($password);
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
         $user->is_admin = 1;

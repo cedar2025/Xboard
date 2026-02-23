@@ -108,6 +108,7 @@ class LoginService
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->password_algo = NULL;
         $user->password_salt = NULL;
+        $user->subscription_encryption_key = Helper::subscriptionEncryptionKeyFromPassword($password);
 
         if (!$user->save()) {
             return [false, [500, __('Reset failed')]];

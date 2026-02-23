@@ -164,9 +164,9 @@ class UserService
 
         // 基本信息
         $user->email = $data['email'];
-        $user->password = isset($data['password'])
-            ? Hash::make($data['password'])
-            : Hash::make($data['email']);
+        $plainPass = $data['password'] ?? $data['email'];
+        $user->password = Hash::make($plainPass);
+        $user->subscription_encryption_key = Helper::subscriptionEncryptionKeyFromPassword($plainPass);
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
 

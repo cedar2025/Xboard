@@ -83,7 +83,21 @@ class ClientController extends Controller
             'clientVersion' => $clientInfo['version'] ?? null
         ]);
 
-        return $protocolInstance->handle();
+        $response = $protocolInstance->handle();
+
+        // FlClash-compatible subscription encryption (AES-128-CBC, key = MD5(login password))
+        if ((int) admin_setting('subscription_encryption_enable', 0) && !empty($user->subscription_encryption_key)) {
+            $body = $response->getContent();
+            $body = Helper::subscriptionEncrypt($body, $user->subscription_encryption_key);
+            $newResponse = response($body);
+            foreach ($response->headers->all() as $name => $values) {
+                $newResponse->headers->set($name, $values);
+            }
+            $newResponse->header('Subscription-Encryption', 'true');
+            return $newResponse;
+        }
+
+        return $response;
     }
 
     /**

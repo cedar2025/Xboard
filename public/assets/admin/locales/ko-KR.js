@@ -518,6 +518,10 @@ window.XBOARD_TRANSLATIONS['ko-KR'] = {
         "title": "노드에 구독 정보 표시",
         "description": "활성화하면 사용자가 노드를 구독할 때 구독 정보가 출력됩니다."
       },
+      "subscription_encryption": {
+        "title": "구독 암호화",
+        "description": "활성화하면 구독 내용이 로그인 비밀번호로 파생된 키로 암호화되며, FlClash 등에서 로그인 비밀번호로 복호화할 수 있습니다."
+      },
       "show_protocol_to_server": {
         "title": "노드 이름에 프로토콜 표시",
         "description": "활성화하면 구독 라인에 프로토콜 이름이 포함됩니다 (예: [Hy2]홍콩)"

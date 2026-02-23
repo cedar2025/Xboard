@@ -140,6 +140,7 @@ class ConfigController extends Controller
                 'renew_order_event_id' => (int) admin_setting('renew_order_event_id', 0),
                 'change_order_event_id' => (int) admin_setting('change_order_event_id', 0),
                 'show_info_to_server_enable' => (bool) admin_setting('show_info_to_server_enable', 0),
+                'subscription_encryption_enable' => (bool) admin_setting('subscription_encryption_enable', 0),
                 'show_protocol_to_server_enable' => (bool) admin_setting('show_protocol_to_server_enable', 0),
                 'default_remind_expire' => (bool) admin_setting('default_remind_expire', 1),
                 'default_remind_traffic' => (bool) admin_setting('default_remind_traffic', 1),

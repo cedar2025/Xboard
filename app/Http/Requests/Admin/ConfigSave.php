@@ -43,6 +43,7 @@ class ConfigSave extends FormRequest
         'renew_order_event_id' => '',
         'change_order_event_id' => '',
         'show_info_to_server_enable' => '',
+        'subscription_encryption_enable' => 'boolean',
         'show_protocol_to_server_enable' => '',
         'subscribe_path' => '',
         // server

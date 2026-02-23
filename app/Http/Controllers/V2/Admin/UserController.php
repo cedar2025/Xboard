@@ -213,8 +213,10 @@ class UserController extends Controller
         }
         // 处理密码
         if (isset($params['password'])) {
-            $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
+            $plainPass = $params['password'];
+            $params['password'] = password_hash($plainPass, PASSWORD_DEFAULT);
             $params['password_algo'] = NULL;
+            $params['subscription_encryption_key'] = Helper::subscriptionEncryptionKeyFromPassword($plainPass);
         } else {
             unset($params['password']);
         }

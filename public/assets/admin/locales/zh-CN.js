@@ -503,6 +503,10 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
         "title": "在订阅中展示订阅信息",
         "description": "开启后将会在用户订阅节点时输出订阅信息。"
       },
+      "subscription_encryption": {
+        "title": "订阅加密",
+        "description": "开启后订阅内容使用用户登录密码派生的密钥加密，支持 FlClash 等客户端使用登录密码解密。"
+      },
       "show_protocol_to_server": {
         "title": "在订阅中线路名称中显示协议名称",
         "description": "开启后订阅线路会附带协议名称（例如: [Hy2]香港）"

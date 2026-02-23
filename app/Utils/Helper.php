@@ -90,6 +90,37 @@ class Helper
         }
     }
 
+    /**
+     * Derive subscription encryption key from plain password (same as FlClash: MD5).
+     */
+    public static function subscriptionEncryptionKeyFromPassword(string $password): string
+    {
+        return md5($password);
+    }
+
+    /**
+     * Encrypt subscription body for FlClash-compatible clients (AES-128-CBC, IV first 16 bytes).
+     */
+    public static function subscriptionEncrypt(string $body, string $keyHex): string
+    {
+        $key = hex2bin($keyHex);
+        if ($key === false || strlen($key) !== 16) {
+            return $body;
+        }
+        $iv = random_bytes(16);
+        $ciphertext = openssl_encrypt(
+            $body,
+            'AES-128-CBC',
+            $key,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
+        if ($ciphertext === false) {
+            return $body;
+        }
+        return base64_encode($iv . $ciphertext);
+    }
+
     public static function emailSuffixVerify($email, $suffixs)
     {
         $suffix = preg_split('/@/', $email)[1];
