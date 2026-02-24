@@ -18,6 +18,7 @@ class Surge extends AbstractProtocol
         Server::TYPE_VMESS,
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
+        Server::TYPE_ANYTLS,
     ];
     protected $protocolRequirements = [
         'surge.hysteria.protocol_settings.version' => [2 => '2398'],
@@ -56,6 +57,10 @@ class Surge extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_HYSTERIA) {
                 $proxies .= self::buildHysteria($item['password'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $proxies .= self::buildAnyTLS($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
         }
@@ -222,4 +227,36 @@ class Surge extends AbstractProtocol
         $uri .= "\r\n";
         return $uri;
     }
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        
+        $config = [
+            "{$server['name']}=anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+            'udp-relay=true'
+        ];
+        
+        // SNI
+        if (data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$protocol_settings['tls']['server_name']}";
+        }
+        
+        // 跳过证书验证
+        if (!is_null(data_get($protocol_settings, 'tls.allow_insecure'))) {
+            $config[] = data_get($protocol_settings, 'tls.allow_insecure')
+                ? 'skip-cert-verify=true'
+                : 'skip-cert-verify=false';
+        }
+        
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        
+       return $uri;
+    }
+
 }
+
