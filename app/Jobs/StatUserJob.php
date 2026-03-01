@@ -22,7 +22,7 @@ class StatUserJob implements ShouldQueue
     protected string $recordType;
 
     public $tries = 3;
-    public $timeout = 60;
+    public $timeout = 120;
     public $maxExceptions = 3;
 
     /**
@@ -51,14 +51,16 @@ class StatUserJob implements ShouldQueue
             ? strtotime(date('Y-m-01'))
             : strtotime(date('Y-m-d'));
 
-        foreach ($this->data as $uid => $v) {
-            try {
-                $this->processUserStat($uid, $v, $recordAt);
-            } catch (\Exception $e) {
-                Log::error('StatUserJob failed for user ' . $uid . ': ' . $e->getMessage());
-                throw $e;
+        DB::transaction(function () use ($recordAt) {
+            foreach ($this->data as $uid => $v) {
+                try {
+                    $this->processUserStat($uid, $v, $recordAt);
+                } catch (\Exception $e) {
+                    Log::error('StatUserJob failed for user ' . $uid . ': ' . $e->getMessage());
+                    throw $e;
+                }
             }
-        }
+        });
     }
 
     protected function processUserStat(int $uid, array $v, int $recordAt): void

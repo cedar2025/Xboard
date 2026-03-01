@@ -20,6 +20,8 @@ class UpdateAliveDataJob implements ShouldQueue
   private const CACHE_TTL = 120;
   private const NODE_DATA_EXPIRY = 100;
 
+  public $timeout = 60;
+
   public function __construct(
     private readonly array $data,
     private readonly string $nodeType,
@@ -76,23 +78,25 @@ class UpdateAliveDataJob implements ShouldQueue
             ->all();
 
           if (!empty($existingIds)) {
-            collect($userUpdates)
-              ->filter(fn($row) => in_array((int) ($row['id'] ?? 0), $existingIds, true))
-              ->chunk(1000)
-              ->each(function ($chunk) use ($now) {
-                collect($chunk)->each(function ($update) use ($now) {
-                  $id = (int) ($update['id'] ?? 0);
-                  $count = (int) ($update['count'] ?? 0);
-                  if ($id > 0) {
-                    User::query()
-                      ->whereKey($id)
-                      ->update([
-                        'online_count' => $count,
-                        'last_online_at' => $now,
-                      ]);
-                  }
+            \Illuminate\Support\Facades\DB::transaction(function () use ($userUpdates, $existingIds, $now) {
+              collect($userUpdates)
+                ->filter(fn($row) => in_array((int) ($row['id'] ?? 0), $existingIds, true))
+                ->chunk(1000)
+                ->each(function ($chunk) use ($now) {
+                  collect($chunk)->each(function ($update) use ($now) {
+                    $id = (int) ($update['id'] ?? 0);
+                    $count = (int) ($update['count'] ?? 0);
+                    if ($id > 0) {
+                      User::query()
+                        ->whereKey($id)
+                        ->update([
+                          'online_count' => $count,
+                          'last_online_at' => $now,
+                        ]);
+                    }
+                  });
                 });
-              });
+            });
           }
         }
       }

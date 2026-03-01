@@ -16,7 +16,7 @@ class SendTelegramJob implements ShouldQueue
     protected $text;
 
     public $tries = 3;
-    public $timeout = 10;
+    public $timeout = 30;
 
     /**
      * Create a new job instance.

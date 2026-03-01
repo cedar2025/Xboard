@@ -17,7 +17,7 @@ class TrafficFetchJob implements ShouldQueue
     protected $protocol;
     protected $timestamp;
     public $tries = 1;
-    public $timeout = 20;
+    public $timeout = 60;
 
     /**
      * Create a new job instance.
@@ -35,15 +35,17 @@ class TrafficFetchJob implements ShouldQueue
 
     public function handle(): void
     {
-        foreach ($this->data as $uid => $v) {
-            User::where('id', $uid)
-                ->incrementEach(
-                    [
-                        'u' => $v[0] * $this->server['rate'],
-                        'd' => $v[1] * $this->server['rate'],
-                    ],
-                    ['t' => time()]
-                );
-        }
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            foreach ($this->data as $uid => $v) {
+                User::where('id', $uid)
+                    ->incrementEach(
+                        [
+                            'u' => $v[0] * $this->server['rate'],
+                            'd' => $v[1] * $this->server['rate'],
+                        ],
+                        ['t' => time()]
+                    );
+            }
+        });
     }
 }

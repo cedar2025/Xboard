@@ -22,7 +22,7 @@ class StatServerJob implements ShouldQueue
     protected string $recordType;
 
     public $tries = 3;
-    public $timeout = 60;
+    public $timeout = 120;
     public $maxExceptions = 3;
 
     /**
