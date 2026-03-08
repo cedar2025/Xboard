@@ -173,7 +173,7 @@ class UserService
         // 默认设置
         $user->remind_expire = admin_setting('default_remind_expire', 1);
         $user->remind_traffic = admin_setting('default_remind_traffic', 1);
-        $user->expired_at = 0;
+        $user->expired_at = null;
 
         // 可选字段
         $this->setOptionalFields($user, $data);
@@ -242,6 +242,7 @@ class UserService
         $user->group_id = $plan->group_id;
         $user->transfer_enable = $plan->transfer_enable * 1073741824;
         $user->speed_limit = $plan->speed_limit;
+        $user->device_limit = $plan->device_limit;
 
         if ($validityDays > 0) {
             $user = $this->extendSubscription($user, $validityDays);
