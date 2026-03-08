@@ -142,8 +142,13 @@ class Helper
     }
 
     public static function randomPort($range): int {
-        $portRange = explode('-', $range);
-        return random_int((int)$portRange[0], (int)$portRange[1]);
+        $portRange = explode('-', (string) $range, 2);
+        $min = (int) ($portRange[0] ?? 0);
+        $max = (int) ($portRange[1] ?? $portRange[0] ?? 0);
+        if ($min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+        return random_int($min, $max);
     }
 
     public static function base64EncodeUrlSafe($data)
