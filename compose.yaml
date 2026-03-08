@@ -31,7 +31,7 @@ services:
     depends_on:
       - redis
   redis:
-    image: redis:7-alpine
+    image: redis:8.0-alpine
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
     restart: unless-stopped
     volumes:
