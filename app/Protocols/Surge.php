@@ -18,6 +18,7 @@ class Surge extends AbstractProtocol
         Server::TYPE_VMESS,
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
+        Server::TYPE_ANYTLS,
     ];
     protected $protocolRequirements = [
         'surge.hysteria.protocol_settings.version' => [2 => '2398'],
@@ -56,6 +57,10 @@ class Surge extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_HYSTERIA) {
                 $proxies .= self::buildHysteria($item['password'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $proxies .= self::buildAnyTLS($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
         }
@@ -186,6 +191,28 @@ class Surge extends AbstractProtocol
         ];
         if (!empty($protocol_settings['allow_insecure'])) {
             array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    //参考文档: https://manual.nssurge.com/policy/proxy.html
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $config = [
+            "{$server['name']}=anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+        ];
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$serverName}";
+        }
+        if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
