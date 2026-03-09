@@ -158,11 +158,11 @@ class DesktopSidebar extends StatelessWidget {
         onTap: () => onPageChanged(page),
         borderRadius: AppDimensions.borderRadiusSmall,
         focusColor: isDark 
-            ? AppColors.primaryLight.withValues(alpha: 0.12)
-            : AppColors.primary.withValues(alpha: 0.08),
+            ? AppColors.primaryLight.withOpacity(0.12)
+            : AppColors.primary.withOpacity(0.08),
         hoverColor: isDark 
-            ? AppColors.primaryLight.withValues(alpha: 0.12)
-            : AppColors.primary.withValues(alpha: 0.08),
+            ? AppColors.primaryLight.withOpacity(0.12)
+            : AppColors.primary.withOpacity(0.08),
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
         child: Container(
@@ -173,8 +173,8 @@ class DesktopSidebar extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive
               ? (isDark 
-                  ? AppColors.primaryLight.withValues(alpha: 0.12)
-                  : AppColors.primary.withValues(alpha: 0.08))
+                  ? AppColors.primaryLight.withOpacity(0.12)
+                  : AppColors.primary.withOpacity(0.08))
               : Colors.transparent,
             borderRadius: AppDimensions.borderRadiusSmall,
           ),
@@ -242,11 +242,11 @@ class DesktopSidebar extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isDark
-                ? AppColors.darkBackground.withValues(alpha: 0.5)
-                : AppColors.lightBackground.withValues(alpha: 0.5),
+                ? AppColors.darkBackground.withOpacity(0.5)
+                : AppColors.lightBackground.withOpacity(0.5),
               borderRadius: AppDimensions.borderRadiusSmall,
               border: Border.all(
-                color: statusColor.withValues(alpha: 0.3),
+                color: statusColor.withOpacity(0.3),
               ),
             ),
             child: Row(

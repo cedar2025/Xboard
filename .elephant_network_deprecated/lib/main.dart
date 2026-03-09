@@ -172,7 +172,7 @@ class MyApp extends StatelessWidget {
                   color: AppColors.lightTextPrimary,
                 ),
               ),
-              cardTheme: CardThemeData(
+              cardTheme: CardTheme(
                 color: AppColors.lightCard,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -246,7 +246,7 @@ class MyApp extends StatelessWidget {
                   color: AppColors.darkTextPrimary,
                 ),
               ),
-              cardTheme: CardThemeData(
+              cardTheme: CardTheme(
                 color: AppColors.darkCard,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

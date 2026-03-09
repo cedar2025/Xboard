@@ -19,6 +19,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   // Enforce single instance mode
   HANDLE hMutex = CreateMutex(NULL, TRUE, L"ElephantNetwork_SingleInstance_Mutex");
+  (void)hMutex;
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     // Find the existing window and bring it to foreground
     HWND hwnd = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"elephant_network"); // Class name from win32_window.cpp

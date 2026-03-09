@@ -19,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.7
+  sdk: ^3.5.4
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -64,13 +64,13 @@ dependencies:
 
   # JSON 序列化
   json_annotation: ^4.9.0
-  google_fonts: ^7.0.2
+  google_fonts: any
 
   # Markdown 渲染
   flutter_markdown: ^0.7.4+1
   cached_network_image: ^3.4.1
   flutter_svg: ^2.0.7
-  launch_at_startup: ^0.5.1
+  launch_at_startup: ^0.3.1
   package_info_plus: ^9.0.0
 
 dev_dependencies:
@@ -82,7 +82,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^6.0.0
+  flutter_lints: any
 
   # JSON 代码生成
   build_runner: ^2.4.13
