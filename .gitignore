@@ -32,3 +32,7 @@ docker-compose.yaml
 bun.lockb
 compose.yaml
 .scribe
+
+# Exclude large release files
+public/download/ElephantNetwork-Android.apk
+public/download/ElephantNetwork-MacOS.zip

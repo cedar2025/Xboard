@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -10,10 +11,13 @@ import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
-import '../../utils/avatar_helper.dart'; // [NEW] Link to helper
+import '../../utils/avatar_helper.dart';
+import '../../utils/platform_utils.dart';
+import '../../utils/toast_utils.dart';
 import '../../widgets/custom_webview.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'change_password_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -89,28 +93,30 @@ class ProfileScreen extends StatelessWidget {
                   }
 
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    child: Column(
-                      children: [
-                        // 头像与用户信息
-                        _buildUserHeader(context, user, isDark),
-                        const SizedBox(height: 32),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520, minWidth: 400),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 头像与用户信息
+                          _buildUserHeader(context, user, isDark),
+                          const SizedBox(height: 32),
 
-                        // 账号信息组
-                        _buildSectionTitle(context, tr.translate('settings'), isDark),
-                        const SizedBox(height: 12),
-                        _buildInfoCard(context, user, isDark),
-                        const SizedBox(height: 24),
+                          // 账号信息卡片
+                          _buildInfoCard(context, user, isDark),
+                          const SizedBox(height: 24),
 
-                        // 应用设置组
-                        _buildSectionTitle(context, tr.translate('app_name'), isDark),
-                        const SizedBox(height: 12),
-                        _buildSettingsCard(context, isDark),
-                        const SizedBox(height: 40),
-                      ],
+                          // 设置信息卡片
+                          _buildSettingsCard(context, isDark),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
                     ),
-                  );
+                  ),
+                );
                 },
               ),
             ),
@@ -295,6 +301,37 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _buildInfoItem(
+            context,
+            Icons.account_balance_wallet_outlined,
+            '账号余额',
+            '¥${(user.balance / 100).toStringAsFixed(2)}',
+            isDark,
+            isFirst: true,
+          ),
+          _buildDivider(isDark),
+          Consumer<UserProvider>(
+            builder: (context, provider, _) {
+              final inviteCode = provider.inviteCode;
+              return InkWell(
+                onTap: () {
+                  if (inviteCode != null && inviteCode.isNotEmpty) {
+                    Clipboard.setData(ClipboardData(text: inviteCode));
+                    ToastUtils.show(context, '已复制邀请码');
+                  }
+                },
+                child: _buildInfoItem(
+                  context,
+                  Icons.group_add_outlined,
+                  '我的邀请码',
+                  inviteCode ?? '获取中...',
+                  isDark,
+                  showChevron: true,
+                ),
+              );
+            },
+          ),
+          _buildDivider(isDark),
           _buildActionItem(
             context,
             Icons.lock_outline,
@@ -305,24 +342,6 @@ class ProfileScreen extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
             ),
-            isFirst: true,
-          ),
-          _buildDivider(isDark),
-          _buildActionItem(
-            context,
-            Icons.receipt_long_outlined,
-            tr.translate('orders'),
-            '查看历史',
-            isDark,
-            () => _openWebPage(context, tr.translate('orders'), 'order'),
-          ),
-          _buildDivider(isDark),
-          _buildInfoItem(
-            context,
-            Icons.account_balance_wallet_outlined,
-            '账号余额',
-            '¥${(user.balance / 100).toStringAsFixed(2)}',
-            isDark,
             isLast: true,
           ),
         ],
@@ -429,12 +448,21 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildActionItem(
             context,
+            Icons.receipt_long_outlined,
+            tr('orders'),
+            '查看历史',
+            isDark,
+            () => _openWebPage(context, tr('orders'), 'order'),
+            isFirst: true,
+          ),
+          _buildDivider(isDark),
+          _buildActionItem(
+            context,
             Icons.support_agent_outlined,
             '我的工单',
             '问题咨询',
             isDark,
             () => _openWebPage(context, '我的工单', 'ticket'),
-            isFirst: true,
           ),
           _buildDivider(isDark),
           Consumer<ThemeProvider>(
@@ -456,7 +484,12 @@ class ProfileScreen extends StatelessWidget {
             '关于大象网络',
             'v1.0.0',
             isDark,
-            () {},
+            () {
+               Navigator.push(
+                 context, 
+                 MaterialPageRoute(builder: (_) => const AboutScreen()),
+               );
+            },
             isLast: true,
           ),
         ],
@@ -473,6 +506,7 @@ class ProfileScreen extends StatelessWidget {
     bool isDark, {
     bool isFirst = false,
     bool isLast = false,
+    bool showChevron = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -491,14 +525,25 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Text(
-            value,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
+          if (showChevron) ...[
+            const SizedBox(width: 8),
+            Icon(
+              Icons.content_copy,
+              size: 14,
+              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+            ),
+          ],
         ],
       ),
     );
@@ -599,6 +644,42 @@ class ProfileScreen extends StatelessWidget {
 
   /// 语言选择器
   void _showLanguagePicker(BuildContext context, LanguageProvider provider, bool isDark) {
+    if (PlatformUtils.isDesktop) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      provider.translate('language'),
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildLanguageOption(context, provider, '中文', 'zh', isDark),
+                    _buildLanguageOption(context, provider, 'English', 'en', isDark),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -664,7 +745,45 @@ class ProfileScreen extends StatelessWidget {
   }
 
   /// 主题选择器
+  /// 主题选择器
   void _showThemePicker(BuildContext context, ThemeProvider provider, bool isDark) {
+    if (PlatformUtils.isDesktop) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '选择主题',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildThemeOption(context, provider, '跟随系统', ThemeMode.system, isDark),
+                    _buildThemeOption(context, provider, '浅色模式', ThemeMode.light, isDark),
+                    _buildThemeOption(context, provider, '深色模式', ThemeMode.dark, isDark),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -732,6 +851,90 @@ class ProfileScreen extends StatelessWidget {
 
   /// 显示头像选择底部弹窗
   void _showAvatarSelectionSheet(BuildContext context, bool isDark) {
+    if (PlatformUtils.isDesktop) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '选择头像',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                        ),
+                        itemCount: AvatarHelper.presetSeeds.length,
+                        itemBuilder: (context, index) {
+                          final seed = AvatarHelper.presetSeeds[index];
+                          final avatarUrl = AvatarHelper.getAvatarUrl(seed);
+                          return Consumer<UserProvider>(
+                            builder: (context, provider, _) {
+                              final isSelected = provider.avatarUrl == avatarUrl;
+                              return GestureDetector(
+                                onTap: () {
+                                  provider.setAvatarSeed(seed);
+                                  Navigator.pop(context);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: isSelected
+                                        ? Border.all(
+                                            color: isDark ? AppColors.primaryLight : AppColors.primary,
+                                            width: 3,
+                                          )
+                                        : null,
+                                  ),
+                                  child: ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl: avatarUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
+                                        child: const Center(child: SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2))),
+                                      ),
+                                      errorWidget: (context, url, error) => Container(
+                                        color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
+                                        child: Icon(Icons.error_outline, size: 20, color: AppColors.slate400),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,

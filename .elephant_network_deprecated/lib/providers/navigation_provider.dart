@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 enum NavigationPage {
   dashboard,
-  nodes,
   shop,
   profile,
 }

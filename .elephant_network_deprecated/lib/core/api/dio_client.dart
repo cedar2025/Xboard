@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../storage/local_storage.dart';
 import '../../utils/constants.dart';
 import 'interceptors/auth_interceptor.dart';
 
 class DioClient {
   late Dio _dio;
-  final _storage = const FlutterSecureStorage();
+  final _storage = const LocalStorage();
 
   DioClient() {
     _dio = Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
     ));
     
     // 添加认证拦截器
@@ -19,5 +19,5 @@ class DioClient {
   }
 
   Dio get dio => _dio;
-  FlutterSecureStorage get storage => _storage;
+  LocalStorage get storage => _storage;
 }

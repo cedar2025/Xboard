@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart'; // 引入 window_manager
 
 class TrayService with TrayListener {
   static final TrayService _instance = TrayService._internal();
@@ -14,25 +15,39 @@ class TrayService with TrayListener {
 
     trayManager.addListener(this);
     
-    // 设置托盘图标 (需要准备图标文件，目前先使用默认或占位)
-    // 注意: 这里路径需要实际存在
-    // await trayManager.setIcon(Platform.isWindows ? 'assets/images/app_icon.ico' : 'assets/images/app_icon.png');
+    // 设置托盘图标
+    final String iconPath = Platform.isWindows
+        ? 'app_icon.ico' // Windows 原生应用图标
+        : 'assets/images/logo_icon_tray.png';
+        
+    await trayManager.setIcon(
+      iconPath,
+      isTemplate: Platform.isMacOS, // 仅 macOS 下支持自适应黑白色（Template Image）
+    );
     
+    // 初始化时显示默认状态（未连接）
+    await updateMenu(false);
+  }
+
+  // 记录外部传入的 Toggle 回调
+  VoidCallback? onToggleVpn;
+
+  Future<void> updateMenu(bool isConnected) async {
     final Menu menu = Menu(
       items: [
+        MenuItem(
+          key: 'toggle_vpn',
+          label: isConnected ? '关闭 VPN' : '开启 VPN',
+        ),
+        MenuItem.separator(),
         MenuItem(
           key: 'show_window',
           label: '显示窗口',
         ),
         MenuItem.separator(),
         MenuItem(
-          key: 'toggle_vpn',
-          label: '开启代理',
-        ),
-        MenuItem.separator(),
-        MenuItem(
           key: 'exit_app',
-          label: '退出',
+          label: '退出应用',
         ),
       ],
     );
@@ -41,15 +56,36 @@ class TrayService with TrayListener {
 
   @override
   void onTrayIconMouseDown() {
-    // 鼠标点击托盘
+    // 鼠标点击托盘，也可以直接改为显示窗口：
+    // windowManager.show();
+    // windowManager.focus();
     trayManager.popUpContextMenu();
   }
 
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
-    if (menuItem.key == 'show_window') {
-      // TODO: 显示窗口逻辑 (需配合 window_manager)
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) async {
+    debugPrint('TRAY: Clicked ${menuItem.key}');
+    if (menuItem.key == 'toggle_vpn') {
+      if (onToggleVpn != null) {
+        debugPrint('TRAY: Executing onToggleVpn callback');
+        onToggleVpn!();
+      } else {
+        debugPrint('TRAY: onToggleVpn callback is NULL');
+      }
+    } else if (menuItem.key == 'show_window') {
+      bool isMinimized = await windowManager.isMinimized();
+      if (isMinimized) {
+        await windowManager.restore();
+      }
+      await windowManager.show();
+      await windowManager.focus();
     } else if (menuItem.key == 'exit_app') {
+      await windowManager.destroy(); // 使用 window_manager 安全退出
       exit(0);
     }
   }

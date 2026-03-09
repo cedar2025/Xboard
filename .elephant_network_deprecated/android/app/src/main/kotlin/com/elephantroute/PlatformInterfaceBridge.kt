@@ -52,50 +52,68 @@ class PlatformInterfaceBridge(
     }
 
     override fun startDefaultInterfaceMonitor(listener: InterfaceUpdateListener) {
+        // Libbox on Android explicitly blocks all 'direct' outbounds with 
+        // "no available network interface" if it never receives a default interface update,
+        // as a built-in protection against TUN routing loops.
+        // We must provide a dummy or real active interface to unlock it.
+        Thread {
+            try {
+                // Give it a short delay to ensure libbox is fully initialized listening
+                Thread.sleep(500)
+                val networkInterfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
+                val activeInfo = networkInterfaces.find { !it.name.startsWith("lo") && it.name != "tun0" && it.isUp }
+                if (activeInfo != null) {
+                    Log.i("PlatformBridge", "Notifying Libbox of active default interface: ${activeInfo.name} idx ${activeInfo.index}")
+                    listener.updateDefaultInterface(activeInfo.name, activeInfo.index, false, false)
+                } else {
+                    // Fallback to a safe guess if reflection fails
+                    listener.updateDefaultInterface("wlan0", 0, false, false)
+                }
+            } catch (e: Exception) {
+                Log.e("PlatformBridge", "Error in default interface monitor", e)
+                listener.updateDefaultInterface("wlan0", 0, false, false)
+            }
+        }.start()
     }
 
     override fun closeDefaultInterfaceMonitor(listener: InterfaceUpdateListener) {
     }
 
     override fun getInterfaces(): NetworkInterfaceIterator {
-        val networks = connectivity?.allNetworks ?: emptyArray()
-        val networkInterfaces = NetworkInterface.getNetworkInterfaces().toList()
+        val networkInterfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
         val interfaces = mutableListOf<LibboxNetworkInterface>()
         
-        for (network in networks) {
+        for (networkInterface in networkInterfaces) {
             try {
-                val boxInterface = LibboxNetworkInterface()
-                val linkProperties = connectivity?.getLinkProperties(network) ?: continue
-                val networkCapabilities = connectivity?.getNetworkCapabilities(network) ?: continue
-                boxInterface.name = linkProperties.interfaceName ?: "unknown"
-                
-                val networkInterface = networkInterfaces.find { it.name == boxInterface.name }
-                
-                boxInterface.dnsServer = StringArray(linkProperties.dnsServers.mapNotNull { it.hostAddress })
-                
-                boxInterface.type = when {
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> Libbox.InterfaceTypeWIFI
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> Libbox.InterfaceTypeCellular
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> Libbox.InterfaceTypeEthernet
-                    else -> Libbox.InterfaceTypeOther
-                }
-                
-                boxInterface.index = networkInterface?.index ?: -1
-                
-                if (networkInterface != null) {
-                    boxInterface.addresses = StringArray(networkInterface.interfaceAddresses.map { it.toPrefix() })
-                } else {
-                    boxInterface.addresses = StringArray(emptyList())   
-                }
+                // Ignore empty or invalid interfaces like loopback for outbounds
+                if (networkInterface.name.startsWith("lo")) continue
 
+                val boxInterface = LibboxNetworkInterface()
+                boxInterface.name = networkInterface.name
+                boxInterface.index = networkInterface.index
+                
+                boxInterface.addresses = StringArray(networkInterface.interfaceAddresses.map { it.toPrefix() })
+                boxInterface.dnsServer = StringArray(emptyList()) // DNS handled by Android Native usually
+                
+                // Set to generic type if we don't query ConnectivityManager
+                boxInterface.type = Libbox.InterfaceTypeOther
+                
+                // FORCE the interface to be UP and RUNNING so Libbox doesn't block traffic
+                // thinking the device is offline!
                 var flags = 0
-                if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-                    flags = OsConstants.IFF_UP or OsConstants.IFF_RUNNING
+                if (networkInterface.isUp) {
+                    flags = flags or OsConstants.IFF_UP or OsConstants.IFF_RUNNING
+                }
+                
+                // If it has addresses and is not loopback, definitely assume it's capable
+                if (networkInterface.interfaceAddresses.isNotEmpty()) {
+                    flags = flags or OsConstants.IFF_UP or OsConstants.IFF_RUNNING
                 }
                 
                 boxInterface.flags = flags
                 interfaces.add(boxInterface)
             } catch (e: Exception) {
+                // Ignore single interface errors
             }
         }
         return InterfaceArray(interfaces.iterator())

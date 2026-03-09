@@ -282,18 +282,20 @@ fun NodeItemRow(
     val delayMs = node.delayMs
     val latencyInfo = when {
         node.isTesting -> LatencyInfo.Testing
-        delayMs == null || delayMs <= 0 -> LatencyInfo.Unknown
-        delayMs < 150 -> LatencyInfo.Low(delayMs.toLong())
-        delayMs < 500 -> LatencyInfo.Medium(delayMs.toLong())
-        else -> LatencyInfo.High(delayMs.toLong())
+        delayMs != null && delayMs > 0 -> {
+            if (delayMs < 150) LatencyInfo.Low(delayMs.toLong())
+            else if (delayMs < 500) LatencyInfo.Medium(delayMs.toLong())
+            else LatencyInfo.High(delayMs.toLong())
+        }
+        node.lastTestAt != null -> LatencyInfo.Timeout
+        else -> LatencyInfo.Unknown
     }
 
     val delayColor = when (latencyInfo) {
         is LatencyInfo.Unknown -> LatencyUnknown
-        is LatencyInfo.Low -> LatencyLow
-        is LatencyInfo.Medium -> LatencyMedium
-        is LatencyInfo.High -> LatencyHigh
-        else -> LatencyUnknown
+        is LatencyInfo.Testing -> scheme.primary
+        is LatencyInfo.Timeout -> LatencyHigh // 超时显示红色
+        else -> LatencyLow // 只要有延迟数值，统一显示绿色
     }
 
     Surface(
@@ -459,6 +461,7 @@ private fun LatencyDisplay(
                 is LatencyInfo.Low -> "优秀"
                 is LatencyInfo.Medium -> "一般"
                 is LatencyInfo.High -> "较慢"
+                is LatencyInfo.Timeout -> "超时"
                 else -> ""
             }
 
@@ -466,9 +469,9 @@ private fun LatencyDisplay(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 延迟数值
+                // 延迟数值或超时文本
                 Text(
-                    text = "${ms}ms",
+                    text = if (latencyInfo is LatencyInfo.Timeout) "超时" else "${ms}ms",
                     style = MaterialTheme.typography.labelSmall,
                     color = delayColor,
                     fontWeight = FontWeight.Medium
@@ -504,6 +507,9 @@ private sealed class LatencyInfo {
 
     /** 测速中 */
     data object Testing : LatencyInfo()
+
+    /** 超时 */
+    data object Timeout : LatencyInfo()
 
     /** 低延迟 (<150ms) */
     data class Low(override val ms: Long) : Known(ms)

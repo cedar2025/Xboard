@@ -13,7 +13,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../utils/helpers.dart';
-import '../../utils/avatar_helper.dart'; // [NEW] Link to helper
+import '../../utils/avatar_helper.dart';
+import '../../utils/flag_helper.dart';
+import '../../utils/platform_utils.dart';
 import '../../core/singbox/vpn_state.dart';
 import 'node_selection_screen.dart';
 
@@ -143,6 +145,28 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                 child: Consumer<VpnProvider>(
                   builder: (context, vpnProvider, _) {
                     final vpnState = vpnProvider.state;
+                    
+                    // 桌面端：单列居中精致布局
+                    if (PlatformUtils.isDesktop) {
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520, minWidth: 400),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildUserStatusCard(user, isDark, vpnState.isConnected, vpnProvider),
+                              const SizedBox(height: 20),
+                              _buildTrafficCard(user, isDark),
+                              const SizedBox(height: 20),
+                              _buildConnectionCard(isDark),
+                              const SizedBox(height: 60),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // 移动端：原有单列布局
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -357,9 +381,9 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                 ),
                 const SizedBox(height: 8),
                 
-                // 第二行：套餐类型 + 有效期 (左右分布)
+                // 第二行：套餐类型 + 有效期 (靠左紧凑分布)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     // 左侧：套餐类型 Badge
                     Container(
@@ -398,7 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                                 style: AppTextStyles.labelMedium.copyWith(
                                   color: isDark ? AppColors.primaryLight : AppColors.primary,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12, // 稍微调小一点适配一行
+                                  fontSize: 12,
                                 ),
                               );
                             },
@@ -406,14 +430,21 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
 
                     // 右侧：有效期至
                     if (!isExpired && hasPlan)
-                      Text(
-                        '有效期至 ${user.expiredAt != null ? formatTimestamp(user.expiredAt!) : "无限"}',
-                        style: AppTextStyles.labelTiny.copyWith(
-                          color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
-                          fontSize: 11,
+                      Expanded(
+                        child: Text(
+                          '有效期至 ${user.expiredAt != null ? formatTimestamp(user.expiredAt!) : "无限"}',
+                          style: AppTextStyles.labelTiny.copyWith(
+                            color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.left,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                   ],
@@ -507,22 +538,28 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               AnimatedContainer(
                 duration: const Duration(milliseconds: 1000),
                 height: 12,
-                width: MediaQuery.of(context).size.width * 0.7 * (usedPercentage / 100).clamp(0.0, 1.0),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      isDark ? AppColors.primaryDark : AppColors.primary,
-                      isDark ? AppColors.primary : AppColors.primaryLight,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Container(
+                      width: constraints.maxWidth * (usedPercentage / 100).clamp(0.0, 1.0),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            isDark ? AppColors.primaryDark : AppColors.primary,
+                            isDark ? AppColors.primary : AppColors.primaryLight,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -747,7 +784,12 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   Widget _buildNodeSelectionButton(bool isConnected, bool isDark) {
     return Consumer<NodeProvider>(
       builder: (context, nodeProvider, _) {
-        final selectedNodeName = nodeProvider.selectedNode?.name ?? '[ss] 新加坡高速 01';
+        final isAutoMode = nodeProvider.isAutoMode;
+        final selectedNodeName = nodeProvider.selectedNode?.name ?? '自动选择节点';
+        final effectiveName = nodeProvider.effectiveNodeName;
+        // 确定显示的国旗：自动模式用实际节点的国旗，手动模式用选中节点的国旗
+        final flagName = isAutoMode ? effectiveName : selectedNodeName;
+        final flagEmoji = getFlagEmoji(flagName);
 
         return GestureDetector(
           onTap: () {
@@ -767,6 +809,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // 国旗 / 自动模式图标
                 Container(
                   width: 32,
                   height: 32,
@@ -774,32 +817,44 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                     color: _getNodeIconBgColor(isConnected, isDark),
                     borderRadius: AppDimensions.borderRadiusSmall,
                   ),
-                  child: Icon(
-                    Icons.location_on,
-                    size: 16,
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                  child: Center(
+                    child: isAutoMode
+                      ? Text(
+                          effectiveName.isNotEmpty ? flagEmoji : '⚡',
+                          style: const TextStyle(fontSize: 18),
+                        )
+                      : Text(
+                          flagEmoji,
+                          style: const TextStyle(fontSize: 18),
+                        ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '当前节点',
-                      style: AppTextStyles.labelTiny.copyWith(
-                        color: _getNodeLabelColor(isConnected, isDark),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isAutoMode ? '自动选择' : '当前节点',
+                        style: AppTextStyles.labelTiny.copyWith(
+                          color: _getNodeLabelColor(isConnected, isDark),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      selectedNodeName,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: _getNodeNameColor(isConnected, isDark),
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 2),
+                      Text(
+                        isAutoMode
+                          ? (effectiveName.isNotEmpty ? effectiveName : '等待测速...')
+                          : selectedNodeName,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: _getNodeNameColor(isConnected, isDark),
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Icon(
@@ -970,7 +1025,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     if (isConnected) {
       return isDark 
         ? AppColors.primaryLight.withOpacity(0.4) 
-        : Colors.white.withOpacity(0.4);
+        : AppColors.primary.withOpacity(0.4);
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.slate300;
   }

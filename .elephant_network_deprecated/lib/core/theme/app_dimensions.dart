@@ -198,6 +198,26 @@ class AppDimensions {
   /// 超大阴影
   static const double elevationXL = 16.0;
 
+  // ==================== Desktop Specific ====================
+  
+  /// 桌面端侧边栏宽度（展开）
+  static const double sidebarWidth = 220.0;
+  
+  /// 桌面端侧边栏宽度（折叠）
+  static const double sidebarWidthCollapsed = 72.0;
+  
+  /// 桌面端内容区最大宽度
+  static const double contentMaxWidth = 1200.0;
+  
+  /// 桌面端卡片最小宽度（Grid 布局用）
+  static const double cardMinWidth = 280.0;
+  
+  /// 桌面端登录卡片最大宽度
+  static const double loginCardMaxWidth = 480.0;
+  
+  /// 桌面端顶部安全区域高度（macOS 标题栏）
+  static const double desktopTopPadding = 32.0;
+
   // ==================== Helper Methods ====================
   
   /// 创建对称间距

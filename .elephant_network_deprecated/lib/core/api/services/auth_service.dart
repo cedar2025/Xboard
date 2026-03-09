@@ -59,7 +59,15 @@ class AuthService {
 
   /// 获取 Token
   Future<String?> getToken() async {
-    return await _client.storage.read(key: 'auth_token');
+    try {
+      return await _client.storage.read(key: 'auth_token');
+    } catch (e) {
+      print('DEBUG: [AuthService] getToken failed: $e');
+      try {
+        await _client.storage.deleteAll();
+      } catch (_) {}
+      return null;
+    }
   }
 
   /// 获取快速登录 URL
@@ -73,7 +81,14 @@ class AuthService {
 
   /// 清除 Token
   Future<void> clearToken() async {
-    await _client.storage.delete(key: 'auth_token');
+    try {
+      await _client.storage.delete(key: 'auth_token');
+    } catch (e) {
+      print('DEBUG: [AuthService] clearToken failed: $e');
+      try {
+        await _client.storage.deleteAll();
+      } catch (_) {}
+    }
   }
 
   /// 检查是否已登录

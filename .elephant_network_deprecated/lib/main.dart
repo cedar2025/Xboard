@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:window_manager/window_manager.dart';
 import 'core/api/dio_client.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_text_styles.dart';
@@ -10,22 +13,62 @@ import 'providers/user_provider.dart';
 import 'providers/vpn_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/node_provider.dart';
-import 'providers/node_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/config_provider.dart';
 import 'core/services/tray_service.dart';
 import 'core/singbox/vpn_manager.dart';
 import 'core/singbox/mock_vpn_service.dart';
 import 'core/singbox/real_vpn_service.dart';
-import 'package:flutter/foundation.dart';
+import 'core/singbox/macos_vpn_service.dart';
+import 'core/singbox/windows_vpn_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
 import 'widgets/main_scaffold.dart';
 import 'screens/profile/profile_screen.dart';
+import 'utils/platform_utils.dart';
+import 'widgets/tray_controller.dart';
+
+import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 桌面端：初始化窗口管理器与开机自启
+  if (PlatformUtils.isDesktop) {
+    if (Platform.isWindows) {
+      try {
+        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+        launchAtStartup.setup(
+          appName: packageInfo.appName,
+          appPath: Platform.resolvedExecutable,
+        );
+        // 默认开启自启（可转移到偏好设置）
+        await launchAtStartup.enable();
+      } catch (e) {
+        debugPrint('Failed to setup launchAtStartup: $e');
+      }
+    }
+    
+    await windowManager.ensureInitialized();
+    
+    const windowOptions = WindowOptions(
+      size: Size(1000, 700),
+      minimumSize: Size(1000, 700),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+      title: '',
+    );
+    
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
   
   // 初始化托盘(桌面端)
   await TrayService().init();
@@ -45,8 +88,20 @@ class MyApp extends StatelessWidget {
           create: (_) => DioClient(),
         ),
         // 提供 VpnManager
+        // 桌面端（macOS/Windows）使用对应 Service，其他桌面端降级为 MockVpnService
+        // 移动端使用 RealVpnService（对接原生 sing-box SDK）
         Provider<VpnManager>(
-          create: (_) => RealVpnService(),
+          create: (_) {
+            if (Platform.isMacOS) {
+              return MacosVpnService();
+            } else if (Platform.isWindows) {
+              return WindowsVpnService();
+            } else if (PlatformUtils.isDesktop) {
+              return MockVpnService();
+            } else {
+              return RealVpnService();
+            }
+          },
           dispose: (_, vpn) => vpn.dispose(),
         ),
         // 提供 AuthProvider
@@ -57,11 +112,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<UserProvider>(
           create: (context) => UserProvider(context.read<DioClient>()),
         ),
+        // 提供 ConfigProvider (前置, 核心网络依赖)
+        ChangeNotifierProvider<ConfigProvider>(
+          create: (_) => ConfigProvider(),
+        ),
         // 提供 NodeProvider
         ChangeNotifierProvider<NodeProvider>(
           create: (context) => NodeProvider(
             context.read<DioClient>(),
             context.read<VpnManager>(),
+            context.read<ConfigProvider>(),
           ),
         ),
         // 提供 VpnProvider
@@ -69,6 +129,7 @@ class MyApp extends StatelessWidget {
           create: (context) => VpnProvider(
             context.read<DioClient>(),
             context.read<VpnManager>(),
+            context.read<ConfigProvider>(),
           ),
         ),
         // 提供 ThemeProvider
@@ -86,8 +147,9 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, _) {
-          return MaterialApp(
-            title: languageProvider.translate('app_name'),
+          return TrayController(
+            child: MaterialApp(
+              title: languageProvider.translate('app_name'),
             locale: languageProvider.locale,
             scrollBehavior: AppScrollBehavior(),
             themeMode: themeProvider.themeMode,
@@ -247,6 +309,7 @@ class MyApp extends StatelessWidget {
               '/home': (context) => const MainScaffold(),
               '/profile': (context) => const ProfileScreen(),
             },
+          ),
           );
         },
       ),
@@ -324,18 +387,13 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 未来这里可以换成真正的 Logo 图片
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.greenAccent.withValues(alpha: 0.1),
-                  border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.2)),
-                ),
-                child: const Icon(
-                  Icons.router_rounded,
-                  size: 80,
-                  color: Colors.greenAccent,
+              // Logo
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/images/logo_icon_macos.png',
+                  width: 120,
+                  height: 120,
                 ),
               ),
               const SizedBox(height: 32),

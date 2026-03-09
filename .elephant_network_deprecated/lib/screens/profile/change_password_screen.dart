@@ -86,87 +86,102 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildPasswordField(
-                  controller: _oldPasswordController,
-                  label: '旧密码',
-                  hint: '请输入旧密码',
-                  isDark: isDark,
-                  autofocus: true,
-                  obscureText: _isOldObscure,
-                  onToggleObscure: () => setState(() => _isOldObscure = !_isOldObscure),
-                  validator: (v) => v?.isEmpty == true ? '请输入旧密码' : null,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+              child: Container(
+                padding: const EdgeInsets.all(32.0),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                  borderRadius: AppDimensions.borderRadiusLarge,
+                  border: Border.all(
+                    color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                  ),
                 ),
-                const SizedBox(height: 24),
-                _buildPasswordField(
-                  controller: _newPasswordController,
-                  label: '新密码',
-                  hint: '密码（8位以上）',
-                  isDark: isDark,
-                  obscureText: _isNewObscure,
-                  onToggleObscure: () => setState(() => _isNewObscure = !_isNewObscure),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return '请输入新密码';
-                    if (v.length < 8) return '密码长度不能少于8位';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildPasswordField(
-                  controller: _confirmPasswordController,
-                  label: '确认新密码',
-                  hint: '确认密码',
-                  isDark: isDark,
-                  obscureText: _isConfirmObscure,
-                  onToggleObscure: () => setState(() => _isConfirmObscure = !_isConfirmObscure),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return '请确认新密码';
-                    if (v != _newPasswordController.text) return '两次输入的密码不一致';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 48),
-                Consumer<UserProvider>(
-                  builder: (context, provider, child) {
-                    return SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: provider.isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.getPrimaryButton(isDark),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppDimensions.borderRadiusMedium,
-                          ),
-                          elevation: 0,
-                        ),
-                        child: provider.isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                '确认修改',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPasswordField(
+                        controller: _oldPasswordController,
+                        label: '旧密码',
+                        hint: '请输入旧密码',
+                        isDark: isDark,
+                        autofocus: true,
+                        obscureText: _isOldObscure,
+                        onToggleObscure: () => setState(() => _isOldObscure = !_isOldObscure),
+                        validator: (v) => v?.isEmpty == true ? '请输入旧密码' : null,
                       ),
-                    );
-                  },
+                      const SizedBox(height: 24),
+                      _buildPasswordField(
+                        controller: _newPasswordController,
+                        label: '新密码',
+                        hint: '密码（8位以上）',
+                        isDark: isDark,
+                        obscureText: _isNewObscure,
+                        onToggleObscure: () => setState(() => _isNewObscure = !_isNewObscure),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return '请输入新密码';
+                          if (v.length < 8) return '密码长度不能少于8位';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      _buildPasswordField(
+                        controller: _confirmPasswordController,
+                        label: '确认新密码',
+                        hint: '确认密码',
+                        isDark: isDark,
+                        obscureText: _isConfirmObscure,
+                        onToggleObscure: () => setState(() => _isConfirmObscure = !_isConfirmObscure),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return '请确认新密码';
+                          if (v != _newPasswordController.text) return '两次输入的密码不一致';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 48),
+                      Consumer<UserProvider>(
+                        builder: (context, provider, child) {
+                          return SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: provider.isLoading ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.getPrimaryButton(isDark),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppDimensions.borderRadiusMedium,
+                                ),
+                                elevation: 0,
+                              ),
+                              child: provider.isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      '确认修改',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

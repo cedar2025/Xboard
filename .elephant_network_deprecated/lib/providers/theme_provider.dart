@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/storage/local_storage.dart';
 
 class ThemeProvider with ChangeNotifier {
-  final _storage = const FlutterSecureStorage();
+  final _storage = const LocalStorage();
   static const String _key = 'theme_mode';
   
   ThemeMode _themeMode = ThemeMode.system;

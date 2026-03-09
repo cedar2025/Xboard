@@ -54,12 +54,6 @@ class AppNavigationBar extends StatelessWidget {
                   isDark: isDark,
                 ),
                 _buildNavItem(
-                  page: NavigationPage.nodes,
-                  icon: Icons.dns_outlined,
-                  label: '节点',
-                  isDark: isDark,
-                ),
-                _buildNavItem(
                   page: NavigationPage.shop,
                   icon: Icons.shopping_bag_outlined,
                   label: '订阅',

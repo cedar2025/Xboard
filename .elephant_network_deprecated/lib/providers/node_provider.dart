@@ -1,43 +1,101 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:async'; // [NEW]
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:math';
 import '../core/api/dio_client.dart';
 import '../core/api/services/user_service.dart';
 import '../models/proxy_node.dart';
 import '../utils/singbox_parser.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/storage/local_storage.dart';
 import '../core/singbox/vpn_manager.dart';
+import '../core/singbox/mock_vpn_service.dart';
 import '../core/singbox/vpn_state.dart';
+import '../utils/toast_utils.dart';
+import 'config_provider.dart';
+
+/// 自动选择节点的固定名称
+const String kAutoSelectNodeName = '自动选择节点';
 
 class NodeProvider with ChangeNotifier {
   final UserService _userService;
   final VpnManager _vpnManager;
+  final ConfigProvider _configProvider;
   StreamSubscription? _vpnStateSubscription;
+  VpnStatus _lastVpnStatus = VpnStatus.disconnected;
 
-  // Restore deleted fields
-  final _storage = const FlutterSecureStorage();
+  final _storage = const LocalStorage();
   List<ProxyNode> _nodes = [];
   ProxyNode? _selectedNode;
   bool _isLoading = false;
   String? _errorMessage;
 
-  NodeProvider(DioClient dioClient, this._vpnManager) 
+  // 自动选择模式相关
+  bool _isAutoMode = true;
+  ProxyNode? _autoSelectedRealNode; // 自动模式下实际选中的真实节点
+
+  NodeProvider(DioClient dioClient, this._vpnManager, this._configProvider) 
       : _userService = UserService(dioClient) {
-    // Listen to VPN state for latency updates
+    // 监听 VPN 状态变化获取延迟更新
     _vpnStateSubscription = _vpnManager.stateStream.listen((state) {
       if (state.latencyMap != null && state.latencyMap!.isNotEmpty) {
         _handleLatencyUpdate(state.latencyMap!);
       }
+      
+      print('DEBUG NodeProvider state: new=${state.status}, old=$_lastVpnStatus, nodes=${_nodes.length}');
+      // VPN 连接成功后自动触发一次完整的测速
+      if (_lastVpnStatus != VpnStatus.connected && state.status == VpnStatus.connected) {
+         print('DEBUG NodeProvider: VPN 连接成功，延迟 2 秒后触发测速，nodes count: ${_nodes.length}');
+         Future.delayed(const Duration(seconds: 2), () {
+             print('DEBUG NodeProvider: 开始执行 testAllLatencies (当前状态=${_vpnManager.currentState.status})');
+             testAllLatencies();
+         });
+      }
+      _lastVpnStatus = state.status;
     });
+
+    // 加载持久化的自动模式设置
+    _loadAutoMode();
   }
 
-  // ... (existing getters/fetchNodes/selectNode)
+  /// 从存储中加载自动模式设置
+  Future<void> _loadAutoMode() async {
+    final savedMode = await _storage.read(key: 'auto_mode');
+    if (savedMode != null) {
+      _isAutoMode = savedMode == 'true';
+    }
+  }
 
-  /// Handle latency updates from VPN service
+  // ==================== Getters ====================
+
+  List<ProxyNode> get nodes => _nodes;
+  ProxyNode? get selectedNode => _selectedNode;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isAutoMode => _isAutoMode;
+  ProxyNode? get autoSelectedRealNode => _autoSelectedRealNode;
+
+  /// 获取真实节点列表（不含自动选择虚拟节点）
+  List<ProxyNode> get realNodes => _nodes.where((n) => n.type != 'auto').toList();
+
+  /// 获取当前实际生效的节点名称（用于 UI 显示）
+  String get effectiveNodeName {
+    if (_isAutoMode && _autoSelectedRealNode != null) {
+      return _autoSelectedRealNode!.name;
+    }
+    return _selectedNode?.name ?? '';
+  }
+
+  // ==================== 延迟处理 ====================
+
+  /// 处理来自 VPN 内核的延迟数据更新
   void _handleLatencyUpdate(Map<String, int> latencyMap) {
     bool changed = false;
     _nodes = _nodes.map((node) {
+      if (node.type == 'auto') return node; // 跳过虚拟节点
       if (latencyMap.containsKey(node.name)) {
         final newLatency = latencyMap[node.name];
         if (node.latency != newLatency) {
@@ -49,6 +107,8 @@ class NodeProvider with ChangeNotifier {
     }).toList();
 
     if (changed) {
+      // 延迟更新后重新评估自动选择
+      _evaluateAutoSelect();
       notifyListeners();
     }
   }
@@ -59,39 +119,116 @@ class NodeProvider with ChangeNotifier {
     super.dispose();
   }
 
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 5),
+    receiveTimeout: const Duration(seconds: 5),
+  ))..httpClientAdapter = IOHttpClientAdapter(
+    onHttpClientCreate: (client) {
+      client.findProxy = (uri) => 'DIRECT';
+      return client;
+    },
+  );
+
   /// 测试所有节点延迟
-  Future<void> testAllLatencies(BuildContext context) async {
-    if (_nodes.isEmpty) return;
+  Future<void> testAllLatencies([BuildContext? context]) async {
+    if (_nodes.isEmpty) {
+       print('DEBUG: testAllLatencies 触发时 nodes 为空，尝试自动 fetchNodes...');
+       await fetchNodes();
+       if (_nodes.isEmpty) {
+           print('DEBUG: 自动 fetchNodes 后仍然为空，放弃测速。');
+           return;
+       }
+    }
     
-    // Check if VPN is connected
+    // 检查 VPN 是否已连接
     if (_vpnManager.currentState.status != VpnStatus.connected) {
-       ScaffoldMessenger.of(context).showSnackBar(
-         const SnackBar(content: Text('请先连接 VPN 再进行测速')),
-       );
+       if (context != null) {
+         ToastUtils.show(context, '请先连接 VPN 再进行测速');
+       }
        return;
     }
     
-    ScaffoldMessenger.of(context).showSnackBar(
-       const SnackBar(
-         content: Text('正在开始测速...'), 
-         duration: Duration(seconds: 1)
-       ),
-    );
+    if (context != null) {
+      ToastUtils.show(context, '正在开始测速...');
+    }
 
-    // Trigger "proxy" group test in Sing-box
-    // This will test all nodes in the proxy group (which contains all nodes)
-    // Results will be broadcasted back via stateStream -> _handleLatencyUpdate
-    await _vpnManager.urlTest("proxy");
+    // 将所有真实节点的延迟清空，标记为正在测速
+    _nodes = _nodes.map((node) {
+       if (node.type == 'auto') return node;
+       return node.copyWithLatency(null);
+    }).toList();
+    notifyListeners();
+
+    // 使用 ConfigProvider 中的测试 URL
+    final testUrl = _configProvider.testUrl;
+    const timeout = 3000;
+    const batchSize = 5;
     
-    // Note: We don't await the results here as they are async.
-    // The UI will update automatically when the stream emits.
+    final realNodesList = realNodes;
+    for (int i = 0; i < realNodesList.length; i += batchSize) {
+        final end = (i + batchSize < realNodesList.length) ? i + batchSize : realNodesList.length;
+        final batch = realNodesList.sublist(i, end);
+        
+        await Future.wait(batch.map((node) async {
+            final latency = await _testSingleNode(node, testUrl, timeout);
+            
+            final index = _nodes.indexWhere((n) => n.name == node.name);
+            if (index != -1) {
+                 _nodes[index] = _nodes[index].copyWithLatency(latency);
+                 notifyListeners();
+            }
+        }));
+        
+        await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    // 测速完成后评估自动选择
+    _evaluateAutoSelect();
+    notifyListeners();
   }
 
+  Future<int> _testSingleNode(ProxyNode node, String testUrl, int timeout) async {
+      // 若处于 MockVpn 模式，直接伪造一个合理的随机延迟
+      if (_vpnManager is MockVpnService) {
+        await Future.delayed(Duration(milliseconds: 100 + Random().nextInt(300)));
+        // 随机产生 10% 的超时率，以及 [30, 430] 毫秒区间的可用延迟用于测试不同颜色
+        if (Random().nextInt(100) < 10) return -1;
+        return 30 + Random().nextInt(400);
+      }
 
-  List<ProxyNode> get nodes => _nodes;
-  ProxyNode? get selectedNode => _selectedNode;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+      try {
+          final encodedName = Uri.encodeComponent(node.name);
+          final url = 'http://127.0.0.1:9090/proxies/$encodedName/delay';
+          
+          final response = await _dio.get(
+              url,
+              queryParameters: {
+                  'url': testUrl,
+                  'timeout': timeout,
+              },
+          );
+          
+          if (response.statusCode == 200 && response.data != null) {
+              final delay = response.data['delay'];
+              if (delay != null && delay is int && delay > 0) {
+                  return delay;
+              } else {
+                  debugPrint('[SPEED_TEST_DART] 节点 ${node.name} 返回无效延迟: $delay');
+              }
+          } else {
+              debugPrint('[SPEED_TEST_DART] 节点 ${node.name} 返回状态: ${response.statusCode}');
+          }
+          return -1;
+      } on DioException catch (e) {
+          debugPrint('[SPEED_TEST_DART] DioException: ${node.name}: ${e.message}');
+          return -1;
+      } catch (e) {
+          debugPrint('[SPEED_TEST_DART] 未知错误: ${node.name}: $e');
+          return -1;
+      }
+  }
+
+  // ==================== 节点获取 ====================
 
   /// 获取节点列表
   Future<void> fetchNodes() async {
@@ -100,22 +237,26 @@ class NodeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 加载本地保存的选中节点 (如果有)
+      // 加载本地保存的选中节点（如果有）
       if (_selectedNode == null) {
           final savedNodeJson = await _storage.read(key: 'selected_node');
           if (savedNodeJson != null) {
-              _selectedNode = ProxyNode.fromJson(jsonDecode(savedNodeJson));
+              final saved = ProxyNode.fromJson(jsonDecode(savedNodeJson));
+              // 如果保存的是自动选择节点，恢复自动模式
+              if (saved.type == 'auto') {
+                _isAutoMode = true;
+              }
+              _selectedNode = saved;
           }
       }
 
-      // 1. 获取订阅信息(包含 subscribe_url)
+      // 1. 获取订阅信息
       dynamic subscribeInfo;
       try {
         subscribeInfo = await _userService.getSubscribe();
       } catch (e) {
-        print('DEBUG: getSubscribe failed: $e');
-        // 如果获取订阅报错（可能是404或500），视作无订阅
-        _errorMessage = '未找到订阅链接，请先购买套餐';
+        print('DEBUG: getSubscribe 失败: $e');
+        _errorMessage = '未找到订阅链接，请先购买套餐 (Debug: $e)';
         _isLoading = false;
         notifyListeners();
         return;
@@ -131,7 +272,6 @@ class NodeProvider with ChangeNotifier {
       }
 
       final subscribeUrl = subscribeInfo['subscribe_url'] as String?;
-      print('DEBUG: subscribeUrl = $subscribeUrl');
       
       if (subscribeUrl == null || subscribeUrl.isEmpty) {
         _errorMessage = '未找到订阅链接，请先购买套餐';
@@ -140,18 +280,10 @@ class NodeProvider with ChangeNotifier {
         return;
       }
 
-      // 2. 从 subscribe_url 中提取 token 参数
-      // URL 格式: http://domain/s/{token}
+      // 2. 从 subscribe_url 中提取 token
       final uri = Uri.parse(subscribeUrl);
       final pathSegments = uri.pathSegments;
-      
-      print('DEBUG: parsed uri = $uri');
-      print('DEBUG: pathSegments = $pathSegments');
-      
-      // 提取最后一个路径段作为 token
       final token = pathSegments.isNotEmpty ? pathSegments.last : null;
-      
-      print('DEBUG: token = $token');
       
       if (token == null || token.isEmpty) {
         _errorMessage = '订阅链接格式错误: $subscribeUrl';
@@ -160,66 +292,162 @@ class NodeProvider with ChangeNotifier {
         return;
       }
 
-      // 3. 调用 Xboard 订阅接口获取 Sing-box 配置
-      // 注意: 这里指定 User-Agent 以获取正确的格式
+      // 3. 获取 Sing-box 配置
       dynamic config;
       try {
         config = await _userService.getSubscriptionConfig(token);
       } catch (e) {
-        print('DEBUG: getSubscriptionConfig failed: $e');
+        print('DEBUG: getSubscriptionConfig 失败: $e');
         _errorMessage = '订阅配置获取失败，请检查您的订阅状态';
         _isLoading = false;
         notifyListeners();
         return;
       }
       
-      print('DEBUG: config type = ${config.runtimeType}');
-      print('DEBUG: config = $config');
-      
-      // 4. 解析配置中的节点
+      // 4. 解析节点
       final List<ProxyNode> fetchedNodes = SingboxConfigParser.parseNodes(config);
       
-      // 5. 合并延迟数据：如果新获取的节点在旧列表中已存在测速结果，则保留旧值
+      // 5. 合并延迟数据
       final Map<String, int?> oldLatencies = {
         for (var node in _nodes) 
-          if (node.latency != null) node.name: node.latency
+          if (node.latency != null && node.type != 'auto') node.name: node.latency
       };
 
-      _nodes = fetchedNodes.map((node) {
+      List<ProxyNode> mergedNodes = fetchedNodes.map((node) {
         if (oldLatencies.containsKey(node.name)) {
           return node.copyWithLatency(oldLatencies[node.name]);
         }
         return node;
       }).toList();
 
-      print('DEBUG: parsed ${_nodes.length} nodes');
+      // 6. 在列表最前面插入"自动选择节点"虚拟节点
+      final autoNode = ProxyNode(
+        name: kAutoSelectNodeName,
+        type: 'auto',
+        server: '',
+        port: 0,
+      );
+      _nodes = [autoNode, ...mergedNodes];
 
-      if (_nodes.isNotEmpty && _selectedNode == null) {
-        _selectedNode = _nodes.first;
+      print('DEBUG: 解析到 ${mergedNodes.length} 个节点 + 1 个自动选择节点');
+
+      // 7. 默认选择逻辑
+      if (_selectedNode == null) {
+        // 首次启动，默认自动模式
+        _isAutoMode = true;
+        _selectedNode = autoNode;
+      }
+
+      // 8. 如果是自动模式，尝试选择最优节点
+      if (_isAutoMode) {
+        _evaluateAutoSelect();
       }
       
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('DEBUG: Error in fetchNodes: $e');
+      print('DEBUG: fetchNodes 错误: $e');
       _errorMessage = '获取节点列表失败: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  // ==================== 节点选择 ====================
+
   /// 选择节点
   void selectNode(ProxyNode node) {
+    debugPrint('NODE_SWITCH: selectNode called with "${node.name}" (type=${node.type}), isConnected=${_vpnManager.currentState.status}');
     _selectedNode = node;
+
+    if (node.type == 'auto') {
+      // 用户选择了自动选择节点
+      _isAutoMode = true;
+      _storage.write(key: 'auto_mode', value: 'true');
+
+      // 立即选择当前最优真实节点
+      _evaluateAutoSelect(forceSwitch: true);
+    } else {
+      // 用户选择了具体节点
+      _isAutoMode = false;
+      _autoSelectedRealNode = null;
+      _storage.write(key: 'auto_mode', value: 'false');
+
+      // 通知 VPN 切换节点
+      debugPrint('NODE_SWITCH: calling selectOutbound("节点选择", "${node.name}"), VPN status=${_vpnManager.currentState.status}');
+      _vpnManager.selectOutbound("节点选择", node.name);
+    }
+
     notifyListeners();
     
-    // 保存到存储以便持久化和跨 Provider 访问
+    // 持久化选中节点
     _storage.write(key: 'selected_node', value: jsonEncode(node.toJson()));
-    
-    // 通知 VPN 切换节点 (热切换)
-    // 注意: 组名目前写死为 "proxy", 实际应根据 Xboard 的配置动态获取
-    _vpnManager.selectOutbound("proxy", node.name);
   }
 
+  // ==================== 自动选择逻辑 ====================
 
+  /// 评估并执行自动选择
+  /// [forceSwitch] 为 true 时强制切换到最优节点（用户主动选择自动模式时）
+  void _evaluateAutoSelect({bool forceSwitch = false}) {
+    if (!_isAutoMode) return;
+
+    final available = realNodes;
+    if (available.isEmpty) return;
+
+    // 找到延迟最低的在线节点
+    ProxyNode? bestNode;
+    int bestLatency = 999999;
+
+    for (final node in available) {
+      if (node.latency != null && node.latency! > 0 && node.latency! < bestLatency) {
+        bestLatency = node.latency!;
+        bestNode = node;
+      }
+    }
+
+    if (bestNode == null) {
+      // 没有任何在线节点，保持当前选择或选第一个
+      if (_autoSelectedRealNode == null && available.isNotEmpty) {
+        _autoSelectedRealNode = available.first;
+        _vpnManager.selectOutbound("节点选择", available.first.name);
+        print('DEBUG 自动选择: 无测速数据，选择第一个节点: ${available.first.name}');
+      }
+      return;
+    }
+
+    if (forceSwitch) {
+      // 强制切换（用户主动选择自动模式）
+      _autoSelectedRealNode = bestNode;
+      _vpnManager.selectOutbound("节点选择", bestNode.name);
+      print('DEBUG 自动选择: 强制切换到最优节点: ${bestNode.name} (${bestLatency}ms)');
+      return;
+    }
+
+    // 检查当前自动选中的节点是否仍在线
+    if (_autoSelectedRealNode != null) {
+      // 在最新的节点列表中找到它
+      final currentNode = available.firstWhere(
+        (n) => n.name == _autoSelectedRealNode!.name,
+        orElse: () => available.first,
+      );
+
+      final currentLatency = currentNode.latency;
+      
+      // 仅在当前节点超时或不可用时才切换
+      if (currentLatency != null && currentLatency > 0) {
+        // 当前节点仍在线，不切换
+        _autoSelectedRealNode = currentNode; // 更新延迟数据
+        print('DEBUG 自动选择: 当前节点 ${currentNode.name} (${currentLatency}ms) 仍在线，不切换');
+        return;
+      }
+
+      // 当前节点超时了，切换到最优节点
+      print('DEBUG 自动选择: 当前节点 ${_autoSelectedRealNode!.name} 已超时，切换到: ${bestNode.name} (${bestLatency}ms)');
+    } else {
+      print('DEBUG 自动选择: 首次选择最优节点: ${bestNode.name} (${bestLatency}ms)');
+    }
+
+    _autoSelectedRealNode = bestNode;
+    _vpnManager.selectOutbound("节点选择", bestNode.name);
+  }
 }

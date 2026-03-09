@@ -1,15 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elephant_network/providers/vpn_provider.dart';
+import 'package:elephant_network/providers/config_provider.dart';
 import 'package:elephant_network/core/singbox/vpn_state.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
-import 'package:elephant_network/core/singbox/mock_vpn_service.dart'; // [NEW]
+import 'package:elephant_network/core/singbox/mock_vpn_service.dart';
+
 void main() {
   group('VpnProvider 测试', () {
     late VpnProvider vpnProvider;
 
     setUp(() {
-      // 使用真实的 MockVpnService (项目中已有的 Mock 实现)
-      vpnProvider = VpnProvider(DioClient(), MockVpnService());
+      // 使用真实的 MockVpnService 和 ConfigProvider
+      vpnProvider = VpnProvider(DioClient(), MockVpnService(), ConfigProvider());
     });
 
     tearDown(() {

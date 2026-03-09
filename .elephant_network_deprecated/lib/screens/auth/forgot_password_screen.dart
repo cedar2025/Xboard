@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../utils/platform_utils.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -106,39 +107,48 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             
             // Form
             Expanded(
-              child: SingleChildScrollView(
-                padding: AppDimensions.pagePadding,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Logo
-                      _buildLogoSection(isDark),
-                      const SizedBox(height: 48),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: PlatformUtils.isDesktop
+                      ? AppDimensions.loginCardMaxWidth
+                      : double.infinity,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: AppDimensions.pagePadding,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Logo
+                          _buildLogoSection(isDark),
+                          const SizedBox(height: 48),
 
-                      // Email
-                      _buildEmailField(isDark),
-                      const SizedBox(height: 16),
+                          // Email
+                          _buildEmailField(isDark),
+                          const SizedBox(height: 16),
 
-                      // Email Code
-                      _buildEmailCodeField(isDark),
-                      const SizedBox(height: 16),
+                          // Email Code
+                          _buildEmailCodeField(isDark),
+                          const SizedBox(height: 16),
 
-                      // New Password
-                      _buildPasswordField(isDark),
-                      const SizedBox(height: 16),
+                          // New Password
+                          _buildPasswordField(isDark),
+                          const SizedBox(height: 16),
 
-                      // Confirm New Password
-                      _buildConfirmPasswordField(isDark),
-                      const SizedBox(height: 24),
+                          // Confirm New Password
+                          _buildConfirmPasswordField(isDark),
+                          const SizedBox(height: 24),
 
-                      // Error Message
-                      _buildErrorMessage(),
+                          // Error Message
+                          _buildErrorMessage(),
 
-                      // Reset Button
-                      _buildResetButton(isDark),
-                    ],
+                          // Reset Button
+                          _buildResetButton(isDark),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),

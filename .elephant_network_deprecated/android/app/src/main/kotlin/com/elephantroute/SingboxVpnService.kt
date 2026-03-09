@@ -43,6 +43,8 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
     private var totalDown = 0L
 
     private var activeProxyTag = "proxy"
+    private var lastSanitizedConfig: String? = null
+    private var isRestarting = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
@@ -51,13 +53,76 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
             stopVpn()
             return START_NOT_STICKY
         }
-        
         if (action == "SELECT_OUTBOUND") {
-            val groupTag = intent?.getStringExtra("groupTag") ?: ""
+            var groupTag = intent?.getStringExtra("groupTag")
+            if (groupTag.isNullOrEmpty() || groupTag == "proxy") {
+                groupTag = activeProxyTag
+            }
             val outboundTag = intent?.getStringExtra("outboundTag") ?: ""
+            Log.d(TAG, "Select outbound $groupTag -> $outboundTag via RESTART")
+            
             try {
-                 Log.d(TAG, "Select outbound $groupTag -> $outboundTag")
-                 commandClient?.selectOutbound(groupTag, outboundTag)
+                 // Fast-path for UI responsiveness if we have the last config
+                 val currentConfig = lastSanitizedConfig
+                 if (currentConfig != null) {
+                     // 1. Modify the config to set the new outbound as the selector's default
+                     val configObj = org.json.JSONObject(currentConfig)
+                     if (configObj.has("outbounds")) {
+                         val outbounds = configObj.getJSONArray("outbounds")
+                         for (i in 0 until outbounds.length()) {
+                             val out = outbounds.getJSONObject(i)
+                             if (out.optString("type") == "selector" && out.optString("tag") == groupTag) {
+                                 out.put("default", outboundTag)
+                                 Log.i(TAG, "Set selector '$groupTag' default to '$outboundTag'")
+                                 break
+                             }
+                         }
+                     }
+                     
+                     val updatedConfigStr = configObj.toString()
+                     
+                     // 2. Clear cache to prevent sing-box from restoring old selection
+                     try {
+                         val baseDir = filesDir.absolutePath
+                         val workingDir = File(baseDir, "sing-box")
+                         val filesToDelete = listOf("cache.db", "cache.db-wal", "cache.db-shm")
+                         for (fileName in filesToDelete) {
+                             val cacheFile = File(workingDir, fileName)
+                             if (cacheFile.exists()) {
+                                 cacheFile.delete()
+                                 Log.d(TAG, "Deleted cache file: $fileName")
+                             }
+                         }
+                     } catch (e: Exception) {
+                         Log.e(TAG, "Failed to delete cache files", e)
+                     }
+                     
+                     // 3. Restart VPN engine with updated config
+                     isRestarting = true
+                     
+                     try {
+                         commandClient?.disconnect()
+                     } catch(e: Exception) {}
+                     commandClient = null
+                     
+                     SingBoxEngine.stop()
+                     
+                     // Start again in background thread
+                     Thread {
+                         try {
+                             Thread.sleep(300) // Brief wait for engine to fully stop
+                             Log.i(TAG, "Restarting VPN engine with new outbound...")
+                             startVpn(updatedConfigStr)
+                         } catch (e: Exception) {
+                             Log.e(TAG, "Failed to restart VPN", e)
+                         } finally {
+                             isRestarting = false
+                         }
+                     }.start()
+                 } else {
+                     Log.w(TAG, "No last config found, falling back to commandClient")
+                     commandClient?.selectOutbound(groupTag, outboundTag)
+                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error selecting outbound", e)
             }
@@ -140,6 +205,22 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                     // CRITICAL: Set cache_file to a writable path to avoid "read-only file system" error
                     val baseDir = filesDir.absolutePath
                     val workingDir = File(baseDir, "sing-box").apply { if (!exists()) mkdirs() }
+                    
+                    // Delete cache.db on completely fresh start (not restart) to avoid SQLite corruption
+                    if (!isRestarting) {
+                        try {
+                            val filesToDelete = listOf("cache.db", "cache.db-wal", "cache.db-shm")
+                            for (fileName in filesToDelete) {
+                                val cacheFile = File(workingDir, fileName)
+                                if (cacheFile.exists()) {
+                                    cacheFile.delete()
+                                    Log.d(TAG, "Deleted $fileName on fresh start")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to delete cache on startup", e)
+                        }
+                    }
                     val cacheFile = File(workingDir, "cache.db")
                     
                     val jsonConfig = org.json.JSONObject(config)
@@ -155,63 +236,77 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                     logObj.put("timestamp", true)
                     jsonConfig.put("log", logObj)
                     
-                    // [FIX] Inject DNS Fallback Rule
-                    val dnsServers = org.json.JSONArray()
-                    
-                    // Reset to default
+                    // Find active proxy tag for fallback use
                     activeProxyTag = "proxy"
-                    
                     if (jsonConfig.has("outbounds")) {
                         val outbounds = jsonConfig.getJSONArray("outbounds")
                         for (i in 0 until outbounds.length()) {
                             val out = outbounds.getJSONObject(i)
-                            val type = out.optString("type")
-                            val tag = out.optString("tag")
-                            if (type == "selector") {
-                                activeProxyTag = tag
+                            if (out.optString("type") == "selector") {
+                                activeProxyTag = out.optString("tag")
                                 Log.i(TAG, "Found Selector Tag: $activeProxyTag")
                                 break
                             }
                         }
                     }
                     
-                    val remoteServer = org.json.JSONObject()
-                    remoteServer.put("tag", "remote")
-                    remoteServer.put("address", "tcp://8.8.8.8")
-                    remoteServer.put("detour", activeProxyTag)
-                    remoteServer.put("strategy", "ipv4_only")
+                    // [FIX] Gracefully Inject API DNS Rule without destroying the original DNS config
+                    if (jsonConfig.has("dns")) {
+                        try {
+                            val dns = jsonConfig.getJSONObject("dns")
+                            if (!dns.has("rules")) {
+                                dns.put("rules", org.json.JSONArray())
+                            }
+                            val rules = dns.getJSONArray("rules")
+                            
+                            // Find a local DNS server tag
+                            var localDnsTag = "local"
+                            if (dns.has("servers")) {
+                                val servers = dns.getJSONArray("servers")
+                                for (i in 0 until servers.length()) {
+                                    val s = servers.getJSONObject(i)
+                                    val tag = s.optString("tag")
+                                    val detour = s.optString("detour")
+                                    // Try to auto-detect the local dns server tag used by this config
+                                    if (tag.lowercase().contains("local") || detour == "direct") {
+                                        localDnsTag = tag
+                                        break
+                                    }
+                                }
+                                // FORCE auto_detect_interface to false on all servers since we app-bypass
+                                for (i in 0 until servers.length()) {
+                                    val s = servers.getJSONObject(i)
+                                    s.remove("auto_detect_interface")
+                                }
+                            }
+                            
+                            val apiRule = org.json.JSONObject()
+                            val apiDomains = org.json.JSONArray()
+                            apiDomains.put("www.elphantroute.com")
+                            apiRule.put("domain", apiDomains)
+                            apiRule.put("server", localDnsTag)
+                            
+                            // Prepend rule to take highest priority
+                            val newRules = org.json.JSONArray()
+                            newRules.put(apiRule)
+                            for (i in 0 until rules.length()) {
+                                newRules.put(rules.get(i))
+                            }
+                            dns.put("rules", newRules)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error injecting DNS rule", e)
+                        }
+                    }
                     
-                    val localServer = org.json.JSONObject()
-                    localServer.put("tag", "local")
-                    localServer.put("address", "223.5.5.5")
-                    localServer.put("detour", "direct")
-                    localServer.put("strategy", "ipv4_only")
-                    
-                    val blockServer = org.json.JSONObject()
-                    blockServer.put("tag", "block")
-                    blockServer.put("address", "rcode://success")
-                    
-                    dnsServers.put(remoteServer)
-                    dnsServers.put(localServer)
-                    dnsServers.put(blockServer)
-                    
-                    val dnsRules = org.json.JSONArray()
-                    
-                    val cnRule = org.json.JSONObject()
-                    cnRule.put("rule_set", org.json.JSONArray().put("geosite-cn"))
-                    cnRule.put("server", "local")
-                    dnsRules.put(cnRule)
-                    
-                    val fallbackRule = org.json.JSONObject()
-                    fallbackRule.put("server", "remote")
-                    dnsRules.put(fallbackRule)
-                    
-                    val newDns = org.json.JSONObject()
-                    newDns.put("servers", dnsServers)
-                    newDns.put("rules", dnsRules)
-                    newDns.put("strategy", "ipv4_only")
-                    
-                    jsonConfig.put("dns", newDns)
+                    // Forcefully remove auto_detect_interface from all outbounds to prevent 
+                    // Android "no available network interface" error now that we use App Bypass
+                    if (jsonConfig.has("outbounds")) {
+                        val outbounds = jsonConfig.getJSONArray("outbounds")
+                        for (i in 0 until outbounds.length()) {
+                            val out = outbounds.getJSONObject(i)
+                            out.remove("auto_detect_interface")
+                        }
+                    }
         
                     if (!experimental.has("clash_api")) {
                          experimental.put("clash_api", org.json.JSONObject())
@@ -280,8 +375,41 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                             if (route.has("rule_set")) {
                                 sanitizeRuleSets(route.getJSONArray("rule_set"))
                             }
+                            
+                            // [FIX] Inject Direct Rule for App Backend API
+                            if (!route.has("rules")) {
+                                route.put("rules", org.json.JSONArray())
+                            }
+                            val rules = route.getJSONArray("rules")
+                            
+                            // 1. Domain-based direct rule
+                            val domainDirectRule = org.json.JSONObject()
+                            domainDirectRule.put("outbound", "direct")
+                            val domains = org.json.JSONArray()
+                            domains.put("www.elphantroute.com")
+                            domainDirectRule.put("domain", domains)
+                            
+                            // 2. IP-based direct rule
+                            val ipDirectRule = org.json.JSONObject()
+                            ipDirectRule.put("outbound", "direct")
+                            val ipCidr = org.json.JSONArray()
+                            ipCidr.put("192.168.11.227/32")
+                            ipCidr.put("192.168.0.0/16")
+                            ipCidr.put("10.0.0.0/8")
+                            ipCidr.put("172.16.0.0/12")
+                            ipCidr.put("127.0.0.1/32")
+                            ipDirectRule.put("ip_cidr", ipCidr)
+                            
+                            // Prepend these rules to take highest priority
+                            val newRules = org.json.JSONArray()
+                            newRules.put(domainDirectRule)
+                            newRules.put(ipDirectRule)
+                            for (i in 0 until rules.length()) {
+                                newRules.put(rules.get(i))
+                            }
+                            route.put("rules", newRules)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error switching Route-Level rule_set", e)
+                            Log.e(TAG, "Error injecting route rules", e)
                         }
                     }
         
@@ -313,8 +441,12 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                     
                     Log.i(TAG, "✓✓✓ SingBoxEngine started successfully! ✓✓✓")
                     
+                    // Store the fully sanitized config for future restarts
+                    lastSanitizedConfig = finalConfig
+                    
                     Log.i(TAG, "Step 4: Updating status to connected...")
                     updateStatus("connected")
+                    Log.i(TAG, "VPN is now CONNECTED")
                     
                     Log.i(TAG, "Step 5: Connecting CommandClient...")
                     connectCommandClient()
@@ -372,6 +504,12 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                 Thread.sleep(1500) 
                 Log.d(TAG, "Connecting CommandClient...")
                 val options = CommandClientOptions()
+                
+                // [FIX] Subscribe to status and group updates to receive speed and urlTest results
+                options.addCommand(Libbox.CommandStatus)
+                options.addCommand(Libbox.CommandGroup)
+                options.addCommand(Libbox.CommandLog)
+                
                 commandClient = Libbox.newCommandClient(this, options)
                 commandClient?.connect()
                 Log.d(TAG, "CommandClient connected")
@@ -414,6 +552,26 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
         val builder = Builder()
             .setSession(getString(R.string.app_name))
             .setMtu(if (options.mtu > 0) options.mtu else 1500)
+            
+        // [FIX] Exclude Local Development LAN and Backend API
+        try {
+            builder.addRoute("192.168.11.227", 32)
+            builder.addRoute("10.0.0.0", 8)
+            builder.addRoute("172.16.0.0", 12)
+            builder.addRoute("192.168.0.0", 16)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding bypass routes map", e)
+        }
+        
+        // [CRITICAL FIX] Ensure the VPN app itself completely bypasses the VPN tunnel.
+        // This is standard practice to prevent routing loops and ensure the app's own API
+        // requests (like fetchNodes and login) go straight to the physical network.
+        try {
+            builder.addDisallowedApplication(packageName)
+            Log.i(TAG, "Successfully added $packageName to disallowed applications (App Bypass)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting disallowed application for self", e)
+        }
             
         val inet4 = options.inet4Address
         if (inet4 != null && inet4.hasNext()) {
@@ -505,7 +663,11 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
     override fun updateClashMode(mode: String?) {}
 
     override fun writeGroups(groups: OutboundGroupIterator?) {
-        if (groups == null) return
+        Log.d(TAG, "CommandClientHandler: writeGroups called")
+        if (groups == null) {
+            Log.d(TAG, "writeGroups: groups is null")
+            return
+        }
         val latencyMap = org.json.JSONObject()
 
         try {
@@ -513,6 +675,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                 val group = groups.next()
                 if (group == null) continue
                 
+                Log.d(TAG, "writeGroups: Process group tag=${group.tag}")
                 val items = group.items
                 if (items != null) {
                     while (items.hasNext()) {
@@ -522,17 +685,23 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                         val delay = item.urlTestDelay
                         val tag = item.tag
                         
-                        if (tag != null) {
+                        Log.d(TAG, "writeGroups: item tag=$tag, delay=$delay")
+                        // delay == 0 means not yet tested, not timeout - filter it out
+                        if (tag != null && delay > 0) {
                             latencyMap.put(tag, delay)
                         }
                     }
                 }
             }
 
+            Log.d(TAG, "writeGroups: Completed parsing, latencyMap size=${latencyMap.length()}")
             if (latencyMap.length() > 0) {
                 val intent = Intent(ACTION_VPN_STATE)
+                // Must include status to prevent BroadcastReceiver defaulting to "disconnected"
+                intent.putExtra("status", currentStatus)
                 intent.putExtra("latency_update", latencyMap.toString())
                 sendBroadcast(intent)
+                Log.d(TAG, "writeGroups: Broadcasted latency_update")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing groups", e)
@@ -541,7 +710,13 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
     
     // Updated signature for new API
     override fun writeLogs(messageList: LogIterator?) {
-         // Stub - ignore logs for now
+        if (messageList == null) return
+        while (messageList.hasNext()) {
+            val log = messageList.next()
+            if (log != null) {
+                Log.d("SingBoxCore", log.message ?: "null")
+            }
+        }
     }
     
     override fun writeStatus(message: StatusMessage?) {

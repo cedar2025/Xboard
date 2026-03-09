@@ -15,6 +15,7 @@ class UserProvider with ChangeNotifier {
   List<dynamic> _plans = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String? _inviteCode; // [NEW] Invite code storage
 
   UserProvider(DioClient dioClient) 
       : _userService = UserService(dioClient);
@@ -24,6 +25,7 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get plans => _plans;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get inviteCode => _inviteCode; // Expose invite code
 
   /// 获取用户信息
   Future<void> fetchUserInfo() async {
@@ -34,6 +36,15 @@ class UserProvider with ChangeNotifier {
     try {
       _user = await _userService.getUserInfo();
       await loadAvatarSeed(); // Load local avatar preference
+      
+      // Async fetch invite code in background without failing main user info fetch
+      _userService.getInviteCode().then((code) {
+        if (code != null) {
+          _inviteCode = code;
+          notifyListeners();
+        }
+      });
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {

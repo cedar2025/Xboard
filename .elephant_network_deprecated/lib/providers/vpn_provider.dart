@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/singbox/vpn_manager.dart';
 import '../core/singbox/vpn_state.dart';
@@ -8,22 +8,32 @@ import '../core/singbox/real_vpn_service.dart';
 import '../core/api/dio_client.dart';
 import '../core/api/services/user_service.dart';
 import '../../utils/constants.dart';
+import '../providers/config_provider.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import '../core/storage/local_storage.dart';
 
 class VpnProvider with ChangeNotifier {
   final VpnManager _vpnManager;
   final UserService _userService;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  final Dio _trafficDio = Dio(); // 用于轮询本地流量端口
+  final ConfigProvider _configProvider;
+  final LocalStorage _storage = const LocalStorage();
+  final Dio _trafficDio = Dio()
+    ..httpClientAdapter = IOHttpClientAdapter(
+      onHttpClientCreate: (client) {
+        client.findProxy = (uri) => 'DIRECT';
+        return client;
+      },
+    );
   VpnState _state = const VpnState(status: VpnStatus.disconnected);
   Timer? _trafficTimer;
 
-  VpnProvider(DioClient dioClient, this._vpnManager) 
+  VpnProvider(DioClient dioClient, this._vpnManager, this._configProvider) 
       : _userService = UserService(dioClient) {
     // 监听 VPN 状态变化
     _vpnManager.stateStream.listen((state) {
@@ -102,7 +112,6 @@ class VpnProvider with ChangeNotifier {
       }
 
       if (config == null || config.isEmpty) {
-         // 这里如果还是没有配置，可能是网络问题或者没有订阅
          _state = _state.copyWith(
            status: VpnStatus.disconnected,
            errorMessage: '获取订阅配置失败，请检查网络或套餐是否有效'
@@ -110,6 +119,9 @@ class VpnProvider with ChangeNotifier {
          notifyListeners();
          return false;
       }
+
+      // 注入用户自定义 DNS 配置
+      config = _injectDnsConfig(config);
 
       // 4. 启动内核
       await _vpnManager.start(config);
@@ -164,10 +176,7 @@ class VpnProvider with ChangeNotifier {
         );
         notifyListeners();
       } catch (e) {
-        // 如果是 Mock 系统, MockVpnService 自己会模拟流量, 这里忽略报错
-        if (_vpnManager is! MockVpnService) {
-          debugPrint('获取实时流量失败: $e');
-        }
+        // Silently ignore traffic polling errors to reduce log noise
       }
     });
   }
@@ -248,5 +257,43 @@ class VpnProvider with ChangeNotifier {
     _stopTrafficPolling();
     _vpnManager.dispose();
     super.dispose();
+  }
+
+  /// 注入用户自定义 DNS 配置到 Sing-box 配置中
+  String _injectDnsConfig(String jsonConfig) {
+    try {
+      final Map<String, dynamic> config = jsonDecode(jsonConfig);
+      
+      // 读取用户设置的 DNS
+      final foreignDns = _configProvider.foreignDns;
+      final domesticDns = _configProvider.domesticDns;
+
+      if (config.containsKey('dns') && config['dns'] is Map) {
+        final dnsConfig = config['dns'] as Map<String, dynamic>;
+        if (dnsConfig.containsKey('servers') && dnsConfig['servers'] is List) {
+          final servers = dnsConfig['servers'] as List<dynamic>;
+          
+          for (var server in servers) {
+            if (server is Map) {
+              final tag = server['tag'];
+              // 替换 remote (国外) 的地址
+              if (tag == 'remote' && server.containsKey('address')) {
+                server['address'] = foreignDns;
+                print('DEBUG: 注入国外 DNS: $foreignDns');
+              }
+              // 替换 local/国内 DNS 的地址
+              else if ((tag == 'local' || tag == 'domestic') && server.containsKey('address')) {
+                server['address'] = domesticDns;
+                print('DEBUG: 注入国内 DNS: $domesticDns');
+              }
+            }
+          }
+        }
+      }
+      return jsonEncode(config);
+    } catch (e) {
+      print('DEBUG: DNS 注入失败: $e');
+      return jsonConfig; // 如果解析失败，返回原配置
+    }
   }
 }

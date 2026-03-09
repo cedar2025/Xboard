@@ -15,9 +15,7 @@ void main() {
     group('登录功能', () {
       test('登录成功应该更新状态', () async {
         // Arrange
-        final mockResponse = {
-          'auth_data': 'mock_token_12345',
-        };
+        // (mockResponse removed to fix unused_local_variable warning)
 
         // 注意：由于 AuthProvider 内部创建 AuthService，
         // 我们需要 mock DioClient 的行为

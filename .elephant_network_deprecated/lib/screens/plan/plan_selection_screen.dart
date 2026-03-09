@@ -10,6 +10,7 @@ import '../../core/theme/app_shadows.dart';
 import '../../widgets/custom_webview.dart';
 import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
+import '../../utils/platform_utils.dart';
 
 class PlanSelectionScreen extends StatefulWidget {
   const PlanSelectionScreen({super.key});
@@ -43,7 +44,6 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             Expanded(
               child: Consumer<UserProvider>(
                 builder: (context, provider, _) {
-                  print('DEBUG: [Build] provider.plans.length = ${provider.plans.length}');
                   if (provider.isLoading && provider.plans.isEmpty) {
                     return Center(
                       child: CircularProgressIndicator(
@@ -68,49 +68,93 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                       await provider.fetchPlans();
                     },
                     color: isDark ? AppColors.primaryLight : AppColors.primary,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
-                      itemCount: provider.plans.length,
-                      itemBuilder: (context, index) {
-                        final plan = provider.plans[index];
-                        
-                        // 动态寻找第一个有效价格用于展示
-                        String displayPrice = '0';
-                        String displayUnit = '/月';
-                        final priceKeys = ['month_price', 'quarter_price', 'half_year_price', 'year_price', 'two_year_price', 'three_year_price', 'onetime_price', 'reset_price'];
-                        for (var k in priceKeys) {
-                          if (plan[k] != null && (double.tryParse(plan[k].toString()) ?? 0) > 0) {
-                            displayPrice = (double.parse(plan[k].toString()) / 100).toStringAsFixed(2);
-                            // 简单的单位映射
-                            if (k == 'onetime_price') displayUnit = '一次性';
-                            else if (k == 'reset_price') displayUnit = '重置包';
-                            else if (k == 'year_price') displayUnit = '/年';
-                            break;
-                          }
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildPlanCard(
-                            context,
-                            plan, 
-                            plan['name'] ?? '未知套餐',
-                            '¥$displayPrice',
-                            displayUnit,
-                            (plan['content'] as String? ?? '').split('\n').where((s) => s.isNotEmpty).toList(),
-                            isDark,
-                            planId: plan['id'] ?? 0,
-                            isHot: false,
-                          ),
-                        );
-                      },
-                    ),
+                    child: PlatformUtils.isDesktop
+                      ? _buildDesktopPlanGrid(provider, isDark)
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                          itemCount: provider.plans.length,
+                          itemBuilder: (context, index) {
+                            return _buildPlanItem(provider.plans[index], isDark);
+                          },
+                        ),
                   );
                 },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 解析套餐价格和单位
+  Map<String, String> _parsePlanPriceUnit(dynamic plan) {
+    String displayPrice = '0';
+    String displayUnit = '/月';
+    final priceKeys = ['month_price', 'quarter_price', 'half_year_price', 'year_price', 'two_year_price', 'three_year_price', 'onetime_price', 'reset_price'];
+    final unitMap = {
+      'month_price': '/月', 'quarter_price': '/季', 'half_year_price': '/半年',
+      'year_price': '/年', 'two_year_price': '/两年', 'three_year_price': '/三年',
+      'onetime_price': '一次性', 'reset_price': '重置包',
+    };
+    for (var k in priceKeys) {
+      if (plan[k] != null && (double.tryParse(plan[k].toString()) ?? 0) > 0) {
+        displayPrice = (double.parse(plan[k].toString()) / 100).toStringAsFixed(2);
+        displayUnit = unitMap[k] ?? '/月';
+        break;
+      }
+    }
+    return {'price': '¥$displayPrice', 'unit': displayUnit};
+  }
+
+  /// 桌面端套餐网格布局
+  Widget _buildDesktopPlanGrid(UserProvider provider, bool isDark) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1000),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              int columns = (constraints.maxWidth / 320).floor();
+              if (columns < 1) columns = 1;
+              if (columns > 3) columns = 3;
+              
+              return GridView.builder(
+                shrinkWrap: true,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisSpacing: 24,
+                  crossAxisSpacing: 24,
+                  childAspectRatio: 0.65, // 相对较大的空间
+                ),
+                itemCount: provider.plans.length,
+                itemBuilder: (context, index) {
+                  return _buildPlanItem(provider.plans[index], isDark);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 通用套餐卡片构建
+  Widget _buildPlanItem(dynamic plan, bool isDark) {
+    final parsed = _parsePlanPriceUnit(plan);
+    return Padding(
+      padding: PlatformUtils.isDesktop ? EdgeInsets.zero : const EdgeInsets.only(bottom: 16),
+      child: _buildPlanCard(
+        context,
+        plan,
+        plan['name'] ?? '未知套餐',
+        parsed['price']!,
+        parsed['unit']!,
+        plan['content'] as String? ?? '',
+        isDark,
+        planId: plan['id'] ?? 0,
+        isHot: false,
       ),
     );
   }
@@ -140,7 +184,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     String title,
     String price,
     String unit,
-    List<String> features,
+    String content,
     bool isDark, {
     required int planId,
     bool isHot = false,
@@ -169,30 +213,32 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AppTextStyles.titleSmall.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (isHot)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.primaryDark : AppColors.primary,
+                    color: isDark ? AppColors.primaryLight : AppColors.primary,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                   ),
                   child: Text(
                     '推荐',
-                    style: AppTextStyles.labelTiny.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: AppTextStyles.labelTiny.copyWith(color: Colors.white),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Price
           Row(
@@ -203,65 +249,70 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                 price,
                 style: AppTextStyles.price.copyWith(
                   color: isDark ? AppColors.primaryLight : AppColors.primary,
-                  fontSize: 32,
+                  fontSize: 28,
                 ),
               ),
               const SizedBox(width: 4),
               Text(
                 unit,
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTextStyles.bodySmall.copyWith(
                   color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          Divider(color: isDark ? Colors.white12 : Colors.black12),
+          const SizedBox(height: 20),
           
           // Features
-          ...features.take(10).map((feature) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: MarkdownBody(
-                  data: feature,
-                  shrinkWrap: true,
-                  styleSheet: MarkdownStyleSheet(
-                    p: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                    strong: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      height: 1.5,
-                    ),
-                    em: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                      height: 1.5,
-                    ),
-                    code: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.primaryLight : AppColors.primary,
-                      fontSize: 13,
-                      fontFamily: 'monospace',
-                      backgroundColor: isDark ? AppColors.darkCardSecondary : AppColors.lightCardBorder,
-                    ),
-                    a: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.primaryLight : AppColors.primary,
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
-                    ),
-                    // 移除列表的默认样式（点点）
-                    listBullet: AppTextStyles.bodyMedium.copyWith(
-                      fontSize: 0, // 设置为 0 隐藏 bullet
-                      height: 0,
-                    ),
-                    listIndent: 0, // 移除列表缩进
+          if (PlatformUtils.isDesktop)
+            Expanded(
+              child: Markdown(
+                data: content,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                styleSheet: MarkdownStyleSheet(
+                  p: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    height: 1.5,
+                  ),
+                  h2: AppTextStyles.titleSmall.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  h3: AppTextStyles.titleSmall.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  listBullet: TextStyle(
+                    color: isDark ? AppColors.primaryLight : AppColors.primary,
                   ),
                 ),
-              )).toList(),
-          const SizedBox(height: 24),
+              ),
+            )
+          else
+            MarkdownBody(
+              data: content,
+              styleSheet: MarkdownStyleSheet(
+                p: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  height: 1.5,
+                ),
+                h2: AppTextStyles.titleSmall.copyWith(
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                h3: AppTextStyles.titleSmall.copyWith(
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                listBullet: TextStyle(
+                  color: isDark ? AppColors.primaryLight : AppColors.primary,
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
           
           // Subscribe Button
           SizedBox(
@@ -296,30 +347,24 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                   if (quickLoginUrl != null && context.mounted) {
                     debugPrint('DEBUG: Original QuickLoginUrl = $quickLoginUrl');
                     
-                    // 关键修复：应用 ProfileScreen 中的 Host 替换逻辑
-                    // 确保 URL 使用当前 ApiConstants 配置的 Host 和 Port
-                    // 这对于解决本地开发/内网环境的跨域或连接问题至关重要
-                    final baseUri = Uri.parse(ApiConstants.baseUrl);
-                    final quickUri = Uri.parse(quickLoginUrl);
-                    
-                    // 强制替换 host 和 port
-                    if (baseUri.host.isNotEmpty) {
-                       quickLoginUrl = quickUri.replace(
+                    // 仅在本地开发/内网环境下替换 host 和 port（与 ProfileScreen 保持一致）
+                    if (ApiConstants.baseUrl.contains('192.168.')) {
+                      final baseUri = Uri.parse(ApiConstants.baseUrl);
+                      final quickUri = Uri.parse(quickLoginUrl);
+                      quickLoginUrl = quickUri.replace(
                         scheme: baseUri.scheme,
                         host: baseUri.host,
                         port: baseUri.port,
                       ).toString();
                     }
                     
-                    debugPrint('DEBUG: Refined QuickLoginUrl = $quickLoginUrl');
-
+                    debugPrint('🚀 [ACTION] Navigating to CustomWebView with URL: $quickLoginUrl');
+                    
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => CustomWebView(
                           title: '套餐详情',
                           url: quickLoginUrl!,
-                          // 恢复默认行为：注入 Auth 和 启用隐藏
-                          // 因为 '我的订单' 能正常工作，说明这个配置是没问题的
                           injectAuth: true, 
                           enableHiding: true,
                         ),

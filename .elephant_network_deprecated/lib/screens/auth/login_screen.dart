@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../utils/platform_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -67,9 +68,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
         body: SafeArea(
           child: Center(
-            child: SingleChildScrollView(
-              padding: AppDimensions.pagePadding,
-              child: Form(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: PlatformUtils.isDesktop
+                  ? AppDimensions.loginCardMaxWidth
+                  : double.infinity,
+              ),
+              child: SingleChildScrollView(
+                padding: AppDimensions.pagePadding,
+                child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -90,17 +97,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     // 忘记密码链接
                     _buildForgotPasswordLink(isDark),
                     const SizedBox(height: 24),
+                      // 错误提示
+                      _buildErrorMessage(),
 
-                    // 错误提示
-                    _buildErrorMessage(),
+                      // 登录按钮
+                      _buildLoginButton(isDark),
+                      const SizedBox(height: 24),
 
-                    // 登录按钮
-                    _buildLoginButton(isDark),
-                    const SizedBox(height: 24),
-
-                    // 注册链接
-                    _buildRegisterLink(isDark),
-                  ],
+                      // 注册链接
+                      _buildRegisterLink(isDark),
+                    ],
+                  ),
                 ),
               ),
             ),

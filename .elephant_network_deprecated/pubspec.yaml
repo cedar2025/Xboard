@@ -38,9 +38,6 @@ dependencies:
   # 网络请求
   dio: ^5.7.0
 
-  # 安全存储(Token管理)
-  flutter_secure_storage: ^9.2.2
-
   # 状态管理
   provider: ^6.1.2
 
@@ -59,6 +56,12 @@ dependencies:
   # 托盘管理
   tray_manager: ^0.2.4
 
+  # 窗口管理 (桌面端)
+  window_manager: ^0.4.3
+
+  # URL 启动器 (桌面端替代 WebView)
+  url_launcher: ^6.3.0
+
   # JSON 序列化
   json_annotation: ^4.9.0
   google_fonts: ^7.0.2
@@ -67,6 +70,8 @@ dependencies:
   flutter_markdown: ^0.7.4+1
   cached_network_image: ^3.4.1
   flutter_svg: ^2.0.7
+  launch_at_startup: ^0.5.1
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:
@@ -105,8 +110,8 @@ flutter:
   assets:
     - assets/images/
     - assets/srs/
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+    - assets/bin/
+    - assets/bin/windows/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -124,6 +129,9 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
+  macos:
+    generate: true
+    image_path: "assets/images/logo_icon_macos.png"
   image_path: "assets/images/logo_icon_transparent.png"
   remove_alpha_ios: true
   adaptive_icon_background: "#ffffff"
