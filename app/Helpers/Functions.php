@@ -28,6 +28,16 @@ if (!function_exists('admin_setting')) {
     }
 }
 
+if (!function_exists('subscribe_template')) {
+    /**
+     * Get subscribe template content by protocol name.
+     */
+    function subscribe_template(string $name): ?string
+    {
+        return \App\Models\SubscribeTemplate::getContent($name);
+    }
+}
+
 if (!function_exists('admin_settings_batch')) {
     /**
      * 批量获取配置参数，性能优化版本
