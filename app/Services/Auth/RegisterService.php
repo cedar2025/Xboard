@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\ApiException;
 use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\User;
@@ -113,7 +114,7 @@ class RegisterService
 
         if (!$inviteCodeModel) {
             if ((int) admin_setting('invite_force', 0)) {
-                throw new \Exception(__('Invalid invitation code'));
+                throw new ApiException(__('Invalid invitation code'));
             }
             return null;
         }
