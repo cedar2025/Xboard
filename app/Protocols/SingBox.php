@@ -83,9 +83,7 @@ class SingBox extends AbstractProtocol
 
     protected function loadConfig()
     {
-        $jsonData = admin_setting('subscribe_template_singbox', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
+        $jsonData = subscribe_template('singbox');
 
         return is_array($jsonData) ? $jsonData : json_decode($jsonData, true);
     }

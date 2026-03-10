@@ -18,14 +18,14 @@ class Stash extends AbstractProtocol
         Server::TYPE_HYSTERIA,
         Server::TYPE_TROJAN,
         Server::TYPE_TUIC,
-        // Server::TYPE_ANYTLS,
+        Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
     protected $protocolRequirements = [
         'stash' => [
             'anytls' => [
-                'base_version' => '9.9.9'
+                'base_version' => '3.3.0' // AnyTLS 协议在3.3.0版本中添加
             ],
             'vless' => [
                 'protocol_settings.tls' => [
@@ -79,13 +79,7 @@ class Stash extends AbstractProtocol
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        $template = admin_setting('subscribe_template_stash', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : (
-                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
-            ));
+        $template = subscribe_template('stash');
 
         $config = Yaml::parse($template);
         $proxy = [];
