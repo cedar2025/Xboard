@@ -71,17 +71,22 @@ class ConfigController extends Controller
 
     public function setTelegramWebhook(Request $request)
     {
-        $app_url = admin_setting('app_url');
-        if (blank($app_url))
-            return $this->fail([422, '请先设置站点网址']);
-        $hookUrl = $app_url . '/api/v1/guest/telegram/webhook?' . http_build_query([
+        $hookUrl = $this->resolveTelegramWebhookUrl();
+        if (blank($hookUrl)) {
+            return $this->fail([422, 'Telegram Webhook地址未配置']);
+        }
+        $hookUrl .= '?' . http_build_query([
             'access_token' => md5(admin_setting('telegram_bot_token', $request->input('telegram_bot_token')))
         ]);
         $telegramService = new TelegramService($request->input('telegram_bot_token'));
         $telegramService->getMe();
-        $telegramService->setWebhook($hookUrl);
+        $telegramService->setWebhook(url: $hookUrl);
         $telegramService->registerBotCommands();
-        return $this->success(true);
+        return $this->success([
+            'success' => true,
+            'webhook_url' => $hookUrl,
+            'webhook_base_url' => $this->getTelegramWebhookBaseUrl(),
+        ]);
     }
 
     public function fetch(Request $request)
@@ -171,6 +176,7 @@ class ConfigController extends Controller
             'telegram' => [
                 'telegram_bot_enable' => (bool) admin_setting('telegram_bot_enable', 0),
                 'telegram_bot_token' => admin_setting('telegram_bot_token'),
+                'telegram_webhook_url' => admin_setting('telegram_webhook_url'),
                 'telegram_discuss_link' => admin_setting('telegram_discuss_link')
             ],
             'app' => [
@@ -312,5 +318,34 @@ class ConfigController extends Controller
         }
 
         return '';
+    }
+
+    private function getTelegramWebhookBaseUrl(): ?string
+    {
+        $customUrl = trim((string) admin_setting('telegram_webhook_url', ''));
+        if ($customUrl !== '') {
+            return rtrim($customUrl, '/');
+        }
+
+        $appUrl = trim((string) admin_setting('app_url', ''));
+        if ($appUrl !== '') {
+            return rtrim($appUrl, '/');
+        }
+
+        return null;
+    }
+
+    private function resolveTelegramWebhookUrl(): ?string
+    {
+        $baseUrl = $this->getTelegramWebhookBaseUrl();
+        if (!$baseUrl) {
+            return null;
+        }
+
+        if (str_contains($baseUrl, '/api/v1/guest/telegram/webhook')) {
+            return $baseUrl;
+        }
+
+        return $baseUrl . '/api/v1/guest/telegram/webhook';
     }
 }
