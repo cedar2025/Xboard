@@ -116,6 +116,7 @@ class ConfigController extends Controller
                 'tos_url' => admin_setting('tos_url'),
                 'currency' => admin_setting('currency', 'CNY'),
                 'currency_symbol' => admin_setting('currency_symbol', '¥'),
+                'ticket_must_wait_reply' => (bool) admin_setting('ticket_must_wait_reply', 0),
             ],
             'subscribe' => [
                 'plan_change_enable' => (bool) admin_setting('plan_change_enable', 1),
