@@ -35,6 +35,7 @@ class ConfigSave extends FormRequest
         'tos_url' => 'nullable|url',
         'currency' => '',
         'currency_symbol' => '',
+        'ticket_must_wait_reply' => '',
         // subscribe
         'plan_change_enable' => '',
         'reset_traffic_method' => 'in:0,1,2,3,4',
