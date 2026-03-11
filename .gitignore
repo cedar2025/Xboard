@@ -19,7 +19,6 @@ yarn-error.log
 composer.phar
 composer.lock
 yarn.lock
-docker-compose.yml
 .DS_Store
 /docker
 storage/laravels.conf
@@ -28,7 +27,6 @@ storage/update_pending
 storage/laravels-timer-process.pid
 cli-php.ini
 frontend
-docker-compose.yaml
 bun.lockb
 compose.yaml
 .scribe
@@ -36,3 +34,4 @@ compose.yaml
 # Exclude large release files
 public/download/ElephantNetwork-Android.apk
 public/download/ElephantNetwork-MacOS.zip
+public/download/elephant_network_windows.zip

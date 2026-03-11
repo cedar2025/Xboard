@@ -87,7 +87,7 @@ class WindowsVpnService implements VpnManager {
       int proxyPort = 2334; // Default to mixed port if possible
       if (configMap['inbounds'] != null) {
         for (var inbound in configMap['inbounds']) {
-          if (inbound['type'] == 'mixed' || inbound['type'] == 'socks' || inbound['type'] == 'http') {
+          if (inbound['type'] == 'mixed' || inbound['type'] == 'http') {
             proxyPort = inbound['listen_port'] ?? proxyPort;
             break;
           }
@@ -354,9 +354,9 @@ class WindowsVpnService implements VpnManager {
         final List<dynamic> inbounds = config['inbounds'];
         inbounds.removeWhere((inbound) => inbound['type'] == 'tun');
         
-        // Ensure there is at least one mixed or socks inbound if none left
+        // Ensure there is at least one mixed or http inbound if none left
         bool hasProxyInbound = inbounds.any((inbound) => 
-          inbound['type'] == 'mixed' || inbound['type'] == 'socks' || inbound['type'] == 'http');
+          inbound['type'] == 'mixed' || inbound['type'] == 'http');
         
         if (!hasProxyInbound) {
           inbounds.add({

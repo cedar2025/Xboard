@@ -1,0 +1,426 @@
+﻿[ +244 ms] Unable to locate an Android SDK.
+[ +173 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[   +4 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[ +151 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[   +5 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +91 ms] Skipping pub get: version match.
+[ +158 ms] Found plugin flutter_native_splash at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_native_splash-2.4.4\
+[ +111 ms] Found plugin package_info_plus at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-9.0.0\
+[  +11 ms] Found plugin path_provider at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +3 ms] Found plugin path_provider_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[   +2 ms] Found plugin path_provider_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +5 ms] Found plugin path_provider_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +3 ms] Found plugin path_provider_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +2 ms] Found plugin permission_handler at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +2 ms] Found plugin permission_handler_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[   +2 ms] Found plugin permission_handler_apple at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +2 ms] Found plugin permission_handler_html at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +3 ms] Found plugin permission_handler_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[  +23 ms] Found plugin screen_retriever at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.0\
+[   +2 ms] Found plugin screen_retriever_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.0\
+[   +3 ms] Found plugin screen_retriever_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.0\
+[   +4 ms] Found plugin screen_retriever_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.0\
+[   +2 ms] Found plugin shared_preferences at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences-2.5.3\
+[   +2 ms] Found plugin shared_preferences_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_android-2.4.7\
+[   +2 ms] Found plugin shared_preferences_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_foundation-2.5.4\
+[   +4 ms] Found plugin shared_preferences_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_linux-2.4.1\
+[   +6 ms] Found plugin shared_preferences_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_web-2.4.3\
+[   +1 ms] Found plugin shared_preferences_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_windows-2.4.1\
+[  +12 ms] Found plugin sqflite at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite-2.4.1\
+[   +2 ms] Found plugin sqflite_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_android-2.4.0\
+[   +3 ms] Found plugin sqflite_darwin at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_darwin-2.4.1+1\
+[  +12 ms] Found plugin tray_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\tray_manager-0.2.4\
+[   +4 ms] Found plugin url_launcher at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms] Found plugin url_launcher_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +1 ms] Found plugin url_launcher_ios at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[   +1 ms] Found plugin url_launcher_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[   +2 ms] Found plugin url_launcher_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +4 ms] Found plugin url_launcher_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[   +1 ms] Found plugin url_launcher_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[  +13 ms] Found plugin webview_flutter at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter-4.10.0\
+[   +1 ms] Found plugin webview_flutter_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_android-4.3.2\
+[   +2 ms] Found plugin webview_flutter_wkwebview at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_wkwebview-3.22.0\
+[   +4 ms] Found plugin window_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[ +135 ms] Found plugin flutter_native_splash at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_native_splash-2.4.4\
+[  +63 ms] Found plugin package_info_plus at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-9.0.0\
+[   +9 ms] Found plugin path_provider at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +2 ms] Found plugin path_provider_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[   +2 ms] Found plugin path_provider_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +2 ms] Found plugin path_provider_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +5 ms] Found plugin path_provider_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +2 ms] Found plugin permission_handler at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +2 ms] Found plugin permission_handler_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[   +2 ms] Found plugin permission_handler_apple at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +2 ms] Found plugin permission_handler_html at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +3 ms] Found plugin permission_handler_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[  +12 ms] Found plugin screen_retriever at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.0\
+[   +1 ms] Found plugin screen_retriever_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.0\
+[   +1 ms] Found plugin screen_retriever_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.0\
+[   +2 ms] Found plugin screen_retriever_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.0\
+[   +1 ms] Found plugin shared_preferences at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences-2.5.3\
+[   +1 ms] Found plugin shared_preferences_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_android-2.4.7\
+[   +1 ms] Found plugin shared_preferences_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_foundation-2.5.4\
+[   +2 ms] Found plugin shared_preferences_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_linux-2.4.1\
+[   +3 ms] Found plugin shared_preferences_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_web-2.4.3\
+[   +1 ms] Found plugin shared_preferences_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_windows-2.4.1\
+[  +10 ms] Found plugin sqflite at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite-2.4.1\
+[   +2 ms] Found plugin sqflite_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_android-2.4.0\
+[   +3 ms] Found plugin sqflite_darwin at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_darwin-2.4.1+1\
+[  +15 ms] Found plugin tray_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\tray_manager-0.2.4\
+[   +4 ms] Found plugin url_launcher at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +1 ms] Found plugin url_launcher_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +1 ms] Found plugin url_launcher_ios at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[   +2 ms] Found plugin url_launcher_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[   +1 ms] Found plugin url_launcher_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +2 ms] Found plugin url_launcher_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[   +1 ms] Found plugin url_launcher_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[  +14 ms] Found plugin webview_flutter at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter-4.10.0\
+[   +1 ms] Found plugin webview_flutter_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_android-4.3.2\
+[   +2 ms] Found plugin webview_flutter_wkwebview at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_wkwebview-3.22.0\
+[   +4 ms] Found plugin window_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +23 ms] Generating C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\android\app\src\main\java\io\flutter\plugins\GeneratedPluginRegistrant.java
+[ +149 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[  +66 ms] Exit code 0 from: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[        ] []
+[        ] executing: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[  +70 ms] Exit code 0 from: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[        ] [
+             {
+               "instanceId": "49dec8b9",
+               "installDate": "2026-03-09T14:52:55Z",
+               "installationName": "VisualStudio/17.14.27+37012.4.-february.2026-",
+               "installationPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools",
+               "installationVersion": "17.14.37012.4",
+               "productId": "Microsoft.VisualStudio.Product.BuildTools",
+               "productPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\LaunchDevCmd.bat",
+               "state": 4294967295,
+               "isComplete": true,
+               "isLaunchable": true,
+               "isPrerelease": false,
+               "isRebootRequired": false,
+               "displayName": "Visual Studio 鐢熸垚宸ュ叿 2022",
+               "description": "Visual Studio 鐢熸垚宸ュ叿鍏佽鐢熸垚鏈満鍜屽熀浜?MSBuild 鐨勬墭绠?.NET 搴旂敤绋嬪簭锛岃€屼笉闇€瑕?Visual Studio IDE銆傝繕鍙互閫夋嫨瀹夎 Visual C++ 缂栬瘧鍣ㄥ拰搴撱€丮FC銆丄LT 鍜?C++/CLI 鏀寔銆?,
+               "channelId": "VisualStudio.17.Release",
+               "channelUri": "https://aka.ms/vs/17/release/channel",
+               "enginePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\resources\\app\\ServiceHub\\Services\\Microsoft.VisualStudio.Setup.Service",
+               "installChannelUri": "https://aka.ms/vs/17/release/525985185_1409332487/channel",
+               "installedChannelId": "VisualStudio.17.Release",
+               "installedChannelUri": "https://aka.ms/vs/17/release/channel",
+               "releaseNotes": "https://docs.microsoft.com/en-us/visualstudio/releases/2022/release-notes-v17.14#17.14.27",
+               "resolvedInstallationPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools",
+               "thirdPartyNotices": "https://go.microsoft.com/fwlink/?LinkId=661288",
+               "updateDate": "2026-03-09T14:52:55.6019664Z",
+               "catalog": {
+                 "buildBranch": "d17.14",
+                 "buildVersion": "17.14.37012.4",
+                 "id": "VisualStudio/17.14.27+37012.4.-february.2026-",
+                 "localBuild": "build-lab",
+                 "manifestName": "VisualStudio",
+                 "manifestType": "installer",
+                 "productDisplayVersion": "17.14.27 (February 2026)",
+                 "productLine": "Dev17",
+                 "productLineVersion": "2022",
+                 "productMilestone": "RTW",
+                 "productMilestoneIsPreRelease": "False",
+                 "productName": "Visual Studio",
+                 "productPatchVersion": "27",
+                 "productPreReleaseMilestoneSuffix": "1.0",
+                 "productReleaseNameSuffix": "(February 2026)",
+                 "productSemanticVersion": "17.14.27+37012.4.-february.2026-",
+                 "requiredEngineVersion": "3.14.2086.54749"
+               },
+               "properties": {
+                 "appLocalWPF": "false",
+                 "campaignId": "",
+                 "channelManifestId": "VisualStudio.17.Release/17.14.27+37012.4.-february.2026-",
+                 "includeRecommended": "0",
+                 "nickname": "",
+                 "setupEngineFilePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\setup.exe"
+               }
+             }
+           ]
+[   +5 ms] Building Windows application...
+[   +8 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -S C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\windows -B C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64 -G Visual Studio 17 2022 -A x64 -DFLUTTER_TARGET_PLATFORM=windows-x64
+[  +95 ms] -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26220.
+flutter : [  +53 ms] Nuget.exe not found, trying to download or use cached version.
+所在位置 行:1 字符: 1
++ flutter build windows --verbose 2>&1 | Out-File -FilePath C:\Users\20 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([  +53 ms] Nuge...cached version.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[+2074 ms] Feeds used:
+[        ]   C:\Users\20236\.nuget\packages\
+[        ]   https://api.nuget.org/v3/index.json
+[  +96 ms] 宸插畨瑁呯▼搴忓寘鈥淢icrosoft.Windows.CppWinRT.2.0.210806.1鈥濄€?[ +919 ms] -- Configuring done (3.2s)
+[ +834 ms] -- Generating done (0.8s)
+[  +20 ms] -- Build files have been written to: C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/build/windows/x64
+[  +18 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe --build C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64 --config Release --target INSTALL --verbose
+[ +133 ms] Change Dir: 'C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/build/windows/x64'
+[   +2 ms] Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/amd64/MSBuild.exe" INSTALL.vcxproj /p:Configuration=Release /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+[ +149 ms] 閫傜敤浜?.NET Framework MSBuild 鐗堟湰 17.14.40+3e7442088
+[ +107 ms] 鐢熸垚鍚姩鏃堕棿涓?2026/3/11 20:34:12銆?[ +317 ms] 鑺傜偣 1 涓婄殑椤圭洰鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\INSTALL.vcxproj鈥?榛樿鐩爣)銆?[        ] 椤圭洰鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\INSTALL.vcxproj鈥?1)姝ｅ湪鑺傜偣 1 涓婄敓鎴愨€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ZERO_CHECK.vcxproj鈥?2) (榛樿鐩爣)銆?[        ] PrepareForBuild:
+[        ]   姝ｅ湪鍒涘缓鐩綍鈥渪64\Release\ZERO_CHECK\鈥濄€?[  +12 ms]   宸插惎鐢ㄧ粨鏋勫寲杈撳嚭銆傜紪璇戝櫒璇婃柇鐨勬牸寮忚缃皢鍙嶆槧閿欒灞傛缁撴瀯銆傛湁鍏宠缁嗕俊鎭紝璇峰弬闃?https://aka.ms/cpp/structured-output銆?[        ]   姝ｅ湪鍒涘缓鐩綍鈥渪64\Release\ZERO_CHECK\ZERO_CHECK.tlog\鈥濄€?[   +3 ms] InitializeBuildStatus:
+[        ]   姝ｅ湪鍒涘缓鈥渪64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild鈥濓紝鍥犱负宸叉寚瀹氣€淎lwaysCreate鈥濄€?[        ]   姝ｅ湪瀵光€渪64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild鈥濇墽琛?Touch 浠诲姟銆?[ +109 ms] CustomBuild:
+[        ]   1>Checking Build System
+[ +142 ms] FinalizeBuildStatus:
+[        ]   姝ｅ湪鍒犻櫎鏂囦欢鈥渪64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild鈥濄€?[        ]   姝ｅ湪瀵光€渪64\Release\ZERO_CHECK\ZERO_CHECK.tlog\ZERO_CHECK.lastbuildstate鈥濇墽琛?Touch 浠诲姟銆?[   +1 ms] 宸插畬鎴愮敓鎴愰」鐩€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ZERO_CHECK.vcxproj鈥?榛樿鐩爣)鐨勬搷浣溿€?[  +87 ms] 椤圭洰鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\INSTALL.vcxproj鈥?1)姝ｅ湪鑺傜偣 1 涓婄敓鎴愨€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ALL_BUILD.vcxproj鈥?3) (榛樿鐩爣)銆?[        ] 椤圭洰鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ALL_BUILD.vcxproj鈥?3)姝ｅ湪鑺傜偣 1 涓婄敓鎴愨€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\runner\elephant_network.vcxproj鈥?4) (榛樿鐩爣)銆?[        ] 椤圭洰鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\runner\elephant_network.vcxproj鈥?4)姝ｅ湪鑺傜偣 1 涓婄敓鎴愨€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj鈥?5) (榛樿鐩爣)銆?[        ] PrepareForBuild:
+[        ]   姝ｅ湪鍒涘缓鐩綍鈥渪64\Release\flutter_assemble\鈥濄€?[   +4 ms]   宸插惎鐢ㄧ粨鏋勫寲杈撳嚭銆傜紪璇戝櫒璇婃柇鐨勬牸寮忚缃皢鍙嶆槧閿欒灞傛缁撴瀯銆傛湁鍏宠缁嗕俊鎭紝璇峰弬闃?https://aka.ms/cpp/structured-output銆?[        ]   姝ｅ湪鍒涘缓鐩綍鈥渪64\Release\flutter_assemble\flutter_assemble.tlog\鈥濄€?[   +2 ms] InitializeBuildStatus:
+[        ]   姝ｅ湪鍒涘缓鈥渪64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild鈥濓紝鍥犱负宸叉寚瀹氣€淎lwaysCreate鈥濄€?[        ]   姝ｅ湪瀵光€渪64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild鈥濇墽琛?Touch 浠诲姟銆?[   +5 ms] CustomBuild:
+[        ]   鈥溾€楥:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\CMakeFiles\99dbb028d63d986d9409d6222582814c\flutter_assemble.rule鈥欑殑鐢熸垚渚濊禆浜庣敱鈥楥:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\CMakeFiles\368d21a859cad54245aece6b42127785\flutter_windows.dll.rule鈥欑殑鐢熸垚鎵€浜х敓鐨勨€楥:\USERS\20236\ONEDRIVE\鏂囨。\GITHUB\XBOARD\.ELEPHANT_NETWORK_DEPRECATED\WINDOWS\FLUTTER\EPHEMERAL\FLUTTER_WINDOWS.DLL鈥欍€傛棤娉曞苟琛岀敓鎴愰」銆傗€?[ +114 ms]   Generating C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_windows.dll, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_export.h, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_windows.h, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_messenger.h, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_plugin_registrar.h, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/flutter_texture_registrar.h, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/cpp_client_wrapper/core_implementations.cc, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/cpp_client_wrapper/standard_codec.cc, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/cpp_client_wrapper/plugin_registrar.cc, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/cpp_client_wrapper/flutter_engine.cc, C:/Users/20236/OneDrive/鏂囨。/GitHub/Xboard/.elephant_network_deprecated/windows/flutter/ephemeral/cpp_client_wrapper/flutter_view_controller.cc, _phony_
+[+1110 ms]   [ +326 ms] Unable to locate an Android SDK.
+[  +50 ms]   [  +72 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[   +3 ms]   [   +3 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[ +116 ms]   [ +116 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[   +2 ms]   [   +3 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +77 ms]   [  +77 ms] Initializing file store
+[  +47 ms]   [  +47 ms] Skipping target: gen_localizations
+[  +19 ms]   [  +18 ms] gen_dart_plugin_registrant: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\package_config_subset}
+[   +7 ms]   [   +8 ms] unpack_windows: Starting due to {}
+[ +472 ms]   [ +472 ms] unpack_windows: Complete
+[+4357 ms]   [+4357 ms] Found plugin flutter_native_splash at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_native_splash-2.4.4\
+[ +132 ms]   [ +133 ms] Found plugin package_info_plus at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-9.0.0\
+[  +17 ms]   [  +17 ms] Found plugin path_provider at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider-2.1.5\
+[   +3 ms]   [   +3 ms] Found plugin path_provider_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_android-2.2.15\
+[  +29 ms]   [  +29 ms] Found plugin path_provider_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_foundation-2.4.1\
+[   +3 ms]   [   +3 ms] Found plugin path_provider_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_linux-2.2.1\
+[   +7 ms]   [   +5 ms] Found plugin path_provider_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\path_provider_windows-2.3.0\
+[   +3 ms]   [   +5 ms] Found plugin permission_handler at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler-11.4.0\
+[   +3 ms]   [   +3 ms] Found plugin permission_handler_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_android-12.1.0\
+[   +3 ms]   [   +3 ms] Found plugin permission_handler_apple at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_apple-9.4.7\
+[   +3 ms]   [   +3 ms] Found plugin permission_handler_html at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_html-0.1.3+5\
+[   +7 ms]   [   +6 ms] Found plugin permission_handler_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\permission_handler_windows-0.2.1\
+[  +33 ms]   [  +33 ms] Found plugin screen_retriever at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever-0.2.0\
+[   +2 ms]   [   +3 ms] Found plugin screen_retriever_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_linux-0.2.0\
+[   +2 ms]   [   +2 ms] Found plugin screen_retriever_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_macos-0.2.0\
+[   +5 ms]   [   +4 ms] Found plugin screen_retriever_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\screen_retriever_windows-0.2.0\
+[   +3 ms]   [   +3 ms] Found plugin shared_preferences at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences-2.5.3\
+[   +4 ms]   [   +4 ms] Found plugin shared_preferences_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_android-2.4.7\
+[   +2 ms]   [   +2 ms] Found plugin shared_preferences_foundation at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_foundation-2.5.4\
+[   +2 ms]   [   +2 ms] Found plugin shared_preferences_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_linux-2.4.1\
+[   +8 ms]   [   +7 ms] Found plugin shared_preferences_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_web-2.4.3\
+[  +10 ms]   [  +10 ms] Found plugin shared_preferences_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_windows-2.4.1\
+[  +17 ms]   [  +17 ms] Found plugin sqflite at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite-2.4.1\
+[   +4 ms]   [   +3 ms] Found plugin sqflite_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_android-2.4.0\
+[   +6 ms]   [   +7 ms] Found plugin sqflite_darwin at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\sqflite_darwin-2.4.1+1\
+[  +18 ms]   [  +18 ms] Found plugin tray_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\tray_manager-0.2.4\
+[   +5 ms]   [   +5 ms] Found plugin url_launcher at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher-6.3.1\
+[   +2 ms]   [   +2 ms] Found plugin url_launcher_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\
+[   +2 ms]   [   +2 ms] Found plugin url_launcher_ios at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_ios-6.3.3\
+[   +1 ms]   [   +2 ms] Found plugin url_launcher_linux at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_linux-3.2.1\
+[   +1 ms]   [   +1 ms] Found plugin url_launcher_macos at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_macos-3.2.2\
+[   +3 ms]   [   +3 ms] Found plugin url_launcher_web at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_web-2.3.3\
+[   +2 ms]   [   +2 ms] Found plugin url_launcher_windows at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_windows-3.1.4\
+[  +17 ms]   [  +17 ms] Found plugin webview_flutter at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter-4.10.0\
+[   +1 ms]   [   +2 ms] Found plugin webview_flutter_android at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_android-4.3.2\
+[   +3 ms]   [   +2 ms] Found plugin webview_flutter_wkwebview at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\webview_flutter_wkwebview-3.22.0\
+[   +5 ms]   [   +5 ms] Found plugin window_manager at C:\Users\20236\AppData\Local\Pub\Cache\hosted\pub.dev\window_manager-0.4.3\
+[  +52 ms]   [  +52 ms] gen_dart_plugin_registrant: Complete
+[  +23 ms]   [  +23 ms] kernel_snapshot_program: Starting due to {}
+[  +14 ms]   [  +14 ms] C:\src\flutter\bin\cache\dart-sdk\bin\dartaotruntime.exe --disable-dart-dev C:\src\flutter\bin\cache\dart-sdk\bin\snapshots\frontend_server_aot.dart.snapshot --sdk-root C:\src\flutter\bin\cache\artifacts\engine\common\flutter_patched_sdk_product/ --target=flutter --no-print-incremental-dependencies -Ddart.vm.profile=false -Ddart.vm.product=true --delete-tostring-package-uri=dart:ui --delete-tostring-package-uri=package:flutter --aot --tfa --target-os windows --packages C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\package_config.json --output-dill C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\program.dill --depfile C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\kernel_snapshot_program.d --source file:///C:/Users/20236/OneDrive/%E6%96%87%E6%A1%A3/GitHub/Xboard/.elephant_network_deprecated/.dart_tool/flutter_build/dart_plugin_registrant.dart --source package:flutter/src/dart_plugin_registrant.dart -Dflutter.dart_plugin_registrant=file:///C:/Users/20236/OneDrive/%E6%96%87%E6%A1%A3/GitHub/Xboard/.elephant_network_deprecated/.dart_tool/flutter_build/dart_plugin_registrant.dart --verbosity=error package:elephant_network/main.dart
+[+29018 ms]   [+29017 ms] kernel_snapshot_program: Complete
+[+1787 ms]   [+1788 ms] native_assets: Starting due to {}
+[ +102 ms]   [ +102 ms] No packages with native assets. Skipping native assets compilation.
+[   +1 ms]   [   +1 ms] Writing native_assets.yaml.
+[  +24 ms]   [  +24 ms] Writing C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\native_assets.yaml done.
+[   +3 ms]   [   +3 ms] native_assets: Complete
+[  +21 ms]   [  +20 ms] kernel_snapshot_native_assets: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\native_assets.yaml,C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\package_config_subset,C:\src\flutter\packages\flutter_tools\lib\src\build_system\targets\common.dart,C:\src\flutter\bin\internal\engine.version,C:\src\flutter\bin\internal\engine.version,C:\src\flutter\bin\internal\engine.version,C:\src\flutter\bin\internal\engine.version}
+[  +17 ms]   [  +19 ms] kernel_snapshot_native_assets: Complete
+[   +8 ms]   [   +8 ms] kernel_snapshot: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\program.dill,C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\native_assets.dill}
+[  +44 ms]   [  +43 ms] kernel_snapshot: Complete
+[ +327 ms]   [ +328 ms] aot_elf_release: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: C:\src\flutter\packages\flutter_tools\lib\src\build_system\targets\common.dart,C:\src\flutter\bin\internal\engine.version,C:\src\flutter\bin\internal\engine.version,C:\src\flutter\bin\internal\engine.version,C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\app.dill}
+[   +7 ms]   [   +7 ms] targetingApplePlatform = false
+[        ]   [        ] extractAppleDebugSymbols = true
+[        ]   [        ] Will strip AOT snapshot during build.
+[   +2 ms]   [   +2 ms] executing: C:\src\flutter\bin\cache\artifacts\engine\windows-x64-release\gen_snapshot --deterministic --snapshot_kind=app-aot-elf --elf=C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\app.so --strip C:\Users\20236\OneDrive\閺傚洦銆俓GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\app.dill
+[ +263 ms] CUSTOMBUILD : [ +249 ms] error : Unable to read file: C:\Users\20236\OneDrive\閿熶茎纰夋嫹\GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\app.dill [C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[        ]   [   +2 ms] ../../../flutter/third_party/dart/runtime/vm/dart_api_impl.cc: 2221: error: Dart_ExitScope expe
+cts there to be a current isolate. Did you forget to call Dart_CreateIsolateGroup or Dart_EnterIsolate?
+[        ]   [        ] version=3.5.4 (stable) (Wed Oct 16 16:18:51 2024 +0000) on "windows_x64"
+[        ]   [        ] pid=2492, thread=-1, isolate_group=(nil)(0000000000000000), isolate=(nil)(0000000000000000)
+[        ]   [        ] os=windows, arch=x64, comp=no, sim=no
+[        ]   [        ] isolate_instructions=0, vm_instructions=0
+[        ]   [        ] fp=ecb411fb18, sp=ecb411fb18, pc=7ff611cf88e2
+[        ]   [   +1 ms]   pc 0x00007ff611cf88e2 fp 0x000000ecb411fb18 Unknown symbol
+[        ]   [        ]   pc 0x0000000000000001 fp 0x000000ecb411fd98 Unknown symbol
+[        ]   [        ] -- End of DumpStackTrace
+[ +237 ms]   [ +248 ms] Dart snapshot generator failed with exit code -1073740791
+[   +1 ms]   [   +1 ms] Persisting file store
+[  +29 ms]   [  +29 ms] Done persisting file store
+[  +53 ms]   [  +53 ms] Target aot_elf_release failed: Exception: AOT snapshotter exited with code -1073740791
+[        ]              #0      AotElfBase.build (package:flutter_tools/src/build_system/targets/common.dart:480:7)
+[        ]              <asynchronous suspension>
+[        ]              #1      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:875:9)
+[   +1 ms]              <asynchronous suspension>
+[        ]              #2      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #3      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #4      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+[        ]              <asynchronous suspension>
+[        ]              #5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+[        ]              <asynchronous suspension>
+[        ]              #6      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:635:16)
+[        ]              <asynchronous suspension>
+[        ]              #7      AssembleCommand.runCommand (package:flutter_tools/src/commands/assemble.dart:328:32)
+[        ]              <asynchronous suspension>
+[        ]              #8      FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+[        ]              <asynchronous suspension>
+[        ]              #9      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #10     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+[        ]              <asynchronous suspension>
+[        ]              #11     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+[        ]              <asynchronous suspension>
+[        ]              #12     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #13     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+[        ]              <asynchronous suspension>
+[        ]              #14     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+[        ]              <asynchronous suspension>
+[        ]              #15     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #16     main (package:flutter_tools/executable.dart:93:3)
+[        ]              <asynchronous suspension>
+[   +7 ms]   [  +17 ms] "flutter assemble" took 37,561ms.
+[  +26 ms]   [  +27 ms] 
+[        ]              #0      throwToolExit (package:flutter_tools/src/base/common.dart:10:3)
+[        ]              #1      AssembleCommand.runCommand (package:flutter_tools/src/commands/assemble.dart:345:7)
+[        ]              <asynchronous suspension>
+[        ]              #2      FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+[        ]              <asynchronous suspension>
+[        ]              #3      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #4      CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+[        ]              <asynchronous suspension>
+[        ]              #5      FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+[        ]              <asynchronous suspension>
+[        ]              #6      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #7      FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+[        ]              <asynchronous suspension>
+[        ]              #8      run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+[        ]              <asynchronous suspension>
+[        ]              #9      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+[        ]              <asynchronous suspension>
+[        ]              #10     main (package:flutter_tools/executable.dart:93:3)
+[        ]              <asynchronous suspension>
+[ +254 ms]   [ +257 ms] ensureAnalyticsSent: 254ms
+[        ]   [        ] Running 1 shutdown hook
+[        ]   [        ] Shutdown hooks complete
+[ +271 ms]   [ +272 ms] exiting with code 1
+[ +132 ms] C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon
+.targets(254,5): error MSB8066: 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x
+64\CMakeFiles\368d21a859cad54245aece6b42127785\flutter_windows.dll.rule;C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elep
+hant_network_deprecated\build\windows\x64\CMakeFiles\99dbb028d63d986d9409d6222582814c\flutter_assemble.rule;C:\Users\20
+236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\windows\flutter\CMakeLists.txt鈥濈殑鑷畾涔夌敓鎴愬凡閫€鍑猴紝浠ｇ爜涓?1銆?[C:\
+Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[   +1 ms] 宸插畬鎴愮敓鎴愰」鐩€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj鈥?榛樿鐩爣)鐨勬搷浣?- 澶辫触銆?[   +1 ms] 宸插畬鎴愮敓鎴愰」鐩€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\runner\elephant_network.vcxproj鈥?榛樿鐩爣)鐨勬搷浣?- 澶辫触銆?[ +429 ms] 宸插畬鎴愮敓鎴愰」鐩€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ALL_BUILD.vcxproj鈥?榛樿鐩爣)鐨勬搷浣?- 澶辫触銆?[   +1 ms] 宸插畬鎴愮敓鎴愰」鐩€淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\INSTALL.vcxproj鈥?榛樿鐩爣)鐨勬搷浣?- 澶辫触銆?[   +6 ms] 鐢熸垚澶辫触銆?[   +2 ms] 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\INSTALL.vcxproj鈥?榛樿鐩爣) (1) ->
+[        ] 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\ALL_BUILD.vcxproj鈥?榛樿鐩爣) (3) ->
+[        ] 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\runner\elephant_network.vcxproj鈥?榛樿鐩爣) (4) ->
+[        ] 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj鈥?榛樿鐩爣) (5) ->
+[        ] (CustomBuild 鐩爣) -> 
+[        ]   CUSTOMBUILD : [ +249 ms] error : Unable to read file: C:\Users\20236\OneDrive\閿熶茎纰夋嫹\GitHub\Xboard\.elephant_network_deprecated\.dart_tool\flutter_build\7ff92e0bd34641445e66b7417e3b00be\app.dill [C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxproj]
+[   +2 ms]   C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Microsoft\VC\v170\Microsoft.CppComm
+on.targets(254,5): error MSB8066: 鈥淐:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows
+\x64\CMakeFiles\368d21a859cad54245aece6b42127785\flutter_windows.dll.rule;C:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.el
+ephant_network_deprecated\build\windows\x64\CMakeFiles\99dbb028d63d986d9409d6222582814c\flutter_assemble.rule;C:\Users\
+20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\windows\flutter\CMakeLists.txt鈥濈殑鑷畾涔夌敓鎴愬凡閫€鍑猴紝浠ｇ爜涓?1銆?[C
+:\Users\20236\OneDrive\鏂囨。\GitHub\Xboard\.elephant_network_deprecated\build\windows\x64\flutter\flutter_assemble.vcxpro
+j]
+[        ]     0 涓鍛?[        ]     2 涓敊璇?[        ] 宸茬敤鏃堕棿 00:00:40.66
+[  +68 ms] Building Windows application... (completed in 45.2s)
+[   +1 ms] "flutter windows" took 46,620ms.
+[  +28 ms] Build process failed.
+[        ] 
+           #0      throwToolExit (package:flutter_tools/src/base/common.dart:10:3)
+           #1      _runBuild (package:flutter_tools/src/windows/build_windows.dart:266:5)
+           <asynchronous suspension>
+           #2      buildWindows (package:flutter_tools/src/windows/build_windows.dart:111:5)
+           <asynchronous suspension>
+           #3      BuildWindowsCommand.runCommand (package:flutter_tools/src/commands/build_windows.dart:64:5)
+           <asynchronous suspension>
+           #4      FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:2
+7)
+           <asynchronous suspension>
+           #5      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #6      CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+           <asynchronous suspension>
+           #7      FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_comman
+d_runner.dart:420:9)
+           <asynchronous suspension>
+           #8      AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #9      FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+           <asynchronous suspension>
+           #10     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+           <asynchronous suspension>
+           #11     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+           <asynchronous suspension>
+           #12     main (package:flutter_tools/executable.dart:93:3)
+           <asynchronous suspension>
+
+
+[ +258 ms] ensureAnalyticsSent: 256ms
+[        ] Running 1 shutdown hook
+[   +1 ms] Shutdown hooks complete
+[  +18 ms] exiting with code 1

@@ -128,8 +128,11 @@ flutter:
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  ios: true
+  ios: false
   macos:
+    generate: true
+    image_path: "assets/images/logo_icon_macos.png"
+  windows:
     generate: true
     image_path: "assets/images/logo_icon_macos.png"
   image_path: "assets/images/logo_icon_transparent.png"

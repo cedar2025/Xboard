@@ -160,9 +160,9 @@ class NodeProvider with ChangeNotifier {
     notifyListeners();
 
     // 使用 ConfigProvider 中的测试 URL
-    final testUrl = _configProvider.testUrl;
-    const timeout = 3000;
-    const batchSize = 5;
+    final testUrl = 'http://www.gstatic.com/generate_204';
+    const timeout = 5000;
+    const batchSize = 1;
     
     final realNodesList = realNodes;
     for (int i = 0; i < realNodesList.length; i += batchSize) {
