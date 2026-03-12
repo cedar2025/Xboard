@@ -17,51 +17,21 @@ dns:
   fake-ip-range: 198.18.0.1/16
   use-hosts: true
   nameserver-policy:
-    "+.google.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.googleapis.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.googleapis.cn":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.googlevideo.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.gstatic.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.youtube.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.youtu.be":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.facebook.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.twitter.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.x.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.github.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.githubusercontent.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.openai.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.chatgpt.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.anthropic.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
+    "+.google.com": "https://dns.cloudflare.com/dns-query"
+    "+.googleapis.com": "https://dns.cloudflare.com/dns-query"
+    "+.googleapis.cn": "https://dns.cloudflare.com/dns-query"
+    "+.googlevideo.com": "https://dns.cloudflare.com/dns-query"
+    "+.gstatic.com": "https://dns.cloudflare.com/dns-query"
+    "+.youtube.com": "https://dns.cloudflare.com/dns-query"
+    "+.youtu.be": "https://dns.cloudflare.com/dns-query"
+    "+.facebook.com": "https://dns.cloudflare.com/dns-query"
+    "+.twitter.com": "https://dns.cloudflare.com/dns-query"
+    "+.x.com": "https://dns.cloudflare.com/dns-query"
+    "+.github.com": "https://dns.cloudflare.com/dns-query"
+    "+.githubusercontent.com": "https://dns.cloudflare.com/dns-query"
+    "+.openai.com": "https://dns.cloudflare.com/dns-query"
+    "+.chatgpt.com": "https://dns.cloudflare.com/dns-query"
+    "+.anthropic.com": "https://dns.cloudflare.com/dns-query"
   nameserver:
     - https://doh.pub/dns-query
     - https://dns.alidns.com/dns-query
@@ -70,10 +40,8 @@ dns:
   fallback:
     - https://dns.cloudflare.com/dns-query
     - https://dns.google/dns-query
-    - https://dns.quad9.net/dns-query
     - tls://1.1.1.1:853
     - tls://8.8.8.8:853
-    - tls://9.9.9.9:853
   fallback-filter:
     geoip: true
     geoip-code: CN
@@ -94,7 +62,6 @@ dns:
       - "+.githubusercontent.com"
       - "+.googlevideo.com"
       - "+.googleapis.cn"
-  # 需要真实 IP 的服务（游戏、STUN、局域网发现等）
   fake-ip-filter:
     - "*.lan"
     - "*.local"
@@ -120,9 +87,30 @@ proxy-groups:
   - { name: "故障转移", type: fallback, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 300 }
 
 rules:
-  # ===== 自定义规则（在此处添加） =====
-
-  # ===== 私有网络 =====
+  # Custom
+  # Ad blocking
+  - DOMAIN-KEYWORD,admarvel,REJECT
+  - DOMAIN-KEYWORD,admaster,REJECT
+  - DOMAIN-KEYWORD,adsage,REJECT
+  - DOMAIN-KEYWORD,adsmogo,REJECT
+  - DOMAIN-KEYWORD,adsrvmedia,REJECT
+  - DOMAIN-KEYWORD,adwords,REJECT
+  - DOMAIN-KEYWORD,adservice,REJECT
+  - DOMAIN-KEYWORD,domob,REJECT
+  - DOMAIN-KEYWORD,duomeng,REJECT
+  - DOMAIN-KEYWORD,dwtrack,REJECT
+  - DOMAIN-KEYWORD,guanggao,REJECT
+  - DOMAIN-KEYWORD,lianmeng,REJECT
+  - DOMAIN-KEYWORD,omgmta,REJECT
+  - DOMAIN-KEYWORD,openx,REJECT
+  - DOMAIN-KEYWORD,partnerad,REJECT
+  - DOMAIN-KEYWORD,supersonicads,REJECT
+  - DOMAIN-KEYWORD,umeng,REJECT
+  - DOMAIN-KEYWORD,zjtoolbar,REJECT
+  - DOMAIN-SUFFIX,appsflyer.com,REJECT
+  - DOMAIN-SUFFIX,doubleclick.net,REJECT
+  - DOMAIN-SUFFIX,mmstat.com,REJECT
+  # LAN
   - DOMAIN-SUFFIX,local,DIRECT
   - DOMAIN-SUFFIX,localhost,DIRECT
   - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
@@ -136,32 +124,103 @@ rules:
   - IP-CIDR6,::1/128,DIRECT,no-resolve
   - IP-CIDR6,fc00::/7,DIRECT,no-resolve
   - IP-CIDR6,fe80::/10,DIRECT,no-resolve
-
-  # ===== 广告拦截 =====
-  - DOMAIN-KEYWORD,admarvel,REJECT
-  - DOMAIN-KEYWORD,admaster,REJECT
-  - DOMAIN-KEYWORD,adsage,REJECT
-  - DOMAIN-KEYWORD,adsmogo,REJECT
-  - DOMAIN-KEYWORD,adsrvmedia,REJECT
-  - DOMAIN-KEYWORD,adwords,REJECT
-  - DOMAIN-KEYWORD,adservice,REJECT
-  - DOMAIN-KEYWORD,domob,REJECT
-  - DOMAIN-KEYWORD,duomeng,REJECT
-  - DOMAIN-KEYWORD,guanggao,REJECT
-  - DOMAIN-KEYWORD,lianmeng,REJECT
-  - DOMAIN-KEYWORD,mopub,REJECT
-  - DOMAIN-KEYWORD,omgmta,REJECT
-  - DOMAIN-KEYWORD,openx,REJECT
-  - DOMAIN-KEYWORD,partnerad,REJECT
-  - DOMAIN-KEYWORD,supersonicads,REJECT
-  - DOMAIN-KEYWORD,umeng,REJECT
-  - DOMAIN-KEYWORD,zjtoolbar,REJECT
-  - DOMAIN-SUFFIX,appsflyer.com,REJECT
-  - DOMAIN-SUFFIX,doubleclick.net,REJECT
-  - DOMAIN-SUFFIX,mmstat.com,REJECT
-  - DOMAIN-SUFFIX,vungle.com,REJECT
-
-  # ===== 被墙服务（关键字高效覆盖） =====
+  # Apple (App Store via proxy for foreign regions)
+  - DOMAIN-SUFFIX,apps.apple.com,$app_name
+  - DOMAIN-SUFFIX,itunes.apple.com,$app_name
+  - DOMAIN-SUFFIX,blobstore.apple.com,$app_name
+  - DOMAIN,safebrowsing.urlsec.qq.com,DIRECT
+  - DOMAIN-SUFFIX,apple.com,DIRECT
+  - DOMAIN-SUFFIX,apple-cloudkit.com,DIRECT
+  - DOMAIN-SUFFIX,icloud.com,DIRECT
+  - DOMAIN-SUFFIX,icloud-content.com,DIRECT
+  - DOMAIN-SUFFIX,mzstatic.com,DIRECT
+  - DOMAIN-SUFFIX,aaplimg.com,DIRECT
+  - DOMAIN-SUFFIX,cdn-apple.com,DIRECT
+  - DOMAIN-SUFFIX,akadns.net,DIRECT
+  # China direct (KEYWORD)
+  - DOMAIN-KEYWORD,baidu,DIRECT
+  - DOMAIN-KEYWORD,alibaba,DIRECT
+  - DOMAIN-KEYWORD,alicdn,DIRECT
+  - DOMAIN-KEYWORD,alipay,DIRECT
+  - DOMAIN-KEYWORD,taobao,DIRECT
+  - DOMAIN-KEYWORD,tencent,DIRECT
+  - DOMAIN-KEYWORD,bilibili,DIRECT
+  - DOMAIN-KEYWORD,weibo,DIRECT
+  - DOMAIN-KEYWORD,douyin,DIRECT
+  - DOMAIN-KEYWORD,bytedance,DIRECT
+  - DOMAIN-KEYWORD,xiaomi,DIRECT
+  - DOMAIN-KEYWORD,huawei,DIRECT
+  - DOMAIN-KEYWORD,netease,DIRECT
+  - DOMAIN-KEYWORD,meituan,DIRECT
+  - DOMAIN-KEYWORD,pinduoduo,DIRECT
+  - DOMAIN-KEYWORD,kuaishou,DIRECT
+  - DOMAIN-KEYWORD,jingdong,DIRECT
+  - DOMAIN-KEYWORD,officecdn,DIRECT
+  # China direct (SUFFIX)
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - DOMAIN-SUFFIX,weixin.com,DIRECT
+  - DOMAIN-SUFFIX,wechat.com,DIRECT
+  - DOMAIN-SUFFIX,gtimg.com,DIRECT
+  - DOMAIN-SUFFIX,qcloud.com,DIRECT
+  - DOMAIN-SUFFIX,myqcloud.com,DIRECT
+  - DOMAIN-SUFFIX,qpic.cn,DIRECT
+  - DOMAIN-SUFFIX,tenpay.com,DIRECT
+  - DOMAIN-SUFFIX,tmall.com,DIRECT
+  - DOMAIN-SUFFIX,jd.com,DIRECT
+  - DOMAIN-SUFFIX,360buyimg.com,DIRECT
+  - DOMAIN-SUFFIX,iqiyi.com,DIRECT
+  - DOMAIN-SUFFIX,youku.com,DIRECT
+  - DOMAIN-SUFFIX,ykimg.com,DIRECT
+  - DOMAIN-SUFFIX,tudou.com,DIRECT
+  - DOMAIN-SUFFIX,acfun.tv,DIRECT
+  - DOMAIN-SUFFIX,hdslb.com,DIRECT
+  - DOMAIN-SUFFIX,sohu.com,DIRECT
+  - DOMAIN-SUFFIX,sogou.com,DIRECT
+  - DOMAIN-SUFFIX,zhihu.com,DIRECT
+  - DOMAIN-SUFFIX,zhimg.com,DIRECT
+  - DOMAIN-SUFFIX,douban.com,DIRECT
+  - DOMAIN-SUFFIX,doubanio.com,DIRECT
+  - DOMAIN-SUFFIX,163.com,DIRECT
+  - DOMAIN-SUFFIX,126.com,DIRECT
+  - DOMAIN-SUFFIX,126.net,DIRECT
+  - DOMAIN-SUFFIX,127.net,DIRECT
+  - DOMAIN-SUFFIX,yeah.net,DIRECT
+  - DOMAIN-SUFFIX,sina.com,DIRECT
+  - DOMAIN-SUFFIX,sinaimg.cn,DIRECT
+  - DOMAIN-SUFFIX,ximalaya.com,DIRECT
+  - DOMAIN-SUFFIX,xmcdn.com,DIRECT
+  - DOMAIN-SUFFIX,csdn.net,DIRECT
+  - DOMAIN-SUFFIX,gitee.com,DIRECT
+  - DOMAIN-SUFFIX,jianshu.com,DIRECT
+  - DOMAIN-SUFFIX,cnblogs.com,DIRECT
+  - DOMAIN-SUFFIX,oschina.net,DIRECT
+  - DOMAIN-SUFFIX,ele.me,DIRECT
+  - DOMAIN-SUFFIX,ctrip.com,DIRECT
+  - DOMAIN-SUFFIX,suning.com,DIRECT
+  - DOMAIN-SUFFIX,dianping.com,DIRECT
+  - DOMAIN-SUFFIX,amap.com,DIRECT
+  - DOMAIN-SUFFIX,autonavi.com,DIRECT
+  - DOMAIN-SUFFIX,mi.com,DIRECT
+  - DOMAIN-SUFFIX,miui.com,DIRECT
+  - DOMAIN-SUFFIX,ifeng.com,DIRECT
+  - DOMAIN-SUFFIX,youdao.com,DIRECT
+  - DOMAIN-SUFFIX,iciba.com,DIRECT
+  - DOMAIN-SUFFIX,xunlei.com,DIRECT
+  - DOMAIN-SUFFIX,smzdm.com,DIRECT
+  - DOMAIN-SUFFIX,sspai.com,DIRECT
+  - DOMAIN-SUFFIX,36kr.com,DIRECT
+  - DOMAIN-SUFFIX,speedtest.net,DIRECT
+  - DOMAIN-SUFFIX,microsoft.com,DIRECT
+  - DOMAIN-SUFFIX,microsoftonline.com,DIRECT
+  - DOMAIN-SUFFIX,office.com,DIRECT
+  - DOMAIN-SUFFIX,office365.com,DIRECT
+  - DOMAIN-SUFFIX,windows.com,DIRECT
+  - DOMAIN-SUFFIX,windowsupdate.com,DIRECT
+  - DOMAIN-SUFFIX,live.com,DIRECT
+  - DOMAIN-SUFFIX,msn.com,DIRECT
+  - DOMAIN-SUFFIX,cn,DIRECT
+  - DOMAIN-KEYWORD,-cn,DIRECT
+  # Blocked services (KEYWORD)
   - DOMAIN-KEYWORD,google,$app_name
   - DOMAIN-KEYWORD,gmail,$app_name
   - DOMAIN-KEYWORD,youtube,$app_name
@@ -180,8 +239,8 @@ rules:
   - DOMAIN-KEYWORD,anthropic,$app_name
   - DOMAIN-KEYWORD,netflix,$app_name
   - DOMAIN-KEYWORD,spotify,$app_name
-
-  # 关键字无法覆盖的被墙域名
+  - DOMAIN-KEYWORD,amazon,$app_name
+  # Blocked services (SUFFIX)
   - DOMAIN-SUFFIX,t.co,$app_name
   - DOMAIN-SUFFIX,x.com,$app_name
   - DOMAIN-SUFFIX,twimg.com,$app_name
@@ -192,7 +251,6 @@ rules:
   - DOMAIN-SUFFIX,gstatic.com,$app_name
   - DOMAIN-SUFFIX,ggpht.com,$app_name
   - DOMAIN-SUFFIX,googlevideo.com,$app_name
-  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,$app_name
   - DOMAIN-SUFFIX,v2ex.com,$app_name
   - DOMAIN-SUFFIX,medium.com,$app_name
   - DOMAIN-SUFFIX,reddit.com,$app_name
@@ -200,31 +258,29 @@ rules:
   - DOMAIN-SUFFIX,imgur.com,$app_name
   - DOMAIN-SUFFIX,pixiv.net,$app_name
   - DOMAIN-SUFFIX,nytimes.com,$app_name
+  - DOMAIN-SUFFIX,nyt.com,$app_name
   - DOMAIN-SUFFIX,bbc.com,$app_name
   - DOMAIN-SUFFIX,bbc.co.uk,$app_name
   - DOMAIN-SUFFIX,steamcommunity.com,$app_name
   - DOMAIN-SUFFIX,twitch.tv,$app_name
   - DOMAIN-SUFFIX,vimeo.com,$app_name
   - DOMAIN-SUFFIX,tumblr.com,$app_name
-  - DOMAIN-SUFFIX,line-apps.com,$app_name
   - DOMAIN-SUFFIX,linkedin.com,$app_name
+  - DOMAIN-SUFFIX,licdn.com,$app_name
   - DOMAIN-SUFFIX,mega.nz,$app_name
   - DOMAIN-SUFFIX,archive.org,$app_name
-
-  # Telegram IP 段（IP 层封锁，域名规则无法覆盖）
+  - DOMAIN-SUFFIX,wikimedia.org,$app_name
+  - DOMAIN-SUFFIX,soundcloud.com,$app_name
+  # Telegram IP
   - IP-CIDR,91.108.4.0/22,$app_name,no-resolve
   - IP-CIDR,91.108.8.0/21,$app_name,no-resolve
+  - IP-CIDR,91.108.12.0/22,$app_name,no-resolve
   - IP-CIDR,91.108.16.0/22,$app_name,no-resolve
   - IP-CIDR,91.108.56.0/22,$app_name,no-resolve
   - IP-CIDR,149.154.160.0/20,$app_name,no-resolve
   - IP-CIDR6,2001:67c:4e8::/48,$app_name,no-resolve
   - IP-CIDR6,2001:b28:f23d::/48,$app_name,no-resolve
   - IP-CIDR6,2001:b28:f23f::/48,$app_name,no-resolve
-
-  # ===== 国内直连 =====
-  - DOMAIN-SUFFIX,cn,DIRECT
-  - DOMAIN-KEYWORD,-cn,DIRECT
+  # Fallback
   - GEOIP,CN,DIRECT
-
-  # ===== 最终规则（未匹配流量走代理） =====
   - MATCH,$app_name
