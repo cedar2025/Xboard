@@ -44,6 +44,7 @@ docker compose up -d
 
 ### Development Guides
 - [Plugin Development Guide](./docs/en/development/plugin-development-guide.md) - Complete guide for developing XBoard plugins
+- [High-Volume Mail Dispatch](./docs/en/development/high-volume-mail.md) - Configure the queue driven mailer to safely send 100k+ emails
 
 ### Deployment Guides
 - [Deploy with 1Panel](./docs/en/installation/1panel.md)
