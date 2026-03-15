@@ -30,6 +30,22 @@ services:
     command: php artisan horizon
     depends_on:
       - redis
+  ws-server:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./plugins:/www/plugins
+    restart: on-failure
+    # network_mode: host
+    command: php artisan ws-server start
+    depends_on:
+      - redis
+    restart: on-failure
+    ports:
+      - 8076:8076
   redis:
     image: redis:8.0-alpine
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
