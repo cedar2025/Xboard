@@ -60,7 +60,7 @@ return [
 
     'prefix' => env(
         'HORIZON_PREFIX',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_horizon:'
+        Str::slug(env('APP_NAME', 'laravel'), '_') . '_horizon:'
     ),
 
     /*
@@ -192,7 +192,7 @@ return [
             ],
             'notification' => [
                 'connection' => 'redis',
-                'queue' => ['send_email', 'send_telegram', 'send_email_mass'],
+                'queue' => ['send_email', 'send_telegram', 'send_email_mass', 'node_sync'],
                 'balance' => 'auto',
                 'autoScalingStrategy' => 'size',
                 'minProcesses' => 1,
@@ -214,6 +214,7 @@ return [
                     'send_email_mass',
                     'send_telegram',
                     'user_alive_sync',
+                    'node_sync'
                 ],
                 'balance' => 'auto',
                 'minProcesses' => 1,
