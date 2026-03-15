@@ -58,7 +58,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=sha,format=long
+            type=sha,format=short,prefix=,enable=true
             type=raw,value=new,enable=${{ github.ref == 'refs/heads/master' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=raw,value=${{ steps.get_version.outputs.version }}
@@ -98,12 +98,3 @@ jobs:
           allow: |
             network.host
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.4.0
-        with:
-          cosign-release: 'v2.2.2'
-
-      - name: Sign image
-        if: steps.build-and-push.outputs.digest != ''
-        run: |
-          echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes "{}@${{ steps.build-and-push.outputs.digest }}"
