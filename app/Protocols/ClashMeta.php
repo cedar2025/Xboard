@@ -194,7 +194,7 @@ class ClashMeta extends AbstractProtocol
                 ->filter()
                 ->mapWithKeys(function ($pair) {
                     if (!str_contains($pair, '=')) {
-                        return [];
+                        return [trim($pair) => true];
                     }
                     [$key, $value] = explode('=', $pair, 2);
                     return [trim($key) => trim($value)];
@@ -204,28 +204,42 @@ class ClashMeta extends AbstractProtocol
             // 根据插件类型进行字段映射
             switch ($plugin) {
                 case 'obfs':
-                    $array['plugin-opts'] = [
-                        'mode' => $parsedOpts['obfs'],
-                        'host' => $parsedOpts['obfs-host'],
-                    ];
-
-                    // 可选path参数
-                    if (isset($parsedOpts['path'])) {
-                        $array['plugin-opts']['path'] = $parsedOpts['path'];
-                    }
+                case 'obfs-local':
+                    $array['plugin'] = 'obfs';
+                    $array['plugin-opts'] = array_filter([
+                        'mode' => $parsedOpts['obfs'] ?? ($parsedOpts['mode'] ?? 'http'),
+                        'host' => $parsedOpts['obfs-host'] ?? ($parsedOpts['host'] ?? 'www.bing.com'),
+                    ]);
                     break;
 
                 case 'v2ray-plugin':
-                    $array['plugin-opts'] = [
+                    $array['plugin-opts'] = array_filter([
                         'mode' => $parsedOpts['mode'] ?? 'websocket',
-                        'tls' => isset($parsedOpts['tls']) && $parsedOpts['tls'] == 'true',
-                        'host' => $parsedOpts['host'] ?? '',
+                        'tls' => isset($parsedOpts['tls']) || isset($parsedOpts['server']),
+                        'host' => $parsedOpts['host'] ?? null,
                         'path' => $parsedOpts['path'] ?? '/',
-                    ];
+                        'mux' => isset($parsedOpts['mux']) ? true : null,
+                        'headers' => isset($parsedOpts['host']) ? ['Host' => $parsedOpts['host']] : null
+                    ], fn($v) => $v !== null);
+                    break;
+
+                case 'shadow-tls':
+                    $array['plugin-opts'] = array_filter([
+                        'host' => $parsedOpts['host'] ?? null,
+                        'password' => $parsedOpts['password'] ?? null,
+                        'version' => isset($parsedOpts['version']) ? (int)$parsedOpts['version'] : 2
+                    ], fn($v) => $v !== null);
+                    break;
+
+                case 'restls':
+                    $array['plugin-opts'] = array_filter([
+                        'host' => $parsedOpts['host'] ?? null,
+                        'password' => $parsedOpts['password'] ?? null,
+                        'restls-script' => $parsedOpts['restls-script'] ?? '123'
+                    ], fn($v) => $v !== null);
                     break;
 
                 default:
-                    // 对于其他插件，直接使用解析出的键值对
                     $array['plugin-opts'] = $parsedOpts;
             }
         }
