@@ -33,6 +33,16 @@ sudo bash quick_start.sh
 
 2. Configure Reverse Proxy:
 ```nginx
+location /ws/ {
+    proxy_pass http://127.0.0.1:8076;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 60s;
+}
+
 location ^~ / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
@@ -49,6 +59,7 @@ location ^~ / {
     proxy_cache off;
 }
 ```
+> The `/ws/` location enables WebSocket real-time node synchronization via `xboard:ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
 
 3. Install Xboard:
 ```bash
@@ -175,4 +186,6 @@ docker compose up -d
 
 - ⚠️ Ensure firewall is enabled to prevent port 7001 exposure to public
 - Service restart is required after code modifications
-- SSL certificate configuration is recommended for secure access 
+- SSL certificate configuration is recommended for secure access
+
+> The node will automatically detect WebSocket availability during handshake. No extra configuration is needed on the node side. 

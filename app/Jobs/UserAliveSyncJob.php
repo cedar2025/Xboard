@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Services\UserOnlineService;
 use Illuminate\Support\Facades\Log;
 
-class UpdateAliveDataJob implements ShouldQueue
+class UserAliveSyncJob implements ShouldQueue
 {
   use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -25,7 +25,7 @@ class UpdateAliveDataJob implements ShouldQueue
     private readonly string $nodeType,
     private readonly int $nodeId
   ) {
-    $this->onQueue('online_sync');
+    $this->onQueue('user_alive_sync');
   }
 
   public function handle(): void
@@ -97,7 +97,7 @@ class UpdateAliveDataJob implements ShouldQueue
         }
       }
     } catch (\Throwable $e) {
-      Log::error('UpdateAliveDataJob failed', [
+      Log::error('UserAliveSyncJob failed', [
         'error' => $e->getMessage(),
       ]);
       $this->fail($e);

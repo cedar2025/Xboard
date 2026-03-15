@@ -104,9 +104,9 @@ class CheckCommission extends Command
             $commissionBalance = $order->commission_balance * ($commissionShareLevels[$l] / 100);
             if (!$commissionBalance) continue;
             if ((int)admin_setting('withdraw_close_enable', 0)) {
-                $inviter->balance = $inviter->balance + $commissionBalance;
+                $inviter->increment('balance', $commissionBalance);
             } else {
-                $inviter->commission_balance = $inviter->commission_balance + $commissionBalance;
+                $inviter->increment('commission_balance', $commissionBalance);
             }
             if (!$inviter->save()) {
                 DB::rollBack();
