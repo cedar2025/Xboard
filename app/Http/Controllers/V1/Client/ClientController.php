@@ -63,7 +63,7 @@ class ClientController extends Controller
         $requestedTypes = $this->parseRequestedTypes($request->input('types'));
         $filterKeywords = $this->parseFilterKeywords($request->input('filter'));
 
-        $protocolClassName = app('protocols.manager')->matchProtocolClassName($clientInfo['flag'])
+        $protocolClassName = app('protocols.manager')->matchProtocolClassName($clientInfo['name'])
             ?? General::class;
 
         $serversFiltered = $this->filterServers(
