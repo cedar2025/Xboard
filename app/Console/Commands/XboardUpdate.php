@@ -45,7 +45,7 @@ class XboardUpdate extends Command
     public function handle()
     {
         $this->info('正在导入数据库请稍等...');
-        Artisan::call("migrate");
+        Artisan::call("migrate", ['--force' => true]);
         $this->info(Artisan::output());
         $this->info('正在检查内置插件文件...');
         XboardInstall::restoreProtectedPlugins($this);
