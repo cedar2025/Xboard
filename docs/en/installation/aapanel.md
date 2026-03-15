@@ -184,7 +184,7 @@ Add a WebSocket daemon process in aaPanel Supervisor:
 - Name: `Xboard-WS`
 - Run User: `www`
 - Running Directory: Site directory
-- Start Command: `php artisan xboard:ws-server start`
+- Start Command: `php artisan ws-server start`
 - Process Count: 1
 
 ### 2. Configure Nginx

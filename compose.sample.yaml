@@ -28,7 +28,7 @@ services:
       - ./:/www/
     restart: always
     network_mode: host
-    command: php artisan xboard:ws-server start
+    command: php artisan ws-server start
     depends_on:
       - redis
   redis:

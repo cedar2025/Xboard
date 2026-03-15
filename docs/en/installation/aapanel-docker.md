@@ -110,7 +110,7 @@ location ^~ / {
     proxy_cache off;
 }
 ```
-> The `/ws/` location enables real-time node synchronization via `xboard:ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
+> The `/ws/` location enables real-time node synchronization via `ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
 
 ## Maintenance Guide
 
