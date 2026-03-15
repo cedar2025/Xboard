@@ -41,6 +41,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property-read int|null $last_check_at 最后检查时间（Unix时间戳）
  * @property-read int|null $last_push_at 最后推送时间（Unix时间戳）
  * @property-read int $online 在线用户数
+ * @property-read int $online_conn 在线连接数
+ * @property-read array|null $metrics 节点指标指标
  * @property-read int $is_online 是否在线（1在线 0离线）
  * @property-read string $available_status 可用状态描述
  * @property-read string $cache_key 缓存键
@@ -112,6 +114,9 @@ class Server extends Model
         'route_ids' => 'array',
         'tags' => 'array',
         'protocol_settings' => 'array',
+        'custom_outbounds' => 'array',
+        'custom_routes' => 'array',
+        'cert_config' => 'array',
         'last_check_at' => 'integer',
         'last_push_at' => 'integer',
         'show' => 'boolean',
@@ -240,7 +245,8 @@ class Server extends Model
             'tls_settings' => [
                 'type' => 'object',
                 'fields' => [
-                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false],
+                    'server_name' => ['type' => 'string', 'default' => null]
                 ]
             ]
         ],
@@ -436,6 +442,32 @@ class Server extends Model
                     return Helper::getServerKey($this->created_at, 16);
                 }
                 return null;
+            }
+        );
+    }
+
+    /**
+     * 指标指标访问器
+     */
+    protected function metrics(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_METRICS", $serverId));
+            }
+        );
+    }
+
+    /**
+     * 在线连接数访问器
+     */
+    protected function onlineConn(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return $this->metrics['active_connections'] ?? 0;
             }
         );
     }

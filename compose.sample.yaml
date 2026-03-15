@@ -21,6 +21,16 @@ services:
     command: php artisan horizon
     depends_on:
       - redis
+  ws-server:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./:/www/
+    restart: always
+    network_mode: host
+    command: php artisan xboard:ws-server start
+    depends_on:
+      - redis
   redis:
     image: redis:7-alpine
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777

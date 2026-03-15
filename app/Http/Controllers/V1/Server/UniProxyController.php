@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\UpdateAliveDataJob;
+use App\Jobs\UserAliveSyncJob;
+use App\Services\NodeSyncService;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
@@ -88,116 +89,12 @@ class UniProxyController extends Controller
     public function config(Request $request)
     {
         $node = $this->getNodeInfo($request);
-        $nodeType = $node->type;
-        $protocolSettings = $node->protocol_settings;
-
-        $serverPort = $node->server_port;
-        $host = $node->host;
-
-        $baseConfig = [
-            'protocol' => $nodeType,
-            'listen_ip' => '0.0.0.0',
-            'server_port' => (int) $serverPort,
-            'network' => data_get($protocolSettings, 'network'),
-            'networkSettings' => data_get($protocolSettings, 'network_settings') ?: null,
-        ];
-
-        $response = match ($nodeType) {
-            'shadowsocks' => [
-                ...$baseConfig,
-                'cipher' => $protocolSettings['cipher'],
-                'plugin' => $protocolSettings['plugin'],
-                'plugin_opts' => $protocolSettings['plugin_opts'],
-                'server_key' => match ($protocolSettings['cipher']) {
-                        '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
-                        '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
-                        default => null
-                    }
-            ],
-            'vmess' => [
-                ...$baseConfig,
-                'tls' => (int) $protocolSettings['tls']
-            ],
-            'trojan' => [
-                ...$baseConfig,
-                'host' => $host,
-                'server_name' => $protocolSettings['server_name'],
-            ],
-            'vless' => [
-                ...$baseConfig,
-                'tls' => (int) $protocolSettings['tls'],
-                'flow' => $protocolSettings['flow'],
-                'tls_settings' =>
-                        match ((int) $protocolSettings['tls']) {
-                            2 => $protocolSettings['reality_settings'],
-                            default => $protocolSettings['tls_settings']
-                        }
-            ],
-            'hysteria' => [
-                ...$baseConfig,
-                'server_port' => (int) $serverPort,
-                'version' => (int) $protocolSettings['version'],
-                'host' => $host,
-                'server_name' => $protocolSettings['tls']['server_name'],
-                'up_mbps' => (int) $protocolSettings['bandwidth']['up'],
-                'down_mbps' => (int) $protocolSettings['bandwidth']['down'],
-                ...match ((int) $protocolSettings['version']) {
-                        1 => ['obfs' => $protocolSettings['obfs']['password'] ?? null],
-                        2 => [
-                            'obfs' => $protocolSettings['obfs']['open'] ? $protocolSettings['obfs']['type'] : null,
-                            'obfs-password' => $protocolSettings['obfs']['password'] ?? null
-                        ],
-                        default => []
-                    }
-            ],
-            'tuic' => [
-                ...$baseConfig,
-                'version' => (int) $protocolSettings['version'],
-                'server_port' => (int) $serverPort,
-                'server_name' => $protocolSettings['tls']['server_name'],
-                'congestion_control' => $protocolSettings['congestion_control'],
-                'auth_timeout' => '3s',
-                'zero_rtt_handshake' => false,
-                'heartbeat' => "3s",
-            ],
-            'anytls' => [
-                ...$baseConfig,
-                'server_port' => (int) $serverPort,
-                'server_name' => $protocolSettings['tls']['server_name'],
-                'padding_scheme' => $protocolSettings['padding_scheme'],
-            ],
-            'socks' => [
-                ...$baseConfig,
-                'server_port' => (int) $serverPort,
-            ],
-            'naive' => [
-                ...$baseConfig,
-                'server_port' => (int) $serverPort,
-                'tls' => (int) $protocolSettings['tls'],
-                'tls_settings' => $protocolSettings['tls_settings']
-            ],
-            'http' => [
-                ...$baseConfig,
-                'server_port' => (int) $serverPort,
-                'tls' => (int) $protocolSettings['tls'],
-                'tls_settings' => $protocolSettings['tls_settings']
-            ],
-            'mieru' => [
-                ...$baseConfig,
-                'server_port' => (string) $serverPort,
-                'protocol' => (int) $protocolSettings['protocol'],
-            ],
-            default => []
-        };
+        $response = ServerService::buildNodeConfig($node);
 
         $response['base_config'] = [
             'push_interval' => (int) admin_setting('server_push_interval', 60),
             'pull_interval' => (int) admin_setting('server_pull_interval', 60)
         ];
-
-        if (!empty($node['route_ids'])) {
-            $response['routes'] = ServerService::getRoutes($node['route_ids']);
-        }
 
         $eTag = sha1(json_encode($response));
         if (strpos($request->header('If-None-Match', ''), $eTag) !== false) {
@@ -226,7 +123,7 @@ class UniProxyController extends Controller
                 'error' => 'Invalid online data'
             ], 400);
         }
-        UpdateAliveDataJob::dispatch($data, $node->type, $node->id);
+        UserAliveSyncJob::dispatch($data, $node->type, $node->id);
         return response()->json(['data' => true]);
     }
 

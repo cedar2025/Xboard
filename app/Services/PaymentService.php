@@ -25,10 +25,18 @@ class PaymentService
         }
 
         if ($id) {
-            $payment = Payment::find($id)->toArray();
+            $paymentModel = Payment::find($id);
+            if (!$paymentModel) {
+                throw new ApiException('payment not found');
+            }
+            $payment = $paymentModel->toArray();
         }
         if ($uuid) {
-            $payment = Payment::where('uuid', $uuid)->first()->toArray();
+            $paymentModel = Payment::where('uuid', $uuid)->first();
+            if (!$paymentModel) {
+                throw new ApiException('payment not found');
+            }
+            $payment = $paymentModel->toArray();
         }
 
         $this->config = [];

@@ -51,6 +51,8 @@ class ConfigSave extends FormRequest
         'server_pull_interval' => 'integer',
         'server_push_interval' => 'integer',
         'device_limit_mode' => 'integer',
+        'server_ws_enable' => 'boolean',
+        'server_ws_url' => 'nullable|url',
         // frontend
         'frontend_theme' => '',
         'frontend_theme_sidebar' => 'nullable|in:dark,light',

@@ -143,6 +143,8 @@ class ConfigController extends Controller
                 'server_pull_interval' => admin_setting('server_pull_interval', 60),
                 'server_push_interval' => admin_setting('server_push_interval', 60),
                 'device_limit_mode' => (int) admin_setting('device_limit_mode', 0),
+                'server_ws_enable' => (bool) admin_setting('server_ws_enable', 1),
+                'server_ws_url' => admin_setting('server_ws_url', ''),
             ],
             'email' => [
                 'email_template' => admin_setting('email_template', 'default'),
