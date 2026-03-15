@@ -16,7 +16,7 @@ use Workerman\Worker;
 
 class NodeWebSocketServer extends Command
 {
-    protected $signature = 'xboard:ws-server
+    protected $signature = 'ws-server
         {action=start : start | stop | restart | reload | status}
         {--d : Start in daemon mode}
         {--host=0.0.0.0 : Listen address}
