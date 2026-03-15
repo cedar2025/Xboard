@@ -22,7 +22,7 @@ class NodeUserSyncJob implements ShouldQueue
         private readonly string $action,
         private readonly ?int $oldGroupId = null
     ) {
-        $this->onQueue('notification');
+        $this->onQueue('node_sync');
     }
 
     public function handle(): void
