@@ -10,6 +10,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\NodeSyncService;
 use App\Services\UserService;
 use App\Traits\QueryOperators;
 use App\Utils\Helper;
@@ -482,7 +483,7 @@ class UserController extends Controller
             Log::error($e);
             return $this->fail([500, '处理失败']);
         }
-
+        NodeSyncService::notifyUsersUpdated();
         return $this->success(true);
     }
 

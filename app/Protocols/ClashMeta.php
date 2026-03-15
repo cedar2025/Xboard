@@ -35,6 +35,7 @@ class ClashMeta extends AbstractProtocol
                 'grpc' => '0.0.0',
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
+                'httpupgrade' => '0.0.0',
             ],
             'strict' => true,
         ],
@@ -246,7 +247,7 @@ class ClashMeta extends AbstractProtocol
         ];
 
         if (data_get($protocol_settings, 'tls')) {
-            $array['tls'] = true;
+            $array['tls'] = (bool) data_get($protocol_settings, 'tls');
             $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
@@ -274,6 +275,22 @@ class ClashMeta extends AbstractProtocol
                 $array['network'] = 'grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
             default:
                 break;
@@ -322,6 +339,19 @@ class ClashMeta extends AbstractProtocol
         }
 
         switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = 'tcp';
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                if ($headerType === 'http') {
+                    $array['network'] = 'http';
+                    if ($httpOpts = array_filter([
+                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                    ])) {
+                        $array['http-opts'] = $httpOpts;
+                    }
+                }
+                break;
             case 'ws':
                 $array['network'] = 'ws';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
@@ -333,6 +363,22 @@ class ClashMeta extends AbstractProtocol
                 $array['network'] = 'grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
             default:
                 break;
@@ -373,6 +419,22 @@ class ClashMeta extends AbstractProtocol
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                break;
             default:
                 $array['network'] = 'tcp';
                 break;
@@ -395,6 +457,9 @@ class ClashMeta extends AbstractProtocol
         ];
         if (isset($server['ports'])) {
             $array['ports'] = $server['ports'];
+        }
+        if ($hopInterval = data_get($protocol_settings, 'hop_interval')) {
+            $array['hop-interval'] = (int) $hopInterval;
         }
         switch (data_get($protocol_settings, 'version')) {
             case 1:

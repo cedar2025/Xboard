@@ -20,6 +20,7 @@ class General extends AbstractProtocol
         Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_TUIC,
+        Server::TYPE_HTTP,
     ];
 
     protected $protocolRequirements = [
@@ -43,6 +44,7 @@ class General extends AbstractProtocol
                 Server::TYPE_ANYTLS => self::buildAnyTLS($item['password'], $item),
                 Server::TYPE_SOCKS => self::buildSocks($item['password'], $item),
                 Server::TYPE_TUIC => self::buildTuic($item['password'], $item),
+                Server::TYPE_HTTP => self::buildHttp($item['password'], $item),
                 default => '',
             };
         }
@@ -113,6 +115,21 @@ class General extends AbstractProtocol
                 if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config['path'] = $path;
                 break;
+            case 'h2':
+                $config['net'] = 'h2';
+                $config['type'] = 'h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config['host'] = is_array($host) ? implode(',', $host) : $host;
+                break;
+            case 'httpupgrade':
+                $config['net'] = 'httpupgrade';
+                $config['type'] = 'httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                break;
             default:
                 break;
         }
@@ -166,6 +183,13 @@ class General extends AbstractProtocol
                 if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config['serviceName'] = $path;
                 break;
+            case 'h2':
+                $config['type'] = 'http';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($h2Host = data_get($protocol_settings, 'network_settings.host'))
+                    $config['host'] = is_array($h2Host) ? implode(',', $h2Host) : $h2Host;
+                break;
             case 'kcp':
                 if ($path = data_get($protocol_settings, 'network_settings.seed'))
                     $config['path'] = $path;
@@ -215,6 +239,19 @@ class General extends AbstractProtocol
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['serviceName'] = $serviceName;
                 break;
+            case 'h2':
+                $array['type'] = 'http';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['host'] = is_array($host) ? implode(',', $host) : $host;
+                break;
+            case 'httpupgrade':
+                $array['type'] = 'httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['path'] = $path;
+                $array['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                break;
             default:
                 break;
         }
@@ -230,31 +267,40 @@ class General extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $params = [];
-        // Return empty if version is not 2
-        if ($server['protocol_settings']['version'] !== 2) {
-            return '';
-        }
+        $version = data_get($protocol_settings, 'version', 2);
 
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $params['sni'] = $serverName;
-            $params['security'] = 'tls';
         }
+        $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure') ? '1' : '0';
 
-        if (data_get($protocol_settings, 'obfs.open')) {
-            $params['obfs'] = 'salamander';
-            $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
-        }
-        if (isset($server['ports'])) {
-            $params['mport'] = $server['ports'];
-        }
-
-        $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
-
-        $query = http_build_query($params);
         $name = rawurlencode($server['name']);
         $addr = Helper::wrapIPv6($server['host']);
 
-        $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
+        if ($version === 2) {
+            if (data_get($protocol_settings, 'obfs.open')) {
+                $params['obfs'] = 'salamander';
+                $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
+            }
+            if (isset($server['ports'])) {
+                $params['mport'] = $server['ports'];
+            }
+
+            $query = http_build_query($params);
+            $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
+        } else {
+            $params['protocol'] = 'udp';
+            $params['auth'] = $password;
+            if ($upMbps = data_get($protocol_settings, 'bandwidth.up'))
+                $params['upmbps'] = $upMbps;
+            if ($downMbps = data_get($protocol_settings, 'bandwidth.down'))
+                $params['downmbps'] = $downMbps;
+            if ($obfsPassword = data_get($protocol_settings, 'obfs.password'))
+                $params['obfsParam'] = $obfsPassword;
+
+            $query = http_build_query($params);
+            $uri = "hysteria://{$addr}:{$server['port']}?{$query}#{$name}";
+        }
         $uri .= "\r\n";
 
         return $uri;
@@ -332,5 +378,29 @@ class General extends AbstractProtocol
         $name = rawurlencode($server['name']);
         $credentials = base64_encode("{$password}:{$password}");
         return "socks://{$credentials}@{$server['host']}:{$server['port']}#{$name}\r\n";
+    }
+
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $name = rawurlencode($server['name']);
+        $addr = Helper::wrapIPv6($server['host']);
+        $credentials = base64_encode("{$password}:{$password}");
+
+        $params = [];
+        if (data_get($protocol_settings, 'tls')) {
+            $params['security'] = 'tls';
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $params['sni'] = $serverName;
+            }
+            $params['allowInsecure'] = data_get($protocol_settings, 'tls_settings.allow_insecure') ? '1' : '0';
+        }
+
+        $uri = "http://{$credentials}@{$addr}:{$server['port']}";
+        if (!empty($params)) {
+            $uri .= '?' . http_build_query($params);
+        }
+        $uri .= "#{$name}\r\n";
+        return $uri;
     }
 }

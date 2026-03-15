@@ -20,6 +20,7 @@ class SingBox extends AbstractProtocol
         Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
+        Server::TYPE_MIERU,
     ];
     private $config;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
@@ -62,6 +63,9 @@ class SingBox extends AbstractProtocol
             ],
             'anytls' => [
                 'base_version' => '1.12.0'
+            ],
+            'mieru' => [
+                'base_version' => '1.12.0'
             ]
         ]
     ];
@@ -72,6 +76,7 @@ class SingBox extends AbstractProtocol
         $this->config = $this->loadConfig();
         $this->buildOutbounds();
         $this->buildRule();
+        $this->adaptConfigForVersion();
         $user = $this->user;
 
         return response()
@@ -133,6 +138,10 @@ class SingBox extends AbstractProtocol
                 $httpConfig = $this->buildHttp($this->user['uuid'], $item);
                 $proxies[] = $httpConfig;
             }
+            if ($item['type'] === Server::TYPE_MIERU) {
+                $mieruConfig = $this->buildMieru($this->user['uuid'], $item);
+                $proxies[] = $mieruConfig;
+            }
         }
         foreach ($outbounds as &$outbound) {
             if (in_array($outbound['type'], ['urltest', 'selector'])) {
@@ -159,6 +168,91 @@ class SingBox extends AbstractProtocol
         //     'outbound' => 'direct',
         // ]);
         $this->config['route']['rules'] = $rules;
+    }
+
+    /**
+     * 根据客户端版本自适应配置格式
+     * 
+     * sing-box 版本断点:
+     * - 1.8.0: rule_set 替代 geoip/geosite db, cache_file 替代 clash_api.cache_file
+     * - 1.10.0: address 数组替代 inet4_address/inet6_address
+     * - 1.11.0: 移除 endpoint_independent_nat, sniff_override_destination
+     */
+    protected function adaptConfigForVersion(): void
+    {
+        $coreVersion = $this->getSingBoxCoreVersion();
+        if (empty($coreVersion)) {
+            return;
+        }
+
+        // >= 1.11.0: 移除已废弃字段，避免 "配置已过时" 警告
+        if (version_compare($coreVersion, '1.11.0', '>=')) {
+            $this->removeDeprecatedFieldsV111();
+        }
+
+        // < 1.10.0: address 数组 → inet4_address/inet6_address
+        if (version_compare($coreVersion, '1.10.0', '<')) {
+            $this->convertAddressToLegacy();
+        }
+    }
+
+    /**
+     * 获取实际 sing-box 核心版本
+     * 
+     * sing-box 客户端直接报核心版本，hiddify/sfm 等 wrapper 客户端
+     * 报的是 app 版本，需要映射到对应的 sing-box 核心版本
+     */
+    private function getSingBoxCoreVersion(): ?string
+    {
+        if (empty($this->clientVersion)) {
+            return null;
+        }
+
+        // sing-box 原生客户端，版本即核心版本
+        if ($this->clientName === 'sing-box') {
+            return $this->clientVersion;
+        }
+
+        // Hiddify/SFM 等 wrapper 默认内置较新的 sing-box 核心
+        // 保守策略: 直接按最新格式输出(移除废弃字段)，因为这些客户端普遍内置 >= 1.11 的核心
+        return '1.11.0';
+    }
+
+    /**
+     * sing-box >= 1.11.0: 移除废弃字段
+     */
+    private function removeDeprecatedFieldsV111(): void
+    {
+        if (!isset($this->config['inbounds'])) {
+            return;
+        }
+        foreach ($this->config['inbounds'] as &$inbound) {
+            unset($inbound['endpoint_independent_nat']);
+            unset($inbound['sniff_override_destination']);
+        }
+    }
+
+    /**
+     * sing-box < 1.10.0: 将 tun address 数组转换为 inet4_address/inet6_address
+     */
+    private function convertAddressToLegacy(): void
+    {
+        if (!isset($this->config['inbounds'])) {
+            return;
+        }
+        foreach ($this->config['inbounds'] as &$inbound) {
+            if ($inbound['type'] !== 'tun' || !isset($inbound['address'])) {
+                continue;
+            }
+            foreach ($inbound['address'] as $addr) {
+                if (str_contains($addr, ':')) {
+                    $inbound['inet6_address'] = $addr;
+                } else {
+                    $inbound['inet4_address'] = $addr;
+                }
+            }
+            unset($inbound['address']);
+        }
     }
 
     protected function buildShadowsocks($password, $server)
@@ -191,14 +285,16 @@ class SingBox extends AbstractProtocol
             'uuid' => $uuid,
             'security' => 'auto',
             'alter_id' => 0,
-            'transport' => [],
-            'tls' => $protocol_settings['tls'] ? [
+        ];
+
+        if ($protocol_settings['tls']) {
+            $array['tls'] = [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
-            ] : null
-        ];
-        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
-            $array['tls']['server_name'] = $serverName;
+            ];
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $array['tls']['server_name'] = $serverName;
+            }
         }
 
         $transport = match ($protocol_settings['network']) {
@@ -217,6 +313,20 @@ class SingBox extends AbstractProtocol
             'grpc' => [
                 'type' => 'grpc',
                 'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
+            ],
+            'h2' => [
+                'type' => 'http',
+                'host' => data_get($protocol_settings, 'network_settings.host'),
+                'path' => data_get($protocol_settings, 'network_settings.path')
+            ],
+            'httpupgrade' => [
+                'type' => 'httpupgrade',
+                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
+                'headers' => data_get($protocol_settings, 'network_settings.headers')
+            ],
+            'quic' => [
+                'type' => 'quic'
             ],
             default => null
         };
@@ -296,6 +406,9 @@ class SingBox extends AbstractProtocol
                 'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
                 'headers' => data_get($protocol_settings, 'network_settings.headers')
             ],
+            'quic' => [
+                'type' => 'quic'
+            ],
             default => null
         };
 
@@ -337,7 +450,9 @@ class SingBox extends AbstractProtocol
             ]),
             default => null
         };
-        $array['transport'] = $transport;
+        if ($transport) {
+            $array['transport'] = array_filter($transport, fn($value) => !is_null($value));
+        }
         return $array;
     }
 
@@ -499,6 +614,30 @@ class SingBox extends AbstractProtocol
             if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                 $array['tls']['server_name'] = $serverName;
             }
+        }
+
+        return $array;
+    }
+
+    protected function buildMieru($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'type' => 'mieru',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+            'transport' => strtolower(data_get($protocol_settings, 'transport', 'tcp')),
+        ];
+
+        if (isset($server['ports'])) {
+            $array['server_port_range'] = [$server['ports']];
+        }
+
+        if ($multiplexing = data_get($protocol_settings, 'multiplexing')) {
+            $array['multiplexing'] = $multiplexing;
         }
 
         return $array;

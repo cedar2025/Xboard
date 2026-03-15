@@ -43,12 +43,11 @@ class CheckOrder extends Command
      */
     public function handle()
     {
-        ini_set('memory_limit', -1);
-        $orders = Order::whereIn('status', [Order::STATUS_PENDING, Order::STATUS_PROCESSING])
+        Order::whereIn('status', [Order::STATUS_PENDING, Order::STATUS_PROCESSING])
             ->orderBy('created_at', 'ASC')
-            ->get();
-        foreach ($orders as $order) {
-            OrderHandleJob::dispatch($order->trade_no);
-        }
+            ->lazyById(200)
+            ->each(function ($order) {
+                OrderHandleJob::dispatch($order->trade_no);
+            });
     }
 }

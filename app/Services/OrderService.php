@@ -95,13 +95,14 @@ class OrderService
     public function open(): void
     {
         $order = $this->order;
-        $this->user = User::find($order->user_id);
         $plan = Plan::find($order->plan_id);
 
         HookManager::call('order.open.before', $order);
 
 
         DB::transaction(function () use ($order, $plan) {
+            $this->user = User::lockForUpdate()->find($order->user_id);
+
             if ($order->refund_amount) {
                 $this->user->balance += $order->refund_amount;
             }

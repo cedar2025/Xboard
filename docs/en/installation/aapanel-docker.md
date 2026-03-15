@@ -84,6 +84,16 @@ docker compose up -d
 #### 3.4 Configure Reverse Proxy
 Add the following content to your site configuration:
 ```nginx
+location /ws/ {
+    proxy_pass http://127.0.0.1:8076;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 60s;
+}
+
 location ^~ / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
@@ -100,6 +110,7 @@ location ^~ / {
     proxy_cache off;
 }
 ```
+> The `/ws/` location enables real-time node synchronization via `xboard:ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
 
 ## Maintenance Guide
 
@@ -134,4 +145,6 @@ If you encounter any issues during installation or operation, please check:
 2. All required ports are available
 3. Docker services are running properly
 4. Nginx configuration is correct
-5. Check logs for detailed error messages 
+5. Check logs for detailed error messages
+
+> The node will automatically detect WebSocket availability during handshake. No extra configuration is needed on the node side. 
