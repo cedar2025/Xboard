@@ -184,7 +184,15 @@ class NodeWebSocketServer extends Command
     {
         $host = config('database.redis.default.host', '127.0.0.1');
         $port = config('database.redis.default.port', 6379);
-        $redis = new \Workerman\Redis\Client("redis://{$host}:{$port}");
+
+        // Handle Unix Socket connection
+        if (str_starts_with($host, '/')) {
+            $redisUri = "unix://{$host}";
+        } else {
+            $redisUri = "redis://{$host}:{$port}";
+        }
+
+        $redis = new \Workerman\Redis\Client($redisUri);
 
         $password = config('database.redis.default.password');
         if ($password) {
