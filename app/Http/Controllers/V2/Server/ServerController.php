@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V2\Server;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\UserAliveSyncJob;
+use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use Illuminate\Http\Request;
@@ -113,6 +114,7 @@ class ServerController extends Controller
                     'used' => (int) ($status['disk']['used'] ?? 0),
                 ],
                 'updated_at' => now()->timestamp,
+                'kernel_status' => $status['kernel_status'] ?? null,
             ];
 
             $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
@@ -125,24 +127,7 @@ class ServerController extends Controller
         // handle node metrics (Metrics)
         $metrics = $request->input('metrics');
         if (is_array($metrics) && !empty($metrics)) {
-            $metricsData = [
-                'uptime' => (int) ($metrics['uptime'] ?? 0),
-                'inbound_speed' => (int) ($metrics['inbound_speed'] ?? 0),
-                'outbound_speed' => (int) ($metrics['outbound_speed'] ?? 0),
-                'active_connections' => (int) ($metrics['active_connections'] ?? 0),
-                'total_connections' => (int) ($metrics['total_connections'] ?? 0),
-                'speed_limiter' => $metrics['speed_limiter'] ?? [],
-                'cpu_per_core' => $metrics['cpu_per_core'] ?? [],
-                'gc' => $metrics['gc'] ?? [],
-                'api' => $metrics['api'] ?? [],
-                'updated_at' => now()->timestamp,
-            ];
-            $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
-            Cache::put(
-                CacheKey::get('SERVER_' . strtoupper($nodeType) . '_METRICS', $nodeId),
-                $metricsData,
-                $cacheTime
-            );
+           ServerService::updateMetrics($node, $metrics);
         }
 
         return response()->json(['data' => true]);

@@ -3,7 +3,6 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\File;
 use App\Support\AbstractProtocol;
 use App\Models\Server;
 
@@ -20,7 +19,6 @@ class SingBox extends AbstractProtocol
         Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
-        Server::TYPE_MIERU,
     ];
     private $config;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
@@ -54,9 +52,6 @@ class SingBox extends AbstractProtocol
             ],
             'juicity' => [
                 'base_version' => '1.7.0'
-            ],
-            'shadowtls' => [
-                'base_version' => '1.6.0'
             ],
             'wireguard' => [
                 'base_version' => '1.5.0'
@@ -292,10 +287,15 @@ class SingBox extends AbstractProtocol
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
             ];
+
+            $this->appendUtls($array['tls'], $protocol_settings);
+
             if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                 $array['tls']['server_name'] = $serverName;
             }
         }
+
+        $this->appendMultiplex($array, $protocol_settings);
 
         $transport = match ($protocol_settings['network']) {
             'tcp' => data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none' ? [
@@ -354,11 +354,9 @@ class SingBox extends AbstractProtocol
             $tlsConfig = [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
-                'utls' => [
-                    'enabled' => true,
-                    'fingerprint' => Helper::getRandFingerprint()
-                ]
             ];
+
+            $this->appendUtls($tlsConfig, $protocol_settings);
 
             switch ($protocol_settings['tls']) {
                 case 1:
@@ -378,6 +376,8 @@ class SingBox extends AbstractProtocol
 
             $array['tls'] = $tlsConfig;
         }
+
+        $this->appendMultiplex($array, $protocol_settings);
 
         $transport = match ($protocol_settings['network']) {
             'tcp' => data_get($protocol_settings, 'network_settings.header.type') == 'http' ? [
@@ -433,9 +433,15 @@ class SingBox extends AbstractProtocol
                 'insecure' => (bool) data_get($protocol_settings, 'allow_insecure', false),
             ]
         ];
+
+        $this->appendUtls($array['tls'], $protocol_settings);
+
         if ($serverName = data_get($protocol_settings, 'server_name')) {
             $array['tls']['server_name'] = $serverName;
         }
+
+        $this->appendMultiplex($array, $protocol_settings);
+
         $transport = match (data_get($protocol_settings, 'network')) {
             'grpc' => [
                 'type' => 'grpc',
@@ -619,27 +625,39 @@ class SingBox extends AbstractProtocol
         return $array;
     }
 
-    protected function buildMieru($password, $server): array
+    protected function appendMultiplex(&$array, $protocol_settings)
     {
-        $protocol_settings = data_get($server, 'protocol_settings', []);
-        $array = [
-            'type' => 'mieru',
-            'tag' => $server['name'],
-            'server' => $server['host'],
-            'server_port' => $server['port'],
-            'username' => $password,
-            'password' => $password,
-            'transport' => strtolower(data_get($protocol_settings, 'transport', 'tcp')),
-        ];
-
-        if (isset($server['ports'])) {
-            $array['server_port_range'] = [$server['ports']];
+        if ($multiplex = data_get($protocol_settings, 'multiplex')) {
+            if (data_get($multiplex, 'enabled')) {
+                $array['multiplex'] = [
+                    'enabled' => true,
+                    'protocol' => data_get($multiplex, 'protocol', 'yamux'),
+                    'max_connections' => data_get($multiplex, 'max_connections'),
+                    'min_streams' => data_get($multiplex, 'min_streams'),
+                    'max_streams' => data_get($multiplex, 'max_streams'),
+                    'padding' => (bool) data_get($multiplex, 'padding', false),
+                ];
+                if (data_get($multiplex, 'brutal.enabled')) {
+                    $array['multiplex']['brutal'] = [
+                        'enabled' => true,
+                        'up_mbps' => data_get($multiplex, 'brutal.up_mbps'),
+                        'down_mbps' => data_get($multiplex, 'brutal.down_mbps'),
+                    ];
+                }
+                $array['multiplex'] = array_filter($array['multiplex'], fn($v) => !is_null($v));
+            }
         }
+    }
 
-        if ($multiplexing = data_get($protocol_settings, 'multiplexing')) {
-            $array['multiplexing'] = $multiplexing;
+    protected function appendUtls(&$tlsConfig, $protocol_settings)
+    {
+        if ($utls = data_get($protocol_settings, 'utls')) {
+            if (data_get($utls, 'enabled')) {
+                $tlsConfig['utls'] = [
+                    'enabled' => true,
+                    'fingerprint' => Helper::getTlsFingerprint($utls)
+                ];
+            }
         }
-
-        return $array;
     }
 }

@@ -126,19 +126,55 @@ class Server extends Model
         'rate_time_enable' => 'boolean',
     ];
 
+    private const MULTIPLEX_CONFIGURATION = [
+        'multiplex' => [
+            'type' => 'object',
+            'fields' => [
+                'enabled' => ['type' => 'boolean', 'default' => false],
+                'protocol' => ['type' => 'string', 'default' => 'yamux'],
+                'max_connections' => ['type' => 'integer', 'default' => null],
+                // 'min_streams' => ['type' => 'integer', 'default' => null],
+                // 'max_streams' => ['type' => 'integer', 'default' => null],
+                'padding' => ['type' => 'boolean', 'default' => false],
+                'brutal' => [
+                    'type' => 'object',
+                    'fields' => [
+                        'enabled' => ['type' => 'boolean', 'default' => false],
+                        'up_mbps' => ['type' => 'integer', 'default' => null],
+                        'down_mbps' => ['type' => 'integer', 'default' => null],
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    private const UTLS_CONFIGURATION = [
+        'utls' => [
+            'type' => 'object',
+            'fields' => [
+                'enabled' => ['type' => 'boolean', 'default' => false],
+                'fingerprint' => ['type' => 'string', 'default' => 'chrome'],
+            ]
+        ]
+    ];
+
     private const PROTOCOL_CONFIGURATIONS = [
         self::TYPE_TROJAN => [
-            'allow_insecure' => ['type' => 'boolean', 'default' => false],
-            'server_name' => ['type' => 'string', 'default' => null],
             'network' => ['type' => 'string', 'default' => null],
-            'network_settings' => ['type' => 'array', 'default' => null]
+            'network_settings' => ['type' => 'array', 'default' => null],
+            'server_name' => ['type' => 'string', 'default' => null],
+            'allow_insecure' => ['type' => 'boolean', 'default' => false],
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_VMESS => [
             'tls' => ['type' => 'integer', 'default' => 0],
             'network' => ['type' => 'string', 'default' => null],
             'rules' => ['type' => 'array', 'default' => null],
             'network_settings' => ['type' => 'array', 'default' => null],
-            'tls_settings' => ['type' => 'array', 'default' => null]
+            'tls_settings' => ['type' => 'array', 'default' => null],
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_VLESS => [
             'tls' => ['type' => 'integer', 'default' => 0],
@@ -156,7 +192,9 @@ class Server extends Model
                     'private_key' => ['type' => 'string', 'default' => null],
                     'short_id' => ['type' => 'string', 'default' => null]
                 ]
-            ]
+            ],
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_SHADOWSOCKS => [
             'cipher' => ['type' => 'string', 'default' => null],
@@ -251,8 +289,9 @@ class Server extends Model
             ]
         ],
         self::TYPE_MIERU => [
-            'transport' => ['type' => 'string', 'default' => 'tcp'],
-            'multiplexing' => ['type' => 'string', 'default' => 'MULTIPLEXING_LOW']
+            'transport' => ['type' => 'string', 'default' => 'TCP'],
+            'traffic_pattern' => ['type' => 'string', 'default' => ''],
+            ...self::MULTIPLEX_CONFIGURATION,
         ]
     ];
 

@@ -283,7 +283,9 @@ class Stash extends AbstractProtocol
         $array['uuid'] = $uuid;
         $array['udp'] = true;
 
-        $array['client-fingerprint'] = Helper::getRandFingerprint();
+        if ($fingerprint = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+            $array['client-fingerprint'] = $fingerprint;
+        }
 
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
@@ -312,10 +314,12 @@ class Stash extends AbstractProtocol
                 $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
                 $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
                 if ($headerType === 'http') {
-                    if ($httpOpts = array_filter([
-                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ])) {
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
                         $array['http-opts'] = $httpOpts;
                     }
                 }
@@ -331,11 +335,11 @@ class Stash extends AbstractProtocol
                 $array['network'] = 'grpc';
                 $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
                 break;
-                // case 'h2':
-                //     $array['network'] = 'h2';
-                //     $array['h2-opts']['host'] = data_get($protocol_settings, 'network_settings.host');
-                //     $array['h2-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
-                //     break;
+            // case 'h2':
+            //     $array['network'] = 'h2';
+            //     $array['h2-opts']['host'] = data_get($protocol_settings, 'network_settings.host');
+            //     $array['h2-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
+            //     break;
         }
 
         return $array;
