@@ -115,6 +115,20 @@ services:
       - 1panel-network
     depends_on:
       - redis
+  ws-server:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - ./.docker/.data/redis/:/data/
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./plugins:/www/plugins
+    restart: on-failure
+    networks:
+      - 1panel-network
+    command: php artisan ws-server start
+    depends_on:
+      - redis
 
   redis:
     image: redis:7-alpine
