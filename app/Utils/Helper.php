@@ -188,8 +188,20 @@ class Helper
     public static function getIpByDomainName($domain) {
         return gethostbynamel($domain) ?: [];
     }
+    
+    public static function getTlsFingerprint($utls = null)
+    {
 
-    public static function getRandFingerprint() {
+        if (is_array($utls) || is_object($utls)) {
+            if (!data_get($utls, 'enabled')) {
+                return null;
+            }
+            $fingerprint = data_get($utls, 'fingerprint', 'chrome');
+            if ($fingerprint !== 'random') {
+                return $fingerprint;
+            }
+        }
+
         $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq'];
         return Arr::random($fingerprints);
     }

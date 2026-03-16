@@ -165,14 +165,18 @@ class Shadowrocket extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['peer'] = $serverName;
                 }
-                $config['fp'] = Helper::getRandFingerprint();
+                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+                    $config['fp'] = $fp;
+                }
                 break;
             case 2:
                 $config['tls'] = 1;
                 $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
                 $config['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
                 $config['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
-                $config['fp'] = Helper::getRandFingerprint();
+                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+                    $config['fp'] = $fp;
+                }
                 break;
             default:
                 break;

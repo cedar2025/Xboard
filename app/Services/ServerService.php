@@ -96,8 +96,41 @@ class ServerService
     }
 
     /**
-     * Build node config data
+     * Update node metrics and load status
      */
+    public static function updateMetrics(Server $node, array $metrics): void
+    {
+        $nodeType = strtoupper($node->type);
+        $nodeId = $node->id;
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+
+        $metricsData = [
+            'uptime' => (int) ($metrics['uptime'] ?? 0),
+            'goroutines' => (int) ($metrics['goroutines'] ?? 0),
+            'active_connections' => (int) ($metrics['active_connections'] ?? 0),
+            'total_connections' => (int) ($metrics['total_connections'] ?? 0),
+            'total_users' => (int) ($metrics['total_users'] ?? 0),
+            'active_users' => (int) ($metrics['active_users'] ?? 0),
+            'inbound_speed' => (int) ($metrics['inbound_speed'] ?? 0),
+            'outbound_speed' => (int) ($metrics['outbound_speed'] ?? 0),
+            'cpu_per_core' => $metrics['cpu_per_core'] ?? [],
+            'load' => $metrics['load'] ?? [],
+            'speed_limiter' => $metrics['speed_limiter'] ?? [],
+            'gc' => $metrics['gc'] ?? [],
+            'api' => $metrics['api'] ?? [],
+            'ws' => $metrics['ws'] ?? [],
+            'limits' => $metrics['limits'] ?? [],
+            'updated_at' => now()->timestamp,
+            'kernel_status' => (bool) ($metrics['kernel_status'] ?? false),
+        ];
+
+        \Illuminate\Support\Facades\Cache::put(
+            \App\Utils\CacheKey::get('SERVER_' . $nodeType . '_METRICS', $nodeId),
+            $metricsData,
+            $cacheTime
+        );
+    }
+
     public static function buildNodeConfig(Server $node): array
     {
         $nodeType = $node->type;
@@ -120,28 +153,31 @@ class ServerService
                 'plugin' => $protocolSettings['plugin'],
                 'plugin_opts' => $protocolSettings['plugin_opts'],
                 'server_key' => match ($protocolSettings['cipher']) {
-                    '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
-                    '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
-                    default => null,
-                },
+                        '2022-blake3-aes-128-gcm' => Helper::getServerKey($node->created_at, 16),
+                        '2022-blake3-aes-256-gcm' => Helper::getServerKey($node->created_at, 32),
+                        default => null,
+                    },
             ],
             'vmess' => [
                 ...$baseConfig,
                 'tls' => (int) $protocolSettings['tls'],
+                'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             'trojan' => [
                 ...$baseConfig,
                 'host' => $host,
                 'server_name' => $protocolSettings['server_name'],
+                'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             'vless' => [
                 ...$baseConfig,
                 'tls' => (int) $protocolSettings['tls'],
                 'flow' => $protocolSettings['flow'],
                 'tls_settings' => match ((int) $protocolSettings['tls']) {
-                    2 => $protocolSettings['reality_settings'],
-                    default => $protocolSettings['tls_settings'],
-                },
+                        2 => $protocolSettings['reality_settings'],
+                        default => $protocolSettings['tls_settings'],
+                    },
+                'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             'hysteria' => [
                 ...$baseConfig,
@@ -152,13 +188,13 @@ class ServerService
                 'up_mbps' => (int) $protocolSettings['bandwidth']['up'],
                 'down_mbps' => (int) $protocolSettings['bandwidth']['down'],
                 ...match ((int) $protocolSettings['version']) {
-                    1 => ['obfs' => $protocolSettings['obfs']['password'] ?? null],
-                    2 => [
-                        'obfs' => $protocolSettings['obfs']['open'] ? $protocolSettings['obfs']['type'] : null,
-                        'obfs-password' => $protocolSettings['obfs']['password'] ?? null,
-                    ],
-                    default => [],
-                },
+                        1 => ['obfs' => $protocolSettings['obfs']['password'] ?? null],
+                        2 => [
+                            'obfs' => $protocolSettings['obfs']['open'] ? $protocolSettings['obfs']['type'] : null,
+                            'obfs-password' => $protocolSettings['obfs']['password'] ?? null,
+                        ],
+                        default => [],
+                    },
             ],
             'tuic' => [
                 ...$baseConfig,
@@ -195,8 +231,10 @@ class ServerService
             ],
             'mieru' => [
                 ...$baseConfig,
-                'server_port' => (string) $serverPort,
-                'protocol' => (int) $protocolSettings['protocol'],
+                'server_port' => (int) $serverPort,
+                'transport' => data_get($protocolSettings, 'transport', 'TCP'),
+                'traffic_pattern' => $protocolSettings['traffic_pattern'],
+                // 'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             default => [],
         };

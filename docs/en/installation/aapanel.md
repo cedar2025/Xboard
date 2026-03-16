@@ -169,8 +169,9 @@ sh update.sh
 ## Troubleshooting
 
 ### Common Issues
-1. Changes to admin path require service restart to take effect
-2. Any code changes after enabling Octane require restart to take effect
+1. **Empty Admin Dashboard**: If the admin panel is blank, run `git submodule update --init --recursive --force` to restore the theme files.
+2. Changes to admin path require service restart to take effect
+3. Any code changes after enabling Octane require restart to take effect
 3. When PHP extension installation fails, check if PHP version is correct
 4. For database connection failures, check database configuration and permissions
 

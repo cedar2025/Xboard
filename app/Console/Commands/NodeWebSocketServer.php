@@ -126,7 +126,7 @@ class NodeWebSocketServer extends Command
             NodeRegistry::add($nodeId, $conn);
             Cache::put("node_ws_alive:{$nodeId}", true, 86400);
 
-            Log::info("[WS] Node#{$nodeId} connected", [
+            Log::debug("[WS] Node#{$nodeId} connected", [
                 'remote' => $conn->getRemoteIp(),
                 'total' => NodeRegistry::count(),
             ]);
@@ -137,8 +137,8 @@ class NodeWebSocketServer extends Command
                 'data' => ['node_id' => $nodeId],
             ]));
 
-            // Push full sync (config + users) immediately
-            $this->pushFullSync($nodeId, $node);
+            // Push full sync (config + users) immediately to this specific connection
+            $this->pushFullSync($conn, $node);
         };
 
         $worker->onMessage = function (TcpConnection $conn, $data) {
@@ -148,12 +148,18 @@ class NodeWebSocketServer extends Command
             }
 
             $event = $msg['event'] ?? '';
+            $nodeId = $conn->nodeId ?? null;
 
             switch ($event) {
                 case 'pong':
                     // Heartbeat response — node is alive
-                    if (!empty($conn->nodeId)) {
-                        Cache::put("node_ws_alive:{$conn->nodeId}", true, 86400);
+                    if ($nodeId) {
+                        Cache::put("node_ws_alive:{$nodeId}", true, 86400);
+                    }
+                    break;
+                case 'node.status':
+                    if ($nodeId && isset($msg['data'])) {
+                        $this->handleNodeStatus($nodeId, $msg['data']);
                     }
                     break;
                 default:
@@ -167,13 +173,32 @@ class NodeWebSocketServer extends Command
                 $nodeId = $conn->nodeId;
                 NodeRegistry::remove($nodeId);
                 Cache::forget("node_ws_alive:{$nodeId}");
-                Log::info("[WS] Node#{$nodeId} disconnected", [
+                Log::debug("[WS] Node#{$nodeId} disconnected", [
                     'total' => NodeRegistry::count(),
                 ]);
             }
         };
 
         Worker::runAll();
+    }
+
+    /**
+     * Handle status data pushed from node via WebSocket
+     */
+    private function handleNodeStatus(int $nodeId, array $data): void
+    {
+        $node = Server::find($nodeId);
+        if (!$node) return;
+
+        $nodeType = strtoupper($node->type);
+
+        // Update last check-in cache
+        Cache::put(\App\Utils\CacheKey::get('SERVER_' . $nodeType . '_LAST_CHECK_AT', $nodeId), time(), 3600);
+        
+        // Update metrics cache via Service
+        ServerService::updateMetrics($node, $data);
+
+        Log::debug("[WS] Node#{$nodeId} status updated via WebSocket");
     }
 
     /**
@@ -229,15 +254,23 @@ class NodeWebSocketServer extends Command
     /**
      * Push full config + users to a newly connected node.
      */
-    private function pushFullSync(int $nodeId, Server $node): void
+    private function pushFullSync(TcpConnection $conn, Server $node): void
     {
+        $nodeId = $conn->nodeId;
         // Push config
         $config = ServerService::buildNodeConfig($node);
-        NodeRegistry::send($nodeId, 'sync.config', ['config' => $config]);
+        Log::debug("[WS] Node#{$nodeId} config: ", $config);
+        $conn->send(json_encode([
+            'event' => 'sync.config',
+            'data' => ['config' => $config]
+        ]));
 
         // Push users
         $users = ServerService::getAvailableUsers($node)->toArray();
-        NodeRegistry::send($nodeId, 'sync.users', ['users' => $users]);
+        $conn->send(json_encode([
+            'event' => 'sync.users',
+            'data' => ['users' => $users]
+        ]));
 
         Log::info("[WS] Full sync pushed to node#{$nodeId}", [
             'users' => count($users),
