@@ -227,7 +227,7 @@ class ClashMeta extends AbstractProtocol
                     $array['plugin-opts'] = array_filter([
                         'host' => $parsedOpts['host'] ?? null,
                         'password' => $parsedOpts['password'] ?? null,
-                        'version' => isset($parsedOpts['version']) ? (int)$parsedOpts['version'] : 2
+                        'version' => isset($parsedOpts['version']) ? (int) $parsedOpts['version'] : 2
                     ], fn($v) => $v !== null);
                     break;
 
@@ -266,14 +266,19 @@ class ClashMeta extends AbstractProtocol
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
 
+        self::appendUtls($array, $protocol_settings);
+        self::appendMultiplex($array, $protocol_settings);
+
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
-                    if ($httpOpts = array_filter([
-                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ])) {
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
                         $array['http-opts'] = $httpOpts;
                     }
                 }
@@ -336,7 +341,7 @@ class ClashMeta extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['servername'] = $serverName;
                 }
-                $array['client-fingerprint'] = Helper::getRandFingerprint();
+                self::appendUtls($array, $protocol_settings);
                 break;
             case 2:
                 $array['tls'] = true;
@@ -346,7 +351,7 @@ class ClashMeta extends AbstractProtocol
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
                     'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
                 ];
-                $array['client-fingerprint'] = Helper::getRandFingerprint();
+                self::appendUtls($array, $protocol_settings);
                 break;
             default:
                 break;
@@ -358,10 +363,12 @@ class ClashMeta extends AbstractProtocol
                 $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
                 if ($headerType === 'http') {
                     $array['network'] = 'http';
-                    if ($httpOpts = array_filter([
-                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ])) {
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
                         $array['http-opts'] = $httpOpts;
                     }
                 }
@@ -398,6 +405,8 @@ class ClashMeta extends AbstractProtocol
                 break;
         }
 
+        self::appendMultiplex($array, $protocol_settings);
+
         return $array;
     }
 
@@ -416,6 +425,9 @@ class ClashMeta extends AbstractProtocol
         if ($serverName = data_get($protocol_settings, 'server_name')) {
             $array['sni'] = $serverName;
         }
+
+        self::appendUtls($array, $protocol_settings);
+        self::appendMultiplex($array, $protocol_settings);
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
@@ -565,8 +577,7 @@ class ClashMeta extends AbstractProtocol
             'port' => $server['port'],
             'username' => $password,
             'password' => $password,
-            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP')),
-            'multiplexing' => data_get($protocol_settings, 'multiplexing', 'MULTIPLEXING_LOW')
+            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP'))
         ];
 
         // 如果配置了端口范围
@@ -638,6 +649,39 @@ class ClashMeta extends AbstractProtocol
             return preg_match($exp, '') !== false;
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    protected static function appendMultiplex(&$array, $protocol_settings)
+    {
+        if ($multiplex = data_get($protocol_settings, 'multiplex')) {
+            if (data_get($multiplex, 'enabled')) {
+                $array['smux'] = array_filter([
+                    'enabled' => true,
+                    'protocol' => data_get($multiplex, 'protocol', 'yamux'),
+                    'max-connections' => data_get($multiplex, 'max_connections'),
+                    // 'min-streams' => data_get($multiplex, 'min_streams'),
+                    // 'max-streams' => data_get($multiplex, 'max_streams'),
+                    'padding' => data_get($multiplex, 'padding') ? true : null,
+                ]);
+
+                if (data_get($multiplex, 'brutal.enabled')) {
+                    $array['smux']['brutal'] = [
+                        'enabled' => true,
+                        'up' => data_get($multiplex, 'brutal.up_mbps'),
+                        'down' => data_get($multiplex, 'brutal.down_mbps'),
+                    ];
+                }
+            }
+        }
+    }
+
+    protected static function appendUtls(&$array, $protocol_settings)
+    {
+        if ($utls = data_get($protocol_settings, 'utls')) {
+            if (data_get($utls, 'enabled')) {
+                $array['client-fingerprint'] = Helper::getTlsFingerprint($utls);
+            }
         }
     }
 }

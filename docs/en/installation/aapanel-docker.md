@@ -141,8 +141,9 @@ docker compose up -d
 ## Troubleshooting
 
 If you encounter any issues during installation or operation, please check:
-1. System requirements are met
-2. All required ports are available
+1. **Empty Admin Dashboard**: If the admin panel is blank, run `git submodule update --init --recursive --force` to restore the theme files.
+2. System requirements are met
+3. All required ports are available
 3. Docker services are running properly
 4. Nginx configuration is correct
 5. Check logs for detailed error messages
