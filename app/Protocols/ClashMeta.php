@@ -666,7 +666,7 @@ class ClashMeta extends AbstractProtocol
                 ]);
 
                 if (data_get($multiplex, 'brutal.enabled')) {
-                    $array['smux']['brutal'] = [
+                    $array['smux']['brutal-opts'] = [
                         'enabled' => true,
                         'up' => data_get($multiplex, 'brutal.up_mbps'),
                         'down' => data_get($multiplex, 'brutal.down_mbps'),
