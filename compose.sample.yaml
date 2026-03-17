@@ -2,7 +2,7 @@ services:
   web:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./:/www/
     environment:
       - docker=true
@@ -14,7 +14,7 @@ services:
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./:/www/
     restart: always
     network_mode: host
@@ -24,7 +24,7 @@ services:
   ws-server:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./:/www/
     restart: always
     network_mode: host
@@ -36,6 +36,9 @@ services:
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777
     restart: unless-stopped
     volumes:
-      - ./.docker/.data/redis:/data
+      - redis-data:/data
     sysctls:
       net.core.somaxconn: 1024
+
+volumes:
+  redis-data:
