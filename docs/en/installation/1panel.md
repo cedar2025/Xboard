@@ -124,6 +124,8 @@ services:
       - ./storage/logs:/www/storage/logs
       - ./plugins:/www/plugins
     restart: on-failure
+    ports:
+      - 8076:8076
     networks:
       - 1panel-network
     command: php artisan ws-server start
