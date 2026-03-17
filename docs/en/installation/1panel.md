@@ -84,7 +84,7 @@ services:
   web:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
@@ -104,7 +104,7 @@ services:
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
@@ -118,7 +118,7 @@ services:
   ws-server:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
@@ -139,7 +139,10 @@ services:
     networks:
       - 1panel-network
     volumes:
-      - ./.docker/.data/redis:/data
+      - redis-data:/data
+
+volumes:
+  redis-data:
 
 networks:
   1panel-network:
