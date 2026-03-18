@@ -13,6 +13,33 @@ use Illuminate\Support\Facades\Mail;
 
 class MailService
 {
+    // Render {{key}} / {{key|default}} placeholders.
+    private static function renderPlaceholders(string $template, array $vars): string
+    {
+        if ($template === '' || empty($vars)) {
+            return $template;
+        }
+
+        return (string) preg_replace_callback('/\{\{\s*([a-zA-Z0-9_.-]+)(?:\|([^}]*))?\s*\}\}/', function ($m) use ($vars) {
+            $key = $m[1] ?? '';
+            $default = array_key_exists(2, $m) ? trim((string) $m[2]) : null;
+
+            if (!array_key_exists($key, $vars) || $vars[$key] === null || $vars[$key] === '') {
+                return $default !== null ? $default : $m[0];
+            }
+
+            $value = $vars[$key];
+            if (is_bool($value)) {
+                return $value ? '1' : '0';
+            }
+            if (is_scalar($value)) {
+                return (string) $value;
+            }
+
+            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+        }, $template);
+    }
+
     /**
      * 获取需要发送提醒的用户总数
      */
@@ -222,6 +249,25 @@ class MailService
         }
         $email = $params['email'];
         $subject = $params['subject'];
+
+        $templateValue = $params['template_value'] ?? [];
+        $vars = is_array($templateValue) ? ($templateValue['vars'] ?? []) : [];
+        $contentMode = is_array($templateValue) ? ($templateValue['content_mode'] ?? null) : null;
+
+        if (is_array($vars) && !empty($vars)) {
+            $subject = self::renderPlaceholders((string) $subject, $vars);
+
+            if (is_array($templateValue) && isset($templateValue['content']) && is_string($templateValue['content'])) {
+                $templateValue['content'] = self::renderPlaceholders($templateValue['content'], $vars);
+            }
+        }
+
+        // Mass mail default: treat admin content as plain text and escape.
+        if ($contentMode === 'text' && is_array($templateValue) && isset($templateValue['content']) && is_string($templateValue['content'])) {
+            $templateValue['content'] = e($templateValue['content']);
+        }
+
+        $params['template_value'] = $templateValue;
         $params['template_name'] = 'mail.' . admin_setting('email_template', 'default') . '.' . $params['template_name'];
         try {
             Mail::send(
