@@ -50,6 +50,6 @@ services:
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
     restart: unless-stopped
     volumes:
-      - ./.docker/.data/redis:/data
+      - redis-data:/data
 volumes:
   redis-data:
