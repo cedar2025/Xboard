@@ -1,6 +1,5 @@
 <?php
 use App\Support\Setting;
-use Illuminate\Support\Facades\App;
 
 if (!function_exists('admin_setting')) {
     /**
