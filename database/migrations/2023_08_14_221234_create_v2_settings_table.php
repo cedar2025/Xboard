@@ -17,7 +17,7 @@ class CreateV2SettingsTable extends Migration
             $table->id();
             $table->string('group')->comment('设置分组')->nullable();
             $table->string('type')->comment('设置类型')->nullable();
-            $table->string('name')->comment('设置名称')->uniqid();
+            $table->string('name')->comment('设置名称')->unique();
             $table->string('value')->comment('设置值')->nullable();
             $table->timestamps();
         });
