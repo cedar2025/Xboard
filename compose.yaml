@@ -51,3 +51,5 @@ services:
     restart: unless-stopped
     volumes:
       - ./.docker/.data/redis:/data
+volumes:
+  redis-data:
