@@ -23,11 +23,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
-        if (admin_setting('force_https')) {
-            resolve(\Illuminate\Routing\UrlGenerator::class)->forceScheme('https');
-        }
-
+        // HTTPS scheme is forced per-request via middleware (Octane-safe).
         parent::boot();
     }
 

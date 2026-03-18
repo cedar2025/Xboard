@@ -239,6 +239,11 @@ class ServerService
             default => [],
         };
 
+        $response = array_filter(
+            $response,
+            static fn ($value) => $value !== null
+        );
+
         if (!empty($node['route_ids'])) {
             $response['routes'] = self::getRoutes($node['route_ids']);
         }
