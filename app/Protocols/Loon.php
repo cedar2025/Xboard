@@ -267,7 +267,11 @@ class Loon extends AbstractProtocol
         ];
         if (data_get($protocol_settings, 'tls.allow_insecure'))
             $config[] = "skip-cert-verify=true";
-        $config[] = "download-bandwidth=" . data_get($protocol_settings, 'bandwidth.download_bandwidth');
+        $config[] = "download-bandwidth=" . data_get($protocol_settings, 'bandwidth.down');
+        if (data_get($protocol_settings, 'obfs.open') && data_get($protocol_settings, 'obfs.type') === 'salamander') {
+            $config[] = 'obfs=salamander';
+            $config[] = "obfs-password=" . data_get($protocol_settings, 'obfs.password');
+        }
         $config[] = "udp=true";
         $config = array_filter($config);
         $uri = implode(',', $config);
