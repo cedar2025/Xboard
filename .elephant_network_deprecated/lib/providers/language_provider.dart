@@ -4,9 +4,9 @@ import '../utils/translations.dart';
 
 class LanguageProvider extends ChangeNotifier {
   Locale _locale = const Locale('zh');
-  
+
   Locale get locale => _locale;
-  
+
   String get currentLanguage => _locale.languageCode == 'zh' ? '中文' : 'English';
 
   void setLanguage(String languageCode) {

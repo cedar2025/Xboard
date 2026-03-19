@@ -15,7 +15,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -61,42 +62,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor:
+            isDark ? AppColors.darkBackground : AppColors.lightBackground,
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: PlatformUtils.isDesktop
-                  ? AppDimensions.loginCardMaxWidth
-                  : double.infinity,
+                    ? AppDimensions.loginCardMaxWidth
+                    : double.infinity,
               ),
               child: SingleChildScrollView(
                 padding: AppDimensions.pagePadding,
                 child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Logo 区域
-                    _buildLogoSection(isDark),
-                    const SizedBox(height: 48),
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Logo 区域
+                      _buildLogoSection(isDark),
+                      const SizedBox(height: 48),
 
-                    // 邮箱输入框
-                    _buildEmailField(isDark),
-                    const SizedBox(height: 16),
+                      // 邮箱输入框
+                      _buildEmailField(isDark),
+                      const SizedBox(height: 16),
 
-                    // 密码输入框
-                    _buildPasswordField(isDark),
-                    const SizedBox(height: 16),
+                      // 密码输入框
+                      _buildPasswordField(isDark),
+                      const SizedBox(height: 16),
 
-                    // 忘记密码链接
-                    _buildForgotPasswordLink(isDark),
-                    const SizedBox(height: 24),
+                      // 忘记密码链接
+                      _buildForgotPasswordLink(isDark),
+                      const SizedBox(height: 24),
                       // 错误提示
                       _buildErrorMessage(),
 
@@ -128,13 +130,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: AppDimensions.borderRadiusLarge,
-            boxShadow: isDark 
-              ? AppShadows.darkXL 
-              : AppShadows.custom(
-                  color: AppColors.primary,
-                  opacity: 0.1,
-                  blurRadius: 20,
-                ),
+            boxShadow: isDark
+                ? AppShadows.darkXL
+                : AppShadows.custom(
+                    color: AppColors.primary,
+                    opacity: 0.1,
+                    blurRadius: 20,
+                  ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -144,16 +146,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
         ),
         const SizedBox(height: 24),
-        
+
         // 品牌名称
         Text(
           '大象网络',
           style: AppTextStyles.displaySmall.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Slogan
         Text(
           'CONNECT THE UNSEEN',
@@ -175,7 +178,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: Text(
             '邮箱地址',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -186,20 +191,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           textInputAction: TextInputAction.next,
           onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
           style: AppTextStyles.bodyLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           decoration: InputDecoration(
             hintText: '请输入您的邮箱',
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
             prefixIcon: Icon(
               Icons.mail_outline,
               size: AppDimensions.iconMedium,
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide.none,
@@ -207,7 +219,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             enabledBorder: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide(
-                color: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                color: isDark
+                    ? AppColors.darkInputBackground
+                    : AppColors.lightInputBackground,
                 width: 2,
               ),
             ),
@@ -258,7 +272,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: Text(
             '访问密码',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -269,23 +285,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) => _handleLogin(),
           style: AppTextStyles.bodyLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           decoration: InputDecoration(
             hintText: '请输入登录密码',
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
             prefixIcon: Icon(
               Icons.lock_outline,
               size: AppDimensions.iconMedium,
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
                 size: AppDimensions.iconMedium,
-                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                color: isDark
+                    ? AppColors.darkTextTertiary
+                    : AppColors.lightTextTertiary,
               ),
               onPressed: () {
                 setState(() {
@@ -294,7 +317,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               },
             ),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide.none,
@@ -302,7 +327,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             enabledBorder: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide(
-                color: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                color: isDark
+                    ? AppColors.darkInputBackground
+                    : AppColors.lightInputBackground,
                 width: 2,
               ),
             ),
@@ -377,9 +404,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: isDark 
-                ? AppColors.error.withOpacity(0.1) 
-                : AppColors.error.withOpacity(0.05),
+              color: isDark
+                  ? AppColors.error.withOpacity(0.1)
+                  : AppColors.error.withOpacity(0.05),
               borderRadius: AppDimensions.borderRadiusMedium,
               border: Border.all(
                 color: isDark ? AppColors.errorLight : AppColors.error,
@@ -428,11 +455,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
-                    ? [AppColors.primaryDark, AppColors.primaryDark]
-                    : [AppColors.primary, AppColors.primary],
+                      ? [AppColors.primaryDark, AppColors.primaryDark]
+                      : [AppColors.primary, AppColors.primary],
                 ),
                 borderRadius: AppDimensions.borderRadiusMedium,
-                boxShadow: isDark ? AppShadows.darkButton : AppShadows.lightButton,
+                boxShadow:
+                    isDark ? AppShadows.darkButton : AppShadows.lightButton,
               ),
               child: ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleLogin,
@@ -446,20 +474,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   padding: EdgeInsets.zero,
                 ),
                 child: authProvider.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        '登 录',
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
-                    )
-                  : Text(
-                      '登 录',
-                      style: AppTextStyles.button.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
               ),
             ),
           ),
@@ -476,7 +505,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Text(
           '还没有账号? ',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextTertiary
+                : AppColors.lightTextSecondary,
           ),
         ),
         TextButton(

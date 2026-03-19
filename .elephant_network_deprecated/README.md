@@ -1,16 +1,21 @@
-# elephant_network
+# ElephantRoute Client
 
-A new Flutter project.
+Flutter desktop/mobile client for Xboard-compatible subscriptions.
 
-## Getting Started
+## Current focus
 
-This project is a starting point for a Flutter application.
+- macOS public beta
+- system proxy mode
+- TUN mode with elevated launch path
+- diagnostics export and runtime recovery
 
-A few resources to get you started if this is your first Flutter project:
+## Development
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run -d macos --dart-define=BASE_URL=https://www.elphantroute.com
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Release
+
+See [docs/macos-beta-release.md](./docs/macos-beta-release.md).

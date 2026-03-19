@@ -44,13 +44,14 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             _buildHeader(isDark),
-            
+
             // 节点列表
             Expanded(
               child: Consumer<NodeProvider>(
@@ -58,7 +59,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                   if (provider.isLoading && provider.nodes.isEmpty) {
                     return Center(
                       child: CircularProgressIndicator(
-                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                        color:
+                            isDark ? AppColors.primaryLight : AppColors.primary,
                       ),
                     );
                   }
@@ -76,8 +78,10 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                   final columns = PlatformUtils.getGridColumns(context);
 
                   // 分离自动节点和普通节点
-                  final autoNodes = nodes.where((n) => n.type == 'auto').toList();
-                  final regularNodes = nodes.where((n) => n.type != 'auto').toList();
+                  final autoNodes =
+                      nodes.where((n) => n.type == 'auto').toList();
+                  final regularNodes =
+                      nodes.where((n) => n.type != 'auto').toList();
 
                   return RefreshIndicator(
                     onRefresh: () async {
@@ -85,7 +89,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                     },
                     color: isDark ? AppColors.primaryLight : AppColors.primary,
                     child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(24, 0, 24, isDesktop ? 24 : 120),
+                      padding:
+                          EdgeInsets.fromLTRB(24, 0, 24, isDesktop ? 24 : 120),
                       child: Column(
                         children: [
                           // 自动选择节点始终全宽显示
@@ -96,13 +101,14 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                               isDark,
                               provider,
                             ),
-                          
+
                           // 桌面端：网格布局
                           if (isDesktop && regularNodes.isNotEmpty)
                             GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                              gridDelegate:
+                                  SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: 300,
                                 mainAxisExtent: 76,
                                 mainAxisSpacing: 10,
@@ -111,17 +117,22 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                               itemCount: regularNodes.length,
                               itemBuilder: (context, index) {
                                 final node = regularNodes[index];
-                                final isSelected = provider.selectedNode?.name == node.name;
-                                return _buildNodeCard(node, isSelected, isDark, provider, index);
+                                final isSelected =
+                                    provider.selectedNode?.name == node.name;
+                                return _buildNodeCard(
+                                    node, isSelected, isDark, provider, index);
                               },
                             ),
-                          
+
                           // 移动端：列表布局
                           if (!isDesktop)
-                            for (int index = 0; index < regularNodes.length; index++)
+                            for (int index = 0;
+                                index < regularNodes.length;
+                                index++)
                               _buildNodeCard(
                                 regularNodes[index],
-                                provider.selectedNode?.name == regularNodes[index].name,
+                                provider.selectedNode?.name ==
+                                    regularNodes[index].name,
                                 isDark,
                                 provider,
                                 index,
@@ -145,12 +156,13 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
           return Container(
             margin: EdgeInsets.only(bottom: PlatformUtils.isDesktop ? 16 : 90),
             child: FloatingActionButton.extended(
-              onPressed: provider.isLoading 
-                  ? null 
+              onPressed: provider.isLoading
+                  ? null
                   : () {
-                      provider.testAllLatencies(context); 
-                  },
-              backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+                      provider.testAllLatencies(context);
+                    },
+              backgroundColor:
+                  isDark ? AppColors.primaryLight : AppColors.primary,
               elevation: 4,
               icon: Icon(
                 Icons.flash_on,
@@ -182,7 +194,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                 color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: AppDimensions.borderRadiusMedium,
                 border: Border.all(
-                  color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                  color: isDark
+                      ? AppColors.darkCardBorder
+                      : AppColors.lightCardBorder,
                 ),
               ),
               child: IconButton(
@@ -190,19 +204,23 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                 icon: Icon(
                   Icons.arrow_back,
                   size: 20,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
           if (Navigator.canPop(context)) const SizedBox(width: 16),
-          
+
           // 标题
           Expanded(
             child: Text(
               '选择节点',
               style: AppTextStyles.titleMedium.copyWith(
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -216,7 +234,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
   int? _pressedIndex;
 
   /// 自动选择节点卡片（特殊样式）
-  Widget _buildAutoNodeCard(ProxyNode node, bool isSelected, bool isDark, NodeProvider provider) {
+  Widget _buildAutoNodeCard(
+      ProxyNode node, bool isSelected, bool isDark, NodeProvider provider) {
     final autoRealNode = provider.autoSelectedRealNode;
     final autoLatency = autoRealNode?.latency;
     final autoNodeName = autoRealNode?.name;
@@ -233,25 +252,35 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: isSelected
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                  ? [AppColors.primaryDark.withOpacity(0.3), AppColors.primaryUltraDark.withOpacity(0.2)]
-                  : [AppColors.primaryUltraLight, AppColors.primaryLight.withOpacity(0.15)],
-              )
-            : null,
-          color: isSelected ? null : (isDark ? AppColors.darkCard : AppColors.lightCard),
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          AppColors.primaryDark.withOpacity(0.3),
+                          AppColors.primaryUltraDark.withOpacity(0.2)
+                        ]
+                      : [
+                          AppColors.primaryUltraLight,
+                          AppColors.primaryLight.withOpacity(0.15)
+                        ],
+                )
+              : null,
+          color: isSelected
+              ? null
+              : (isDark ? AppColors.darkCard : AppColors.lightCard),
           borderRadius: AppDimensions.borderRadiusMedium,
           border: Border.all(
             color: isSelected
-              ? (isDark ? AppColors.primaryDark : AppColors.primary)
-              : (isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder),
+                ? (isDark ? AppColors.primaryDark : AppColors.primary)
+                : (isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected 
-            ? (isDark ? AppShadows.glowSmall : AppShadows.lightSmall)
-            : AppShadows.getCard(isDark),
+          boxShadow: isSelected
+              ? (isDark ? AppShadows.glowSmall : AppShadows.lightSmall)
+              : AppShadows.getCard(isDark),
         ),
         child: Row(
           children: [
@@ -262,18 +291,22 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isSelected
-                    ? [
-                        isDark ? AppColors.primaryDark : AppColors.primary,
-                        isDark ? AppColors.primary : AppColors.primaryLight,
-                      ]
-                    : [
-                        isDark ? AppColors.darkCardSecondary : AppColors.slate50,
-                        isDark ? AppColors.darkCardSecondary : AppColors.slate50,
-                      ],
+                      ? [
+                          isDark ? AppColors.primaryDark : AppColors.primary,
+                          isDark ? AppColors.primary : AppColors.primaryLight,
+                        ]
+                      : [
+                          isDark
+                              ? AppColors.darkCardSecondary
+                              : AppColors.slate50,
+                          isDark
+                              ? AppColors.darkCardSecondary
+                              : AppColors.slate50,
+                        ],
                 ),
                 borderRadius: AppDimensions.borderRadiusSmall,
               ),
-                child: Center(
+              child: Center(
                 child: Text(
                   '⚡',
                   style: TextStyle(fontSize: isSelected ? 20 : 18),
@@ -281,7 +314,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // 节点信息
             Expanded(
               child: Column(
@@ -290,7 +323,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                   Text(
                     kAutoSelectNodeName,
                     style: AppTextStyles.headlineMedium.copyWith(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -300,16 +335,19 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                       Icon(
                         Icons.auto_awesome,
                         size: 14,
-                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                        color:
+                            isDark ? AppColors.primaryLight : AppColors.primary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          autoNodeName != null 
-                            ? '当前: $autoNodeName'
-                            : '智能选择最快节点',
+                          autoNodeName != null
+                              ? '当前: $autoNodeName'
+                              : '智能选择最快节点',
                           style: AppTextStyles.labelTiny.copyWith(
-                            color: isDark ? AppColors.primaryLight.withOpacity(0.7) : AppColors.primary.withOpacity(0.8),
+                            color: isDark
+                                ? AppColors.primaryLight.withOpacity(0.7)
+                                : AppColors.primary.withOpacity(0.8),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -319,7 +357,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                 ],
               ),
             ),
-            
+
             // 延迟和选中状态
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -351,9 +389,10 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
   }
 
   /// 普通节点卡片
-  Widget _buildNodeCard(ProxyNode node, bool isSelected, bool isDark, NodeProvider provider, int index) {
+  Widget _buildNodeCard(ProxyNode node, bool isSelected, bool isDark,
+      NodeProvider provider, int index) {
     final isPressed = _isCardPressed && _pressedIndex == index;
-    
+
     return GestureDetector(
       onTapDown: (_) => setState(() {
         _isCardPressed = true;
@@ -377,113 +416,126 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
         scale: isPressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-            ? (isDark ? AppColors.primaryUltraDark.withOpacity(0.3) : AppColors.primaryUltraLight)
-            : (isDark ? AppColors.darkCard : AppColors.lightCard),
-          borderRadius: AppDimensions.borderRadiusMedium,
-          border: Border.all(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
             color: isSelected
-              ? (isDark ? AppColors.primaryDark : AppColors.primary)
-              : (isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected 
-            ? (isDark ? AppShadows.glowSmall : AppShadows.lightSmall)
-            : AppShadows.getCard(isDark),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Row(
-              children: [
-                // 国旗图标
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                      ? (isDark ? AppColors.primaryDark.withOpacity(0.2) : AppColors.primaryUltraLight)
-                      : (isDark ? AppColors.darkCardSecondary : AppColors.slate50),
-                    borderRadius: AppDimensions.borderRadiusSmall,
-                  ),
-                  child: Center(
-                    child: Text(
-                      getFlagEmoji(node.name),
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                
-                // 节点信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        node.name,
-                        style: AppTextStyles.headlineMedium.copyWith(
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        node.type.toUpperCase(),
-                        style: AppTextStyles.labelTiny.copyWith(
-                          color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // 选中状态
-                if (isSelected)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Icon(
-                      Icons.check_circle,
-                      size: 22,
-                      color: isDark ? AppColors.primaryLight : AppColors.primary,
-                    ),
-                  ),
-              ],
+                ? (isDark
+                    ? AppColors.primaryUltraDark.withOpacity(0.3)
+                    : AppColors.primaryUltraLight)
+                : (isDark ? AppColors.darkCard : AppColors.lightCard),
+            borderRadius: AppDimensions.borderRadiusMedium,
+            border: Border.all(
+              color: isSelected
+                  ? (isDark ? AppColors.primaryDark : AppColors.primary)
+                  : (isDark
+                      ? AppColors.darkCardBorder
+                      : AppColors.lightCardBorder),
+              width: isSelected ? 2 : 1,
             ),
-            
-            // 右下角延迟显示
-            if (node.latency != null)
-              Positioned(
-                right: 0,
-                bottom: -4,
-                child: Text(
-                  (node.latency! <= 0) ? '超时' : '${node.latency}ms',
-                  style: AppTextStyles.labelTiny.copyWith(
-                    color: _getLatencyColor(node.latency!, isDark),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
+            boxShadow: isSelected
+                ? (isDark ? AppShadows.glowSmall : AppShadows.lightSmall)
+                : AppShadows.getCard(isDark),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Row(
+                children: [
+                  // 国旗图标
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isDark
+                              ? AppColors.primaryDark.withOpacity(0.2)
+                              : AppColors.primaryUltraLight)
+                          : (isDark
+                              ? AppColors.darkCardSecondary
+                              : AppColors.slate50),
+                      borderRadius: AppDimensions.borderRadiusSmall,
+                    ),
+                    child: Center(
+                      child: Text(
+                        getFlagEmoji(node.name),
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // 节点信息
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          node.name,
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          node.type.toUpperCase(),
+                          style: AppTextStyles.labelTiny.copyWith(
+                            color: isDark
+                                ? AppColors.darkTextTertiary
+                                : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 选中状态
+                  if (isSelected)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Icon(
+                        Icons.check_circle,
+                        size: 22,
+                        color:
+                            isDark ? AppColors.primaryLight : AppColors.primary,
+                      ),
+                    ),
+                ],
+              ),
+
+              // 右下角延迟显示
+              if (node.latency != null)
+                Positioned(
+                  right: 0,
+                  bottom: -4,
+                  child: Text(
+                    (node.latency! <= 0) ? '超时' : '${node.latency}ms',
+                    style: AppTextStyles.labelTiny.copyWith(
+                      color: _getLatencyColor(node.latency!, isDark),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   /// 错误视图
   Widget _buildErrorView(bool isDark, NodeProvider provider) {
     final errorMsg = provider.errorMessage ?? '';
     print('DEBUG: NodeSelectionScreen Error Message: "$errorMsg"');
-    
-    final isSubscriptionError = errorMsg.contains('订阅') || 
-                                errorMsg.contains('套餐');
+
+    final isSubscriptionError =
+        errorMsg.contains('订阅') || errorMsg.contains('套餐');
 
     if (isSubscriptionError) {
       return _buildNoSubscriptionView(isDark);
@@ -504,7 +556,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
             Text(
               provider.errorMessage!,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -530,7 +584,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.primaryDark.withOpacity(0.1) : AppColors.primaryUltraLight,
+                color: isDark
+                    ? AppColors.primaryDark.withOpacity(0.1)
+                    : AppColors.primaryUltraLight,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -543,7 +599,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
             Text(
               '开启您的极速之旅',
               style: AppTextStyles.headlineMedium.copyWith(
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -551,7 +609,9 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
             Text(
               '暂时没有可用的节点信息\n订阅套餐以获取全球极速网络加速服务',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -565,7 +625,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                 context.read<NavigationProvider>().setPage(NavigationPage.shop);
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text('立即去订阅'),
             ),
@@ -581,7 +642,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
       child: Text(
         '暂无可用节点',
         style: AppTextStyles.bodyLarge.copyWith(
-          color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+          color:
+              isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
         ),
       ),
     );

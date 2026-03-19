@@ -24,20 +24,20 @@ class _TrayControllerState extends State<TrayController> {
 
   void _initTrayService() {
     final trayService = TrayService();
-    
+
     // Bind the toggle callback
     trayService.onToggleVpn = () async {
       debugPrint('TRAY_CTRL: Received toggle VPN request');
       final authProvider = context.read<AuthProvider>();
       final vpnProvider = context.read<VpnProvider>();
-      
+
       // Ensure user is logged in
       if (!authProvider.isLoggedIn) {
         debugPrint('TRAY_CTRL: User not logged in, ignoring toggle.');
         // Pop window to login screen and ask them to log in ideally?
         return;
       }
-      
+
       // Prevent rapid tapping
       if (vpnProvider.isProcessing) {
         debugPrint('TRAY_CTRL: VPN is processing, ignoring toggle.');

@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../dio_client.dart';
+import '../../services/app_logger.dart';
 import '../../../utils/constants.dart';
 import '../../../models/user.dart';
 
@@ -31,10 +31,11 @@ class UserService {
         headers: {'User-Agent': 'sing-box/1.10.0'},
       ),
     );
-    
-    print('DEBUG UserService: response.data type = ${response.data.runtimeType}');
-    print('DEBUG UserService: response.data = ${response.data}');
-    
+
+    await AppLogger.instance.info(
+      'Subscription config fetched: type=${response.data.runtimeType}',
+    );
+
     return response.data;
   }
 
@@ -46,7 +47,8 @@ class UserService {
 
   /// 创建订单并获取支付链接
   Future<String> createOrder(int planId, String period) async {
-    print('DEBUG UserService: Creating order for planId: $planId, period: $period');
+    await AppLogger.instance
+        .info('Creating order for planId=$planId period=$period');
     final response = await _client.dio.post(
       ApiConstants.createOrder,
       data: {
@@ -54,13 +56,12 @@ class UserService {
         'period': period,
       },
     );
-    print('DEBUG UserService: API Response: ${response.data}');
     // Xboard 接口返回的是订单号 trade_no
     final tradeNo = response.data['data'];
-    
+
     // 修正：根据用户反馈，前端入口 path 为 /app
     final url = '${ApiConstants.baseUrl}/app#/order/$tradeNo';
-    print('DEBUG UserService: Final URL: $url');
+    await AppLogger.instance.info('Created order redirect url: $url');
     return url;
   }
 
@@ -89,17 +90,18 @@ class UserService {
       final response = await _client.dio.get('/api/v1/user/invite/fetch');
       debugPrint('DEBUG InviteCode: fetch response = ${response.data}');
       final data = response.data['data'];
-      
+
       if (data is Map && data.containsKey('codes')) {
         final codes = data['codes'];
         if (codes is List && codes.isNotEmpty) {
           return codes.first['code'];
         } else if (codes is List && codes.isEmpty) {
           // 当没有生成过邀请码时，主动调用生成一个
-          debugPrint('DEBUG InviteCode: no existing codes, generating new one...');
+          debugPrint(
+              'DEBUG InviteCode: no existing codes, generating new one...');
           final saveRes = await _client.dio.post('/api/v1/user/invite/save');
           debugPrint('DEBUG InviteCode: save response = ${saveRes.data}');
-          
+
           // 生成后再拉一次
           final fetchAg = await _client.dio.get('/api/v1/user/invite/fetch');
           final dataAg = fetchAg.data['data'];
@@ -120,4 +122,3 @@ class UserService {
     return null;
   }
 }
-

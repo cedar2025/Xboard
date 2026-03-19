@@ -7,8 +7,8 @@ class ProxyNode {
   final String? alterId;
   final String? security;
   final String? network;
-  final dynamic tlsOptions;  // 可能是 Map 或其他类型
-  final dynamic wsOptions;   // 可能是 Map、List 或其他类型
+  final dynamic tlsOptions; // 可能是 Map 或其他类型
+  final dynamic wsOptions; // 可能是 Map、List 或其他类型
   final int? latency; // 毫秒
 
   ProxyNode({

@@ -1,197 +1,202 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+
+import '../services/app_logger.dart';
+import '../services/mac_runtime_service.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
 
 class MacosVpnService implements VpnManager {
-  static const MethodChannel _proxyChannel = MethodChannel('com.elephant.network/proxy');
-  static const String _clashApiBase = 'http://127.0.0.1:9090';
-  
-  // Use a Dio instance that BYPASSES system proxy for Clash API calls
-  late final Dio _clashDio;
-  
-  Process? _singboxProcess;
-  bool _isConnected = false;
-  bool _isRestarting = false;  // Prevent false disconnect during node switch restart
-  VpnState _state = const VpnState(status: VpnStatus.disconnected);
-  final _stateController = StreamController<VpnState>.broadcast();
-  
-  // Store last config info for restart-based node switching
-  String? _lastSanitizedConfig;
-  String? _singboxDirPath;
-  String? _singboxBinPath;
-  int _proxyPort = 2334;
-
-  MacosVpnService() {
-    _clashDio = Dio(BaseOptions(
-      baseUrl: _clashApiBase,
-      connectTimeout: const Duration(seconds: 3),
-      receiveTimeout: const Duration(seconds: 5),
-    ));
-    // Force Dio to bypass system proxy for local Clash API calls
+  MacosVpnService()
+      : _clashDio = Dio(
+          BaseOptions(
+            baseUrl: _clashApiBase,
+            connectTimeout: const Duration(seconds: 3),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        ) {
     _clashDio.httpClientAdapter = IOHttpClientAdapter(
-      onHttpClientCreate: (client) {
-        client.findProxy = (uri) => 'DIRECT';
+      createHttpClient: () {
+        final client = HttpClient();
+        client.findProxy = (_) => 'DIRECT';
         return client;
       },
     );
   }
 
-  void _updateState(VpnStatus status, {String? errorMessage}) {
-    _state = _state.copyWith(status: status, errorMessage: errorMessage);
-    _stateController.add(_state);
-  }
+  static const String _clashApiBase = 'http://127.0.0.1:9090';
+
+  final Dio _clashDio;
+  final MacRuntimeService _runtime = MacRuntimeService.instance;
+  final _stateController = StreamController<VpnState>.broadcast();
+
+  VpnState _state = const VpnState(status: VpnStatus.disconnected);
+  String? _lastSanitizedConfig;
+  String? _singboxDirPath;
+  String? _singboxBinPath;
+  int _proxyPort = 2334;
+  bool _isTunMode = false;
+  bool _isRestarting = false;
+
+  @override
+  Stream<VpnState> get stateStream => _stateController.stream;
+
+  @override
+  VpnState get currentState => _state;
 
   @override
   Future<bool> requestPermission() async {
-    // macOS 在此阶段不需要特殊的 VPN 权限请求
+    await AppLogger.instance.info('macOS requestPermission invoked');
     return true;
   }
 
   @override
   Future<void> start(String config) async {
     try {
-      debugPrint('macOS VpnService start...');
-      
-      final docDir = await getApplicationSupportDirectory();
-      final singboxDir = Directory('${docDir.path}/sing-box'); // Unify with VpnProvider
-      if (!await singboxDir.exists()) {
-        await singboxDir.create(recursive: true);
+      _updateState(VpnStatus.connecting, resetFailure: true, resetError: true);
+      final supportDir = await getApplicationSupportDirectory();
+      final singBoxDir = Directory('${supportDir.path}/sing-box');
+      if (!await singBoxDir.exists()) {
+        await singBoxDir.create(recursive: true);
       }
-      
-      final updatedConfig = _sanitizeConfig(config, singboxDir.path);
-      final configFile = File('${singboxDir.path}/config.json');
-      await configFile.writeAsString(updatedConfig);
-      
-      // Store for restart-based switching
-      _lastSanitizedConfig = updatedConfig;
-      _singboxDirPath = singboxDir.path;
-      
+
+      final configMap = jsonDecode(config) as Map<String, dynamic>;
+      _isTunMode = configMap['use_tun_mode'] == true;
+      final sanitizedConfig =
+          _sanitizeConfig(config, singBoxDir.path, _isTunMode);
+      final configFile = File('${singBoxDir.path}/config.json');
+      await configFile.writeAsString(sanitizedConfig);
+
+      _lastSanitizedConfig = sanitizedConfig;
+      _singboxDirPath = singBoxDir.path;
+
       final arch = await _getArchitecture();
-      final binName = arch == 'arm64' ? 'sing-box-darwin-arm64' : 'sing-box-darwin-amd64';
-      final binFile = File('${singboxDir.path}/sing-box');
-      
+      final binName =
+          arch == 'arm64' ? 'sing-box-darwin-arm64' : 'sing-box-darwin-amd64';
+      final binFile = File('${singBoxDir.path}/$binName');
+
       if (!await binFile.exists()) {
         final byteData = await rootBundle.load('assets/bin/$binName');
-        await binFile.writeAsBytes(byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
+        await binFile.writeAsBytes(
+          byteData.buffer
+              .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+        );
         await Process.run('chmod', ['+x', binFile.path]);
       }
-      
+
       _singboxBinPath = binFile.path;
-      
-      final configMap = jsonDecode(updatedConfig);
-      int proxyPort = 2334; // Default to mixed port if possible
-      if (configMap['inbounds'] != null) {
-        for (var inbound in configMap['inbounds']) {
-          if (inbound['type'] == 'mixed' || inbound['type'] == 'socks' || inbound['type'] == 'http') {
-            proxyPort = inbound['listen_port'] ?? proxyPort;
-            break;
-          }
-        }
-      }
-      _proxyPort = proxyPort;
-      
-      // Clear cache files to prevent SQLite corruption errors on start
-      final filesToDelete = [
-        '${singboxDir.path}/cache.db',
-        '${singboxDir.path}/cache.db-wal',
-        '${singboxDir.path}/cache.db-shm'
-      ];
-      for (final filePath in filesToDelete) {
-        final f = File(filePath);
-        if (await f.exists()) {
-          try {
-            await f.delete();
-            debugPrint('MacosVpnService: deleted $filePath on start');
-          } catch (e) {
-            debugPrint('MacosVpnService: failed to delete $filePath on start: $e');
-          }
-        }
-      }
-      
-      if (_singboxProcess != null) {
-        _singboxProcess?.kill();
-        _singboxProcess = null;
-      }
-      
-      _singboxProcess = await Process.start(
-        binFile.path, 
-        ['run', '-c', configFile.path],
-        workingDirectory: singboxDir.path,
+      _proxyPort = _extractProxyPort(sanitizedConfig);
+
+      await _cleanupResidualCacheFiles(singBoxDir.path);
+      await AppLogger.instance.info(
+        'Starting macOS runtime mode=${_isTunMode ? 'tun' : 'proxy'} port=$_proxyPort',
       );
-      
-      _singboxProcess?.stdout.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box]: $data');
-      });
-      _singboxProcess?.stderr.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box ERR]: $data');
-      });
-      
-      _singboxProcess?.exitCode.then((code) {
-        debugPrint('sing-box process exited with code $code');
-        if (_isRestarting) {
-          debugPrint('sing-box exit during restart, ignoring...');
-          return;
-        }
-        _isConnected = false;
-        _updateState(VpnStatus.disconnected);
-        _disableSystemProxy();
-      });
 
-      await Future.delayed(const Duration(milliseconds: 1000));
-      
-      final proxySuccess = await _enableSystemProxy(proxyPort);
-      // Even if proxy enabling fails, sing-box is running, so we connect.
-      if (!proxySuccess) {
-        debugPrint('Failed to setup system proxy but sing-box is running.');
+      _updateState(VpnStatus.coreStarting);
+      Map<String, dynamic> startResult;
+      if (_isTunMode) {
+        startResult = await _runtime.startTunMode(
+          configPath: configFile.path,
+          binaryPath: binFile.path,
+        );
+      } else {
+        startResult = await _runtime.startProxyMode(
+          configPath: configFile.path,
+          binaryPath: binFile.path,
+          proxyPort: _proxyPort,
+        );
       }
 
-      _isConnected = true;
-      _updateState(VpnStatus.connected);
-    } catch (e) {
-      debugPrint('macOS VpnService start failed: $e');
-      _updateState(VpnStatus.disconnected, errorMessage: e.toString());
-      await stop();
+      final started = startResult['ok'] == true;
+      if (!started) {
+        final errorMessage = (startResult['error'] as String?) ?? '启动内核失败';
+        _updateState(
+          VpnStatus.error,
+          errorMessage: errorMessage,
+          failureReason: _mapStartFailureReason(
+            startResult,
+            isTunMode: _isTunMode,
+            fallbackError: errorMessage,
+          ),
+        );
+        return;
+      }
+
+      if (!_isTunMode) {
+        _updateState(VpnStatus.applyingProxy);
+      }
+
+      final healthy = await _waitForHealthCheck();
+      if (!healthy) {
+        await AppLogger.instance.warn('Health check failed after start');
+        _updateState(
+          VpnStatus.error,
+          errorMessage: '连接健康检查失败，请检查本地内核和网络权限',
+          failureReason: VpnFailureReason.healthCheckFailed,
+        );
+        return;
+      }
+
+      final runtimeStatus = await _runtime.getRuntimeStatus();
+      _updateState(
+        VpnStatus.connected,
+        connectionMode:
+            _isTunMode ? VpnConnectionMode.tun : VpnConnectionMode.proxy,
+        runtimeDetails: runtimeStatus,
+        resetFailure: true,
+        resetError: true,
+      );
+      await AppLogger.instance.info('macOS runtime connected successfully');
+    } catch (e, stackTrace) {
+      await AppLogger.instance.error('macOS VpnService start failed',
+          error: e, stackTrace: stackTrace);
+      _updateState(
+        VpnStatus.error,
+        errorMessage: e.toString(),
+        failureReason: VpnFailureReason.unknown,
+      );
     }
   }
 
   @override
   Future<void> stop() async {
     try {
-      debugPrint('macOS VpnService stop...');
-      await _disableSystemProxy();
-      
-      if (_singboxProcess != null) {
-        // macOS 下使用 terminate() 进行优雅退出
-        _singboxProcess?.kill();
-        _singboxProcess = null;
-      } else {
-        await Process.run('pkill', ['-f', 'sing-box run -c']);
-      }
-      
-      _isConnected = false;
-      _updateState(VpnStatus.disconnected);
-    } catch (e) {
-      debugPrint('macOS VpnService stop error: $e');
-      _updateState(VpnStatus.disconnected, errorMessage: e.toString());
+      _updateState(VpnStatus.disconnecting, resetError: true);
+      final result = await _runtime.stopCore();
+      final restored = result['proxyRestored'] != false;
+      final nextStatus =
+          restored ? VpnStatus.disconnected : VpnStatus.restoreFailed;
+      _updateState(
+        nextStatus,
+        errorMessage: restored ? null : '系统代理恢复失败，请在设置页手动恢复',
+        failureReason: restored ? null : VpnFailureReason.restoreFailed,
+        resetError: restored,
+        resetFailure: restored,
+        connectionMode: VpnConnectionMode.unknown,
+        runtimeDetails: result,
+      );
+      await AppLogger.instance
+          .info('macOS runtime stopped: restored=$restored');
+    } catch (e, stackTrace) {
+      await AppLogger.instance.error('macOS VpnService stop failed',
+          error: e, stackTrace: stackTrace);
+      _updateState(
+        VpnStatus.restoreFailed,
+        errorMessage: e.toString(),
+        failureReason: VpnFailureReason.restoreFailed,
+      );
     }
   }
 
   @override
-  VpnState get currentState => _state;
-
-  @override
-  Stream<VpnState> get stateStream => _stateController.stream;
-  
-  @override
   Future<int> urlTest(String groupTag) async {
-    // 通过 Clash API 触发 URL 测试
     try {
       final encodedGroup = Uri.encodeComponent(groupTag);
       final response = await _clashDio.get(
@@ -207,111 +212,204 @@ class MacosVpnService implements VpnManager {
       }
       return -1;
     } catch (e) {
-      debugPrint('MacosVpnService urlTest failed: $e');
+      await AppLogger.instance.warn('macOS urlTest failed for $groupTag: $e');
       return -1;
     }
   }
 
   @override
   Future<void> selectOutbound(String groupTag, String outboundTag) async {
-    if (!_isConnected || _lastSanitizedConfig == null || _singboxDirPath == null || _singboxBinPath == null) {
-      debugPrint('MacosVpnService selectOutbound: not connected or no stored config, skipping');
+    if (_lastSanitizedConfig == null ||
+        _singboxDirPath == null ||
+        _singboxBinPath == null) {
       return;
     }
 
-    debugPrint('MacosVpnService selectOutbound: switching $groupTag -> $outboundTag via restart');
-    
     try {
-      // 1. Modify the stored config to set the new outbound as the selector's default
-      final Map<String, dynamic> config = jsonDecode(_lastSanitizedConfig!);
-      
-      if (config.containsKey('outbounds') && config['outbounds'] is List) {
-        final List<dynamic> outbounds = config['outbounds'];
-        for (var outbound in outbounds) {
-          if (outbound is Map && outbound['type'] == 'selector' && outbound['tag'] == groupTag) {
+      _isRestarting = true;
+      _updateState(VpnStatus.coreStarting);
+
+      final config = jsonDecode(_lastSanitizedConfig!) as Map<String, dynamic>;
+      final outbounds = config['outbounds'];
+      if (outbounds is List) {
+        for (final outbound in outbounds) {
+          if (outbound is Map<String, dynamic> &&
+              outbound['type'] == 'selector' &&
+              outbound['tag'] == groupTag) {
             outbound['default'] = outboundTag;
-            debugPrint('MacosVpnService: set selector "$groupTag" default to "$outboundTag"');
             break;
           }
         }
       }
-      
+
       final updatedConfig = jsonEncode(config);
       _lastSanitizedConfig = updatedConfig;
-      
-      // 2. Write updated config
       final configFile = File('$_singboxDirPath/config.json');
       await configFile.writeAsString(updatedConfig);
-      
-      // 3. Clear cache to prevent sing-box from restoring old selection
-      final filesToDelete = [
-        '$_singboxDirPath/cache.db',
-        '$_singboxDirPath/cache.db-wal',
-        '$_singboxDirPath/cache.db-shm'
-      ];
-      for (final filePath in filesToDelete) {
-        final f = File(filePath);
-        if (await f.exists()) {
-          try {
-            await f.delete();
-            debugPrint('MacosVpnService: deleted $filePath');
-          } catch (e) {
-            debugPrint('MacosVpnService: failed to delete $filePath: $e');
-          }
-        }
+      await _cleanupResidualCacheFiles(_singboxDirPath!);
+
+      await _runtime.stopCore();
+      Map<String, dynamic> startResult;
+      if (_isTunMode) {
+        startResult = await _runtime.startTunMode(
+          configPath: configFile.path,
+          binaryPath: _singboxBinPath!,
+        );
+      } else {
+        _updateState(VpnStatus.applyingProxy);
+        startResult = await _runtime.startProxyMode(
+          configPath: configFile.path,
+          binaryPath: _singboxBinPath!,
+          proxyPort: _proxyPort,
+        );
       }
-      
-      // 4. Kill current sing-box process (set restarting flag to prevent false disconnect)
-      _isRestarting = true;
-      if (_singboxProcess != null) {
-        _singboxProcess?.kill();
-        _singboxProcess = null;
-        // Brief wait for process to exit
-        await Future.delayed(const Duration(milliseconds: 500));
+
+      if (startResult['ok'] != true || !await _waitForHealthCheck()) {
+        final errorMessage = (startResult['error'] as String?) ?? '节点切换失败，请重试';
+        _updateState(
+          VpnStatus.error,
+          errorMessage: errorMessage,
+          failureReason: _mapStartFailureReason(
+            startResult,
+            isTunMode: _isTunMode,
+            fallbackError: errorMessage,
+          ),
+        );
+        return;
       }
-      
-      // 5. Restart sing-box with updated config (system proxy stays enabled)
-      _singboxProcess = await Process.start(
-        _singboxBinPath!,
-        ['run', '-c', configFile.path],
-        workingDirectory: _singboxDirPath!,
+
+      _updateState(
+        VpnStatus.connected,
+        connectionMode:
+            _isTunMode ? VpnConnectionMode.tun : VpnConnectionMode.proxy,
+        runtimeDetails: await _runtime.getRuntimeStatus(),
+        resetError: true,
+        resetFailure: true,
       );
-      
-      _singboxProcess?.stdout.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box]: $data');
-      });
-      _singboxProcess?.stderr.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box ERR]: $data');
-      });
-      
-      _singboxProcess?.exitCode.then((code) {
-        debugPrint('sing-box process exited with code $code');
-        if (_isRestarting) {
-          debugPrint('sing-box exit during restart, ignoring...');
-          return;
-        }
-        _isConnected = false;
-        _updateState(VpnStatus.disconnected);
-        _disableSystemProxy();
-      });
-      
-      // Wait for sing-box to start up then clear restarting flag
-      await Future.delayed(const Duration(milliseconds: 800));
+      await AppLogger.instance.info('Node switch completed: $outboundTag');
+    } catch (e, stackTrace) {
+      await AppLogger.instance
+          .error('Node switch failed', error: e, stackTrace: stackTrace);
+      _updateState(
+        VpnStatus.error,
+        errorMessage: '节点切换失败: $e',
+        failureReason: VpnFailureReason.unknown,
+      );
+    } finally {
       _isRestarting = false;
-      
-      debugPrint('MacosVpnService selectOutbound: restart complete, now using "$outboundTag"');
-    } catch (e) {
-      debugPrint('MacosVpnService selectOutbound FAILED: $e');
     }
   }
 
   @override
   void dispose() {
-    stop();
+    if (!_isRestarting) {
+      stop();
+    }
     _stateController.close();
   }
-  
-  // ================= 辅助方法 =================
+
+  void _updateState(
+    VpnStatus status, {
+    String? errorMessage,
+    VpnFailureReason? failureReason,
+    VpnConnectionMode? connectionMode,
+    Map<String, dynamic>? runtimeDetails,
+    bool resetError = false,
+    bool resetFailure = false,
+  }) {
+    _state = _state.copyWith(
+      status: status,
+      errorMessage: errorMessage,
+      resetErrorMessage: resetError,
+      failureReason: failureReason,
+      resetFailureReason: resetFailure,
+      connectionMode: connectionMode,
+      runtimeDetails: runtimeDetails,
+    );
+    _stateController.add(_state);
+  }
+
+  Future<bool> _waitForHealthCheck() async {
+    for (var i = 0; i < 12; i++) {
+      try {
+        final response = await _clashDio.get('/proxies');
+        if (response.statusCode == 200) {
+          return true;
+        }
+      } catch (_) {
+        // Retry until timeout.
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    return false;
+  }
+
+  VpnFailureReason _mapStartFailureReason(
+    Map<String, dynamic> startResult, {
+    required bool isTunMode,
+    required String fallbackError,
+  }) {
+    final code = (startResult['code'] as String?)?.toUpperCase() ?? '';
+    final errorText = fallbackError.toLowerCase();
+
+    if (code == 'TUN_CONFLICT' ||
+        code == 'TUN_ROUTE_CONFLICT' ||
+        errorText.contains('route') ||
+        errorText.contains('其他 tun/vpn') ||
+        errorText.contains('冲突路由') ||
+        errorText.contains('file exists')) {
+      return VpnFailureReason.routeConflict;
+    }
+    if (code == 'PERMISSION_DENIED' ||
+        errorText.contains('permission') ||
+        errorText.contains('administrator') ||
+        errorText.contains('授权')) {
+      return VpnFailureReason.permissionDenied;
+    }
+    if (errorText.contains('proxy')) {
+      return VpnFailureReason.proxySetupFailed;
+    }
+    if (errorText.contains('health check')) {
+      return VpnFailureReason.healthCheckFailed;
+    }
+    return isTunMode
+        ? VpnFailureReason.coreStartFailed
+        : VpnFailureReason.coreStartFailed;
+  }
+
+  Future<void> _cleanupResidualCacheFiles(String baseDir) async {
+    final filesToDelete = [
+      '$baseDir/cache.db',
+      '$baseDir/cache.db-wal',
+      '$baseDir/cache.db-shm',
+    ];
+    for (final filePath in filesToDelete) {
+      final file = File(filePath);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {
+          // Best-effort cleanup.
+        }
+      }
+    }
+  }
+
+  int _extractProxyPort(String jsonConfig) {
+    final updatedConfigMap = jsonDecode(jsonConfig) as Map<String, dynamic>;
+    final inbounds = updatedConfigMap['inbounds'];
+    if (inbounds is List) {
+      for (final inbound in inbounds) {
+        if (inbound is Map<String, dynamic>) {
+          final type = inbound['type'];
+          if (type == 'mixed' || type == 'socks' || type == 'http') {
+            return (inbound['listen_port'] as num?)?.toInt() ?? 2334;
+          }
+        }
+      }
+    }
+    return 2334;
+  }
 
   Future<String> _getArchitecture() async {
     final result = await Process.run('uname', ['-m']);
@@ -322,64 +420,66 @@ class MacosVpnService implements VpnManager {
     return 'amd64';
   }
 
-  Future<bool> _enableSystemProxy(int port) async {
+  String _sanitizeConfig(String jsonConfig, String baseDir, bool useTunMode) {
     try {
-      final bool result = await _proxyChannel.invokeMethod('enableProxy', {
-        'port': port,
-      });
-      return result;
-    } catch (e) {
-      debugPrint('Invoke enableProxy failed: $e');
-      return false; // 可能由于没有权限或者还没实现
-    }
-  }
-
-  Future<bool> _disableSystemProxy() async {
-    try {
-      final bool result = await _proxyChannel.invokeMethod('disableProxy');
-      return result;
-    } catch (e) {
-      debugPrint('Invoke disableProxy failed: $e');
-      return false;
-    }
-  }
-
-  String _sanitizeConfig(String jsonConfig, String baseDir) {
-    try {
-      final Map<String, dynamic> config = jsonDecode(jsonConfig);
-
-      // 1. Set log level to warn to reduce TRACE noise
+      final config = jsonDecode(jsonConfig) as Map<String, dynamic>;
+      config.remove('use_tun_mode');
       config['log'] = {'level': 'warn', 'timestamp': true};
 
-      // 2. Remove TUN inbounds (unsupported without root perms on macOS desktop)
-      if (config.containsKey('inbounds') && config['inbounds'] is List) {
-        final List<dynamic> inbounds = config['inbounds'];
-        inbounds.removeWhere((inbound) => inbound['type'] == 'tun');
-        
-        // Ensure there is at least one mixed or socks inbound if none left
-        bool hasProxyInbound = inbounds.any((inbound) => 
-          inbound['type'] == 'mixed' || inbound['type'] == 'socks' || inbound['type'] == 'http');
-        
+      if (config['inbounds'] is List) {
+        final inbounds = config['inbounds'] as List<dynamic>;
+        if (!useTunMode) {
+          inbounds.removeWhere((inbound) => inbound['type'] == 'tun');
+        } else {
+          var hasTunInbound = false;
+          for (final inbound in inbounds) {
+            if (inbound['type'] == 'tun') {
+              hasTunInbound = true;
+              inbound.remove('address');
+              inbound.remove('interface_name');
+              inbound['inet4_address'] = '172.19.0.1/30';
+              inbound['inet6_address'] = 'fdfe:dcba:9876::1/126';
+              inbound['auto_route'] = true;
+              inbound['strict_route'] = false;
+            }
+          }
+          if (!hasTunInbound) {
+            inbounds.add({
+              'type': 'tun',
+              'tag': 'tun-in',
+              'inet4_address': '172.19.0.1/30',
+              'inet6_address': 'fdfe:dcba:9876::1/126',
+              'auto_route': true,
+              'strict_route': false,
+              'stack': 'system',
+              'sniff': true,
+            });
+          }
+        }
+
+        final hasProxyInbound = inbounds.any((inbound) {
+          final type = inbound['type'];
+          return type == 'mixed' || type == 'socks' || type == 'http';
+        });
         if (!hasProxyInbound) {
           inbounds.add({
-            "type": "mixed",
-            "tag": "mixed-in",
-            "listen": "127.0.0.1",
-            "listen_port": 2334,
-            "sniff": true
+            'type': 'mixed',
+            'tag': 'mixed-in',
+            'listen': '127.0.0.1',
+            'listen_port': 2334,
+            'sniff': true,
           });
         }
       }
 
-      // 3. Convert remote rule_sets to local rule_sets
-      if (config.containsKey('route') && config['route'] is Map) {
-        final Map<String, dynamic> route = config['route'];
-        if (route.containsKey('rule_set') && route['rule_set'] is List) {
-          final List<dynamic> ruleSets = route['rule_set'];
+      if (config['route'] is Map<String, dynamic>) {
+        final route = config['route'] as Map<String, dynamic>;
+        if (route['rule_set'] is List) {
+          final ruleSets = route['rule_set'] as List<dynamic>;
           for (var i = 0; i < ruleSets.length; i++) {
             final ruleSet = ruleSets[i];
-            if (ruleSet is Map && ruleSet['type'] == 'remote') {
-              // Convert to local using the assets we copied
+            if (ruleSet is Map<String, dynamic> &&
+                ruleSet['type'] == 'remote') {
               final tag = ruleSet['tag'];
               ruleSets[i] = {
                 'tag': tag,
@@ -390,36 +490,21 @@ class MacosVpnService implements VpnManager {
             }
           }
         }
+        route['final'] = '节点选择';
       }
 
-      // 4. Ensure experimental.clash_api is configured for local REST API
-      if (!config.containsKey('experimental')) {
-        config['experimental'] = <String, dynamic>{};
-      }
-      final experimental = config['experimental'] as Map<String, dynamic>;
-      
-      // Inject clash_api if not present
-      if (!experimental.containsKey('clash_api')) {
-        experimental['clash_api'] = <String, dynamic>{};
-      }
-      final clashApi = experimental['clash_api'] as Map<String, dynamic>;
+      final experimental = (config['experimental'] as Map<String, dynamic>?) ??
+          <String, dynamic>{};
+      config['experimental'] = experimental;
+      final clashApi = (experimental['clash_api'] as Map<String, dynamic>?) ??
+          <String, dynamic>{};
+      experimental['clash_api'] = clashApi;
       clashApi['external_controller'] = '127.0.0.1:9090';
-      // Optionally set default mode
-      if (!clashApi.containsKey('default_mode')) {
-        clashApi['default_mode'] = 'rule';
-      }
+      clashApi['default_mode'] = clashApi['default_mode'] ?? 'rule';
 
-      // Ensure cache_file path is absolute
-      if (experimental.containsKey('cache_file') && experimental['cache_file'] is Map) {
+      if (experimental['cache_file'] is Map<String, dynamic>) {
         final cacheFile = experimental['cache_file'] as Map<String, dynamic>;
         cacheFile['path'] = '$baseDir/cache.db';
-      }
-
-      // 5. Add explicit final outbound to route through 节点选择 selector
-      if (config.containsKey('route') && config['route'] is Map) {
-        final Map<String, dynamic> route = config['route'];
-        // Ensure unmatched traffic goes through the selector for proper outbound switching
-        route['final'] = '节点选择';
       }
 
       return jsonEncode(config);

@@ -114,6 +114,38 @@
                 opacity: 0.8;
             }
             
+            .nav-link {
+                color: #333;
+                font-weight: 600;
+                text-decoration: none;
+                margin-left: 36px;
+                font-size: 0.95rem;
+                letter-spacing: 0.05em;
+                position: relative;
+                padding-bottom: 4px;
+                transition: color 0.3s ease;
+            }
+
+            .nav-link::after {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 2px;
+                bottom: 0;
+                left: 50%;
+                background-color: #000;
+                transition: all 0.3s ease;
+                transform: translateX(-50%);
+            }
+
+            .nav-link:hover {
+                color: #000;
+            }
+            
+            .nav-link:hover::after {
+                width: 100%;
+            }
+            
             .landing-page .header-buttons {
                 display: flex;
                 gap: 12px;
@@ -314,14 +346,41 @@
             }
             .landing-page footer {
                 text-align: center;
-                padding: 40px 30px;
-                color: var(--text-dim);
-                font-size: 0.8rem;
-                border-top: 1px solid var(--border);
-                background: #fafafa;
+                padding: 60px 20px;
+                background: #fcfcfc;
+                border-top: 1px solid #f0f0f0;
                 position: relative;
                 width: 100%;
                 z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+            }
+            
+            .footer-links {
+                display: flex;
+                gap: 32px;
+                justify-content: center;
+            }
+            
+            .footer-links a {
+                color: #888;
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-weight: 500;
+                letter-spacing: 0.02em;
+                transition: color 0.3s ease;
+            }
+            
+            .footer-links a:hover {
+                color: #333;
+            }
+            
+            .footer-copy {
+                color: #aaa;
+                font-size: 0.75rem;
+                letter-spacing: 0.03em;
             }
 
             /* ===== 首屏滚动指示器 ===== */
@@ -751,7 +810,7 @@
         <div class="landing-page">
 
             <header>
-                <div style="display: flex; align-items: center; gap: 40px;">
+                <div style="display: flex; align-items: center;">
                     <a href="/" class="brand" id="brandLogo" style="text-decoration: none;">
                         <img
                             src="/landing/assets/elephant-route-logo.jpg"
@@ -765,7 +824,7 @@
                         />
                         大象网络
                     </a>
-                    
+                    <a href="/pricing.html" class="nav-link">定价方案</a>
                 </div>
                 <div class="header-buttons">
                     <button class="btn-login" id="loginBtn">登录</button>
@@ -930,7 +989,12 @@
             </section>
 
             <footer>
-                <p>© 2024 大象网络 Inc. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="/terms.html">服务条款</a>
+                    <a href="/privacy.html">隐私政策</a>
+                    <a href="/refund.html">退款说明</a>
+                </div>
+                <div class="footer-copy">© 2026 大象网络 Inc. All rights reserved.</div>
             </footer>
         </div>
 

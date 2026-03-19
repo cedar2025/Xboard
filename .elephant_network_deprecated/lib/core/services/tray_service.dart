@@ -9,22 +9,23 @@ class TrayService with TrayListener {
   TrayService._internal();
 
   Future<void> init() async {
-    if (kIsWeb || (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
+    if (kIsWeb ||
+        (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
       return;
     }
 
     trayManager.addListener(this);
-    
+
     // 设置托盘图标
     final String iconPath = Platform.isWindows
         ? 'app_icon.ico' // Windows 原生应用图标
         : 'assets/images/logo_icon_tray.png';
-        
+
     await trayManager.setIcon(
       iconPath,
       isTemplate: Platform.isMacOS, // 仅 macOS 下支持自适应黑白色（Template Image）
     );
-    
+
     // 初始化时显示默认状态（未连接）
     await updateMenu(false);
   }

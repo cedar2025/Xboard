@@ -21,6 +21,7 @@ class ConfigProvider with ChangeNotifier {
   String _domesticDns = defaultDomesticDns;
   String _serviceMode = defaultServiceMode;
   String _testUrl = defaultTestUrl;
+  bool _useTunMode = false;
   bool _isLoaded = false;
 
   // Getters
@@ -28,6 +29,7 @@ class ConfigProvider with ChangeNotifier {
   String get domesticDns => _domesticDns;
   String get serviceMode => _serviceMode;
   String get testUrl => _testUrl;
+  bool get useTunMode => _useTunMode;
   bool get isLoaded => _isLoaded;
 
   ConfigProvider() {
@@ -39,9 +41,12 @@ class ConfigProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _foreignDns = prefs.getString('config_foreign_dns') ?? defaultForeignDns;
-      _domesticDns = prefs.getString('config_domestic_dns') ?? defaultDomesticDns;
-      _serviceMode = prefs.getString('config_service_mode') ?? defaultServiceMode;
+      _domesticDns =
+          prefs.getString('config_domestic_dns') ?? defaultDomesticDns;
+      _serviceMode =
+          prefs.getString('config_service_mode') ?? defaultServiceMode;
       _testUrl = prefs.getString('config_test_url') ?? defaultTestUrl;
+      _useTunMode = prefs.getBool('config_use_tun_mode') ?? false;
       _isLoaded = true;
       notifyListeners();
     } catch (e) {
@@ -86,12 +91,21 @@ class ConfigProvider with ChangeNotifier {
     await prefs.setString('config_test_url', url);
   }
 
+  /// 更新 TUN 模式状态
+  Future<void> setUseTunMode(bool use) async {
+    _useTunMode = use;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('config_use_tun_mode', use);
+  }
+
   /// 恢复默认设置
   Future<void> resetToDefaults() async {
     _foreignDns = defaultForeignDns;
     _domesticDns = defaultDomesticDns;
     _serviceMode = defaultServiceMode;
     _testUrl = defaultTestUrl;
+    _useTunMode = false;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -99,5 +113,6 @@ class ConfigProvider with ChangeNotifier {
     await prefs.remove('config_domestic_dns');
     await prefs.remove('config_service_mode');
     await prefs.remove('config_test_url');
+    await prefs.remove('config_use_tun_mode');
   }
 }

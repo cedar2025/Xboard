@@ -14,7 +14,8 @@ class CustomToastWidget extends StatefulWidget {
   State<CustomToastWidget> createState() => _CustomToastWidgetState();
 }
 
-class _CustomToastWidgetState extends State<CustomToastWidget> with SingleTickerProviderStateMixin {
+class _CustomToastWidgetState extends State<CustomToastWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacity;
 
@@ -27,7 +28,7 @@ class _CustomToastWidgetState extends State<CustomToastWidget> with SingleTicker
     );
     _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
-    
+
     // 在销毁前执行回退动画
     Future.delayed(const Duration(milliseconds: 1700), () {
       if (mounted) _controller.reverse();

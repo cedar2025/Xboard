@@ -30,7 +30,8 @@ class PlatformUtils {
 
   /// 基于屏幕宽度的响应式判断
   /// 宽度 >= breakpoint 视为桌面宽度
-  static bool isDesktopWidth(BuildContext context, {double breakpoint = 800.0}) {
+  static bool isDesktopWidth(BuildContext context,
+      {double breakpoint = 800.0}) {
     return MediaQuery.of(context).size.width >= breakpoint;
   }
 
@@ -46,7 +47,8 @@ class PlatformUtils {
 
   /// 根据宽度计算 Grid 列数
   /// 用于桌面端节点列表、套餐卡片等网格布局
-  static int getGridColumns(BuildContext context, {double minItemWidth = 280.0}) {
+  static int getGridColumns(BuildContext context,
+      {double minItemWidth = 280.0}) {
     final width = MediaQuery.of(context).size.width;
     // 桌面端需要减去侧边栏宽度
     final contentWidth = isDesktop ? width - 220.0 : width;

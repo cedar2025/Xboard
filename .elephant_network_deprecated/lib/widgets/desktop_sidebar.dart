@@ -24,35 +24,31 @@ class DesktopSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: AppDimensions.sidebarWidth,
       decoration: BoxDecoration(
-        color: isDark 
-          ? AppColors.darkCard 
-          : AppColors.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         border: Border(
           right: BorderSide(
-            color: isDark 
-              ? AppColors.darkCardBorder 
-              : AppColors.lightCardBorder,
+            color:
+                isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
             width: 1,
           ),
         ),
-        boxShadow: isDark
-          ? AppShadows.navigationDark
-          : AppShadows.navigationLight,
+        boxShadow:
+            isDark ? AppShadows.navigationDark : AppShadows.navigationLight,
       ),
       child: Column(
         children: [
           // macOS 标题栏安全区域
           const SizedBox(height: AppDimensions.desktopTopPadding),
-          
+
           // Logo 区域
           _buildLogo(isDark),
-          
+
           const SizedBox(height: AppDimensions.spacingXL),
-          
+
           // 导航项
           Expanded(
             child: Padding(
@@ -85,10 +81,10 @@ class DesktopSidebar extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 底部VPN状态指示器
           _buildConnectionStatus(context, isDark),
-          
+
           const SizedBox(height: AppDimensions.spacingMedium),
         ],
       ),
@@ -119,18 +115,18 @@ class DesktopSidebar extends StatelessWidget {
                 Text(
                   '大象网络',
                   style: AppTextStyles.titleSmall.copyWith(
-                    color: isDark 
-                      ? AppColors.darkTextPrimary 
-                      : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   'Elephant Network',
                   style: AppTextStyles.labelTiny.copyWith(
-                    color: isDark 
-                      ? AppColors.darkTextTertiary 
-                      : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary,
                     fontSize: 9,
                     letterSpacing: 0.5,
                   ),
@@ -151,16 +147,16 @@ class DesktopSidebar extends StatelessWidget {
     required bool isDark,
   }) {
     final isActive = currentPage == page;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onPageChanged(page),
         borderRadius: AppDimensions.borderRadiusSmall,
-        focusColor: isDark 
+        focusColor: isDark
             ? AppColors.primaryLight.withOpacity(0.12)
             : AppColors.primary.withOpacity(0.08),
-        hoverColor: isDark 
+        hoverColor: isDark
             ? AppColors.primaryLight.withOpacity(0.12)
             : AppColors.primary.withOpacity(0.08),
         highlightColor: Colors.transparent,
@@ -172,10 +168,10 @@ class DesktopSidebar extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isActive
-              ? (isDark 
-                  ? AppColors.primaryLight.withOpacity(0.12)
-                  : AppColors.primary.withOpacity(0.08))
-              : Colors.transparent,
+                ? (isDark
+                    ? AppColors.primaryLight.withOpacity(0.12)
+                    : AppColors.primary.withOpacity(0.08))
+                : Colors.transparent,
             borderRadius: AppDimensions.borderRadiusSmall,
           ),
           child: Row(
@@ -184,16 +180,20 @@ class DesktopSidebar extends StatelessWidget {
                 icon,
                 size: 20,
                 color: isActive
-                  ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                  : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary),
+                    ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                    : (isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary),
               ),
               const SizedBox(width: AppDimensions.spacingSM),
               Text(
                 label,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: isActive
-                    ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextPrimary),
+                      ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                      : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextPrimary),
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -210,11 +210,11 @@ class DesktopSidebar extends StatelessWidget {
       builder: (context, vpnProvider, _) {
         final isConnected = vpnProvider.isConnected;
         final isProcessing = vpnProvider.isProcessing;
-        
+
         String statusText;
         Color statusColor;
         IconData statusIcon;
-        
+
         if (isProcessing) {
           statusText = '连接中...';
           statusColor = Colors.orange;
@@ -225,12 +225,12 @@ class DesktopSidebar extends StatelessWidget {
           statusIcon = Icons.check_circle_rounded;
         } else {
           statusText = '未连接';
-          statusColor = isDark 
-            ? AppColors.darkTextTertiary 
-            : AppColors.lightTextSecondary;
+          statusColor = isDark
+              ? AppColors.darkTextTertiary
+              : AppColors.lightTextSecondary;
           statusIcon = Icons.circle_outlined;
         }
-        
+
         return Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.spacingMedium,
@@ -242,8 +242,8 @@ class DesktopSidebar extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isDark
-                ? AppColors.darkBackground.withOpacity(0.5)
-                : AppColors.lightBackground.withOpacity(0.5),
+                  ? AppColors.darkBackground.withOpacity(0.5)
+                  : AppColors.lightBackground.withOpacity(0.5),
               borderRadius: AppDimensions.borderRadiusSmall,
               border: Border.all(
                 color: statusColor.withOpacity(0.3),

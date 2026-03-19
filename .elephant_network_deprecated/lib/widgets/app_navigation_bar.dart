@@ -31,18 +31,18 @@ class AppNavigationBar extends StatelessWidget {
           child: Container(
             height: AppDimensions.navigationBarHeight,
             decoration: BoxDecoration(
-              color: isDark 
-                ? AppColors.darkCard.withOpacity(0.8)
-                : AppColors.lightCard.withOpacity(0.8),
+              color: isDark
+                  ? AppColors.darkCard.withOpacity(0.8)
+                  : AppColors.lightCard.withOpacity(0.8),
               borderRadius: AppDimensions.borderRadiusLarge,
               border: Border.all(
-                color: isDark 
-                  ? AppColors.darkCardBorder 
-                  : AppColors.lightCardBorder.withOpacity(0.5),
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder.withOpacity(0.5),
               ),
-              boxShadow: isDark 
-                ? AppShadows.navigationDark 
-                : AppShadows.navigationLight,
+              boxShadow: isDark
+                  ? AppShadows.navigationDark
+                  : AppShadows.navigationLight,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -95,16 +95,20 @@ class AppNavigationBar extends StatelessWidget {
               icon,
               size: 24,
               color: isActive
-                ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary),
+                  ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                  : (isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextSecondary),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: AppTextStyles.labelTiny.copyWith(
                 color: isActive
-                  ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                  : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary),
+                    ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                    : (isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary),
               ),
             ),
           ],

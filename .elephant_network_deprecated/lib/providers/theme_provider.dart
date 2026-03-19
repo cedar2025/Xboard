@@ -4,7 +4,7 @@ import '../core/storage/local_storage.dart';
 class ThemeProvider with ChangeNotifier {
   final _storage = const LocalStorage();
   static const String _key = 'theme_mode';
-  
+
   ThemeMode _themeMode = ThemeMode.system;
 
   ThemeProvider() {
@@ -43,7 +43,7 @@ class ThemeProvider with ChangeNotifier {
     String value = 'system';
     if (mode == ThemeMode.light) value = 'light';
     if (mode == ThemeMode.dark) value = 'dark';
-    
+
     await _storage.write(key: _key, value: value);
     notifyListeners();
   }

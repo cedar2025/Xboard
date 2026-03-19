@@ -1,4 +1,5 @@
 import '../dio_client.dart';
+import '../../services/app_logger.dart';
 import '../../../utils/constants.dart';
 
 class AuthService {
@@ -17,21 +18,18 @@ class AuthService {
 
   /// 用户注册
   Future<Map<String, dynamic>> register(
-    String email, 
-    String password,
-    String emailCode,
-    {String? inviteCode}
-  ) async {
+      String email, String password, String emailCode,
+      {String? inviteCode}) async {
     final data = {
       'email': email,
       'password': password,
       'email_code': emailCode,
     };
-    
+
     if (inviteCode != null && inviteCode.isNotEmpty) {
       data['invite_code'] = inviteCode;
     }
-    
+
     final response = await _client.dio.post(
       ApiConstants.register,
       data: data,
@@ -62,7 +60,7 @@ class AuthService {
     try {
       return await _client.storage.read(key: 'auth_token');
     } catch (e) {
-      print('DEBUG: [AuthService] getToken failed: $e');
+      await AppLogger.instance.error('[AuthService] getToken failed', error: e);
       try {
         await _client.storage.deleteAll();
       } catch (_) {}
@@ -84,7 +82,8 @@ class AuthService {
     try {
       await _client.storage.delete(key: 'auth_token');
     } catch (e) {
-      print('DEBUG: [AuthService] clearToken failed: $e');
+      await AppLogger.instance
+          .error('[AuthService] clearToken failed', error: e);
       try {
         await _client.storage.deleteAll();
       } catch (_) {}

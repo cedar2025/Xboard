@@ -6,7 +6,7 @@ class AppShadows {
   AppShadows._();
 
   // ==================== Light Theme Shadows ====================
-  
+
   /// 小阴影 - Light
   static List<BoxShadow> lightSmall = [
     BoxShadow(
@@ -15,7 +15,7 @@ class AppShadows {
       offset: const Offset(0, 2),
     ),
   ];
-  
+
   /// 中阴影 - Light
   static List<BoxShadow> lightMedium = [
     BoxShadow(
@@ -24,7 +24,7 @@ class AppShadows {
       offset: const Offset(0, 4),
     ),
   ];
-  
+
   /// 大阴影 - Light
   static List<BoxShadow> lightLarge = [
     BoxShadow(
@@ -33,7 +33,7 @@ class AppShadows {
       offset: const Offset(0, 8),
     ),
   ];
-  
+
   /// 超大阴影 - Light
   static List<BoxShadow> lightXL = [
     BoxShadow(
@@ -42,7 +42,7 @@ class AppShadows {
       offset: const Offset(0, 15),
     ),
   ];
-  
+
   /// 卡片阴影 - Light (Premium UI 标准)
   static List<BoxShadow> lightCard = [
     BoxShadow(
@@ -52,7 +52,7 @@ class AppShadows {
       spreadRadius: 0,
     ),
   ];
-  
+
   /// 按钮阴影 - Light
   static List<BoxShadow> lightButton = [
     BoxShadow(
@@ -63,7 +63,7 @@ class AppShadows {
   ];
 
   // ==================== Dark Theme Shadows ====================
-  
+
   /// 小阴影 - Dark
   static List<BoxShadow> darkSmall = [
     BoxShadow(
@@ -72,7 +72,7 @@ class AppShadows {
       offset: const Offset(0, 2),
     ),
   ];
-  
+
   /// 中阴影 - Dark
   static List<BoxShadow> darkMedium = [
     BoxShadow(
@@ -81,7 +81,7 @@ class AppShadows {
       offset: const Offset(0, 4),
     ),
   ];
-  
+
   /// 大阴影 - Dark
   static List<BoxShadow> darkLarge = [
     BoxShadow(
@@ -90,7 +90,7 @@ class AppShadows {
       offset: const Offset(0, 15),
     ),
   ];
-  
+
   /// 超大阴影 - Dark
   static List<BoxShadow> darkXL = [
     BoxShadow(
@@ -99,7 +99,7 @@ class AppShadows {
       offset: const Offset(0, 20),
     ),
   ];
-  
+
   /// 卡片阴影 - Dark
   static List<BoxShadow> darkCard = [
     BoxShadow(
@@ -108,7 +108,7 @@ class AppShadows {
       offset: const Offset(0, 10),
     ),
   ];
-  
+
   /// 按钮阴影 - Dark
   static List<BoxShadow> darkButton = [
     BoxShadow(
@@ -119,7 +119,7 @@ class AppShadows {
   ];
 
   // ==================== Glow Effects ====================
-  
+
   /// 绿色发光效果 - 小
   static List<BoxShadow> glowSmall = [
     BoxShadow(
@@ -128,7 +128,7 @@ class AppShadows {
       spreadRadius: 0,
     ),
   ];
-  
+
   /// 绿色发光效果 - 中
   static List<BoxShadow> glowMedium = [
     BoxShadow(
@@ -137,7 +137,7 @@ class AppShadows {
       spreadRadius: 0,
     ),
   ];
-  
+
   /// 绿色发光效果 - 大 (连接状态专用)
   static List<BoxShadow> glowLarge = [
     BoxShadow(
@@ -146,7 +146,7 @@ class AppShadows {
       spreadRadius: 0,
     ),
   ];
-  
+
   /// 多层发光效果 (最强)
   static List<BoxShadow> glowMulti = [
     // 外层大范围柔和发光
@@ -164,7 +164,7 @@ class AppShadows {
   ];
 
   // ==================== Connection Card Shadows ====================
-  
+
   /// 连接卡片阴影 - 未连接 Light
   static List<BoxShadow> connectionDisconnectedLight = [
     BoxShadow(
@@ -173,7 +173,7 @@ class AppShadows {
       offset: const Offset(0, 10),
     ),
   ];
-  
+
   /// 连接卡片阴影 - 未连接 Dark
   static List<BoxShadow> connectionDisconnectedDark = [
     BoxShadow(
@@ -182,7 +182,7 @@ class AppShadows {
       offset: const Offset(0, 20),
     ),
   ];
-  
+
   /// 连接卡片阴影 - 已连接 Light
   static List<BoxShadow> connectionConnectedLight = [
     BoxShadow(
@@ -191,7 +191,7 @@ class AppShadows {
       offset: const Offset(0, 15),
     ),
   ];
-  
+
   /// 连接卡片阴影 - 已连接 Dark (带发光)
   static List<BoxShadow> connectionConnectedDark = [
     BoxShadow(
@@ -202,7 +202,7 @@ class AppShadows {
   ];
 
   // ==================== Power Button Shadows ====================
-  
+
   /// 电源按钮 - 未连接 Light
   static List<BoxShadow> powerButtonDisconnectedLight = [
     BoxShadow(
@@ -211,7 +211,7 @@ class AppShadows {
       offset: const Offset(0, 15),
     ),
   ];
-  
+
   /// 电源按钮 - 未连接 Dark
   static List<BoxShadow> powerButtonDisconnectedDark = [
     BoxShadow(
@@ -220,7 +220,7 @@ class AppShadows {
       offset: const Offset(0, 20),
     ),
   ];
-  
+
   /// 电源按钮 - 已连接 Light
   static List<BoxShadow> powerButtonConnectedLight = [
     BoxShadow(
@@ -229,7 +229,7 @@ class AppShadows {
       offset: const Offset(0, 15),
     ),
   ];
-  
+
   /// 电源按钮 - 已连接 Dark (强发光)
   static List<BoxShadow> powerButtonConnectedDark = [
     BoxShadow(
@@ -240,7 +240,7 @@ class AppShadows {
   ];
 
   // ==================== Navigation Bar Shadow ====================
-  
+
   /// 导航栏阴影 - Light
   static List<BoxShadow> navigationLight = [
     BoxShadow(
@@ -249,7 +249,7 @@ class AppShadows {
       offset: const Offset(0, -5),
     ),
   ];
-  
+
   /// 导航栏阴影 - Dark
   static List<BoxShadow> navigationDark = [
     BoxShadow(
@@ -260,32 +260,32 @@ class AppShadows {
   ];
 
   // ==================== Helper Methods ====================
-  
+
   /// 根据主题获取小阴影
   static List<BoxShadow> getSmall(bool isDark) {
     return isDark ? darkSmall : lightSmall;
   }
-  
+
   /// 根据主题获取中阴影
   static List<BoxShadow> getMedium(bool isDark) {
     return isDark ? darkMedium : lightMedium;
   }
-  
+
   /// 根据主题获取大阴影
   static List<BoxShadow> getLarge(bool isDark) {
     return isDark ? darkLarge : lightLarge;
   }
-  
+
   /// 根据主题获取卡片阴影
   static List<BoxShadow> getCard(bool isDark) {
     return isDark ? darkCard : lightCard;
   }
-  
+
   /// 根据主题获取按钮阴影
   static List<BoxShadow> getButton(bool isDark) {
     return isDark ? darkButton : lightButton;
   }
-  
+
   /// 自定义颜色的阴影
   static List<BoxShadow> custom({
     required Color color,

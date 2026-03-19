@@ -42,17 +42,17 @@ class ApiErrorHandler {
         if (response.statusCode == 422 && data.containsKey('errors')) {
           final errors = data['errors'];
           if (errors is Map) {
-             // Return the first validation error found
-             final firstKey = errors.keys.first;
-             final firstError = errors[firstKey];
-             if (firstError is List && firstError.isNotEmpty) {
-               return firstError.first.toString();
-             }
+            // Return the first validation error found
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            }
           }
         }
       } else if (data is String) {
-         // If response is just a string, it might be the error message
-         if (data.length < 100) return data; 
+        // If response is just a string, it might be the error message
+        if (data.length < 100) return data;
       }
     } catch (e) {
       // JSON parsing failed

@@ -7,8 +7,10 @@ import 'dart:convert';
 
 /// 真实的 VPN 服务实现(对接原生 sing-box 插件)
 class RealVpnService implements VpnManager {
-  static const MethodChannel _channel = MethodChannel('com.elephant.network/vpn');
-  static const EventChannel _eventChannel = EventChannel('com.elephant.network/vpn_state');
+  static const MethodChannel _channel =
+      MethodChannel('com.elephant.network/vpn');
+  static const EventChannel _eventChannel =
+      EventChannel('com.elephant.network/vpn_state');
 
   final _stateController = StreamController<VpnState>.broadcast();
   VpnState _currentState = const VpnState(status: VpnStatus.disconnected);
@@ -59,7 +61,8 @@ class RealVpnService implements VpnManager {
   Future<void> start(String config) async {
     try {
       // 在原生端启动 sing-box
-      debugPrint('RealVpnService: invoking start with config length: ${config.length}');
+      debugPrint(
+          'RealVpnService: invoking start with config length: ${config.length}');
       await _channel.invokeMethod('start', {'config': config});
       debugPrint('RealVpnService: start invoked successfully');
     } on PlatformException catch (e) {
@@ -113,19 +116,23 @@ class RealVpnService implements VpnManager {
       if (statusStr != null) {
         status = _parseVpnStatus(statusStr);
       }
-      
+
       // Parse latency update if present
       Map<String, int>? latencyMap;
       if (map.containsKey('latency_update')) {
-         final latencyJsonStr = map['latency_update'] as String;
-         debugPrint('[SPEED_TEST_DART] Received latency update: $latencyJsonStr'); // Log received string
-         try {
-             final latencyJson = jsonDecode(latencyJsonStr) as Map<String, dynamic>;
-             latencyMap = latencyJson.map((key, value) => MapEntry(key, value as int));
-             debugPrint('[SPEED_TEST_DART] Parsed latency map size: ${latencyMap.length}');
-         } catch(e) {
-             print("[SPEED_TEST_DART] Error parsing latency update: $e");
-         }
+        final latencyJsonStr = map['latency_update'] as String;
+        debugPrint(
+            '[SPEED_TEST_DART] Received latency update: $latencyJsonStr'); // Log received string
+        try {
+          final latencyJson =
+              jsonDecode(latencyJsonStr) as Map<String, dynamic>;
+          latencyMap =
+              latencyJson.map((key, value) => MapEntry(key, value as int));
+          debugPrint(
+              '[SPEED_TEST_DART] Parsed latency map size: ${latencyMap.length}');
+        } catch (e) {
+          print("[SPEED_TEST_DART] Error parsing latency update: $e");
+        }
       }
 
       _currentState = _currentState.copyWith(
@@ -137,7 +144,7 @@ class RealVpnService implements VpnManager {
         errorMessage: map['error_message'],
         latencyMap: latencyMap, // Update latency map
       );
-      
+
       _stateController.add(_currentState);
     } catch (e) {
       print("解析原生状态数据失败: $e");
@@ -146,10 +153,13 @@ class RealVpnService implements VpnManager {
 
   VpnStatus _parseVpnStatus(String status) {
     switch (status) {
-      case 'connected': return VpnStatus.connected;
-      case 'connecting': return VpnStatus.connecting;
-      case 'disconnecting': return VpnStatus.disconnecting;
-      case 'disconnected': 
+      case 'connected':
+        return VpnStatus.connected;
+      case 'connecting':
+        return VpnStatus.connecting;
+      case 'disconnecting':
+        return VpnStatus.disconnecting;
+      case 'disconnected':
       default:
         return VpnStatus.disconnected;
     }

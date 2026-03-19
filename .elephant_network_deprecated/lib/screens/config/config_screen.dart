@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/mac_runtime_service.dart';
 import '../../providers/config_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -14,12 +15,14 @@ class ConfigScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: Consumer<ConfigProvider>(
           builder: (context, config, _) {
             return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics()),
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -30,6 +33,9 @@ class ConfigScreen extends StatelessWidget {
 
                   // 配置列表卡片
                   _buildSettingsCard(context, config, isDark),
+                  const SizedBox(height: 24),
+
+                  _buildRuntimeToolsCard(context, isDark),
                   const SizedBox(height: 24),
 
                   // 恢复默认按钮
@@ -53,7 +59,8 @@ class ConfigScreen extends StatelessWidget {
         Text(
           '配置参数',
           style: AppTextStyles.titleMedium.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -63,7 +70,8 @@ class ConfigScreen extends StatelessWidget {
   }
 
   /// 设置列表卡片
-  Widget _buildSettingsCard(BuildContext context, ConfigProvider config, bool isDark) {
+  Widget _buildSettingsCard(
+      BuildContext context, ConfigProvider config, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -150,7 +158,8 @@ class ConfigScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.vertical(
         top: isFirst ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
-        bottom: isLast ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
+        bottom:
+            isLast ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -159,13 +168,17 @@ class ConfigScreen extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
             const SizedBox(width: 12),
             Text(
               label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
               ),
             ),
             const SizedBox(width: 16),
@@ -173,7 +186,9 @@ class ConfigScreen extends StatelessWidget {
               child: Text(
                 value,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextSecondary,
                   fontFamily: 'monospace',
                 ),
                 textAlign: TextAlign.right,
@@ -201,8 +216,85 @@ class ConfigScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRuntimeToolsCard(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        borderRadius: AppDimensions.borderRadiusLarge,
+        border: Border.all(
+          color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+        ),
+        boxShadow: AppShadows.getCard(isDark),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '运行时工具',
+            style: AppTextStyles.titleSmall.copyWith(
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '用于恢复系统代理和查看当前 mac 运行态。',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () async {
+                  final result =
+                      await MacRuntimeService.instance.restoreSystemProxy();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result['restored'] == true ? '系统代理已恢复' : '恢复失败，请查看诊断页',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.restore),
+                label: const Text('恢复系统代理'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () async {
+                  final status =
+                      await MacRuntimeService.instance.getRuntimeStatus();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '状态: ${(status['status'] as String?) ?? 'unknown'} / 模式: ${(status['mode'] as String?) ?? 'unknown'}',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.monitor_heart_outlined),
+                label: const Text('查看运行状态'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 恢复默认按钮
-  Widget _buildResetButton(BuildContext context, ConfigProvider config, bool isDark) {
+  Widget _buildResetButton(
+      BuildContext context, ConfigProvider config, bool isDark) {
     return InkWell(
       borderRadius: AppDimensions.borderRadiusMedium,
       onTap: () {
@@ -213,13 +305,17 @@ class ConfigScreen extends StatelessWidget {
             title: Text(
               '恢复默认设置',
               style: TextStyle(
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
               ),
             ),
             content: Text(
               '确定要将所有配置恢复为默认值吗？',
               style: TextStyle(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
             actions: [
@@ -228,7 +324,9 @@ class ConfigScreen extends StatelessWidget {
                 child: Text(
                   '取消',
                   style: TextStyle(
-                    color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ),
@@ -261,7 +359,8 @@ class ConfigScreen extends StatelessWidget {
           color: isDark ? AppColors.darkCard : AppColors.lightCard,
           borderRadius: AppDimensions.borderRadiusMedium,
           border: Border.all(
-            color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+            color:
+                isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
           ),
         ),
         child: Center(
@@ -297,7 +396,8 @@ class ConfigScreen extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -306,17 +406,22 @@ class ConfigScreen extends StatelessWidget {
           controller: controller,
           autofocus: true,
           style: TextStyle(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontFamily: 'monospace',
           ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextSecondary,
               fontSize: 13,
             ),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -336,7 +441,9 @@ class ConfigScreen extends StatelessWidget {
             child: Text(
               '取消',
               style: TextStyle(
-                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextTertiary
+                    : AppColors.lightTextSecondary,
               ),
             ),
           ),
@@ -362,7 +469,8 @@ class ConfigScreen extends StatelessWidget {
   }
 
   /// 服务模式选择弹窗
-  void _showServiceModeDialog(BuildContext context, ConfigProvider config, bool isDark) {
+  void _showServiceModeDialog(
+      BuildContext context, ConfigProvider config, bool isDark) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -370,7 +478,8 @@ class ConfigScreen extends StatelessWidget {
         title: Text(
           '更改服务模式',
           style: TextStyle(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -384,19 +493,25 @@ class ConfigScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               tileColor: isSelected
-                ? (isDark ? AppColors.primaryDark.withOpacity(0.15) : AppColors.primaryUltraLight)
-                : null,
+                  ? (isDark
+                      ? AppColors.primaryDark.withOpacity(0.15)
+                      : AppColors.primaryUltraLight)
+                  : null,
               leading: Icon(
                 isSelected ? Icons.check_circle : Icons.circle_outlined,
                 color: isSelected
-                  ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                  : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary),
+                    ? (isDark ? AppColors.primaryLight : AppColors.primary)
+                    : (isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary),
                 size: 22,
               ),
               title: Text(
                 mode,
                 style: TextStyle(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),

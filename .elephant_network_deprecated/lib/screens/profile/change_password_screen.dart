@@ -17,7 +17,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isOldObscure = true;
   bool _isNewObscure = true;
   bool _isConfirmObscure = true;
@@ -34,16 +34,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<UserProvider>();
-    
+
     try {
       await provider.changePassword(
         _oldPasswordController.text,
         _newPasswordController.text,
       );
-      
+
       if (mounted) {
         if (Navigator.canPop(context)) {
-            Navigator.pop(context);
+          Navigator.pop(context);
         }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -69,20 +69,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
         title: Text(
           '修改密码',
           style: AppTextStyles.titleMedium.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor:
+            isDark ? AppColors.darkBackground : AppColors.lightBackground,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
         iconTheme: IconThemeData(
-          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          color:
+              isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
         ),
       ),
       body: SafeArea(
@@ -90,14 +94,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
               child: Container(
                 padding: const EdgeInsets.all(32.0),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkCard : AppColors.lightCard,
                   borderRadius: AppDimensions.borderRadiusLarge,
                   border: Border.all(
-                    color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                    color: isDark
+                        ? AppColors.darkCardBorder
+                        : AppColors.lightCardBorder,
                   ),
                 ),
                 child: Form(
@@ -112,7 +119,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         isDark: isDark,
                         autofocus: true,
                         obscureText: _isOldObscure,
-                        onToggleObscure: () => setState(() => _isOldObscure = !_isOldObscure),
+                        onToggleObscure: () =>
+                            setState(() => _isOldObscure = !_isOldObscure),
                         validator: (v) => v?.isEmpty == true ? '请输入旧密码' : null,
                       ),
                       const SizedBox(height: 24),
@@ -122,7 +130,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         hint: '密码（8位以上）',
                         isDark: isDark,
                         obscureText: _isNewObscure,
-                        onToggleObscure: () => setState(() => _isNewObscure = !_isNewObscure),
+                        onToggleObscure: () =>
+                            setState(() => _isNewObscure = !_isNewObscure),
                         validator: (v) {
                           if (v == null || v.isEmpty) return '请输入新密码';
                           if (v.length < 8) return '密码长度不能少于8位';
@@ -136,10 +145,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         hint: '确认密码',
                         isDark: isDark,
                         obscureText: _isConfirmObscure,
-                        onToggleObscure: () => setState(() => _isConfirmObscure = !_isConfirmObscure),
+                        onToggleObscure: () => setState(
+                            () => _isConfirmObscure = !_isConfirmObscure),
                         validator: (v) {
                           if (v == null || v.isEmpty) return '请确认新密码';
-                          if (v != _newPasswordController.text) return '两次输入的密码不一致';
+                          if (v != _newPasswordController.text)
+                            return '两次输入的密码不一致';
                           return null;
                         },
                       ),
@@ -151,9 +162,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             child: ElevatedButton(
                               onPressed: provider.isLoading ? null : _submit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.getPrimaryButton(isDark),
+                                backgroundColor:
+                                    AppColors.getPrimaryButton(isDark),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: AppDimensions.borderRadiusMedium,
+                                  borderRadius:
+                                      AppDimensions.borderRadiusMedium,
                                 ),
                                 elevation: 0,
                               ),
@@ -205,60 +218,69 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         Text(
           label,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
-            controller: controller,
-            autofocus: autofocus,
-            obscureText: obscureText,
-            style: TextStyle(
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          controller: controller,
+          autofocus: autofocus,
+          obscureText: obscureText,
+          style: TextStyle(
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextSecondary,
             ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
-              ),
-              filled: true,
-              fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
-              border: OutlineInputBorder(
-                borderRadius: AppDimensions.borderRadiusMedium,
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: AppDimensions.borderRadiusMedium,
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: AppDimensions.borderRadiusMedium,
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.primaryLight : AppColors.primary,
-                  width: 1.5,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: AppDimensions.borderRadiusMedium,
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.errorLight : AppColors.error,
-                  width: 1.5,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              suffixIcon: onToggleObscure != null
-                  ? IconButton(
-                      icon: Icon(
-                        obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
-                        size: 20,
-                      ),
-                      onPressed: onToggleObscure,
-                    )
-                  : null,
+            filled: true,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
+            border: OutlineInputBorder(
+              borderRadius: AppDimensions.borderRadiusMedium,
+              borderSide: BorderSide.none,
             ),
-            validator: validator,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: AppDimensions.borderRadiusMedium,
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: AppDimensions.borderRadiusMedium,
+              borderSide: BorderSide(
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: AppDimensions.borderRadiusMedium,
+              borderSide: BorderSide(
+                color: isDark ? AppColors.errorLight : AppColors.error,
+                width: 1.5,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            suffixIcon: onToggleObscure != null
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: isDark
+                          ? AppColors.darkTextTertiary
+                          : AppColors.lightTextSecondary,
+                      size: 20,
+                    ),
+                    onPressed: onToggleObscure,
+                  )
+                : null,
+          ),
+          validator: validator,
         ),
       ],
     );

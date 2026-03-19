@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 
 class User {
   final String email;
-  final int transferEnable;  // 总流量(bytes)
-  final int u;               // 已上传(bytes)
-  final int d;               // 已下载(bytes)
-  final int? expiredAt;      // 到期时间(timestamp)
-  final int balance;         // 余额
-  final int? planId;         // 套餐ID
+  final int transferEnable; // 总流量(bytes)
+  final int u; // 已上传(bytes)
+  final int d; // 已下载(bytes)
+  final int? expiredAt; // 到期时间(timestamp)
+  final int balance; // 余额
+  final int? planId; // 套餐ID
 
   User({
     required this.email,
@@ -47,7 +47,7 @@ class User {
     if (expiredAt == null) return false;
     return DateTime.now().millisecondsSinceEpoch > expiredAt! * 1000;
   }
-  
+
   @override
   String toString() {
     return 'User(email=$email, u=$u, d=$d, transferEnable=$transferEnable, expired=$expiredAt)';

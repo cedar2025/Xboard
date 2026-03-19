@@ -51,7 +51,7 @@ class MainScaffold extends StatelessWidget {
             children: [
               // 主内容
               _buildPage(nav.currentPage),
-              
+
               // 浮动导航栏
               AppNavigationBar(
                 currentPage: nav.currentPage,

@@ -22,7 +22,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailCodeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isCodeSending = false;
@@ -98,21 +98,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             _buildHeader(isDark),
-            
+
             // Form
             Expanded(
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: PlatformUtils.isDesktop
-                      ? AppDimensions.loginCardMaxWidth
-                      : double.infinity,
+                        ? AppDimensions.loginCardMaxWidth
+                        : double.infinity,
                   ),
                   child: SingleChildScrollView(
                     padding: AppDimensions.pagePadding,
@@ -171,7 +172,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               color: isDark ? AppColors.darkCard : AppColors.lightCard,
               borderRadius: AppDimensions.borderRadiusMedium,
               border: Border.all(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
             child: IconButton(
@@ -179,7 +182,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               icon: Icon(
                 Icons.arrow_back,
                 size: 20,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -217,7 +222,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           '找回密码',
           style: AppTextStyles.displaySmall.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -240,7 +246,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Text(
             '邮箱地址',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -248,16 +256,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           style: AppTextStyles.bodyLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           decoration: InputDecoration(
             hintText: '请输入绑定的邮箱',
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextSecondary,
             ),
             prefixIcon: Icon(Icons.mail_outline, size: 18),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide.none,
@@ -289,7 +302,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Text(
             '邮箱验证码',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -300,16 +315,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 controller: _emailCodeController,
                 keyboardType: TextInputType.number,
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                 ),
                 decoration: InputDecoration(
                   hintText: '验证码',
                   hintStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextSecondary,
                   ),
                   prefixIcon: Icon(Icons.security, size: 18),
                   filled: true,
-                  fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                  fillColor: isDark
+                      ? AppColors.darkInputBackground
+                      : AppColors.lightInputBackground,
                   border: OutlineInputBorder(
                     borderRadius: AppDimensions.borderRadiusMedium,
                     borderSide: BorderSide.none,
@@ -333,9 +354,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               width: 100,
               height: 56,
               child: ElevatedButton(
-                onPressed: (_isCodeSending || _countdown > 0) ? null : _sendEmailCode,
+                onPressed:
+                    (_isCodeSending || _countdown > 0) ? null : _sendEmailCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? AppColors.primaryDark : AppColors.primary,
+                  backgroundColor:
+                      isDark ? AppColors.primaryDark : AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: AppDimensions.borderRadiusMedium,
                   ),
@@ -346,12 +369,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : Text(
                         _countdown > 0 ? '${_countdown}s' : '发送',
-                        style: const TextStyle(fontSize: 14, color: Colors.white),
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.white),
                       ),
               ),
             ),
@@ -370,7 +395,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Text(
             '新密码',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -378,20 +405,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           controller: _passwordController,
           obscureText: _obscurePassword,
           style: AppTextStyles.bodyLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           decoration: InputDecoration(
             hintText: '至少8位字符',
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextSecondary,
             ),
             prefixIcon: Icon(Icons.lock_outline, size: 18),
             suffixIcon: IconButton(
-              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, size: 18),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  size: 18),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide.none,
@@ -423,7 +458,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Text(
             '确认新密码',
             style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ),
         ),
@@ -431,20 +468,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           controller: _confirmPasswordController,
           obscureText: _obscureConfirmPassword,
           style: AppTextStyles.bodyLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           decoration: InputDecoration(
             hintText: '再次输入新密码',
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextSecondary,
             ),
             prefixIcon: Icon(Icons.lock_outline, size: 18),
             suffixIcon: IconButton(
-              icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, size: 18),
-              onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              icon: Icon(
+                  _obscureConfirmPassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  size: 18),
+              onPressed: () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword),
             ),
             filled: true,
-            fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+            fillColor: isDark
+                ? AppColors.darkInputBackground
+                : AppColors.lightInputBackground,
             border: OutlineInputBorder(
               borderRadius: AppDimensions.borderRadiusMedium,
               borderSide: BorderSide.none,
@@ -526,7 +573,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.primaryDark : AppColors.primary,
                 borderRadius: AppDimensions.borderRadiusMedium,
-                boxShadow: isDark ? AppShadows.darkButton : AppShadows.lightButton,
+                boxShadow:
+                    isDark ? AppShadows.darkButton : AppShadows.lightButton,
               ),
               child: ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleResetPassword,
@@ -545,12 +593,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : Text(
                         '重 置 密 码',
-                        style: AppTextStyles.button.copyWith(color: Colors.white),
+                        style:
+                            AppTextStyles.button.copyWith(color: Colors.white),
                       ),
               ),
             ),

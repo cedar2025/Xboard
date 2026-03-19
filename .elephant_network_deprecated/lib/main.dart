@@ -17,6 +17,7 @@ import 'providers/language_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/config_provider.dart';
 import 'core/services/tray_service.dart';
+import 'core/services/app_logger.dart';
 import 'core/singbox/vpn_manager.dart';
 import 'core/singbox/mock_vpn_service.dart';
 import 'core/singbox/real_vpn_service.dart';
@@ -35,7 +36,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  await AppLogger.instance.initialize();
+
   // 桌面端：初始化窗口管理器与开机自启
   if (PlatformUtils.isDesktop) {
     if (Platform.isWindows) {
@@ -51,9 +53,9 @@ void main() async {
         debugPrint('Failed to setup launchAtStartup: $e');
       }
     }
-    
+
     await windowManager.ensureInitialized();
-    
+
     const windowOptions = WindowOptions(
       size: Size(1000, 700),
       minimumSize: Size(1000, 700),
@@ -63,16 +65,16 @@ void main() async {
       titleBarStyle: TitleBarStyle.normal,
       title: '',
     );
-    
+
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
     });
   }
-  
+
   // 初始化托盘(桌面端)
   await TrayService().init();
-  
+
   runApp(const MyApp());
 }
 
@@ -150,166 +152,166 @@ class MyApp extends StatelessWidget {
           return TrayController(
             child: MaterialApp(
               title: languageProvider.translate('app_name'),
-            locale: languageProvider.locale,
-            scrollBehavior: AppScrollBehavior(),
-            themeMode: themeProvider.themeMode,
-            theme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.light,
-              scaffoldBackgroundColor: AppColors.lightBackground,
-              colorScheme: ColorScheme.light(
-                primary: AppColors.primary,
-                secondary: AppColors.primaryLight,
-                surface: AppColors.lightCard,
-                error: AppColors.error,
-              ),
-              appBarTheme: AppBarTheme(
-                backgroundColor: AppColors.lightBackground,
-                foregroundColor: AppColors.lightTextPrimary,
-                elevation: 0,
-                systemOverlayStyle: SystemUiOverlayStyle.dark,
-                titleTextStyle: AppTextStyles.titleMedium.copyWith(
-                  color: AppColors.lightTextPrimary,
+              locale: languageProvider.locale,
+              scrollBehavior: AppScrollBehavior(),
+              themeMode: themeProvider.themeMode,
+              theme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.light,
+                scaffoldBackgroundColor: AppColors.lightBackground,
+                colorScheme: ColorScheme.light(
+                  primary: AppColors.primary,
+                  secondary: AppColors.primaryLight,
+                  surface: AppColors.lightCard,
+                  error: AppColors.error,
                 ),
-              ),
-              cardTheme: CardTheme(
-                color: AppColors.lightCard,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppDimensions.borderRadiusLarge,
-                  side: BorderSide(
-                    color: AppColors.lightCardBorder,
-                    width: 1,
-                  ),
-                ),
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                appBarTheme: AppBarTheme(
+                  backgroundColor: AppColors.lightBackground,
+                  foregroundColor: AppColors.lightTextPrimary,
                   elevation: 0,
-                  padding: AppDimensions.buttonPadding,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppDimensions.borderRadiusMedium,
-                  ),
-                  textStyle: AppTextStyles.button,
-                ),
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppColors.lightInputBackground,
-                border: OutlineInputBorder(
-                  borderRadius: AppDimensions.borderRadiusMedium,
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: AppDimensions.borderRadiusMedium,
-                  borderSide: BorderSide(
-                    color: AppColors.primary,
-                    width: 2,
+                  systemOverlayStyle: SystemUiOverlayStyle.dark,
+                  titleTextStyle: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.lightTextPrimary,
                   ),
                 ),
-                contentPadding: AppDimensions.inputPadding,
-              ),
-              fontFamily: 'Source Han Sans CN',
-              textTheme: TextTheme(
-                displayLarge: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.lightTextPrimary,
-                ),
-                titleLarge: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.lightTextPrimary,
-                ),
-                bodyLarge: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.lightTextPrimary,
-                ),
-                bodyMedium: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.lightTextSecondary,
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: AppColors.darkBackground,
-              colorScheme: ColorScheme.dark(
-                primary: AppColors.primaryLight,
-                secondary: AppColors.primary,
-                surface: AppColors.darkCard,
-                error: AppColors.errorLight,
-              ),
-              appBarTheme: AppBarTheme(
-                backgroundColor: Colors.transparent,
-                foregroundColor: AppColors.darkTextPrimary,
-                elevation: 0,
-                systemOverlayStyle: SystemUiOverlayStyle.light,
-                titleTextStyle: AppTextStyles.titleMedium.copyWith(
-                  color: AppColors.darkTextPrimary,
-                ),
-              ),
-              cardTheme: CardTheme(
-                color: AppColors.darkCard,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppDimensions.borderRadiusLarge,
-                  side: BorderSide(
-                    color: AppColors.darkCardBorder,
-                    width: 1,
-                  ),
-                ),
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: Colors.white,
+                cardTheme: CardThemeData(
+                  color: AppColors.lightCard,
                   elevation: 0,
-                  padding: AppDimensions.buttonPadding,
                   shape: RoundedRectangleBorder(
+                    borderRadius: AppDimensions.borderRadiusLarge,
+                    side: BorderSide(
+                      color: AppColors.lightCardBorder,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: AppDimensions.buttonPadding,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppDimensions.borderRadiusMedium,
+                    ),
+                    textStyle: AppTextStyles.button,
+                  ),
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  filled: true,
+                  fillColor: AppColors.lightInputBackground,
+                  border: OutlineInputBorder(
                     borderRadius: AppDimensions.borderRadiusMedium,
+                    borderSide: BorderSide.none,
                   ),
-                  textStyle: AppTextStyles.button,
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppDimensions.borderRadiusMedium,
+                    borderSide: BorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: AppDimensions.inputPadding,
                 ),
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppColors.darkInputBackground,
-                border: OutlineInputBorder(
-                  borderRadius: AppDimensions.borderRadiusMedium,
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: AppDimensions.borderRadiusMedium,
-                  borderSide: BorderSide(
-                    color: AppColors.primaryDark,
-                    width: 2,
+                fontFamily: 'Source Han Sans CN',
+                textTheme: TextTheme(
+                  displayLarge: AppTextStyles.displayLarge.copyWith(
+                    color: AppColors.lightTextPrimary,
+                  ),
+                  titleLarge: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.lightTextPrimary,
+                  ),
+                  bodyLarge: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.lightTextPrimary,
+                  ),
+                  bodyMedium: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.lightTextSecondary,
                   ),
                 ),
-                contentPadding: AppDimensions.inputPadding,
               ),
-              fontFamily: 'Source Han Sans CN',
-              textTheme: TextTheme(
-                displayLarge: AppTextStyles.displayLarge.copyWith(
-                  color: AppColors.darkTextPrimary,
+              darkTheme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.dark,
+                scaffoldBackgroundColor: AppColors.darkBackground,
+                colorScheme: ColorScheme.dark(
+                  primary: AppColors.primaryLight,
+                  secondary: AppColors.primary,
+                  surface: AppColors.darkCard,
+                  error: AppColors.errorLight,
                 ),
-                titleLarge: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.darkTextPrimary,
+                appBarTheme: AppBarTheme(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.darkTextPrimary,
+                  elevation: 0,
+                  systemOverlayStyle: SystemUiOverlayStyle.light,
+                  titleTextStyle: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.darkTextPrimary,
+                  ),
                 ),
-                bodyLarge: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.darkTextPrimary,
+                cardTheme: CardThemeData(
+                  color: AppColors.darkCard,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppDimensions.borderRadiusLarge,
+                    side: BorderSide(
+                      color: AppColors.darkCardBorder,
+                      width: 1,
+                    ),
+                  ),
                 ),
-                bodyMedium: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.darkTextSecondary,
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryDark,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: AppDimensions.buttonPadding,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppDimensions.borderRadiusMedium,
+                    ),
+                    textStyle: AppTextStyles.button,
+                  ),
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  filled: true,
+                  fillColor: AppColors.darkInputBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: AppDimensions.borderRadiusMedium,
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppDimensions.borderRadiusMedium,
+                    borderSide: BorderSide(
+                      color: AppColors.primaryDark,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: AppDimensions.inputPadding,
+                ),
+                fontFamily: 'Source Han Sans CN',
+                textTheme: TextTheme(
+                  displayLarge: AppTextStyles.displayLarge.copyWith(
+                    color: AppColors.darkTextPrimary,
+                  ),
+                  titleLarge: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.darkTextPrimary,
+                  ),
+                  bodyLarge: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.darkTextPrimary,
+                  ),
+                  bodyMedium: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.darkTextSecondary,
+                  ),
                 ),
               ),
+              home: const SplashScreen(),
+              routes: {
+                '/login': (context) => const LoginScreen(),
+                '/register': (context) => const RegisterScreen(),
+                '/forget': (context) => const ForgotPasswordScreen(),
+                '/home': (context) => const MainScaffold(),
+                '/profile': (context) => const ProfileScreen(),
+              },
             ),
-            home: const SplashScreen(),
-            routes: {
-              '/login': (context) => const LoginScreen(),
-              '/register': (context) => const RegisterScreen(),
-              '/forget': (context) => const ForgotPasswordScreen(),
-              '/home': (context) => const MainScaffold(),
-              '/profile': (context) => const ProfileScreen(),
-            },
-          ),
           );
         },
       ),
@@ -335,20 +337,15 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      // 添加超时限制，避免永久卡住
-      await authProvider.checkLoginStatus().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () {
-          // 超时则假定未登录
-        },
-      );
+
+      // 启动阶段只读本地提示，避免触发 Keychain 访问弹窗。
+      await authProvider.loadStartupLoginHint();
 
       if (!mounted) return;
 
       // 延迟一小段时间显示启动页动画
       await Future.delayed(const Duration(milliseconds: 1500));
-      
+
       if (!mounted) return;
 
       // 检查登录状态并跳转
@@ -408,7 +405,8 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.greenAccent,
                   borderRadius: BorderRadius.circular(4),
@@ -471,4 +469,3 @@ class AppScrollBehavior extends MaterialScrollBehavior {
     return const BouncingScrollPhysics();
   }
 }
-

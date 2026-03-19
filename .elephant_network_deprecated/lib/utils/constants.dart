@@ -2,6 +2,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
+  static const bool allowInsecureCertificates = bool.fromEnvironment(
+    'ALLOW_INSECURE_CERTS',
+    defaultValue: false,
+  );
+
   // 基础 URL
   static String get baseUrl {
     const envBaseUrl = String.fromEnvironment('BASE_URL');
@@ -14,7 +19,7 @@ class ApiConstants {
     }
     return 'https://www.elphantroute.com';
   }
-  
+
   // API 路径
   static const String login = '/api/v1/passport/auth/login';
   static const String register = '/api/v1/passport/auth/register';
@@ -32,7 +37,7 @@ class ApiConstants {
   static const String sendEmailVerify = '/api/v1/passport/comm/sendEmailVerify';
   static const String changePassword = '/api/v1/user/changePassword';
   static const String quickLogin = '/api/v1/passport/auth/getQuickLoginUrl';
-  
+
   // Clash API(本地流量监控)
   static const String clashTraffic = 'http://127.0.0.1:9090/traffic';
 }

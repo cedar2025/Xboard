@@ -28,7 +28,7 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   void initState() {
     super.initState();
-    
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0A0E27))
@@ -113,7 +113,8 @@ class _WebViewPageState extends State<WebViewPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E2A4A),
         elevation: 0,
-        title: Text(widget.title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(widget.title,
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -130,7 +131,8 @@ class _WebViewPageState extends State<WebViewPage> {
               ? LinearProgressIndicator(
                   value: _progress,
                   backgroundColor: Colors.transparent,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
                   minHeight: 2,
                 )
               : const SizedBox.shrink(),

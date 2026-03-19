@@ -1,204 +1,202 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../core/services/app_logger.dart';
+import '../../core/services/mac_runtime_service.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../utils/constants.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  late final Future<_AboutData> _dataFuture = _loadData();
+
+  Future<_AboutData> _loadData() async {
+    final package = await PackageInfo.fromPlatform();
+    final runtime = await MacRuntimeService.instance.getRuntimeStatus();
+    final logPath = await AppLogger.instance.getLogPath();
+    return _AboutData(
+      packageInfo: package,
+      runtimeStatus: runtime,
+      logPath: logPath,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: Text(
-          '关于大象网络',
-          style: TextStyle(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            size: 20,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        title: Text(
+          '关于与诊断',
+          style: AppTextStyles.titleMedium.copyWith(
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            fontWeight: FontWeight.bold,
           ),
-          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 40),
-            child: Column(
-              children: [
-                // 顶部 Logo / Slogan 区域
-                _buildHeroSection(context, isDark),
-                const SizedBox(height: 24),
+      body: FutureBuilder<_AboutData>(
+        future: _dataFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
+              ),
+            );
+          }
 
-                // 功能点区域
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '解决你的每一个痛点',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                        ),
+          final data = snapshot.data!;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildCard(
+                      isDark: isDark,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ElephantRoute macOS Beta',
+                            style: AppTextStyles.titleLarge.copyWith(
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('版本', data.packageInfo.version, isDark),
+                          _buildInfoRow(
+                              '构建号', data.packageInfo.buildNumber, isDark),
+                          _buildInfoRow(
+                              '包名', data.packageInfo.packageName, isDark),
+                          _buildInfoRow('后端地址', ApiConstants.baseUrl, isDark),
+                          _buildInfoRow(
+                            'TLS 校验',
+                            ApiConstants.allowInsecureCertificates
+                                ? '不安全模式已开启'
+                                : '严格校验',
+                            isDark,
+                          ),
+                          _buildInfoRow(
+                            '运行模式',
+                            (data.runtimeStatus['mode'] as String?) ??
+                                'unknown',
+                            isDark,
+                          ),
+                          _buildInfoRow(
+                            '运行状态',
+                            (data.runtimeStatus['status'] as String?) ??
+                                'unknown',
+                            isDark,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildFeatureCard(
-                        context,
-                        icon: Icons.g_mobiledata,
-                        title: '注册 Google，不再拦截',
-                        desc: '大象网络提供纯净住宅级 IP，风控评分极低，轻松完成注册，账号更稳定长久。',
-                        isDark: isDark,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildCard(
+                      isDark: isDark,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '诊断工具',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                              'Dart 日志', data.logPath ?? '未初始化', isDark),
+                          _buildInfoRow(
+                            '最后错误',
+                            (data.runtimeStatus['lastError'] as String?) ?? '无',
+                            isDark,
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              _buildActionButton(
+                                label: '导出诊断',
+                                icon: Icons.download_rounded,
+                                isDark: isDark,
+                                onPressed: () async {
+                                  final path = await MacRuntimeService.instance
+                                      .exportDiagnostics();
+                                  if (!mounted) return;
+                                  _showCopiedMessage(
+                                      path == null ? '导出失败' : '诊断已导出到: $path');
+                                },
+                              ),
+                              _buildActionButton(
+                                label: '恢复系统代理',
+                                icon: Icons.restore_rounded,
+                                isDark: isDark,
+                                onPressed: () async {
+                                  final result = await MacRuntimeService
+                                      .instance
+                                      .restoreSystemProxy();
+                                  if (!mounted) return;
+                                  _showCopiedMessage(
+                                    result['restored'] == true
+                                        ? '系统代理已恢复'
+                                        : '恢复失败，请查看日志',
+                                  );
+                                },
+                              ),
+                              _buildActionButton(
+                                label: '复制日志路径',
+                                icon: Icons.copy_all_rounded,
+                                isDark: isDark,
+                                onPressed: () async {
+                                  if (data.logPath == null) return;
+                                  await Clipboard.setData(
+                                      ClipboardData(text: data.logPath!));
+                                  if (!mounted) return;
+                                  _showCopiedMessage('日志路径已复制');
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildFeatureCard(
-                        context,
-                        icon: Icons.smart_toy_outlined,
-                        title: 'AI 工具稳定不掉线',
-                        desc: '针对 OpenAI、Anthropic 等主流 AI 平台进行专线优化，低延迟、零封锁，让你的工作流不再被中断。',
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildFeatureCard(
-                        context,
-                        icon: Icons.four_k_outlined,
-                        title: 'Netflix 4K 想看就看',
-                        desc: '解锁主流流媒体完整内容库，支持 4K 高清，无缓冲畅享国际版流媒体。',
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 40),
-
-                      // 用户评价区域
-                      Text(
-                        '他们都在用',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTestimonialCard(
-                        context,
-                        quote: '以前总担心 Google 账号被封，现在用大象的低风控住宅 IP，注册、登录一路畅通。',
-                        author: 'SaaS 产品经理',
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTestimonialCard(
-                        context,
-                        quote: '跑 TikTok 账号最怕网络不稳，切到大象之后，直播不掉线，视频发布秒传。',
-                        author: '短视频运营',
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTestimonialCard(
-                        context,
-                        quote: '在咖啡厅远程办公最受不了网络不给力，大象的客户端一键连接，稳定且性价比极高。',
-                        author: '数字游民',
-                        isDark: isDark,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                
-                const SizedBox(height: 48),
-                // Footer
-                Text(
-                  '© 2024 大象网络 Inc.\nCONNECT THE UNSEEN',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeroSection(BuildContext context, bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.primaryUltraDark : AppColors.primaryUltraLight,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.primaryDark : AppColors.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (isDark ? AppColors.primaryDark : AppColors.primaryLight).withOpacity(0.5),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: const Icon(
-              Icons.vpn_lock,
-              size: 48,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '大象网络',
-            style: AppTextStyles.displaySmall.copyWith(
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 28,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '专为极客打造的下一代全球网络加速服务。\n突破物理边界，重塑数字自由。',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String desc,
-    required bool isDark,
-  }) {
+  Widget _buildCard({required bool isDark, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -209,43 +207,35 @@ class AboutScreen extends StatelessWidget {
         ),
         boxShadow: AppShadows.getCard(isDark),
       ),
+      child: child,
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.primaryDark.withOpacity(0.15) : AppColors.primaryUltraLight,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              size: 24,
-              color: isDark ? AppColors.primaryLight : AppColors.primary,
+          SizedBox(
+            width: 92,
+            child: Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(
+                color: isDark
+                    ? AppColors.darkTextTertiary
+                    : AppColors.lightTextSecondary,
+              ),
             ),
           ),
-          const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  desc,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
+            child: SelectableText(
+              value,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
             ),
           ),
         ],
@@ -253,48 +243,41 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTestimonialCard(
-    BuildContext context, {
-    required String quote,
-    required String author,
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
     required bool isDark,
+    required Future<void> Function() onPressed,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.format_quote_rounded,
-            size: 24,
-            color: isDark ? AppColors.darkTextTertiary : AppColors.slate300,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            quote,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '— $author',
-            style: AppTextStyles.labelMedium.copyWith(
-              color: isDark ? AppColors.primaryLight : AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        backgroundColor: isDark
+            ? AppColors.darkInputBackground
+            : AppColors.primaryUltraLight,
+        foregroundColor:
+            isDark ? AppColors.darkTextPrimary : AppColors.primaryDark,
       ),
     );
   }
+
+  void _showCopiedMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _AboutData {
+  const _AboutData({
+    required this.packageInfo,
+    required this.runtimeStatus,
+    required this.logPath,
+  });
+
+  final PackageInfo packageInfo;
+  final Map<String, dynamic> runtimeStatus;
+  final String? logPath;
 }

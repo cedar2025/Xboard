@@ -26,9 +26,10 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tr = context.read<LanguageProvider>();
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -41,7 +42,9 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     '个人中心',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
                       fontSize: 20, // 增大字号匹配其他页面
                       fontWeight: FontWeight.bold,
                     ),
@@ -50,9 +53,12 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () => _handleLogout(context),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.error.withOpacity(0.1) : AppColors.error.withOpacity(0.05),
+                        color: isDark
+                            ? AppColors.error.withOpacity(0.1)
+                            : AppColors.error.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -60,14 +66,17 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.logout_rounded,
-                            color: isDark ? AppColors.errorLight : AppColors.error,
+                            color:
+                                isDark ? AppColors.errorLight : AppColors.error,
                             size: 18,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             tr.translate('logout'),
                             style: AppTextStyles.labelMedium.copyWith(
-                              color: isDark ? AppColors.errorLight : AppColors.error,
+                              color: isDark
+                                  ? AppColors.errorLight
+                                  : AppColors.error,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -87,36 +96,39 @@ class ProfileScreen extends StatelessWidget {
                   if (user == null) {
                     return Center(
                       child: CircularProgressIndicator(
-                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                        color:
+                            isDark ? AppColors.primaryLight : AppColors.primary,
                       ),
                     );
                   }
 
                   return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 520, minWidth: 400),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 头像与用户信息
-                          _buildUserHeader(context, user, isDark),
-                          const SizedBox(height: 32),
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics()),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxWidth: 520, minWidth: 400),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 头像与用户信息
+                            _buildUserHeader(context, user, isDark),
+                            const SizedBox(height: 32),
 
-                          // 账号信息卡片
-                          _buildInfoCard(context, user, isDark),
-                          const SizedBox(height: 24),
+                            // 账号信息卡片
+                            _buildInfoCard(context, user, isDark),
+                            const SizedBox(height: 24),
 
-                          // 设置信息卡片
-                          _buildSettingsCard(context, isDark),
-                          const SizedBox(height: 40),
-                        ],
+                            // 设置信息卡片
+                            _buildSettingsCard(context, isDark),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
+                  );
                 },
               ),
             ),
@@ -156,7 +168,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                  child: Consumer<UserProvider>(
+                child: Consumer<UserProvider>(
                   builder: (context, provider, _) {
                     final avatarUrl = provider.avatarUrl;
                     return ClipRRect(
@@ -200,7 +212,9 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: AppShadows.getCard(isDark),
                     border: Border.all(
-                      color: isDark ? AppColors.darkCardBorder : Colors.transparent, 
+                      color: isDark
+                          ? AppColors.darkCardBorder
+                          : Colors.transparent,
                       width: 1,
                     ),
                   ),
@@ -215,24 +229,25 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        
+
         // 邮箱
         Text(
           user.email,
           style: AppTextStyles.titleLarge.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 12),
-        
+
         // 会员标签
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark 
-              ? AppColors.primaryUltraDark.withOpacity(0.3)
-              : AppColors.primaryUltraLight,
+            color: isDark
+                ? AppColors.primaryUltraDark.withOpacity(0.3)
+                : AppColors.primaryUltraLight,
             borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             border: Border.all(
               color: isDark ? AppColors.primaryDark : AppColors.primary,
@@ -244,7 +259,7 @@ class ProfileScreen extends StatelessWidget {
               final plan = userProvider.subscribeInfo?['plan'];
               final planName = plan?['name'];
               final hasPlan = plan != null;
-              
+
               String displayText;
               if (!hasPlan) {
                 displayText = '未订阅';
@@ -257,7 +272,8 @@ class ProfileScreen extends StatelessWidget {
               return Text(
                 displayText,
                 style: AppTextStyles.labelMedium.copyWith(
-                  color: isDark ? AppColors.primaryLight : AppColors.primaryDark,
+                  color:
+                      isDark ? AppColors.primaryLight : AppColors.primaryDark,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
                   fontSize: 13,
@@ -279,7 +295,8 @@ class ProfileScreen extends StatelessWidget {
         child: Text(
           title,
           style: AppTextStyles.labelMedium.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -350,9 +367,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   /// 统一处理 WebView 跳转 (自动登录)
-  Future<void> _openWebPage(BuildContext context, String title, String path) async {
+  Future<void> _openWebPage(
+      BuildContext context, String title, String path) async {
     final tr = context.read<LanguageProvider>();
-    
+
     // 1. 显示加载弹窗
     showDialog(
       context: context,
@@ -377,7 +395,7 @@ class ProfileScreen extends StatelessWidget {
     try {
       final authProvider = context.read<AuthProvider>();
       String? quickLoginUrl = await authProvider.getQuickLoginUrl(path);
-      
+
       // 关闭加载弹窗
       if (context.mounted) Navigator.of(context).pop();
 
@@ -388,21 +406,24 @@ class ProfileScreen extends StatelessWidget {
         // 检查 URL 中是否包含 auth_data
         final uri = Uri.parse(quickLoginUrl);
         final authData = uri.queryParameters['auth_data'];
-        debugPrint('DEBUG: URL auth_data param = ${authData?.substring(0, 10)}...');
+        debugPrint(
+            'DEBUG: URL auth_data param = ${authData?.substring(0, 10)}...');
         debugPrint('DEBUG: ----------------------------------------');
-        
+
         // 增强替换逻辑：确保端口号也正确
         if (ApiConstants.baseUrl.contains('192.168.')) {
           final baseUri = Uri.parse(ApiConstants.baseUrl);
           final quickUri = Uri.parse(quickLoginUrl);
-          
+
           // 构造新的 URL，强制使用 API 的 host 和 port
           // 注意：如果原 URL 没有端口（通常是因为 APP_URL 没配置端口），replace 会补上 API 正在使用的端口
-          quickLoginUrl = quickUri.replace(
-            scheme: baseUri.scheme,
-            host: baseUri.host,
-            port: baseUri.port,
-          ).toString();
+          quickLoginUrl = quickUri
+              .replace(
+                scheme: baseUri.scheme,
+                host: baseUri.host,
+                port: baseUri.port,
+              )
+              .toString();
         }
 
         debugPrint('DEBUG: Refined QuickLoginUrl = $quickLoginUrl');
@@ -434,7 +455,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildSettingsCard(BuildContext context, bool isDark) {
     final trProvider = context.watch<LanguageProvider>();
     final tr = trProvider.translate;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -485,10 +506,10 @@ class ProfileScreen extends StatelessWidget {
             'v1.0.0',
             isDark,
             () {
-               Navigator.push(
-                 context, 
-                 MaterialPageRoute(builder: (_) => const AboutScreen()),
-               );
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AboutScreen()),
+              );
             },
             isLast: true,
           ),
@@ -515,13 +536,17 @@ class ProfileScreen extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
           const SizedBox(width: 12),
           Text(
             label,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
             ),
           ),
           const Spacer(),
@@ -529,7 +554,9 @@ class ProfileScreen extends StatelessWidget {
             child: Text(
               value,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
                 fontWeight: FontWeight.w600,
               ),
               overflow: TextOverflow.ellipsis,
@@ -541,7 +568,9 @@ class ProfileScreen extends StatelessWidget {
             Icon(
               Icons.content_copy,
               size: 14,
-              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
             ),
           ],
         ],
@@ -564,7 +593,8 @@ class ProfileScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.vertical(
         top: isFirst ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
-        bottom: isLast ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
+        bottom:
+            isLast ? Radius.circular(AppDimensions.radiusLarge) : Radius.zero,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -573,20 +603,26 @@ class ProfileScreen extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
             const SizedBox(width: 12),
             Text(
               label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
               ),
             ),
             const Spacer(),
             Text(
               value,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextTertiary
+                    : AppColors.lightTextSecondary,
               ),
             ),
             const SizedBox(width: 8),
@@ -643,7 +679,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   /// 语言选择器
-  void _showLanguagePicker(BuildContext context, LanguageProvider provider, bool isDark) {
+  void _showLanguagePicker(
+      BuildContext context, LanguageProvider provider, bool isDark) {
     if (PlatformUtils.isDesktop) {
       showDialog(
         context: context,
@@ -663,12 +700,15 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       provider.translate('language'),
                       style: AppTextStyles.titleSmall.copyWith(
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
                     _buildLanguageOption(context, provider, '中文', 'zh', isDark),
-                    _buildLanguageOption(context, provider, 'English', 'en', isDark),
+                    _buildLanguageOption(
+                        context, provider, 'English', 'en', isDark),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -697,7 +737,9 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 provider.translate('language'),
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -720,23 +762,25 @@ class ProfileScreen extends StatelessWidget {
     bool isDark,
   ) {
     final isSelected = provider.locale.languageCode == code;
-    
+
     return ListTile(
       title: Text(
         title,
         style: AppTextStyles.bodyLarge.copyWith(
           color: isSelected
-            ? (isDark ? AppColors.primaryLight : AppColors.primary)
-            : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+              ? (isDark ? AppColors.primaryLight : AppColors.primary)
+              : (isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary),
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
         ),
       ),
       trailing: isSelected
-        ? Icon(
-            Icons.check,
-            color: isDark ? AppColors.primaryLight : AppColors.primary,
-          )
-        : null,
+          ? Icon(
+              Icons.check,
+              color: isDark ? AppColors.primaryLight : AppColors.primary,
+            )
+          : null,
       onTap: () {
         provider.setLanguage(code);
         Navigator.pop(context);
@@ -746,7 +790,8 @@ class ProfileScreen extends StatelessWidget {
 
   /// 主题选择器
   /// 主题选择器
-  void _showThemePicker(BuildContext context, ThemeProvider provider, bool isDark) {
+  void _showThemePicker(
+      BuildContext context, ThemeProvider provider, bool isDark) {
     if (PlatformUtils.isDesktop) {
       showDialog(
         context: context,
@@ -766,13 +811,18 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       '选择主题',
                       style: AppTextStyles.titleSmall.copyWith(
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildThemeOption(context, provider, '跟随系统', ThemeMode.system, isDark),
-                    _buildThemeOption(context, provider, '浅色模式', ThemeMode.light, isDark),
-                    _buildThemeOption(context, provider, '深色模式', ThemeMode.dark, isDark),
+                    _buildThemeOption(
+                        context, provider, '跟随系统', ThemeMode.system, isDark),
+                    _buildThemeOption(
+                        context, provider, '浅色模式', ThemeMode.light, isDark),
+                    _buildThemeOption(
+                        context, provider, '深色模式', ThemeMode.dark, isDark),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -801,13 +851,18 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 '选择主题',
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                 ),
               ),
               const SizedBox(height: 16),
-              _buildThemeOption(context, provider, '跟随系统', ThemeMode.system, isDark),
-              _buildThemeOption(context, provider, '浅色模式', ThemeMode.light, isDark),
-              _buildThemeOption(context, provider, '深色模式', ThemeMode.dark, isDark),
+              _buildThemeOption(
+                  context, provider, '跟随系统', ThemeMode.system, isDark),
+              _buildThemeOption(
+                  context, provider, '浅色模式', ThemeMode.light, isDark),
+              _buildThemeOption(
+                  context, provider, '深色模式', ThemeMode.dark, isDark),
               const SizedBox(height: 16),
             ],
           ),
@@ -825,23 +880,25 @@ class ProfileScreen extends StatelessWidget {
     bool isDark,
   ) {
     final isSelected = provider.themeMode == mode;
-    
+
     return ListTile(
       title: Text(
         title,
         style: AppTextStyles.bodyLarge.copyWith(
           color: isSelected
-            ? (isDark ? AppColors.primaryLight : AppColors.primary)
-            : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+              ? (isDark ? AppColors.primaryLight : AppColors.primary)
+              : (isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary),
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
         ),
       ),
       trailing: isSelected
-        ? Icon(
-            Icons.check,
-            color: isDark ? AppColors.primaryLight : AppColors.primary,
-          )
-        : null,
+          ? Icon(
+              Icons.check,
+              color: isDark ? AppColors.primaryLight : AppColors.primary,
+            )
+          : null,
       onTap: () {
         provider.setThemeMode(mode);
         Navigator.pop(context);
@@ -870,14 +927,17 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       '选择头像',
                       style: AppTextStyles.titleMedium.copyWith(
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 24),
                     Expanded(
                       child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
@@ -888,7 +948,8 @@ class ProfileScreen extends StatelessWidget {
                           final avatarUrl = AvatarHelper.getAvatarUrl(seed);
                           return Consumer<UserProvider>(
                             builder: (context, provider, _) {
-                              final isSelected = provider.avatarUrl == avatarUrl;
+                              final isSelected =
+                                  provider.avatarUrl == avatarUrl;
                               return GestureDetector(
                                 onTap: () {
                                   provider.setAvatarSeed(seed);
@@ -899,7 +960,9 @@ class ProfileScreen extends StatelessWidget {
                                     shape: BoxShape.circle,
                                     border: isSelected
                                         ? Border.all(
-                                            color: isDark ? AppColors.primaryLight : AppColors.primary,
+                                            color: isDark
+                                                ? AppColors.primaryLight
+                                                : AppColors.primary,
                                             width: 3,
                                           )
                                         : null,
@@ -909,12 +972,25 @@ class ProfileScreen extends StatelessWidget {
                                       imageUrl: avatarUrl,
                                       fit: BoxFit.cover,
                                       placeholder: (context, url) => Container(
-                                        color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
-                                        child: const Center(child: SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2))),
+                                        color: isDark
+                                            ? AppColors.darkInputBackground
+                                            : AppColors.slate100,
+                                        child: const Center(
+                                            child: SizedBox(
+                                                width: 10,
+                                                height: 10,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2))),
                                       ),
-                                      errorWidget: (context, url, error) => Container(
-                                        color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
-                                        child: Icon(Icons.error_outline, size: 20, color: AppColors.slate400),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
+                                        color: isDark
+                                            ? AppColors.darkInputBackground
+                                            : AppColors.slate100,
+                                        child: Icon(Icons.error_outline,
+                                            size: 20,
+                                            color: AppColors.slate400),
                                       ),
                                     ),
                                   ),
@@ -959,14 +1035,17 @@ class ProfileScreen extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCardBorder : AppColors.slate200,
+                    color:
+                        isDark ? AppColors.darkCardBorder : AppColors.slate200,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 Text(
                   '选择头像',
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -975,7 +1054,8 @@ class ProfileScreen extends StatelessWidget {
                   child: GridView.builder(
                     controller: scrollController,
                     padding: const EdgeInsets.all(24),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
@@ -997,7 +1077,9 @@ class ProfileScreen extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 border: isSelected
                                     ? Border.all(
-                                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                                        color: isDark
+                                            ? AppColors.primaryLight
+                                            : AppColors.primary,
                                         width: 3,
                                       )
                                     : null,
@@ -1007,12 +1089,23 @@ class ProfileScreen extends StatelessWidget {
                                   imageUrl: avatarUrl,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) => Container(
-                                    color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
-                                    child: const Center(child: SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2))),
+                                    color: isDark
+                                        ? AppColors.darkInputBackground
+                                        : AppColors.slate100,
+                                    child: const Center(
+                                        child: SizedBox(
+                                            width: 10,
+                                            height: 10,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2))),
                                   ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: isDark ? AppColors.darkInputBackground : AppColors.slate100,
-                                    child: Icon(Icons.error_outline, size: 20, color: AppColors.slate400),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                    color: isDark
+                                        ? AppColors.darkInputBackground
+                                        : AppColors.slate100,
+                                    child: Icon(Icons.error_outline,
+                                        size: 20, color: AppColors.slate400),
                                   ),
                                 ),
                               ),

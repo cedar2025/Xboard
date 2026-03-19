@@ -9,7 +9,7 @@ import '../utils/avatar_helper.dart'; // [NEW] Link to helper
 
 class UserProvider with ChangeNotifier {
   final UserService _userService;
-  
+
   User? _user;
   Map<String, dynamic>? _subscribeInfo;
   List<dynamic> _plans = [];
@@ -17,8 +17,7 @@ class UserProvider with ChangeNotifier {
   String? _errorMessage;
   String? _inviteCode; // [NEW] Invite code storage
 
-  UserProvider(DioClient dioClient) 
-      : _userService = UserService(dioClient);
+  UserProvider(DioClient dioClient) : _userService = UserService(dioClient);
 
   User? get user => _user;
   Map<String, dynamic>? get subscribeInfo => _subscribeInfo;
@@ -36,7 +35,7 @@ class UserProvider with ChangeNotifier {
     try {
       _user = await _userService.getUserInfo();
       await loadAvatarSeed(); // Load local avatar preference
-      
+
       // Async fetch invite code in background without failing main user info fetch
       _userService.getInviteCode().then((code) {
         if (code != null) {
@@ -58,17 +57,19 @@ class UserProvider with ChangeNotifier {
   Future<void> fetchSubscribeInfo() async {
     try {
       _subscribeInfo = await _userService.getSubscribe();
-      
+
       // 从订阅信息中提取流量数据并更新到 User 对象
       if (_subscribeInfo != null && _user != null) {
         final u = _subscribeInfo!['u'] ?? _subscribeInfo!['upload'] ?? 0;
         final d = _subscribeInfo!['d'] ?? _subscribeInfo!['download'] ?? 0;
-        final transferEnable = _subscribeInfo!['transfer_enable'] ?? _user!.transferEnable;
-        
+        final transferEnable =
+            _subscribeInfo!['transfer_enable'] ?? _user!.transferEnable;
+
         // 创建新的 User 对象，包含流量数据
         _user = User(
           email: _user!.email,
-          transferEnable: transferEnable is int ? transferEnable : _user!.transferEnable,
+          transferEnable:
+              transferEnable is int ? transferEnable : _user!.transferEnable,
           u: u is int ? u : 0,
           d: d is int ? d : 0,
           expiredAt: _user!.expiredAt,
@@ -76,7 +77,7 @@ class UserProvider with ChangeNotifier {
           planId: _user!.planId,
         );
       }
-      
+
       notifyListeners();
     } catch (e) {
       _errorMessage = '获取订阅信息失败: ${e.toString()}';
@@ -107,12 +108,13 @@ class UserProvider with ChangeNotifier {
   Future<String?> createPayUrl(int planId, String period) async {
     try {
       _isLoading = true;
-      _errorMessage = null; 
+      _errorMessage = null;
       notifyListeners();
-      
-      print('DEBUG: Request Parameter - plan_id: $planId, type: ${planId.runtimeType}');
+
+      print(
+          'DEBUG: Request Parameter - plan_id: $planId, type: ${planId.runtimeType}');
       print('DEBUG: Request Parameter - period: $period');
-      
+
       final payUrl = await _userService.createOrder(planId, period);
       _isLoading = false;
       notifyListeners();
@@ -120,26 +122,26 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('创建订单失败: $e');
       String msg = '未知错误';
-      
+
       if (e is DioException && e.response != null) {
         final data = e.response?.data;
-        
+
         String cleanMsg = '';
         if (data is Map) {
           cleanMsg = data['message'] ?? data.toString();
         } else {
           cleanMsg = data?.toString() ?? e.toString();
         }
-        
+
         if (cleanMsg.contains('未付款') || cleanMsg.contains('开通中')) {
-           msg = '您有未完成的订单，请前往“我的-订阅账单”中支付或取消后再试。';
+          msg = '您有未完成的订单，请前往“我的-订阅账单”中支付或取消后再试。';
         } else {
-           msg = '服务器提示: $cleanMsg';
+          msg = '服务器提示: $cleanMsg';
         }
       } else {
         msg = e.toString();
       }
-      
+
       _errorMessage = msg;
       _isLoading = false;
       notifyListeners();
@@ -172,9 +174,10 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   // Avatar Management
   String? _avatarSeed;
-  
+
   /// Get current avatar URL
   /// If seed is set, use it. Otherwise, generate from email.
   String get avatarUrl {
@@ -183,7 +186,7 @@ class UserProvider with ChangeNotifier {
     }
     // Fallback to email as seed if user is logged in
     if (_user != null && _user!.email.isNotEmpty) {
-      return AvatarHelper.getAvatarUrl(_user!.email); 
+      return AvatarHelper.getAvatarUrl(_user!.email);
     }
     // Final fallback
     return AvatarHelper.getAvatarUrl('default_guest');
@@ -205,7 +208,7 @@ class UserProvider with ChangeNotifier {
     try {
       _avatarSeed = seed;
       notifyListeners();
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_avatar_seed', seed);
     } catch (e) {

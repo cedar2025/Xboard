@@ -69,7 +69,8 @@ class _CustomWebViewState extends State<CustomWebView> {
             _injectHideLayoutCSS();
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('WebView Error: ${error.description} (Code: ${error.errorCode})');
+            debugPrint(
+                'WebView Error: ${error.description} (Code: ${error.errorCode})');
           },
         ),
       );
@@ -144,12 +145,14 @@ class _CustomWebViewState extends State<CustomWebView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
         title: Text(
           widget.title,
           style: AppTextStyles.titleMedium.copyWith(
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
         backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -158,7 +161,8 @@ class _CustomWebViewState extends State<CustomWebView> {
         leading: IconButton(
           icon: Icon(
             Icons.close,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),

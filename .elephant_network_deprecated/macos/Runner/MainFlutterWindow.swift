@@ -12,7 +12,7 @@ class MainFlutterWindow: NSWindow {
     self.setContentSize(NSSize(width: 1000, height: 700))
     self.minSize = NSSize(width: 800, height: 600)
     self.center()
-    self.title = "大象网络"
+    self.title = "ElephantRoute"
 
     // 窗口样式
     self.titlebarAppearsTransparent = false
