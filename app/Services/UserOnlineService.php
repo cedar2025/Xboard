@@ -14,6 +14,26 @@ class UserOnlineService
     private const CACHE_PREFIX = 'ALIVE_IP_USER_';
 
     /**
+     * Check if an IP is private/reserved (Docker bridge, loopback, etc.)
+     *
+     * When nodes run behind a TCP proxy (e.g. ShadowTLS) with Docker bridge
+     * networking, the reported source IP is the Docker gateway (172.x.0.1)
+     * instead of the real client IP. Each VPS uses a different bridge subnet,
+     * so these get counted as separate devices, inflating online_count.
+     *
+     * Filters: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8,
+     *          ::1, fc00::/7, and other reserved ranges.
+     */
+    private static function isPrivateIP(string $ip): bool
+    {
+        return filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) === false;
+    }
+
+    /**
      * 获取所有限制设备用户的在线数量
      */
     public function getAliveList(Collection $deviceLimitUsers): array
@@ -62,6 +82,7 @@ class UserOnlineService
                     })
                     ->all();
             })
+            ->filter(fn(array $device): bool => !self::isPrivateIP($device['ip']))
             ->values()
             ->all();
 
@@ -98,6 +119,9 @@ class UserOnlineService
 
     /**
      * 计算在线设备数量
+     *
+     * Private/reserved IPs (Docker bridge, loopback, etc.) are excluded
+     * from the count in both modes to prevent false device inflation.
      */
     public static function calculateDeviceCount(array $ipsArray): int
     {
@@ -113,10 +137,15 @@ class UserOnlineService
                         ->all()
                 )
                 ->unique()
+                ->reject(fn(string $ip): bool => self::isPrivateIP($ip))
                 ->count(),
             0 => collect($ipsArray)
                 ->filter(fn(mixed $data): bool => is_array($data) && isset($data['aliveips']))
-                ->sum(fn(array $data): int => count($data['aliveips'])),
+                ->sum(fn(array $data): int => collect($data['aliveips'])
+                    ->map(fn(string $ipNodeId): string => Str::before($ipNodeId, '_'))
+                    ->reject(fn(string $ip): bool => self::isPrivateIP($ip))
+                    ->count()
+                ),
             default => throw new \InvalidArgumentException("Invalid device limit mode: $mode"),
         };
     }
