@@ -404,6 +404,10 @@ class Stash extends AbstractProtocol
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $array['obfs'] = data_get($protocol_settings, 'obfs.type');
+                    $array['obfs-password'] = data_get($protocol_settings, 'obfs.password');
+                }
                 break;
         }
         return $array;
