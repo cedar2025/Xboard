@@ -134,7 +134,8 @@ class UserController extends Controller
                 'uuid',
                 'device_limit',
                 'speed_limit',
-                'next_reset_at'
+                'next_reset_at',
+                'online_count'
             ])
             ->first();
         if (!$user) {
