@@ -168,6 +168,11 @@ class ServerService
                 'host' => $host,
                 'server_name' => $protocolSettings['server_name'],
                 'multiplex' => data_get($protocolSettings, 'multiplex'),
+                'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => match ((int) $protocolSettings['tls']) {
+                        2 => $protocolSettings['reality_settings'],
+                        default => null,
+                    },
             ],
             'vless' => [
                 ...$baseConfig,
@@ -256,7 +261,7 @@ class ServerService
             $response['custom_routes'] = $node['custom_routes'];
         }
 
-        if (!empty($node['cert_config'])) {
+        if (!empty($node['cert_config']) && data_get($node['cert_config'],'cert_mode') !== 'none' ) {
             $response['cert_config'] = $node['cert_config'];
         }
 

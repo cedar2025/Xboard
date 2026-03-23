@@ -48,7 +48,9 @@ class General extends AbstractProtocol
                 default => '',
             };
         }
-        return response(base64_encode($uri))->header('content-type', 'text/plain');
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain')
+            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
     public static function buildShadowsocks($password, $server)
@@ -66,7 +68,7 @@ class General extends AbstractProtocol
         $plugin_opts = data_get($protocol_settings, 'plugin_opts');
         $url = "ss://{$str}@{$addr}:{$server['port']}";
         if ($plugin && $plugin_opts) {
-            $url .= '/?' . 'plugin=' . $plugin . ';' . rawurlencode($plugin_opts);
+            $url .= '/?' . 'plugin=' . rawurlencode($plugin . ';' . $plugin_opts);
         }
         $url .= "#{$name}\r\n";
         return $url;
@@ -90,6 +92,9 @@ class General extends AbstractProtocol
         ];
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $config['sni'] = $serverName;
+        }
+        if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+            $config['fp'] = $fp;
         }
 
         switch ($protocol_settings['network']) {
@@ -148,7 +153,7 @@ class General extends AbstractProtocol
             'security' => '', //传输层安全 tls/reality
             'encryption' => 'none', //加密方式
             'type' => $server['protocol_settings']['network'], //传输协议
-            'flow' => $protocol_settings['flow'] ? $protocol_settings['flow'] : null,
+            'flow' => data_get($protocol_settings, 'flow'),
         ];
         // 处理TLS
         switch ($server['protocol_settings']['tls']) {
@@ -159,6 +164,9 @@ class General extends AbstractProtocol
                 }
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['sni'] = $serverName;
+                }
+                if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
+                    $config['allowInsecure'] = '1';
                 }
                 break;
             case 2: //reality
@@ -224,11 +232,30 @@ class General extends AbstractProtocol
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
         $array = [];
-        $array['allowInsecure'] = $protocol_settings['allow_insecure'];
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
-            $array['peer'] = $serverName;
-            $array['sni'] = $serverName;
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+
+        switch ($tlsMode) {
+            case 2: // Reality
+                $array['security'] = 'reality';
+                $array['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
+                $array['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
+                $array['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
+                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+                    $array['fp'] = $fp;
+                }
+                break;
+            default: // Standard TLS
+                $array['allowInsecure'] = data_get($protocol_settings, 'allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $array['peer'] = $serverName;
+                    $array['sni'] = $serverName;
+                }
+                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+                    $array['fp'] = $fp;
+                }
+                break;
         }
+
         switch ($server['protocol_settings']['network']) {
             case 'ws':
                 $array['type'] = 'ws';
@@ -299,8 +326,10 @@ class General extends AbstractProtocol
                 $params['upmbps'] = $upMbps;
             if ($downMbps = data_get($protocol_settings, 'bandwidth.down'))
                 $params['downmbps'] = $downMbps;
-            if ($obfsPassword = data_get($protocol_settings, 'obfs.password'))
+            if (data_get($protocol_settings, 'obfs.open') && ($obfsPassword = data_get($protocol_settings, 'obfs.password'))) {
+                $params['obfs'] = 'xplus';
                 $params['obfsParam'] = $obfsPassword;
+            }
 
             $query = http_build_query($params);
             $uri = "hysteria://{$addr}:{$server['port']}?{$query}#{$name}";
@@ -309,8 +338,8 @@ class General extends AbstractProtocol
 
         return $uri;
     }
-    
-    
+
+
     public static function buildTuic($password, $server)
     {
         $protocol_settings = data_get($server, 'protocol_settings', []);
@@ -344,6 +373,10 @@ class General extends AbstractProtocol
         $udpRelay = data_get($protocol_settings, 'udp_relay_mode', 'native');
         $queryParams['udp-relay-mode'] = $udpRelay;
 
+        if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $queryParams['insecure'] = '1';
+        }
+
         $query = http_build_query($queryParams);
 
         // 构造完整URI，格式：
@@ -361,7 +394,7 @@ class General extends AbstractProtocol
 
 
 
- 	   
+
 
     public static function buildAnyTLS($password, $server)
     {
@@ -372,16 +405,18 @@ class General extends AbstractProtocol
             'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
         ];
         $query = http_build_query($params);
-        $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+        $uri = "anytls://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
-    
+
     public static function buildSocks($password, $server)
     {
         $name = rawurlencode($server['name']);
         $credentials = base64_encode("{$password}:{$password}");
-        return "socks://{$credentials}@{$server['host']}:{$server['port']}#{$name}\r\n";
+        $addr = Helper::wrapIPv6($server['host']);
+        return "socks://{$credentials}@{$addr}:{$server['port']}#{$name}\r\n";
     }
 
     public static function buildHttp($password, $server)

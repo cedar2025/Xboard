@@ -95,7 +95,7 @@ class Surge extends AbstractProtocol
         $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
         $unusedTraffic = $totalTraffic - $useTraffic;
         $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{ $unusedTraffic }GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
+        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{$unusedTraffic}GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
@@ -108,7 +108,7 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=ss",
+            "{$server['name']} = ss",
             "{$server['host']}",
             "{$server['port']}",
             "encrypt-method={$protocol_settings['cipher']}",
@@ -152,7 +152,7 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=vmess",
+            "{$server['name']} = vmess",
             "{$server['host']}",
             "{$server['port']}",
             "username={$uuid}",
@@ -191,11 +191,11 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=trojan",
+            "{$server['name']} = trojan",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            $protocol_settings['server_name'] ? "sni={$protocol_settings['server_name']}" : "",
+            data_get($protocol_settings, 'server_name') ? "sni=" . data_get($protocol_settings, 'server_name') : "",
             'tfo=true',
             'udp-relay=true'
         ];
@@ -213,7 +213,7 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = data_get($server, 'protocol_settings', []);
         $config = [
-            "{$server['name']}=anytls",
+            "{$server['name']} = anytls",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
@@ -237,7 +237,7 @@ class Surge extends AbstractProtocol
         if ($protocol_settings['version'] != 2)
             return '';
         $config = [
-            "{$server['name']}=hysteria2",
+            "{$server['name']} = hysteria2",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
@@ -266,7 +266,7 @@ class Surge extends AbstractProtocol
         $protocol_settings = data_get($server, 'protocol_settings', []);
         $type = data_get($protocol_settings, 'tls') ? 'socks5-tls' : 'socks5';
         $config = [
-            "{$server['name']}={$type}",
+            "{$server['name']} = {$type}",
             "{$server['host']}",
             "{$server['port']}",
             "{$password}",
@@ -295,7 +295,7 @@ class Surge extends AbstractProtocol
         $protocol_settings = data_get($server, 'protocol_settings', []);
         $type = data_get($protocol_settings, 'tls') ? 'https' : 'http';
         $config = [
-            "{$server['name']}={$type}",
+            "{$server['name']} = {$type}",
             "{$server['host']}",
             "{$server['port']}",
             "{$password}",

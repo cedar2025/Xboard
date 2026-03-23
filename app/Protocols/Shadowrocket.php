@@ -35,7 +35,7 @@ class Shadowrocket extends AbstractProtocol
         $upload = round($user['u'] / (1024 * 1024 * 1024), 2);
         $download = round($user['d'] / (1024 * 1024 * 1024), 2);
         $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
-        $expiredDate = date('Y-m-d', $user['expired_at']);
+        $expiredDate = $user['expired_at'] === null ? 'N/A' : date('Y-m-d', $user['expired_at']);
         $uri .= "STATUS=🚀↑:{$upload}GB,↓:{$download}GB,TOT:{$totalTraffic}GB💡Expires:{$expiredDate}\r\n";
         foreach ($servers as $item) {
             if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
@@ -128,6 +128,25 @@ class Shadowrocket extends AbstractProtocol
                 $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
                 $config['host'] = data_get($protocol_settings, 'tls_settings.server_name') ?? $server['host'];
                 break;
+            case 'httpupgrade':
+                $config['obfs'] = "httpupgrade";
+                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = $path;
+                }
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+                    $config['obfsParam'] = $host;
+                }
+            break;
+                case 'h2':
+                $config['obfs'] = "h2";
+                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = $path;
+                }
+                if ($host = data_get($protocol_settings, 'network_settings.host')) {
+                    $config['obfsParam'] = $host[0] ?? $server['host'];
+                    $config['peer'] = $host [0] ?? $server['host'];
+                }
+                break;
         }
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
         $uri = "vmess://{$userinfo}?{$query}";
@@ -157,7 +176,6 @@ class Shadowrocket extends AbstractProtocol
                 $config['xtls'] = $xtlsMap[data_get($protocol_settings, 'flow')];
             }
         }
-
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
                 $config['tls'] = 1;
@@ -211,6 +229,15 @@ class Shadowrocket extends AbstractProtocol
                 }
                 $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'none');
                 break;
+            case 'h2':
+                $config['obfs'] = "h2";
+                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = $path;
+                }
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+                    $config['obfsParam'] = $host;
+                }
+                break;
             case 'httpupgrade':
                 $config['obfs'] = "httpupgrade";
                 if ($path = data_get($protocol_settings, 'network_settings.path')) {
@@ -244,10 +271,24 @@ class Shadowrocket extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $params['allowInsecure'] = data_get($protocol_settings, 'allow_insecure');
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
-            $params['peer'] = $serverName;
+        $params = [];
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+
+        switch ($tlsMode) {
+            case 2: // Reality
+                $params['security'] = 'reality';
+                $params['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
+                $params['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
+                $params['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
+                break;
+            default: // Standard TLS
+                $params['allowInsecure'] = data_get($protocol_settings, 'allow_insecure');
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $params['peer'] = $serverName;
+                }
+                break;
         }
+
         switch (data_get($protocol_settings, 'network')) {
             case 'grpc':
                 $params['obfs'] = 'grpc';
@@ -286,7 +327,7 @@ class Shadowrocket extends AbstractProtocol
                 }
                 if (data_get($protocol_settings, 'obfs.open')) {
                     $params["obfs"] = "xplus";
-                    $params["obfsParam"] = data_get($protocol_settings, 'obfs_settings.password');
+                    $params["obfsParam"] = data_get($protocol_settings, 'obfs.password');
                 }
                 $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
                 if (isset($server['ports']))
@@ -341,7 +382,8 @@ class Shadowrocket extends AbstractProtocol
             $params['password'] = $password;
         }
         $query = http_build_query($params);
-        $uri = "tuic://{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+        $uri = "tuic://{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
@@ -355,7 +397,8 @@ class Shadowrocket extends AbstractProtocol
             'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
         ];
         $query = http_build_query($params);
-        $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+        $uri = "anytls://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
         $uri .= "\r\n";
         return $uri;
     }
@@ -364,7 +407,8 @@ class Shadowrocket extends AbstractProtocol
     {   
         $protocol_settings = $server['protocol_settings'];
         $name = rawurlencode($server['name']);
-        $uri = "socks://" . base64_encode("{$password}:{$password}@{$server['host']}:{$server['port']}") . "?method=auto#{$name}";
+        $addr = Helper::wrapIPv6($server['host']);
+        $uri = 'socks://' . base64_encode("{$password}:{$password}@{$addr}:{$server['port']}") . "?method=auto#{$name}";
         $uri .= "\r\n";
         return $uri;
     }

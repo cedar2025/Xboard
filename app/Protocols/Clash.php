@@ -199,8 +199,9 @@ class Clash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
                     if ($httpOpts = array_filter([
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
                         'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])

@@ -80,7 +80,8 @@ class ClientController extends Controller
             'user' => $user,
             'servers' => $serversFiltered,
             'clientName' => $clientInfo['name'] ?? null,
-            'clientVersion' => $clientInfo['version'] ?? null
+            'clientVersion' => $clientInfo['version'] ?? null,
+            'userAgent' => $clientInfo['flag'] ?? null
         ]);
 
         return $protocolInstance->handle();

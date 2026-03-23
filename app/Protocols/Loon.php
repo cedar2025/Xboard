@@ -19,6 +19,7 @@ class Loon extends AbstractProtocol
 
     protected $protocolRequirements = [
         'loon.hysteria.protocol_settings.version' => [2 => '637'],
+        'loon.trojan.protocol_settings.tls' => [0 => '3.2.1', 1 => '3.2.1',2 => '999.9.9'],
     ];
 
     public function handle()
@@ -115,11 +116,10 @@ class Loon extends AbstractProtocol
         ];
 
         if (data_get($protocol_settings, 'tls')) {
-            if (data_get($protocol_settings, 'network') === 'tcp')
-                $config[] = 'over-tls=true';
+            $config[] = 'over-tls=true';
             if (data_get($protocol_settings, 'tls_settings')) {
                 $tls_settings = data_get($protocol_settings, 'tls_settings');
-                $config[] = 'skip-cert-verify=' . ($tls_settings['allow_insecure'] ? 'true' : 'false');
+                $config[] = 'skip-cert-verify=' . (data_get($tls_settings, 'allow_insecure') ? 'true' : 'false');
                 if (data_get($tls_settings, 'server_name'))
                     $config[] = "tls-name={$tls_settings['server_name']}";
             }
@@ -150,8 +150,25 @@ class Loon extends AbstractProtocol
                 if (data_get($wsSettings, key: 'headers.Host'))
                     $config[] = "host={$wsSettings['headers']['Host']}";
                 break;
-
-
+            case 'grpc':
+                $config[] = 'transport=grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config[] = "grpc-service-name={$serviceName}";
+                break;
+            case 'h2':
+                $config[] = 'transport=h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config[] = "host=" . (is_array($host) ? $host[0] : $host);
+                break;
+            case 'httpupgrade':
+                $config[] = 'transport=httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $config[] = "host={$host}";
+                break;
         }
 
         $uri = implode(',', $config);
@@ -167,13 +184,45 @@ class Loon extends AbstractProtocol
             "{$server['host']}",
             "{$server['port']}",
             "{$password}",
-            data_get($protocol_settings, 'server_name') ? "tls-name={$protocol_settings['server_name']}" : "",
-            'fast-open=false',
-            'udp=true'
         ];
-        if (!empty($protocol_settings['allow_insecure'])) {
-            $config[] = data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+        switch ($tlsMode) {
+            case 2: // Reality
+                if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
+                    $config[] = "tls-name={$serverName}";
+                }
+                if ($pubkey = data_get($protocol_settings, 'reality_settings.public_key')) {
+                    $config[] = "public-key={$pubkey}";
+                }
+                if ($shortid = data_get($protocol_settings, 'reality_settings.short_id')) {
+                    $config[] = "short-id={$shortid}";
+                }
+                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'reality_settings.allow_insecure', false) ? 'true' : 'false');
+                break;
+            default: // Standard TLS
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $config[] = "tls-name={$serverName}";
+                }
+                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'allow_insecure') ? 'true' : 'false');
+                break;
         }
+
+        switch (data_get($protocol_settings, 'network', 'tcp')) {
+            case 'ws':
+                $config[] = 'transport=ws';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $config[] = "host={$host}";
+                break;
+            case 'grpc':
+                $config[] = 'transport=grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config[] = "grpc-service-name={$serviceName}";
+                break;
+        }
+
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
@@ -267,7 +316,9 @@ class Loon extends AbstractProtocol
         ];
         if (data_get($protocol_settings, 'tls.allow_insecure'))
             $config[] = "skip-cert-verify=true";
-        $config[] = "download-bandwidth=" . data_get($protocol_settings, 'bandwidth.download_bandwidth');
+        if ($down = data_get($protocol_settings, 'bandwidth.down')) {
+            $config[] = "download-bandwidth={$down}";
+        }
         $config[] = "udp=true";
         $config = array_filter($config);
         $uri = implode(',', $config);
