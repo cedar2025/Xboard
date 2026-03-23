@@ -42,10 +42,17 @@ class ServerSave extends FormRequest
             'tls_settings.allow_insecure' => 'nullable|boolean',
         ],
         'trojan' => [
+            'tls' => 'nullable|integer',
             'network' => 'required|string',
             'network_settings' => 'nullable|array',
             'server_name' => 'nullable|string',
             'allow_insecure' => 'nullable|boolean',
+            'reality_settings.allow_insecure' => 'nullable|boolean',
+            'reality_settings.server_name' => 'nullable|string',
+            'reality_settings.server_port' => 'nullable|integer',
+            'reality_settings.public_key' => 'nullable|string',
+            'reality_settings.private_key' => 'nullable|string',
+            'reality_settings.short_id' => 'nullable|string',
         ],
         'hysteria' => [
             'version' => 'required|integer',

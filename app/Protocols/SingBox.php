@@ -5,6 +5,7 @@ use App\Utils\Helper;
 use Illuminate\Support\Arr;
 use App\Support\AbstractProtocol;
 use App\Models\Server;
+use Log;
 
 class SingBox extends AbstractProtocol
 {
@@ -59,9 +60,6 @@ class SingBox extends AbstractProtocol
             'anytls' => [
                 'base_version' => '1.12.0'
             ],
-            'mieru' => [
-                'base_version' => '1.12.0'
-            ]
         ]
     ];
 
@@ -133,10 +131,6 @@ class SingBox extends AbstractProtocol
                 $httpConfig = $this->buildHttp($this->user['uuid'], $item);
                 $proxies[] = $httpConfig;
             }
-            if ($item['type'] === Server::TYPE_MIERU) {
-                $mieruConfig = $this->buildMieru($this->user['uuid'], $item);
-                $proxies[] = $mieruConfig;
-            }
         }
         foreach ($outbounds as &$outbound) {
             if (in_array($outbound['type'], ['urltest', 'selector'])) {
@@ -155,23 +149,12 @@ class SingBox extends AbstractProtocol
     protected function buildRule()
     {
         $rules = $this->config['route']['rules'];
-        // Force the nodes ip to be a direct rule
-        // array_unshift($rules, [
-        //     'ip_cidr' => collect($this->servers)->pluck('host')->map(function ($host) {
-        //         return filter_var($host, FILTER_VALIDATE_IP) ? [$host] : Helper::getIpByDomainName($host);
-        //     })->flatten()->unique()->values(),
-        //     'outbound' => 'direct',
-        // ]);
         $this->config['route']['rules'] = $rules;
     }
 
     /**
      * 根据客户端版本自适应配置格式
-     * 
-     * sing-box 版本断点:
-     * - 1.8.0: rule_set 替代 geoip/geosite db, cache_file 替代 clash_api.cache_file
-     * - 1.10.0: address 数组替代 inet4_address/inet6_address
-     * - 1.11.0: 移除 endpoint_independent_nat, sniff_override_destination
+     * 模板基准格式: 1.13.0+ (最新)
      */
     protected function adaptConfigForVersion(): void
     {
@@ -180,57 +163,190 @@ class SingBox extends AbstractProtocol
             return;
         }
 
-        // >= 1.11.0: 移除已废弃字段，避免 "配置已过时" 警告
-        if (version_compare($coreVersion, '1.11.0', '>=')) {
-            $this->removeDeprecatedFieldsV111();
+        // >= 1.13.0: 移除已删除的 block/dns 出站
+        if (version_compare($coreVersion, '1.13.0', '>=')) {
+            $this->upgradeSpecialOutboundsToActions();
         }
 
-        // < 1.10.0: address 数组 → inet4_address/inet6_address
+        // < 1.11.0: rule action 降级为旧出站; 恢复废弃字段
+        if (version_compare($coreVersion, '1.11.0', '<')) {
+            $this->downgradeActionsToSpecialOutbounds();
+            $this->restoreDeprecatedInboundFields();
+        }
+
+        // < 1.12.0: DNS type+server → 旧 address 格式
+        if (version_compare($coreVersion, '1.12.0', '<')) {
+            $this->convertDnsServersToLegacy();
+        }
+
+        // < 1.10.0: tun address 数组 → inet4_address/inet6_address
         if (version_compare($coreVersion, '1.10.0', '<')) {
-            $this->convertAddressToLegacy();
+            $this->convertTunAddressToLegacy();
         }
     }
 
     /**
-     * 获取实际 sing-box 核心版本
-     * 
-     * sing-box 客户端直接报核心版本，hiddify/sfm 等 wrapper 客户端
-     * 报的是 app 版本，需要映射到对应的 sing-box 核心版本
+     * 获取核心版本 (Hiddify/SFM 等映射到内核版本)
      */
     private function getSingBoxCoreVersion(): ?string
     {
+        // 优先从 UA 提取核心版本
+        if (!empty($this->userAgent)) {
+            if (preg_match('/sing-box\s+v?(\d+(?:\.\d+){0,2})/i', $this->userAgent, $matches)) {
+                return $matches[1];
+            }
+        }
+
         if (empty($this->clientVersion)) {
             return null;
         }
 
-        // sing-box 原生客户端，版本即核心版本
         if ($this->clientName === 'sing-box') {
             return $this->clientVersion;
         }
 
-        // Hiddify/SFM 等 wrapper 默认内置较新的 sing-box 核心
-        // 保守策略: 直接按最新格式输出(移除废弃字段)，因为这些客户端普遍内置 >= 1.11 的核心
-        return '1.11.0';
+        return '1.13.0';
     }
 
     /**
-     * sing-box >= 1.11.0: 移除废弃字段
+     * sing-box >= 1.13.0: block/dns 出站升级为 action
      */
-    private function removeDeprecatedFieldsV111(): void
+    private function upgradeSpecialOutboundsToActions(): void
+    {
+        $removedTags = [];
+        $this->config['outbounds'] = array_values(array_filter(
+            $this->config['outbounds'] ?? [],
+            function ($outbound) use (&$removedTags) {
+                if (in_array($outbound['type'] ?? '', ['block', 'dns'])) {
+                    $removedTags[$outbound['tag']] = $outbound['type'];
+                    return false;
+                }
+                return true;
+            }
+        ));
+
+        if (empty($removedTags)) {
+            return;
+        }
+
+        if (isset($this->config['route']['rules'])) {
+            foreach ($this->config['route']['rules'] as &$rule) {
+                if (!isset($rule['outbound']) || !isset($removedTags[$rule['outbound']])) {
+                    continue;
+                }
+                $type = $removedTags[$rule['outbound']];
+                unset($rule['outbound']);
+                $rule['action'] = $type === 'dns' ? 'hijack-dns' : 'reject';
+            }
+            unset($rule);
+        }
+    }
+
+    /**
+     * sing-box < 1.11.0: rule action 降级为旧 block/dns 出站
+     */
+    private function downgradeActionsToSpecialOutbounds(): void
+    {
+        $needsDnsOutbound = false;
+        $needsBlockOutbound = false;
+
+        if (isset($this->config['route']['rules'])) {
+            foreach ($this->config['route']['rules'] as &$rule) {
+                if (!isset($rule['action'])) {
+                    continue;
+                }
+                switch ($rule['action']) {
+                    case 'hijack-dns':
+                        unset($rule['action']);
+                        $rule['outbound'] = 'dns-out';
+                        $needsDnsOutbound = true;
+                        break;
+                    case 'reject':
+                        unset($rule['action']);
+                        $rule['outbound'] = 'block';
+                        $needsBlockOutbound = true;
+                        break;
+                }
+            }
+            unset($rule);
+        }
+
+        if ($needsBlockOutbound) {
+            $this->config['outbounds'][] = ['type' => 'block', 'tag' => 'block'];
+        }
+        if ($needsDnsOutbound) {
+            $this->config['outbounds'][] = ['type' => 'dns', 'tag' => 'dns-out'];
+        }
+    }
+
+    /**
+     * sing-box < 1.11.0: 恢复废弃的入站字段
+     */
+    private function restoreDeprecatedInboundFields(): void
     {
         if (!isset($this->config['inbounds'])) {
             return;
         }
         foreach ($this->config['inbounds'] as &$inbound) {
-            unset($inbound['endpoint_independent_nat']);
-            unset($inbound['sniff_override_destination']);
+            if ($inbound['type'] === 'tun') {
+                $inbound['endpoint_independent_nat'] = true;
+            }
+            if (!empty($inbound['sniff'])) {
+                $inbound['sniff_override_destination'] = true;
+            }
         }
+    }
+
+    /**
+     * sing-box < 1.12.0: 将新 DNS server type+server 格式转换为旧 address 格式
+     */
+    private function convertDnsServersToLegacy(): void
+    {
+        if (!isset($this->config['dns']['servers'])) {
+            return;
+        }
+        foreach ($this->config['dns']['servers'] as &$server) {
+            if (!isset($server['type'])) {
+                continue;
+            }
+            $type = $server['type'];
+            $host = $server['server'] ?? null;
+            switch ($type) {
+                case 'https':
+                    $server['address'] = "https://{$host}/dns-query";
+                    break;
+                case 'tls':
+                    $server['address'] = "tls://{$host}";
+                    break;
+                case 'tcp':
+                    $server['address'] = "tcp://{$host}";
+                    break;
+                case 'quic':
+                    $server['address'] = "quic://{$host}";
+                    break;
+                case 'udp':
+                    $server['address'] = $host;
+                    break;
+                case 'block':
+                    $server['address'] = 'rcode://refused';
+                    break;
+                case 'rcode':
+                    $server['address'] = 'rcode://' . ($server['rcode'] ?? 'success');
+                    unset($server['rcode']);
+                    break;
+                default:
+                    $server['address'] = $host;
+                    break;
+            }
+            unset($server['type'], $server['server']);
+        }
+        unset($server);
     }
 
     /**
      * sing-box < 1.10.0: 将 tun address 数组转换为 inet4_address/inet6_address
      */
-    private function convertAddressToLegacy(): void
+    private function convertTunAddressToLegacy(): void
     {
         if (!isset($this->config['inbounds'])) {
             return;
@@ -297,42 +413,8 @@ class SingBox extends AbstractProtocol
 
         $this->appendMultiplex($array, $protocol_settings);
 
-        $transport = match ($protocol_settings['network']) {
-            'tcp' => data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none' ? [
-                'type' => 'http',
-                'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/'])),
-                'host' => data_get($protocol_settings, 'network_settings.header.request.headers.Host', [])
-            ] : null,
-            'ws' => array_filter([
-                'type' => 'ws',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
-                'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
-                'max_early_data' => 2048,
-                'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ]),
-            'grpc' => [
-                'type' => 'grpc',
-                'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
-            ],
-            'h2' => [
-                'type' => 'http',
-                'host' => data_get($protocol_settings, 'network_settings.host'),
-                'path' => data_get($protocol_settings, 'network_settings.path')
-            ],
-            'httpupgrade' => [
-                'type' => 'httpupgrade',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
-                'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
-                'headers' => data_get($protocol_settings, 'network_settings.headers')
-            ],
-            'quic' => [
-                'type' => 'quic'
-            ],
-            default => null
-        };
-
-        if ($transport) {
-            $array['transport'] = array_filter($transport, fn($value) => !is_null($value));
+        if ($transport = $this->buildTransport($protocol_settings, $server)) {
+            $array['transport'] = $transport;
         }
         return $array;
     }
@@ -347,18 +429,23 @@ class SingBox extends AbstractProtocol
             "server_port" => $server['port'],
             "uuid" => $password,
             "packet_encoding" => "xudp",
-            'flow' => data_get($protocol_settings, 'flow', ''),
         ];
+        if ($flow = data_get($protocol_settings, 'flow')) {
+            $array['flow'] = $flow;
+        }
 
         if ($protocol_settings['tls']) {
+            $tlsMode = (int) $protocol_settings['tls'];
             $tlsConfig = [
                 'enabled' => true,
-                'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
+                'insecure' => $tlsMode === 2
+                    ? (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false)
+                    : (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
             ];
 
             $this->appendUtls($tlsConfig, $protocol_settings);
 
-            switch ($protocol_settings['tls']) {
+            switch ($tlsMode) {
                 case 1:
                     if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                         $tlsConfig['server_name'] = $serverName;
@@ -379,41 +466,8 @@ class SingBox extends AbstractProtocol
 
         $this->appendMultiplex($array, $protocol_settings);
 
-        $transport = match ($protocol_settings['network']) {
-            'tcp' => data_get($protocol_settings, 'network_settings.header.type') == 'http' ? [
-                'type' => 'http',
-                'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']))
-            ] : null,
-            'ws' => array_filter([
-                'type' => 'ws',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
-                'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
-                'max_early_data' => 2048,
-                'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ], fn($value) => !is_null($value)),
-            'grpc' => [
-                'type' => 'grpc',
-                'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
-            ],
-            'h2' => [
-                'type' => 'http',
-                'host' => data_get($protocol_settings, 'network_settings.host'),
-                'path' => data_get($protocol_settings, 'network_settings.path')
-            ],
-            'httpupgrade' => [
-                'type' => 'httpupgrade',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
-                'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
-                'headers' => data_get($protocol_settings, 'network_settings.headers')
-            ],
-            'quic' => [
-                'type' => 'quic'
-            ],
-            default => null
-        };
-
-        if ($transport) {
-            $array['transport'] = array_filter($transport, fn($value) => !is_null($value));
+        if ($transport = $this->buildTransport($protocol_settings, $server)) {
+            $array['transport'] = $transport;
         }
 
         return $array;
@@ -428,36 +482,36 @@ class SingBox extends AbstractProtocol
             'server' => $server['host'],
             'server_port' => $server['port'],
             'password' => $password,
-            'tls' => [
-                'enabled' => true,
-                'insecure' => (bool) data_get($protocol_settings, 'allow_insecure', false),
-            ]
         ];
 
-        $this->appendUtls($array['tls'], $protocol_settings);
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+        $tlsConfig = ['enabled' => true];
 
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
-            $array['tls']['server_name'] = $serverName;
+        switch ($tlsMode) {
+            case 2: // Reality
+                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
+                $tlsConfig['server_name'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $tlsConfig['reality'] = [
+                    'enabled' => true,
+                    'public_key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short_id' => data_get($protocol_settings, 'reality_settings.short_id'),
+                ];
+                break;
+            default: // Standard TLS
+                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $tlsConfig['server_name'] = $serverName;
+                }
+                break;
         }
+
+        $this->appendUtls($tlsConfig, $protocol_settings);
+        $array['tls'] = $tlsConfig;
 
         $this->appendMultiplex($array, $protocol_settings);
 
-        $transport = match (data_get($protocol_settings, 'network')) {
-            'grpc' => [
-                'type' => 'grpc',
-                'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
-            ],
-            'ws' => array_filter([
-                'type' => 'ws',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
-                'headers' => data_get($protocol_settings, 'network_settings.headers.Host') ? ['Host' => [data_get($protocol_settings, 'network_settings.headers.Host')]] : null,
-                'max_early_data' => 2048,
-                'early_data_header_name' => 'Sec-WebSocket-Protocol'
-            ]),
-            default => null
-        };
-        if ($transport) {
-            $array['transport'] = array_filter($transport, fn($value) => !is_null($value));
+        if ($transport = $this->buildTransport($protocol_settings, $server)) {
+            $array['transport'] = $transport;
         }
         return $array;
     }
@@ -508,10 +562,9 @@ class SingBox extends AbstractProtocol
             ]
         };
 
-        return array_merge(
-            $baseConfig,
-            $speedConfig,
-            $versionConfig
+        return array_filter(
+            array_merge($baseConfig, $speedConfig, $versionConfig),
+            fn($v) => !is_null($v)
         );
     }
 
@@ -623,6 +676,47 @@ class SingBox extends AbstractProtocol
         }
 
         return $array;
+    }
+
+    protected function buildTransport(array $protocol_settings, array $server): ?array
+    {
+        $transport = match (data_get($protocol_settings, 'network')) {
+            'tcp' => data_get($protocol_settings, 'network_settings.header.type') === 'http' ? [
+                'type' => 'http',
+                'path' => Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/'])),
+                'host' => data_get($protocol_settings, 'network_settings.header.request.headers.Host', [])
+            ] : null,
+            'ws' => [
+                'type' => 'ws',
+                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
+                'max_early_data' => 0,
+                // 'early_data_header_name' => 'Sec-WebSocket-Protocol'
+            ],
+            'grpc' => [
+                'type' => 'grpc',
+                'service_name' => data_get($protocol_settings, 'network_settings.serviceName')
+            ],
+            'h2' => [
+                'type' => 'http',
+                'host' => data_get($protocol_settings, 'network_settings.host'),
+                'path' => data_get($protocol_settings, 'network_settings.path')
+            ],
+            'httpupgrade' => [
+                'type' => 'httpupgrade',
+                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
+                'headers' => data_get($protocol_settings, 'network_settings.headers')
+            ],
+            'quic' => ['type' => 'quic'],
+            default => null
+        };
+
+        if (!$transport) {
+            return null;
+        }
+
+        return array_filter($transport, fn($v) => !is_null($v));
     }
 
     protected function appendMultiplex(&$array, $protocol_settings)
