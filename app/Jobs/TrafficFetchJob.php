@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Redis;
 
 class TrafficFetchJob implements ShouldQueue
 {
@@ -19,11 +20,6 @@ class TrafficFetchJob implements ShouldQueue
     public $tries = 1;
     public $timeout = 20;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
     public function __construct(array $server, array $data, $protocol, int $timestamp)
     {
         $this->onQueue('traffic_fetch');
@@ -35,6 +31,8 @@ class TrafficFetchJob implements ShouldQueue
 
     public function handle(): void
     {
+        $userIds = array_keys($this->data);
+
         foreach ($this->data as $uid => $v) {
             User::where('id', $uid)
                 ->incrementEach(
@@ -44,6 +42,10 @@ class TrafficFetchJob implements ShouldQueue
                     ],
                     ['t' => time()]
                 );
+        }
+
+        if (!empty($userIds)) {
+            Redis::sadd('traffic:pending_check', ...$userIds);
         }
     }
 }

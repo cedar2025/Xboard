@@ -13,7 +13,7 @@ class NodeSyncService
     /**
      * Check if node has active WS connection
      */
-    private static function isNodeOnline(int $nodeId): bool
+    public static function isNodeOnline(int $nodeId): bool
     {
         return (bool) Cache::get("node_ws_alive:{$nodeId}");
     }
@@ -125,7 +125,7 @@ class NodeSyncService
     /**
      * Publish a push command to Redis — picked up by the Workerman WS server
      */
-    private static function push(int $nodeId, string $event, array $data): void
+    public static function push(int $nodeId, string $event, array $data): void
     {
         try {
             Redis::publish('node:push', json_encode([
