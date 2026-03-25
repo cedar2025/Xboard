@@ -274,7 +274,7 @@ class ServerService
      * @param string $serverType
      * @return Server|null
      */
-    public static function getServer($serverId, ?string $serverType)
+    public static function getServer($serverId, ?string $serverType = null): Server | null
     {
         return Server::query()
             ->when($serverType, function ($query) use ($serverType) {
