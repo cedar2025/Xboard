@@ -131,7 +131,7 @@ class NodeWorker
             return;
         }
 
-        $node = Server::find($nodeId);
+        $node = ServerService::getServer($nodeId, null);
         if (!$node) {
             $conn->close(json_encode([
                 'event' => 'error',
