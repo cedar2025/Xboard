@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\V2\Server;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\UserAliveSyncJob;
 use App\Services\DeviceStateService;
 use App\Services\ServerService;
 use App\Services\UserService;
