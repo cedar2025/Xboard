@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V2\Server;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\UserAliveSyncJob;
+use App\Services\DeviceStateService;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
@@ -83,7 +84,10 @@ class ServerController extends Controller
         // handle alive data
         $alive = $request->input('alive');
         if (is_array($alive) && !empty($alive)) {
-            UserAliveSyncJob::dispatch($alive, $nodeType, $nodeId);
+            $deviceStateService = app(DeviceStateService::class);
+            foreach ($alive as $uid => $ips) {
+                $deviceStateService->setDevices((int) $uid, $nodeId, (array) $ips);
+            }
         }
 
         // handle active connections
@@ -127,7 +131,7 @@ class ServerController extends Controller
         // handle node metrics (Metrics)
         $metrics = $request->input('metrics');
         if (is_array($metrics) && !empty($metrics)) {
-           ServerService::updateMetrics($node, $metrics);
+            ServerService::updateMetrics($node, $metrics);
         }
 
         return response()->json(['data' => true]);

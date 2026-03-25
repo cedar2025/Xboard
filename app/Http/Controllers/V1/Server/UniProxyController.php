@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\UserAliveSyncJob;
+use App\Services\DeviceStateService;
 use App\Services\NodeSyncService;
 use App\Services\ServerService;
 use App\Services\UserService;
@@ -11,13 +11,12 @@ use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Services\UserOnlineService;
 use Illuminate\Http\JsonResponse;
 
 class UniProxyController extends Controller
 {
     public function __construct(
-        private readonly UserOnlineService $userOnlineService
+        private readonly DeviceStateService $deviceStateService
     ) {
     }
 
@@ -103,13 +102,15 @@ class UniProxyController extends Controller
         return response($response)->header('ETag', "\"{$eTag}\"");
     }
 
-    // 获取在线用户数据（wyx2685
+    // 获取在线用户数据
     public function alivelist(Request $request): JsonResponse
     {
         $node = $this->getNodeInfo($request);
         $deviceLimitUsers = ServerService::getAvailableUsers($node)
             ->where('device_limit', '>', 0);
-        $alive = $this->userOnlineService->getAliveList($deviceLimitUsers);
+
+        $alive = $this->deviceStateService->getAliveList(collect($deviceLimitUsers));
+
         return response()->json(['alive' => (object) $alive]);
     }
 
@@ -123,7 +124,11 @@ class UniProxyController extends Controller
                 'error' => 'Invalid online data'
             ], 400);
         }
-        UserAliveSyncJob::dispatch($data, $node->type, $node->id);
+
+        foreach ($data as $uid => $ips) {
+            $this->deviceStateService->setDevices((int) $uid, $node->id, $ips);
+        }
+
         return response()->json(['data' => true]);
     }
 

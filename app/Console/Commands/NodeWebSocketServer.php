@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Server;
+use App\Services\DeviceStateService;
 use App\Services\NodeSyncService;
 use App\Services\NodeRegistry;
 use App\Services\ServerService;
@@ -69,6 +70,23 @@ class NodeWebSocketServer extends Command
                     }
                 }
             });
+
+            // 定时推送设备状态给节点（每10秒）
+            Timer::add(10, function () {
+                $pendingNodeIds = Redis::spop('device:push_pending_nodes', 100);
+                if (empty($pendingNodeIds)) {
+                    return;
+                }
+
+                $deviceStateService = app(DeviceStateService::class);
+
+                foreach ($pendingNodeIds as $nodeId) {
+                    $nodeId = (int) $nodeId;
+                    if (NodeRegistry::get($nodeId) !== null) {
+                        $this->pushDeviceStateToNode($nodeId, $deviceStateService);
+                    }
+                }
+            });
         };
 
         $worker->onConnect = function (TcpConnection $conn) {
@@ -126,6 +144,10 @@ class NodeWebSocketServer extends Command
             NodeRegistry::add($nodeId, $conn);
             Cache::put("node_ws_alive:{$nodeId}", true, 86400);
 
+            // 清理该节点的旧设备数据（节点重连后需重新上报全量）
+            $deviceStateService = app(DeviceStateService::class);
+            $deviceStateService->clearNodeDevices($nodeId);
+
             Log::debug("[WS] Node#{$nodeId} connected", [
                 'remote' => $conn->getRemoteIp(),
                 'total' => NodeRegistry::count(),
@@ -162,8 +184,17 @@ class NodeWebSocketServer extends Command
                         $this->handleNodeStatus($nodeId, $msg['data']);
                     }
                     break;
+                case 'report.devices':
+                    if ($nodeId && isset($msg['data'])) {
+                        $this->handleDeviceReport($nodeId, $msg['data']);
+                    }
+                    break;
+                case 'request.devices':
+                    if ($nodeId) {
+                        $this->handleDeviceRequest($conn, $nodeId);
+                    }
+                    break;
                 default:
-                    // Future: handle other node-initiated messages if needed
                     break;
             }
         };
@@ -173,6 +204,9 @@ class NodeWebSocketServer extends Command
                 $nodeId = $conn->nodeId;
                 NodeRegistry::remove($nodeId);
                 Cache::forget("node_ws_alive:{$nodeId}");
+
+                app(DeviceStateService::class)->clearNodeDevices($nodeId);
+
                 Log::debug("[WS] Node#{$nodeId} disconnected", [
                     'total' => NodeRegistry::count(),
                 ]);
@@ -194,11 +228,83 @@ class NodeWebSocketServer extends Command
 
         // Update last check-in cache
         Cache::put(\App\Utils\CacheKey::get('SERVER_' . $nodeType . '_LAST_CHECK_AT', $nodeId), time(), 3600);
-        
+
         // Update metrics cache via Service
         ServerService::updateMetrics($node, $data);
 
         Log::debug("[WS] Node#{$nodeId} status updated via WebSocket");
+    }
+
+    /**
+     * Handle device report from node via WebSocket
+     * 
+     * 节点发送全量设备列表，面板负责差异计算
+     * 数据格式: {"event": "report.devices", "data": {userId: [ip1, ip2, ...], ...}}
+     * 
+     * 示例: {"event": "report.devices", "data": {"123": ["1.1.1.1", "2.2.2.2"], "456": ["3.3.3.3"]}}
+     */
+    private function handleDeviceReport(int $nodeId, array $data): void
+    {
+        $deviceStateService = app(DeviceStateService::class);
+
+        // 清理该节点的旧数据
+        $deviceStateService->clearNodeDevices($nodeId);
+
+        // 全量写入新数据
+        foreach ($data as $userId => $ips) {
+            if (is_numeric($userId) && is_array($ips)) {
+                $deviceStateService->setDevices((int) $userId, $nodeId, $ips);
+            }
+        }
+
+        // 标记该节点待推送（由定时器批量处理）
+        Redis::sadd('device:push_pending_nodes', $nodeId);
+
+        Log::debug("[WS] Node#{$nodeId} synced " . count($data) . " users");
+    }
+
+    /**
+     * 推送全量设备状态给指定节点
+     */
+    private function pushDeviceStateToNode(int $nodeId, DeviceStateService $service): void
+    {
+        $node = Server::find($nodeId);
+        if (!$node) return;
+
+        // 获取该节点关联的所有用户
+        $users = ServerService::getAvailableUsers($node);
+        $userIds = $users->pluck('id')->toArray();
+
+        // 获取这些用户的设备列表
+        $devices = $service->getUsersDevices($userIds);
+
+        NodeRegistry::send($nodeId, 'sync.devices', [
+            'users' => $devices
+        ]);
+
+        Log::debug("[WS] Pushed device state to node#{$nodeId}: " . count($devices) . " users");
+    }
+
+    /**
+     * Handle device state request from node via WebSocket
+     */
+    private function handleDeviceRequest(TcpConnection $conn, int $nodeId): void
+    {
+        $node = Server::find($nodeId);
+        if (!$node) return;
+
+        $users = ServerService::getAvailableUsers($node);
+        $userIds = $users->pluck('id')->toArray();
+
+        $deviceStateService = app(DeviceStateService::class);
+        $devices = $deviceStateService->getUsersDevices($userIds);
+
+        $conn->send(json_encode([
+            'event' => 'sync.devices',
+            'data' => ['users' => $devices],
+        ]));
+
+        Log::debug("[WS] Node#{$nodeId} requested devices, sent " . count($devices) . " users");
     }
 
     /**
@@ -244,7 +350,7 @@ class NodeWebSocketServer extends Command
 
             $sent = NodeRegistry::send((int) $nodeId, $event, $data);
             if ($sent) {
-                Log::debug("[WS] Pushed {$event} to node#{$nodeId}");
+                Log::debug("[WS] Pushed {$event} to node#{$nodeId}, data: " . json_encode($data));
             }
         });
 
