@@ -20,6 +20,7 @@ class SingBox extends AbstractProtocol
         Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
+        Server::TYPE_MIERU,
     ];
     private $config;
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.sing-box.json';
@@ -60,6 +61,9 @@ class SingBox extends AbstractProtocol
             'anytls' => [
                 'base_version' => '1.12.0'
             ],
+            'mieru' => [
+                'base_version' => '1.12.0'
+            ]
         ]
     ];
 
@@ -131,6 +135,10 @@ class SingBox extends AbstractProtocol
                 $httpConfig = $this->buildHttp($this->user['uuid'], $item);
                 $proxies[] = $httpConfig;
             }
+            if ($item['type'] === Server::TYPE_MIERU) {
+                $mieruConfig = $this->buildMieru($this->user['uuid'], $item);
+                $proxies[] = $mieruConfig;
+            }
         }
         foreach ($outbounds as &$outbound) {
             if (in_array($outbound['type'], ['urltest', 'selector'])) {
@@ -190,10 +198,22 @@ class SingBox extends AbstractProtocol
      */
     private function getSingBoxCoreVersion(): ?string
     {
-        // 优先从 UA 提取核心版本
         if (!empty($this->userAgent)) {
-            if (preg_match('/sing-box\s+v?(\d+(?:\.\d+){0,2})/i', $this->userAgent, $matches)) {
+            // UA 中显式带 sing-box 版本 (e.g. "Hiddify/2.5.7 sing-box/1.9.0")
+            if (preg_match('/sing-box[\/\s]+v?(\d+(?:\.\d+){0,2})/i', $this->userAgent, $matches)) {
                 return $matches[1];
+            }
+            // Hiddify 自身版本号 → 映射到内部 sing-box core
+            if (preg_match('/Hiddify[^\d]*(\d+)/i', $this->userAgent, $matches)) {
+                return match ((int) $matches[1]) {
+                    4       => '1.11.0',  // Hiddify v4.x → core 1.11.x
+                    2, 3    => '1.9.0',   // Hiddify v2-3.x → core ~1.8-1.10
+                    default => '1.8.0',
+                };
+            }
+            // SFM (Sing-box for Mobile) — 通常跟进较新 core
+            if (preg_match('/sfm/i', $this->userAgent)) {
+                return '1.11.0';
             }
         }
 
@@ -205,7 +225,12 @@ class SingBox extends AbstractProtocol
             return $this->clientVersion;
         }
 
-        return '1.13.0';
+        // Hiddify/SFM 通过 flags 匹配但 UA 未识别 → 保守默认
+        if (in_array($this->clientName, ['hiddify', 'sfm'])) {
+            return '1.9.0';
+        }
+
+        return '1.11.0';
     }
 
     /**
@@ -519,24 +544,21 @@ class SingBox extends AbstractProtocol
     protected function buildHysteria($password, $server): array
     {
         $protocol_settings = $server['protocol_settings'];
+        // 端口跳跃: 从 ports 范围随机选一个端口, 避免客户端兼容性问题
+        $serverPort = $server['port'];
+        if (isset($server['ports'])) {
+            $serverPort = $this->randomPortFromRange($server['ports']);
+        }
+
         $baseConfig = [
             'server' => $server['host'],
-            'server_port' => $server['port'],
+            'server_port' => $serverPort,
             'tag' => $server['name'],
             'tls' => [
                 'enabled' => true,
                 'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
             ]
         ];
-        // 支持 1.11.0 版本及以上 `server_ports` 和 `hop_interval` 配置
-        if ($this->supportsFeature('sing-box', '1.11.0')) {
-            if (isset($server['ports'])) {
-                $baseConfig['server_ports'] = [str_replace('-', ':', $server['ports'])];
-            }
-            if (isset($protocol_settings['hop_interval'])) {
-                $baseConfig['hop_interval'] = "{$protocol_settings['hop_interval']}s";
-            }
-        }
 
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
@@ -678,6 +700,20 @@ class SingBox extends AbstractProtocol
         return $array;
     }
 
+    protected function buildMieru($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        return [
+            'type' => 'mieru',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'server_port' => $server['port'],
+            'username' => $password,
+            'password' => $password,
+            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP'))
+        ];
+    }
+
     protected function buildTransport(array $protocol_settings, array $server): ?array
     {
         $transport = match (data_get($protocol_settings, 'network')) {
@@ -753,5 +789,22 @@ class SingBox extends AbstractProtocol
                 ];
             }
         }
+    }
+
+    /**
+     * 从端口范围字符串 (如 "20000-30000") 随机取一个端口
+     */
+    private function randomPortFromRange(string $ports): int
+    {
+        if (str_contains($ports, '-')) {
+            [$min, $max] = explode('-', $ports, 2);
+            return random_int((int) $min, (int) $max);
+        }
+        // 逗号分隔的多个端口 (如 "443,8443,2053")
+        if (str_contains($ports, ',')) {
+            $list = array_map('intval', explode(',', $ports));
+            return $list[array_rand($list)];
+        }
+        return (int) $ports;
     }
 }
