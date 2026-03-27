@@ -220,7 +220,7 @@ class UserController extends Controller
             return $this->fail([400202, '用户不存在']);
         }
         if (isset($params['email'])) {
-            if (User::where('email', $params['email'])->first() && $user->email !== $params['email']) {
+            if (User::byEmail($params['email'])->first() && $user->email !== $params['email']) {
                 return $this->fail([400201, '邮箱已被使用']);
             }
         }
@@ -240,7 +240,7 @@ class UserController extends Controller
             $params['group_id'] = $plan->group_id;
         }
         // 处理邀请用户
-        if ($request->input('invite_user_email') && $inviteUser = User::where('email', $request->input('invite_user_email'))->first()) {
+        if ($request->input('invite_user_email') && $inviteUser = User::byEmail($request->input('invite_user_email'))->first()) {
             $params['invite_user_id'] = $inviteUser->id;
         } else {
             $params['invite_user_id'] = null;
@@ -365,7 +365,7 @@ class UserController extends Controller
         if ($request->input('email_prefix')) {
             $email = $request->input('email_prefix') . '@' . $request->input('email_suffix');
 
-            if (User::where('email', $email)->exists()) {
+            if (User::byEmail($email)->exists()) {
                 return $this->fail([400201, '邮箱已存在于系统中']);
             }
 
