@@ -89,7 +89,7 @@ class Surfboard extends AbstractProtocol
             "{$server['name']}=ss",
             "{$server['host']}",
             "{$server['port']}",
-            "encrypt-method={$protocol_settings['cipher']}",
+            "encrypt-method=" . data_get($protocol_settings, 'cipher'),
             "password={$password}",
             'tfo=true',
             'udp-relay=true'

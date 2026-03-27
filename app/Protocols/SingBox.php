@@ -434,8 +434,8 @@ class SingBox extends AbstractProtocol
             $array['flow'] = $flow;
         }
 
-        if ($protocol_settings['tls']) {
-            $tlsMode = (int) $protocol_settings['tls'];
+        if (data_get($protocol_settings, 'tls')) {
+            $tlsMode = (int) data_get($protocol_settings, 'tls', 0);
             $tlsConfig = [
                 'enabled' => true,
                 'insecure' => $tlsMode === 2

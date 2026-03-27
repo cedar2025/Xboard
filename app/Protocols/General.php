@@ -61,7 +61,7 @@ class General extends AbstractProtocol
         $str = str_replace(
             ['+', '/', '='],
             ['-', '_', ''],
-            base64_encode("{$protocol_settings['cipher']}:{$password}")
+            base64_encode(data_get($protocol_settings, 'cipher') . ":{$password}")
         );
         $addr = Helper::wrapIPv6($server['host']);
         $plugin = data_get($protocol_settings, 'plugin');
@@ -84,11 +84,11 @@ class General extends AbstractProtocol
             "port" => (string) $server['port'],
             "id" => $uuid,
             "aid" => '0',
-            "net" => $server['protocol_settings']['network'],
+            "net" => data_get($server, 'protocol_settings.network'),
             "type" => "none",
             "host" => "",
             "path" => "",
-            "tls" => $protocol_settings['tls'] ? "tls" : "",
+            "tls" => data_get($protocol_settings, 'tls') ? "tls" : "",
         ];
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $config['sni'] = $serverName;
@@ -97,7 +97,7 @@ class General extends AbstractProtocol
             $config['fp'] = $fp;
         }
 
-        switch ($protocol_settings['network']) {
+        switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
@@ -152,11 +152,11 @@ class General extends AbstractProtocol
             'mode' => 'multi', //grpc传输模式
             'security' => '', //传输层安全 tls/reality
             'encryption' => 'none', //加密方式
-            'type' => $server['protocol_settings']['network'], //传输协议
+            'type' => data_get($server, 'protocol_settings.network'), //传输协议
             'flow' => data_get($protocol_settings, 'flow'),
         ];
         // 处理TLS
-        switch ($server['protocol_settings']['tls']) {
+        switch (data_get($server, 'protocol_settings.tls')) {
             case 1:
                 $config['security'] = "tls";
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
@@ -184,7 +184,7 @@ class General extends AbstractProtocol
                 break;
         }
         // 处理传输协议
-        switch ($server['protocol_settings']['network']) {
+        switch (data_get($server, 'protocol_settings.network')) {
             case 'ws':
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
@@ -256,7 +256,7 @@ class General extends AbstractProtocol
                 break;
         }
 
-        switch ($server['protocol_settings']['network']) {
+        switch (data_get($server, 'protocol_settings.network')) {
             case 'ws':
                 $array['type'] = 'ws';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
