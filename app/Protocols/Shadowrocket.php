@@ -76,7 +76,7 @@ class Shadowrocket extends AbstractProtocol
         $str = str_replace(
             ['+', '/', '='],
             ['-', '_', ''],
-            base64_encode("{$protocol_settings['cipher']}:{$password}")
+            base64_encode(data_get($protocol_settings, 'cipher') . ":{$password}")
         );
         $addr = Helper::wrapIPv6($server['host']);
 
@@ -98,7 +98,7 @@ class Shadowrocket extends AbstractProtocol
             'remark' => $server['name'],
             'alterId' => 0
         ];
-        if ($protocol_settings['tls']) {
+        if (data_get($protocol_settings, 'tls')) {
             $config['tls'] = 1;
             if (data_get($protocol_settings, 'tls_settings')) {
                 if (!!data_get($protocol_settings, 'tls_settings.allow_insecure'))
@@ -352,7 +352,7 @@ class Shadowrocket extends AbstractProtocol
                 }
                 $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
                 if (isset($protocol_settings['hop_interval'])) {
-                    $params['keepalive'] = $protocol_settings['hop_interval'];
+                    $params['keepalive'] = data_get($protocol_settings, 'hop_interval');
                 }
                 if (isset($server['ports'])) {
                     $params['mport'] = $server['ports'];
