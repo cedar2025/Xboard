@@ -72,7 +72,6 @@ class Loon extends AbstractProtocol
         if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
             $plugin = data_get($protocol_settings, 'plugin');
             $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
-            // 解析插件选项
             $parsedOpts = collect(explode(';', $pluginOpts))
                 ->filter()
                 ->mapWithKeys(function ($pair) {

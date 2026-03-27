@@ -31,7 +31,6 @@ class Shadowrocket extends AbstractProtocol
         $user = $this->user;
 
         $uri = '';
-        //display remaining traffic and expire date
         $upload = round($user['u'] / (1024 * 1024 * 1024), 2);
         $download = round($user['d'] / (1024 * 1024 * 1024), 2);
         $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
@@ -164,7 +163,6 @@ class Shadowrocket extends AbstractProtocol
             'alterId' => 0
         ];
 
-        // 判断是否开启xtls
         if (data_get($protocol_settings, 'flow')) {
             $xtlsMap = [
                 'none' => 0,
@@ -311,7 +309,7 @@ class Shadowrocket extends AbstractProtocol
     public static function buildHysteria($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $uri = ''; // 初始化变量
+        $uri = '';
 
         switch (data_get($protocol_settings, 'version')) {
             case 1:

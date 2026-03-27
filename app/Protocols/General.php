@@ -149,12 +149,13 @@ class General extends AbstractProtocol
         $name = $server['name']; //节点名称
 
         $config = [
-            'mode' => 'multi', //grpc传输模式
-            'security' => '', //传输层安全 tls/reality
-            'encryption' => 'none', //加密方式
-            'type' => $server['protocol_settings']['network'], //传输协议
-            'flow' => data_get($protocol_settings, 'flow'),
+            'security' => '',
+            'encryption' => 'none',
+            'type' => $server['protocol_settings']['network'],
         ];
+        if ($flow = data_get($protocol_settings, 'flow')) {
+            $config['flow'] = $flow;
+        }
         // 处理TLS
         switch ($server['protocol_settings']['tls']) {
             case 1:
@@ -169,12 +170,11 @@ class General extends AbstractProtocol
                     $config['allowInsecure'] = '1';
                 }
                 break;
-            case 2: //reality
+            case 2:
                 $config['security'] = "reality";
                 $config['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
                 $config['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
                 $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
-                $config['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
                 $config['spx'] = "/";
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
                     $config['fp'] = $fp;
@@ -192,6 +192,7 @@ class General extends AbstractProtocol
                     $config['host'] = $wsHost;
                 break;
             case 'grpc':
+                $config['mode'] = 'multi';
                 if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config['serviceName'] = $path;
                 break;

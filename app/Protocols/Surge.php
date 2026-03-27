@@ -80,7 +80,6 @@ class Surge extends AbstractProtocol
 
         $config = subscribe_template('surge');
 
-        // Subscription link
         $subsDomain = request()->header('Host');
         $subsURL = Helper::getSubscribeUrl($user['token'], $subsDomain ? 'https://' . $subsDomain : null);
 
@@ -119,7 +118,6 @@ class Surge extends AbstractProtocol
         if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
             $plugin = data_get($protocol_settings, 'plugin');
             $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
-            // 解析插件选项
             $parsedOpts = collect(explode(';', $pluginOpts))
                 ->filter()
                 ->mapWithKeys(function ($pair) {
@@ -208,7 +206,6 @@ class Surge extends AbstractProtocol
         return $uri;
     }
 
-    //参考文档: https://manual.nssurge.com/policy/proxy.html
     public static function buildAnyTLS($password, $server)
     {
         $protocol_settings = data_get($server, 'protocol_settings', []);
@@ -230,7 +227,6 @@ class Surge extends AbstractProtocol
         return $uri;
     }
 
-    //参考文档: https://manual.nssurge.com/policy/proxy.html
     public static function buildHysteria($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
@@ -242,7 +238,6 @@ class Surge extends AbstractProtocol
             "{$server['port']}",
             "password={$password}",
             $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
-            // 'tfo=true', 
             'udp-relay=true'
         ];
         if (data_get($protocol_settings, 'bandwidth.up')) {
@@ -260,7 +255,6 @@ class Surge extends AbstractProtocol
         return $uri;
     }
 
-    //参考文档: https://manual.nssurge.com/policy/proxy.html
     public static function buildSocks($password, $server)
     {
         $protocol_settings = data_get($server, 'protocol_settings', []);
@@ -289,7 +283,6 @@ class Surge extends AbstractProtocol
         return $uri;
     }
 
-    //参考文档: https://manual.nssurge.com/policy/proxy.html
     public static function buildHttp($password, $server)
     {
         $protocol_settings = data_get($server, 'protocol_settings', []);
