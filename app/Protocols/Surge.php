@@ -199,7 +199,7 @@ class Surge extends AbstractProtocol
             'tfo=true',
             'udp-relay=true'
         ];
-        if (!empty($protocol_settings['allow_insecure'])) {
+        if (data_get($protocol_settings, 'allow_insecure')) {
             array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
@@ -233,23 +233,23 @@ class Surge extends AbstractProtocol
     //参考文档: https://manual.nssurge.com/policy/proxy.html
     public static function buildHysteria($password, $server)
     {
-        $protocol_settings = $server['protocol_settings'];
-        if ($protocol_settings['version'] != 2)
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        if (data_get($protocol_settings, 'version') !== 2)
             return '';
         $config = [
             "{$server['name']} = hysteria2",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
+            data_get($protocol_settings, 'tls.server_name') ? "sni=" . data_get($protocol_settings, 'tls.server_name') : "",
             // 'tfo=true', 
             'udp-relay=true'
         ];
         if (data_get($protocol_settings, 'bandwidth.up')) {
-            $config[] = "upload-bandwidth={$protocol_settings['bandwidth']['up']}";
+            $config[] = "upload-bandwidth=" . data_get($protocol_settings, 'bandwidth.up');
         }
         if (data_get($protocol_settings, 'bandwidth.down')) {
-            $config[] = "download-bandwidth={$protocol_settings['bandwidth']['down']}";
+            $config[] = "download-bandwidth=" . data_get($protocol_settings, 'bandwidth.down');
         }
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';

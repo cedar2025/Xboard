@@ -303,8 +303,8 @@ class Loon extends AbstractProtocol
 
     public static function buildHysteria($password, $server, $user)
     {
-        $protocol_settings = $server['protocol_settings'];
-        if ($protocol_settings['version'] != 2) {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        if (data_get($protocol_settings, 'version') !== 2) {
             return;
         }
         $config = [
@@ -312,7 +312,7 @@ class Loon extends AbstractProtocol
             $server['host'],
             $server['port'],
             $password,
-            $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "(null)"
+            data_get($protocol_settings, 'tls.server_name') ? "sni=" . data_get($protocol_settings, 'tls.server_name') : "(null)"
         ];
         if (data_get($protocol_settings, 'tls.allow_insecure'))
             $config[] = "skip-cert-verify=true";
