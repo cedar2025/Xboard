@@ -54,6 +54,7 @@
                 align-items: center;
                 font-size: 1.2rem;
                 font-weight: 700;
+                line-height: 1;
                 color: var(--text-main);
                 cursor: pointer;
                 transition: opacity 0.2s;
@@ -61,16 +62,22 @@
             .landing-page .brand:hover {
                 opacity: 0.8;
             }
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 36px;
+            }
 
             .nav-link {
+                display: flex;
+                align-items: center;
                 color: #333;
                 font-weight: 600;
                 text-decoration: none;
-                margin-left: 36px;
                 font-size: 0.95rem;
+                line-height: 1;
                 letter-spacing: 0.05em;
                 position: relative;
-                padding-bottom: 4px;
                 transition: color 0.3s ease;
             }
 
@@ -79,7 +86,7 @@
                 position: absolute;
                 width: 0;
                 height: 2px;
-                bottom: 0;
+                bottom: -6px;
                 left: 50%;
                 background-color: #000;
                 transition: all 0.3s ease;
@@ -311,6 +318,9 @@
                 .pricing-section {
                     padding: 100px 24px 80px;
                 }
+                .header-left {
+                    gap: 20px;
+                }
                 .nav-link {
                     display: none; /* Optionally hide on very small screens, or put in menu */
                 }
@@ -320,7 +330,7 @@
     <body>
         <div class="landing-page">
             <header>
-                <div style="display: flex; align-items: center;">
+                <div class="header-left">
                     <a href="/" class="brand" id="brandLogo" style="text-decoration: none;">
                         <img
                             src="/landing/assets/elephant-route-logo.jpg"
@@ -382,14 +392,25 @@
                                     contentHtml = contentHtml.replace(/\*\s/g, ''); 
                                     let listItems = contentHtml.split('\n').filter(i => i.trim()).map(i => `<li>${i.trim()}</li>`).join('');
                                     
-                                    const price = plan.month_price ? `￥${(plan.month_price / 100).toFixed(2)}` : '免费';
+                                    const pricingPeriods = [
+                                        { key: 'month_price', label: '月' },
+                                        { key: 'quarter_price', label: '季付' },
+                                        { key: 'half_year_price', label: '半年付' },
+                                        { key: 'year_price', label: '年付' },
+                                        { key: 'two_year_price', label: '两年付' },
+                                        { key: 'three_year_price', label: '三年付' },
+                                        { key: 'onetime_price', label: '一次性' }
+                                    ];
+                                    const activePricing = pricingPeriods.find(({ key }) => Number(plan[key]) > 0);
+                                    const price = activePricing ? `￥${(Number(plan[activePricing.key]) / 100).toFixed(2)}` : '免费';
+                                    const periodLabel = activePricing ? activePricing.label : '月';
                                     const isRecommended = index === 1 ? 'recommended' : '';
                                     
                                     const card = document.createElement('div');
                                     card.className = `pricing-card ${isRecommended}`;
                                     card.innerHTML = `
                                         <div class="plan-name">${plan.name}</div>
-                                        <div class="plan-price">${price} <span>/ 月</span></div>
+                                        <div class="plan-price">${price} <span>/ ${periodLabel}</span></div>
                                         <div class="plan-desc"><ul>${listItems}</ul></div>
                                         <button class="pricing-btn" onclick="window.location.href='/app#/register'">立即订阅</button>
                                     `;
