@@ -29,7 +29,7 @@ class CommController extends Controller
 
         // 检查白名单后缀限制
         if ((int) admin_setting('email_whitelist_enable', 0)) {
-            $isRegisteredEmail = User::where('email', $email)->exists();
+            $isRegisteredEmail = User::byEmail($email)->exists();
             if (!$isRegisteredEmail) {
                 $allowedSuffixes = Helper::getEmailSuffix();
                 $emailSuffix = substr(strrchr($email, '@'), 1);

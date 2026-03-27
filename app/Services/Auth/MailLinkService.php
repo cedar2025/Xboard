@@ -27,7 +27,7 @@ class MailLinkService
             return [false, [429, __('Sending frequently, please try again later')]];
         }
 
-        $user = User::where('email', $email)->first();
+        $user = User::byEmail($email)->first();
         if (!$user) {
             return [true, true]; // 成功但用户不存在，保护用户隐私
         }

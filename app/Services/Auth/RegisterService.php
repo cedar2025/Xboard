@@ -91,8 +91,7 @@ class RegisterService
         }
 
         // 检查邮箱是否存在
-        $email = $request->input('email');
-        $exist = User::where('email', $email)->first();
+        $exist = User::byEmail($request->input('email'))->first();
         if ($exist) {
             return [false, [400201, __('Email already exists')]];
         }
