@@ -233,15 +233,53 @@
                 flex-grow: 1;
                 margin-bottom: 30px;
             }
-            .plan-desc p { margin-bottom: 10px; }
-            .plan-desc ul { list-style: none; padding: 0; }
-            .plan-desc li { margin-bottom: 12px; position: relative; padding-left: 20px; }
-            .plan-desc li::before {
+            .plan-desc h3,
+            .plan-desc h4 {
+                margin: 18px 0 10px;
+                color: #111;
+                font-size: 1.05rem;
+                font-weight: 700;
+                line-height: 1.4;
+            }
+            .plan-desc p {
+                margin: 0 0 12px;
+            }
+            .plan-desc ul,
+            .plan-desc ol {
+                margin: 0 0 14px;
+            }
+            .plan-desc ul {
+                list-style: none;
+                padding: 0;
+            }
+            .plan-desc ul li {
+                margin-bottom: 12px;
+                position: relative;
+                padding-left: 20px;
+            }
+            .plan-desc ul li::before {
                 content: '✓';
                 position: absolute;
                 left: 0;
                 color: #000;
                 font-weight: bold;
+            }
+            .plan-desc ol {
+                padding-left: 22px;
+            }
+            .plan-desc ol li {
+                margin-bottom: 10px;
+            }
+            .plan-desc strong {
+                color: #222;
+                font-weight: 700;
+            }
+            .plan-desc code {
+                font-family: "SFMono-Regular", Consolas, monospace;
+                font-size: 0.9em;
+                background: #f5f5f5;
+                padding: 0.1em 0.35em;
+                border-radius: 6px;
             }
             .pricing-btn {
                 width: 100%;
@@ -379,6 +417,82 @@
                 function fetchAndRenderPricing() {
                     const grid = document.getElementById('pricingGrid');
                     if (!grid) return;
+
+                    function escapeHtml(text) {
+                        return String(text || '')
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#39;');
+                    }
+
+                    function renderInlineMarkdown(text) {
+                        return escapeHtml(text)
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/__(.+?)__/g, '<strong>$1</strong>')
+                            .replace(/`(.+?)`/g, '<code>$1</code>');
+                    }
+
+                    function renderPlanContent(content) {
+                        const lines = String(content || '')
+                            .split(/\r?\n/)
+                            .map(line => line.trim())
+                            .filter(Boolean);
+
+                        if (!lines.length) {
+                            return '<p>暂无套餐说明</p>';
+                        }
+
+                        let html = '';
+                        let listType = null;
+
+                        function closeList() {
+                            if (listType) {
+                                html += `</${listType}>`;
+                                listType = null;
+                            }
+                        }
+
+                        lines.forEach(line => {
+                            const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+                            const orderedMatch = line.match(/^(\d+)\.\s+(.+)$/);
+                            const bulletMatch = line.match(/^[-*+]\s+(.+)$/);
+
+                            if (headingMatch) {
+                                closeList();
+                                const level = Math.min(4, headingMatch[1].length + 1);
+                                html += `<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`;
+                                return;
+                            }
+
+                            if (orderedMatch) {
+                                if (listType !== 'ol') {
+                                    closeList();
+                                    listType = 'ol';
+                                    html += '<ol>';
+                                }
+                                html += `<li>${renderInlineMarkdown(orderedMatch[2])}</li>`;
+                                return;
+                            }
+
+                            if (bulletMatch) {
+                                if (listType !== 'ul') {
+                                    closeList();
+                                    listType = 'ul';
+                                    html += '<ul>';
+                                }
+                                html += `<li>${renderInlineMarkdown(bulletMatch[1])}</li>`;
+                                return;
+                            }
+
+                            closeList();
+                            html += `<p>${renderInlineMarkdown(line)}</p>`;
+                        });
+
+                        closeList();
+                        return html;
+                    }
                     
                     fetch('/api/v1/guest/plan/fetch')
                         .then(response => response.json())
@@ -386,10 +500,7 @@
                             if (res.data && Array.isArray(res.data) && res.data.length > 0) {
                                 grid.innerHTML = '';
                                 res.data.forEach((plan, index) => {
-                                    let contentHtml = (plan.content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                                           .replace(/`(.*?)`/g, '<code>$1</code>');
-                                    contentHtml = contentHtml.replace(/\*\s/g, ''); 
-                                    let listItems = contentHtml.split('\n').filter(i => i.trim()).map(i => `<li>${i.trim()}</li>`).join('');
+                                    const contentHtml = renderPlanContent(plan.content);
                                     
                                     const pricingPeriods = [
                                         { key: 'month_price', label: '月' },
@@ -408,9 +519,9 @@
                                     const card = document.createElement('div');
                                     card.className = `pricing-card ${isRecommended}`;
                                     card.innerHTML = `
-                                        <div class="plan-name">${plan.name}</div>
+                                        <div class="plan-name">${escapeHtml(plan.name)}</div>
                                         <div class="plan-price">${price} <span>/ ${periodLabel}</span></div>
-                                        <div class="plan-desc"><ul>${listItems}</ul></div>
+                                        <div class="plan-desc">${contentHtml}</div>
                                         <button class="pricing-btn" onclick="window.location.href='/app#/register'">立即订阅</button>
                                     `;
                                     grid.appendChild(card);
