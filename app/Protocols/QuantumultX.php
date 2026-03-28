@@ -46,7 +46,7 @@ class QuantumultX extends AbstractProtocol
         $addr = Helper::wrapIPv6($server['host']);
         $config = [
             "shadowsocks={$addr}:{$server['port']}",
-            "method={$protocol_settings['cipher']}",
+            "method=" . data_get($protocol_settings, 'cipher'),
             "password={$password}",
         ];
 
