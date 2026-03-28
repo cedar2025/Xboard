@@ -35,6 +35,7 @@ class ConfigSave extends FormRequest
         'tos_url' => 'nullable|url',
         'currency' => '',
         'currency_symbol' => '',
+        'ticket_must_wait_reply' => '',
         // subscribe
         'plan_change_enable' => '',
         'reset_traffic_method' => 'in:0,1,2,3,4',
@@ -50,6 +51,8 @@ class ConfigSave extends FormRequest
         'server_pull_interval' => 'integer',
         'server_push_interval' => 'integer',
         'device_limit_mode' => 'integer',
+        'server_ws_enable' => 'boolean',
+        'server_ws_url' => 'nullable|url',
         // frontend
         'frontend_theme' => '',
         'frontend_theme_sidebar' => 'nullable|in:dark,light',
@@ -68,6 +71,7 @@ class ConfigSave extends FormRequest
         // telegram
         'telegram_bot_enable' => '',
         'telegram_bot_token' => '',
+        'telegram_webhook_url' => 'nullable|url',
         'telegram_discuss_id' => '',
         'telegram_channel_id' => '',
         'telegram_discuss_link' => 'nullable|url',
@@ -128,6 +132,7 @@ class ConfigSave extends FormRequest
             'subscribe_url.url' => '订阅URL格式不正确，必须携带http(s)://',
             'server_token.min' => '通讯密钥长度必须大于16位',
             'tos_url.url' => '服务条款URL格式不正确，必须携带http(s)://',
+            'telegram_webhook_url.url' => 'Telegram Webhook地址格式不正确，必须携带http(s)://',
             'telegram_discuss_link.url' => 'Telegram群组地址必须为URL格式，必须携带http(s)://',
             'logo.url' => 'LOGO URL格式不正确，必须携带https(s)://',
             'secure_path.min' => '后台路径长度最小为8位',

@@ -18,14 +18,27 @@ class Stash extends AbstractProtocol
         Server::TYPE_HYSTERIA,
         Server::TYPE_TROJAN,
         Server::TYPE_TUIC,
-        // Server::TYPE_ANYTLS,
+        Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
     protected $protocolRequirements = [
+        // Global rules applied regardless of client version (features Stash never supports)
+        '*' => [
+            'trojan' => [
+                'protocol_settings.tls' => [
+                    '2' => '9999.0.0',  // Trojan Reality not supported in Stash
+                ],
+            ],
+            'vmess' => [
+                'protocol_settings.network' => [
+                    'httpupgrade' => '9999.0.0',  // httpupgrade not supported in Stash
+                ],
+            ],
+        ],
         'stash' => [
             'anytls' => [
-                'base_version' => '9.9.9'
+                'base_version' => '3.3.0' // AnyTLS 协议在3.3.0版本中添加
             ],
             'vless' => [
                 'protocol_settings.tls' => [
@@ -79,13 +92,7 @@ class Stash extends AbstractProtocol
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        $template = admin_setting('subscribe_template_stash', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : (
-                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
-            ));
+        $template = subscribe_template('stash');
 
         $config = Yaml::parse($template);
         $proxy = [];
@@ -116,10 +123,10 @@ class Stash extends AbstractProtocol
                 array_push($proxy, self::buildTuic($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
-            // if ($item['type'] === 'anytls') {
-            //     array_push($proxy, self::buildAnyTLS($item['password'], $item));
-            //     array_push($proxies, $item['name']);
-            // }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                array_push($proxy, self::buildAnyTLS($item['password'], $item));
+                array_push($proxies, $item['name']);
+            }
             if ($item['type'] === Server::TYPE_SOCKS) {
                 array_push($proxy, self::buildSocks5($item['password'], $item));
                 array_push($proxies, $item['name']);
@@ -243,18 +250,21 @@ class Stash extends AbstractProtocol
         $array['cipher'] = 'auto';
         $array['udp'] = true;
 
-        $array['tls'] = data_get($protocol_settings, 'tls');
-        $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
+        $array['tls'] = (bool) data_get($protocol_settings, 'tls');
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $array['servername'] = $serverName;
         }
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
-                if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
-                    $array['http-opts']['headers']['Host'] = $host;
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
+                    $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                    if ($host = data_get($protocol_settings, 'network_settings.header.request.headers.Host')) {
+                        $array['http-opts']['headers']['Host'] = $host;
+                    }
                 }
                 break;
             case 'ws':
@@ -268,6 +278,15 @@ class Stash extends AbstractProtocol
                 $array['network'] = 'grpc';
                 $array['grpc-opts'] = [];
                 $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
+                break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['tls'] = true;
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
                 break;
             default:
                 break;
@@ -286,7 +305,9 @@ class Stash extends AbstractProtocol
         $array['uuid'] = $uuid;
         $array['udp'] = true;
 
-        $array['client-fingerprint'] = Helper::getRandFingerprint();
+        if ($fingerprint = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+            $array['client-fingerprint'] = $fingerprint;
+        }
 
         switch (data_get($protocol_settings, 'tls')) {
             case 1:
@@ -298,6 +319,7 @@ class Stash extends AbstractProtocol
                 break;
             case 2:
                 $array['tls'] = true;
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
                 if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
                     $array['servername'] = $serverName;
                     $array['sni'] = $serverName;
@@ -312,12 +334,15 @@ class Stash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                if ($headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp') != 'tcp') {
-                    $array['network'] = $headerType;
-                    if ($httpOpts = array_filter([
-                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ])) {
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
                         $array['http-opts'] = $httpOpts;
                     }
                 }
@@ -333,11 +358,14 @@ class Stash extends AbstractProtocol
                 $array['network'] = 'grpc';
                 $array['grpc-opts']['grpc-service-name'] = data_get($protocol_settings, 'network_settings.serviceName');
                 break;
-                // case 'h2':
-                //     $array['network'] = 'h2';
-                //     $array['h2-opts']['host'] = data_get($protocol_settings, 'network_settings.host');
-                //     $array['h2-opts']['path'] = data_get($protocol_settings, 'network_settings.path');
-                //     break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
         }
 
         return $array;
@@ -346,17 +374,43 @@ class Stash extends AbstractProtocol
     public static function buildTrojan($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $array = [];
-        $array['name'] = $server['name'];
-        $array['type'] = 'trojan';
-        $array['server'] = $server['host'];
-        $array['port'] = $server['port'];
-        $array['password'] = $password;
-        $array['udp'] = true;
+        $array = [
+            'name' => $server['name'],
+            'type' => 'trojan',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'udp' => true,
+        ];
+
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+        switch ($tlsMode) {
+            case 2: // Reality
+                $array['tls'] = true;
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
+                    $array['sni'] = $serverName;
+                }
+                $array['reality-opts'] = [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id'),
+                ];
+                break;
+            default: // Standard TLS
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $array['sni'] = $serverName;
+                }
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure', false);
+                break;
+        }
+
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
+                    $array['http-opts']['path'] = data_get($protocol_settings, 'network_settings.header.request.path', ['/']);
+                }
                 break;
             case 'ws':
                 $array['network'] = 'ws';
@@ -365,11 +419,13 @@ class Stash extends AbstractProtocol
                     $array['ws-opts']['headers'] = ['Host' => $host];
                 }
                 break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
         }
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
-            $array['sni'] = $serverName;
-        }
-        $array['skip-cert-verify'] = data_get($protocol_settings, 'allow_insecure');
+
         return $array;
     }
 
@@ -393,12 +449,18 @@ class Stash extends AbstractProtocol
                 $array['type'] = 'hysteria';
                 $array['auth-str'] = $password;
                 $array['protocol'] = 'udp';
-                $array['obfs'] = data_get($protocol_settings, 'obfs.open') ? data_get($protocol_settings, 'obfs.type') : null;
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $array['obfs'] = data_get($protocol_settings, 'obfs.password');
+                }
                 break;
             case 2:
                 $array['type'] = 'hysteria2';
                 $array['auth'] = $password;
                 $array['fast-open'] = true;
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $array['obfs'] = data_get($protocol_settings, 'obfs.type', 'salamander');
+                    $array['obfs-password'] = data_get($protocol_settings, 'obfs.password');
+                }
                 break;
         }
         return $array;
@@ -412,8 +474,6 @@ class Stash extends AbstractProtocol
             'type' => 'tuic',
             'server' => $server['host'],
             'port' => $server['port'],
-            'uuid' => $password,
-            'password' => $password,
             'congestion-controller' => data_get($protocol_settings, 'congestion_control', 'cubic'),
             'udp-relay-mode' => data_get($protocol_settings, 'udp_relay_mode', 'native'),
             'alpn' => data_get($protocol_settings, 'alpn', ['h3']),
@@ -425,6 +485,13 @@ class Stash extends AbstractProtocol
             'version' => data_get($protocol_settings, 'version', 5),
         ];
 
+        if (data_get($protocol_settings, 'version') === 4) {
+            $array['token'] = $password;
+        } else {
+            $array['uuid'] = $password;
+            $array['password'] = $password;
+        }
+
         $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['sni'] = $serverName;
@@ -435,15 +502,15 @@ class Stash extends AbstractProtocol
 
     public static function buildAnyTLS($password, $server)
     {
-        $protocol_settings = $server['protocol_settings'];
+        $protocol_settings = data_get($server, 'protocol_settings', []);
         $array = [
             'name' => $server['name'],
             'type' => 'anytls',
             'server' => $server['host'],
             'port' => $server['port'],
             'password' => $password,
-            'sni' => data_get($protocol_settings, 'tls_settings.server_name'),
-            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
             'udp' => true,
         ];
 
