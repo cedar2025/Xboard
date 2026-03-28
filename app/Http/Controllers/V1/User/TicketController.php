@@ -70,7 +70,7 @@ class TicketController extends Controller
         if ($ticket->status) {
             return $this->fail([400, __('The ticket is closed and cannot be replied')]);
         }
-        if ($request->user()->id == $this->getLastMessage($ticket->id)->user_id) {
+        if ((int) admin_setting('ticket_must_wait_reply', 0) && $request->user()->id == $this->getLastMessage($ticket->id)->user_id) {
             return $this->fail(codeResponse: [400, __('Please wait for the technical enginneer to reply')]);
         }
         $ticketService = new TicketService();

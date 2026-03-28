@@ -41,6 +41,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @property-read int|null $last_check_at 最后检查时间（Unix时间戳）
  * @property-read int|null $last_push_at 最后推送时间（Unix时间戳）
  * @property-read int $online 在线用户数
+ * @property-read int $online_conn 在线连接数
+ * @property-read array|null $metrics 节点指标指标
  * @property-read int $is_online 是否在线（1在线 0离线）
  * @property-read string $available_status 可用状态描述
  * @property-read string $cache_key 缓存键
@@ -112,6 +114,9 @@ class Server extends Model
         'route_ids' => 'array',
         'tags' => 'array',
         'protocol_settings' => 'array',
+        'custom_outbounds' => 'array',
+        'custom_routes' => 'array',
+        'cert_config' => 'array',
         'last_check_at' => 'integer',
         'last_push_at' => 'integer',
         'show' => 'boolean',
@@ -121,19 +126,71 @@ class Server extends Model
         'rate_time_enable' => 'boolean',
     ];
 
+    private const MULTIPLEX_CONFIGURATION = [
+        'multiplex' => [
+            'type' => 'object',
+            'fields' => [
+                'enabled' => ['type' => 'boolean', 'default' => false],
+                'protocol' => ['type' => 'string', 'default' => 'yamux'],
+                'max_connections' => ['type' => 'integer', 'default' => null],
+                // 'min_streams' => ['type' => 'integer', 'default' => null],
+                // 'max_streams' => ['type' => 'integer', 'default' => null],
+                'padding' => ['type' => 'boolean', 'default' => false],
+                'brutal' => [
+                    'type' => 'object',
+                    'fields' => [
+                        'enabled' => ['type' => 'boolean', 'default' => false],
+                        'up_mbps' => ['type' => 'integer', 'default' => null],
+                        'down_mbps' => ['type' => 'integer', 'default' => null],
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    private const REALITY_CONFIGURATION = [
+        'reality_settings' => [
+            'type' => 'object',
+            'fields' => [
+                'server_name' => ['type' => 'string', 'default' => null],
+                'server_port' => ['type' => 'string', 'default' => null],
+                'public_key' => ['type' => 'string', 'default' => null],
+                'private_key' => ['type' => 'string', 'default' => null],
+                'short_id' => ['type' => 'string', 'default' => null],
+                'allow_insecure' => ['type' => 'boolean', 'default' => false],
+            ]
+        ]
+    ];
+
+    private const UTLS_CONFIGURATION = [
+        'utls' => [
+            'type' => 'object',
+            'fields' => [
+                'enabled' => ['type' => 'boolean', 'default' => false],
+                'fingerprint' => ['type' => 'string', 'default' => 'chrome'],
+            ]
+        ]
+    ];
+
     private const PROTOCOL_CONFIGURATIONS = [
         self::TYPE_TROJAN => [
-            'allow_insecure' => ['type' => 'boolean', 'default' => false],
-            'server_name' => ['type' => 'string', 'default' => null],
+            'tls' => ['type' => 'integer', 'default' => 1],
             'network' => ['type' => 'string', 'default' => null],
-            'network_settings' => ['type' => 'array', 'default' => null]
+            'network_settings' => ['type' => 'array', 'default' => null],
+            'server_name' => ['type' => 'string', 'default' => null],
+            'allow_insecure' => ['type' => 'boolean', 'default' => false],
+            ...self::REALITY_CONFIGURATION,
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_VMESS => [
             'tls' => ['type' => 'integer', 'default' => 0],
             'network' => ['type' => 'string', 'default' => null],
             'rules' => ['type' => 'array', 'default' => null],
             'network_settings' => ['type' => 'array', 'default' => null],
-            'tls_settings' => ['type' => 'array', 'default' => null]
+            'tls_settings' => ['type' => 'array', 'default' => null],
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_VLESS => [
             'tls' => ['type' => 'integer', 'default' => 0],
@@ -141,17 +198,9 @@ class Server extends Model
             'flow' => ['type' => 'string', 'default' => null],
             'network' => ['type' => 'string', 'default' => null],
             'network_settings' => ['type' => 'array', 'default' => null],
-            'reality_settings' => [
-                'type' => 'object',
-                'fields' => [
-                    'allow_insecure' => ['type' => 'boolean', 'default' => false],
-                    'server_port' => ['type' => 'string', 'default' => null],
-                    'server_name' => ['type' => 'string', 'default' => null],
-                    'public_key' => ['type' => 'string', 'default' => null],
-                    'private_key' => ['type' => 'string', 'default' => null],
-                    'short_id' => ['type' => 'string', 'default' => null]
-                ]
-            ]
+            ...self::REALITY_CONFIGURATION,
+            ...self::MULTIPLEX_CONFIGURATION,
+            ...self::UTLS_CONFIGURATION
         ],
         self::TYPE_SHADOWSOCKS => [
             'cipher' => ['type' => 'string', 'default' => null],
@@ -240,13 +289,15 @@ class Server extends Model
             'tls_settings' => [
                 'type' => 'object',
                 'fields' => [
-                    'allow_insecure' => ['type' => 'boolean', 'default' => false]
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false],
+                    'server_name' => ['type' => 'string', 'default' => null]
                 ]
             ]
         ],
         self::TYPE_MIERU => [
-            'transport' => ['type' => 'string', 'default' => 'tcp'],
-            'multiplexing' => ['type' => 'string', 'default' => 'MULTIPLEXING_LOW']
+            'transport' => ['type' => 'string', 'default' => 'TCP'],
+            'traffic_pattern' => ['type' => 'string', 'default' => ''],
+            ...self::MULTIPLEX_CONFIGURATION,
         ]
     ];
 
@@ -436,6 +487,32 @@ class Server extends Model
                     return Helper::getServerKey($this->created_at, 16);
                 }
                 return null;
+            }
+        );
+    }
+
+    /**
+     * 指标指标访问器
+     */
+    protected function metrics(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $type = strtoupper($this->type);
+                $serverId = $this->parent_id ?: $this->id;
+                return Cache::get(CacheKey::get("SERVER_{$type}_METRICS", $serverId));
+            }
+        );
+    }
+
+    /**
+     * 在线连接数访问器
+     */
+    protected function onlineConn(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return $this->metrics['active_connections'] ?? 0;
             }
         );
     }

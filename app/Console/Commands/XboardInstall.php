@@ -160,9 +160,7 @@ class XboardInstall extends Command
             if (!self::registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
             }
-            if (function_exists('exec')) {
-                self::restoreProtectedPlugins($this);
-            }
+            self::restoreProtectedPlugins($this);
             $this->info('正在安装默认插件...');
             PluginManager::installDefaultPlugins();
             $this->info('默认插件安装完成');
@@ -369,61 +367,31 @@ class XboardInstall extends Command
 
     /**
      * 还原内置受保护插件（可在安装和更新时调用）
+     * Docker 部署时 plugins/ 目录被外部挂载覆盖，需要从镜像备份中还原默认插件
      */
     public static function restoreProtectedPlugins(Command $console = null)
     {
-        exec("git config core.filemode false", $output, $returnVar);
-        $cmd = "git status --porcelain plugins/ 2>/dev/null";
-        exec($cmd, $output, $returnVar);
-        if (!empty($output)) {
-            $hasNonNewFiles = false;
-            foreach ($output as $line) {
-                $status = trim(substr($line, 0, 2));
-                if ($status !== 'A') {
-                    $hasNonNewFiles = true;
-                    break;
-                }
+        $backupBase = '/opt/default-plugins';
+        $pluginsBase = base_path('plugins');
+
+        if (!File::isDirectory($backupBase)) {
+            $console?->info('非 Docker 环境或备份目录不存在，跳过插件还原。');
+            return;
+        }
+
+        foreach (Plugin::PROTECTED_PLUGINS as $pluginCode) {
+            $dirName = Str::studly($pluginCode);
+            $source = "{$backupBase}/{$dirName}";
+            $target = "{$pluginsBase}/{$dirName}";
+
+            if (!File::isDirectory($source)) {
+                continue;
             }
-            if ($hasNonNewFiles) {
-                if ($console)
-                    $console->info("检测到 plugins 目录有变更，正在还原...");
 
-                foreach ($output as $line) {
-                    $status = trim(substr($line, 0, 2));
-                    $filePath = trim(substr($line, 3));
-
-                    if (strpos($filePath, 'plugins/') === 0 && $status !== 'A') {
-                        $relativePath = substr($filePath, 8);
-                        if ($console) {
-                            $action = match ($status) {
-                                'M' => '修改',
-                                'D' => '删除',
-                                'R' => '重命名',
-                                'C' => '复制',
-                                default => '变更'
-                            };
-                            $console->info("还原插件文件 [{$relativePath}] ({$action})");
-                        }
-
-                        $cmd = "git checkout HEAD -- {$filePath}";
-                        exec($cmd, $gitOutput, $gitReturnVar);
-
-                        if ($gitReturnVar === 0) {
-                            if ($console)
-                                $console->info("插件文件 [{$relativePath}] 已还原。");
-                        } else {
-                            if ($console)
-                                $console->error("插件文件 [{$relativePath}] 还原失败。");
-                        }
-                    }
-                }
-            } else {
-                if ($console)
-                    $console->info("plugins 目录状态正常，无需还原。");
-            }
-        } else {
-            if ($console)
-                $console->info("plugins 目录状态正常，无需还原。");
+            // 先清除旧文件再复制，避免重命名后残留旧文件
+            File::deleteDirectory($target);
+            File::copyDirectory($source, $target);
+            $console?->info("已同步默认插件 [{$dirName}]");
         }
     }
 }

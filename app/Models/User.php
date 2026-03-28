@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Utils\Helper;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,6 +83,20 @@ class User extends Authenticatable
     public const COMMISSION_TYPE_SYSTEM = 0;
     public const COMMISSION_TYPE_PERIOD = 1;
     public const COMMISSION_TYPE_ONETIME = 2;
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value) => strtolower(trim($value)),
+        );
+    }
+
+    /**
+     * 按邮箱查询（大小写不敏感，兼容所有数据库）
+     */
+    public function scopeByEmail(Builder $query, string $email): Builder
+    {
+        return $query->where('email', strtolower(trim($email)));
+    }
 
     // 获取邀请人信息
     public function invite_user(): BelongsTo
@@ -145,6 +161,14 @@ class User extends Authenticatable
         return !$this->banned && 
                ($this->expired_at === null || $this->expired_at > time()) &&
                $this->plan_id !== null;
+    }
+
+    /** 
+     * 检查用户是否可用节点流量且充足
+     */
+    public function isAvailable(): bool
+    {     
+        return $this->isActive() && $this->getRemainingTraffic() > 0;   
     }
 
     /**

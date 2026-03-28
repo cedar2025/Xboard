@@ -173,7 +173,7 @@ class GiftCardService
                 $userService->assignPlan(
                     $this->user,
                     $plan,
-                    $rewards['plan_validity_days'] ?? null
+                    $rewards['plan_validity_days'] ?? 0
                 );
             }
         } else {

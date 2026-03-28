@@ -84,7 +84,12 @@ class ManageController extends Controller
             'show' => 'integer',
         ]);
 
-        if (!Server::where('id', $request->id)->update(['show' => $request->show])) {
+        $server = Server::find($request->id);
+        if (!$server) {
+            return $this->fail([400202, '服务器不存在']);
+        }
+        $server->show = (int) $request->show;
+        if (!$server->save()) {
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);

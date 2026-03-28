@@ -35,6 +35,7 @@ class ClashMeta extends AbstractProtocol
                 'grpc' => '0.0.0',
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
+                'httpupgrade' => '0.0.0',
             ],
             'strict' => true,
         ],
@@ -65,13 +66,7 @@ class ClashMeta extends AbstractProtocol
         $user = $this->user;
         $appName = admin_setting('app_name', 'XBoard');
 
-        $template = admin_setting('subscribe_template_clashmeta', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : (
-                File::exists(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                ? File::get(base_path(self::CUSTOM_CLASH_TEMPLATE_FILE))
-                : File::get(base_path(self::DEFAULT_TEMPLATE_FILE))
-            ));
+        $template = subscribe_template('clashmeta');
 
         $config = Yaml::parse($template);
         $proxy = [];
@@ -199,7 +194,7 @@ class ClashMeta extends AbstractProtocol
                 ->filter()
                 ->mapWithKeys(function ($pair) {
                     if (!str_contains($pair, '=')) {
-                        return [];
+                        return [trim($pair) => true];
                     }
                     [$key, $value] = explode('=', $pair, 2);
                     return [trim($key) => trim($value)];
@@ -209,28 +204,42 @@ class ClashMeta extends AbstractProtocol
             // 根据插件类型进行字段映射
             switch ($plugin) {
                 case 'obfs':
-                    $array['plugin-opts'] = [
-                        'mode' => $parsedOpts['obfs'],
-                        'host' => $parsedOpts['obfs-host'],
-                    ];
-
-                    // 可选path参数
-                    if (isset($parsedOpts['path'])) {
-                        $array['plugin-opts']['path'] = $parsedOpts['path'];
-                    }
+                case 'obfs-local':
+                    $array['plugin'] = 'obfs';
+                    $array['plugin-opts'] = array_filter([
+                        'mode' => $parsedOpts['obfs'] ?? ($parsedOpts['mode'] ?? 'http'),
+                        'host' => $parsedOpts['obfs-host'] ?? ($parsedOpts['host'] ?? 'www.bing.com'),
+                    ]);
                     break;
 
                 case 'v2ray-plugin':
-                    $array['plugin-opts'] = [
+                    $array['plugin-opts'] = array_filter([
                         'mode' => $parsedOpts['mode'] ?? 'websocket',
-                        'tls' => isset($parsedOpts['tls']) && $parsedOpts['tls'] == 'true',
-                        'host' => $parsedOpts['host'] ?? '',
+                        'tls' => isset($parsedOpts['tls']) || isset($parsedOpts['server']),
+                        'host' => $parsedOpts['host'] ?? null,
                         'path' => $parsedOpts['path'] ?? '/',
-                    ];
+                        'mux' => isset($parsedOpts['mux']) ? true : null,
+                        'headers' => isset($parsedOpts['host']) ? ['Host' => $parsedOpts['host']] : null
+                    ], fn($v) => $v !== null);
+                    break;
+
+                case 'shadow-tls':
+                    $array['plugin-opts'] = array_filter([
+                        'host' => $parsedOpts['host'] ?? null,
+                        'password' => $parsedOpts['password'] ?? null,
+                        'version' => isset($parsedOpts['version']) ? (int) $parsedOpts['version'] : 2
+                    ], fn($v) => $v !== null);
+                    break;
+
+                case 'restls':
+                    $array['plugin-opts'] = array_filter([
+                        'host' => $parsedOpts['host'] ?? null,
+                        'password' => $parsedOpts['password'] ?? null,
+                        'restls-script' => $parsedOpts['restls-script'] ?? '123'
+                    ], fn($v) => $v !== null);
                     break;
 
                 default:
-                    // 对于其他插件，直接使用解析出的键值对
                     $array['plugin-opts'] = $parsedOpts;
             }
         }
@@ -252,19 +261,25 @@ class ClashMeta extends AbstractProtocol
         ];
 
         if (data_get($protocol_settings, 'tls')) {
-            $array['tls'] = true;
+            $array['tls'] = (bool) data_get($protocol_settings, 'tls');
             $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
         }
 
+        self::appendUtls($array, $protocol_settings);
+        self::appendMultiplex($array, $protocol_settings);
+
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type', 'tcp');
-                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
-                    if ($httpOpts = array_filter([
-                        'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
-                        'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
-                    ])) {
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
                         $array['http-opts'] = $httpOpts;
                     }
                 }
@@ -280,6 +295,22 @@ class ClashMeta extends AbstractProtocol
                 $array['network'] = 'grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
             default:
                 break;
@@ -311,6 +342,7 @@ class ClashMeta extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['servername'] = $serverName;
                 }
+                self::appendUtls($array, $protocol_settings);
                 break;
             case 2:
                 $array['tls'] = true;
@@ -320,13 +352,28 @@ class ClashMeta extends AbstractProtocol
                     'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
                     'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
                 ];
-                $array['client-fingerprint'] = Helper::getRandFingerprint();
+                self::appendUtls($array, $protocol_settings);
                 break;
             default:
                 break;
         }
 
         switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = 'tcp';
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                if ($headerType === 'http') {
+                    $array['network'] = 'http';
+                    if (
+                        $httpOpts = array_filter([
+                            'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
+                            'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])
+                        ])
+                    ) {
+                        $array['http-opts'] = $httpOpts;
+                    }
+                }
+                break;
             case 'ws':
                 $array['network'] = 'ws';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
@@ -339,9 +386,27 @@ class ClashMeta extends AbstractProtocol
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
                 break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                break;
             default:
                 break;
         }
+
+        self::appendMultiplex($array, $protocol_settings);
 
         return $array;
     }
@@ -356,11 +421,30 @@ class ClashMeta extends AbstractProtocol
             'port' => $server['port'],
             'password' => $password,
             'udp' => true,
-            'skip-cert-verify' => (bool) data_get($protocol_settings, 'allow_insecure', false)
         ];
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
-            $array['sni'] = $serverName;
+
+        $tlsMode = (int) data_get($protocol_settings, 'tls', 1);
+        switch ($tlsMode) {
+            case 2: // Reality
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
+                    $array['sni'] = $serverName;
+                }
+                $array['reality-opts'] = [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id'),
+                ];
+                break;
+            default: // Standard TLS
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                    $array['sni'] = $serverName;
+                }
+                break;
         }
+
+        self::appendUtls($array, $protocol_settings);
+        self::appendMultiplex($array, $protocol_settings);
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
@@ -377,6 +461,22 @@ class ClashMeta extends AbstractProtocol
                 $array['network'] = 'grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
+            case 'h2':
+                $array['network'] = 'h2';
+                $array['h2-opts'] = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['h2-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                break;
+            case 'httpupgrade':
+                $array['network'] = 'ws';
+                $array['ws-opts'] = ['v2ray-http-upgrade' => true];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
             default:
                 $array['network'] = 'tcp';
@@ -400,6 +500,9 @@ class ClashMeta extends AbstractProtocol
         ];
         if (isset($server['ports'])) {
             $array['ports'] = $server['ports'];
+        }
+        if ($hopInterval = data_get($protocol_settings, 'hop_interval')) {
+            $array['hop-interval'] = (int) $hopInterval;
         }
         switch (data_get($protocol_settings, 'version')) {
             case 1:
@@ -491,8 +594,7 @@ class ClashMeta extends AbstractProtocol
             'port' => $server['port'],
             'username' => $password,
             'password' => $password,
-            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP')),
-            'multiplexing' => data_get($protocol_settings, 'multiplexing', 'MULTIPLEXING_LOW')
+            'transport' => strtoupper(data_get($protocol_settings, 'transport', 'TCP'))
         ];
 
         // 如果配置了端口范围
@@ -564,6 +666,39 @@ class ClashMeta extends AbstractProtocol
             return preg_match($exp, '') !== false;
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    protected static function appendMultiplex(&$array, $protocol_settings)
+    {
+        if ($multiplex = data_get($protocol_settings, 'multiplex')) {
+            if (data_get($multiplex, 'enabled')) {
+                $array['smux'] = array_filter([
+                    'enabled' => true,
+                    'protocol' => data_get($multiplex, 'protocol', 'yamux'),
+                    'max-connections' => data_get($multiplex, 'max_connections'),
+                    // 'min-streams' => data_get($multiplex, 'min_streams'),
+                    // 'max-streams' => data_get($multiplex, 'max_streams'),
+                    'padding' => data_get($multiplex, 'padding') ? true : null,
+                ]);
+
+                if (data_get($multiplex, 'brutal.enabled')) {
+                    $array['smux']['brutal-opts'] = [
+                        'enabled' => true,
+                        'up' => data_get($multiplex, 'brutal.up_mbps'),
+                        'down' => data_get($multiplex, 'brutal.down_mbps'),
+                    ];
+                }
+            }
+        }
+    }
+
+    protected static function appendUtls(&$array, $protocol_settings)
+    {
+        if ($utls = data_get($protocol_settings, 'utls')) {
+            if (data_get($utls, 'enabled')) {
+                $array['client-fingerprint'] = Helper::getTlsFingerprint($utls);
+            }
         }
     }
 }

@@ -27,9 +27,7 @@ class Clash extends AbstractProtocol
         $appName = admin_setting('app_name', 'XBoard');
 
         // 优先从数据库配置中获取模板
-        $template = admin_setting('subscribe_template_clash', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
+        $template = subscribe_template('clash');
 
         $config = Yaml::parse($template);
         $proxy = [];
@@ -201,8 +199,9 @@ class Clash extends AbstractProtocol
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
-                $array['network'] = data_get($protocol_settings, 'network_settings.header.type');
-                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                $array['network'] = ($headerType === 'http') ? 'http' : 'tcp';
+                if ($headerType === 'http') {
                     if ($httpOpts = array_filter([
                         'headers' => data_get($protocol_settings, 'network_settings.header.request.headers'),
                         'path' => data_get($protocol_settings, 'network_settings.header.request.path', ['/'])

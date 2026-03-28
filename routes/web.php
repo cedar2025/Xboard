@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\File;
 
 Route::get('/', function (Request $request) {
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
-        if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
+        $requestHost = $request->getHost();
+        $configHost = parse_url(admin_setting('app_url'), PHP_URL_HOST);
+        
+        if ($requestHost !== $configHost) {
             abort(403);
         }
     }

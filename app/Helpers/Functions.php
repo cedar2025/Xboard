@@ -1,6 +1,5 @@
 <?php
 use App\Support\Setting;
-use Illuminate\Support\Facades\App;
 
 if (!function_exists('admin_setting')) {
     /**
@@ -25,6 +24,16 @@ if (!function_exists('admin_setting')) {
 
         $default = config('v2board.' . $key) ?? $default;
         return $setting->get($key) ?? $default;
+    }
+}
+
+if (!function_exists('subscribe_template')) {
+    /**
+     * Get subscribe template content by protocol name.
+     */
+    function subscribe_template(string $name): ?string
+    {
+        return \App\Models\SubscribeTemplate::getContent($name);
     }
 }
 

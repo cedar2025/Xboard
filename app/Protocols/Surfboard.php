@@ -58,9 +58,7 @@ class Surfboard extends AbstractProtocol
             }
         }
 
-        $config = admin_setting('subscribe_template_surfboard', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
+        $config = subscribe_template('surfboard');
         // Subscription link
         $subsURL = Helper::getSubscribeUrl($user['token']);
         $subsDomain = request()->header('Host');
@@ -76,7 +74,7 @@ class Surfboard extends AbstractProtocol
         $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
         $unusedTraffic = $totalTraffic - $useTraffic;
         $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量: { $unusedTraffic }GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
+        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{$unusedTraffic}GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
@@ -91,7 +89,7 @@ class Surfboard extends AbstractProtocol
             "{$server['name']}=ss",
             "{$server['host']}",
             "{$server['port']}",
-            "encrypt-method={$protocol_settings['cipher']}",
+            "encrypt-method=" . data_get($protocol_settings, 'cipher'),
             "password={$password}",
             'tfo=true',
             'udp-relay=true'
@@ -148,10 +146,12 @@ class Surfboard extends AbstractProtocol
             array_push($config, 'tls=true');
             if (data_get($protocol_settings, 'tls_settings')) {
                 $tlsSettings = data_get($protocol_settings, 'tls_settings');
-                if (!!data_get($tlsSettings, 'allowInsecure'))
-                    array_push($config, 'skip-cert-verify=' . ($tlsSettings['allowInsecure'] ? 'true' : 'false'));
-                if (!!data_get($tlsSettings, 'serverName'))
-                    array_push($config, "sni={$tlsSettings['serverName']}");
+                if (data_get($tlsSettings, 'allow_insecure')) {
+                    array_push($config, 'skip-cert-verify=' . ($tlsSettings['allow_insecure'] ? 'true' : 'false'));
+                }
+                if ($sni = data_get($tlsSettings, 'server_name')) {
+                    array_push($config, "sni={$sni}");
+                }
             }
         }
         if (data_get($protocol_settings, 'network') === 'ws') {
@@ -178,7 +178,7 @@ class Surfboard extends AbstractProtocol
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            $protocol_settings['server_name'] ? "sni={$protocol_settings['server_name']}" : "",
+            data_get($protocol_settings, 'server_name') ? "sni=" . data_get($protocol_settings, 'server_name') : "",
             'tfo=true',
             'udp-relay=true'
         ];

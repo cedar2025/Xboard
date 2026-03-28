@@ -481,19 +481,20 @@ class StatController extends Controller
         }
 
         $result = [];
+        $ids = $currentData->pluck('id');
+        $names = $type === 'node'
+            ? Server::whereIn('id', $ids)->pluck('name', 'id')
+            : User::whereIn('id', $ids)->pluck('email', 'id');
+
         foreach ($currentData as $data) {
             $previousValue = isset($previousData[$data->id]) ? $previousData[$data->id]->value : 0;
             $change = $previousValue > 0 ? round(($data->value - $previousValue) / $previousValue * 100, 1) : 0;
 
-            $name = $type === 'node'
-                ? optional(Server::find($data->id))->name ?? "Node {$data->id}"
-                : optional(User::find($data->id))->email ?? "User {$data->id}";
-
             $result[] = [
                 'id' => (string) $data->id,
-                'name' => $name,
-                'value' => $data->value, // Convert to GB
-                'previousValue' => $previousValue, // Convert to GB
+                'name' => $names[$data->id] ?? ($type === 'node' ? "Node {$data->id}" : "User {$data->id}"),
+                'value' => $data->value,
+                'previousValue' => $previousValue,
                 'change' => $change,
                 'timestamp' => date('c', $endDate)
             ];
