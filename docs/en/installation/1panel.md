@@ -33,6 +33,16 @@ sudo bash quick_start.sh
 
 2. Configure Reverse Proxy:
 ```nginx
+location /ws/ {
+    proxy_pass http://127.0.0.1:8076;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 60s;
+}
+
 location ^~ / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
@@ -49,6 +59,7 @@ location ^~ / {
     proxy_cache off;
 }
 ```
+> The `/ws/` location enables WebSocket real-time node synchronization via `ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
 
 3. Install Xboard:
 ```bash
@@ -73,7 +84,7 @@ services:
   web:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
@@ -93,7 +104,7 @@ services:
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
-      - ./.docker/.data/redis/:/data/
+      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
@@ -104,6 +115,22 @@ services:
       - 1panel-network
     depends_on:
       - redis
+  ws-server:
+    image: ghcr.io/cedar2025/xboard:new
+    volumes:
+      - redis-data:/data
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./plugins:/www/plugins
+    restart: on-failure
+    ports:
+      - 8076:8076
+    networks:
+      - 1panel-network
+    command: php artisan ws-server start
+    depends_on:
+      - redis
 
   redis:
     image: redis:7-alpine
@@ -112,7 +139,10 @@ services:
     networks:
       - 1panel-network
     volumes:
-      - ./.docker/.data/redis:/data
+      - redis-data:/data
+
+volumes:
+  redis-data:
 
 networks:
   1panel-network:
@@ -175,4 +205,6 @@ docker compose up -d
 
 - ⚠️ Ensure firewall is enabled to prevent port 7001 exposure to public
 - Service restart is required after code modifications
-- SSL certificate configuration is recommended for secure access 
+- SSL certificate configuration is recommended for secure access
+
+> The node will automatically detect WebSocket availability during handshake. No extra configuration is needed on the node side. 

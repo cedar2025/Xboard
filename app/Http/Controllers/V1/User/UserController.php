@@ -18,6 +18,7 @@ use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -31,20 +32,14 @@ class UserController extends Controller
 
     public function getActiveSession(Request $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
         $authService = new AuthService($user);
         return $this->success($authService->getSessions());
     }
 
     public function removeActiveSession(Request $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
         $authService = new AuthService($user);
         return $this->success($authService->removeSession($request->input('session_id')));
     }
@@ -62,10 +57,7 @@ class UserController extends Controller
 
     public function changePassword(UserChangePassword $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
         if (
             !Helper::multiPasswordVerify(
                 $user->password_algo,
@@ -82,6 +74,14 @@ class UserController extends Controller
         if (!$user->save()) {
             return $this->fail([400, __('Save failed')]);
         }
+        
+        $currentToken = $user->currentAccessToken();
+        if ($currentToken) {
+            $user->tokens()->where('id', '!=', $currentToken->id)->delete();
+        } else {
+            $user->tokens()->delete();
+        }
+        
         return $this->success(true);
     }
 
@@ -163,10 +163,7 @@ class UserController extends Controller
 
     public function resetSecurity(Request $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
         if (!$user->save()) {
@@ -182,10 +179,7 @@ class UserController extends Controller
             'remind_traffic'
         ]);
 
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
         try {
             $user->update($updateData);
         } catch (\Exception $e) {
@@ -197,27 +191,31 @@ class UserController extends Controller
 
     public function transfer(UserTransfer $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
-        if ($request->input('transfer_amount') > $user->commission_balance) {
-            return $this->fail([400, __('Insufficient commission balance')]);
-        }
-        $user->commission_balance = $user->commission_balance - $request->input('transfer_amount');
-        $user->balance = $user->balance + $request->input('transfer_amount');
-        if (!$user->save()) {
-            return $this->fail([400, __('Transfer failed')]);
+        $amount = $request->input('transfer_amount');
+        try {
+            DB::transaction(function () use ($request, $amount) {
+                $user = User::lockForUpdate()->find($request->user()->id);
+                if (!$user) {
+                    throw new \Exception(__('The user does not exist'));
+                }
+                if ($amount > $user->commission_balance) {
+                    throw new \Exception(__('Insufficient commission balance'));
+                }
+                $user->commission_balance -= $amount;
+                $user->balance += $amount;
+                if (!$user->save()) {
+                    throw new \Exception(__('Transfer failed'));
+                }
+            });
+        } catch (\Exception $e) {
+            return $this->fail([400, $e->getMessage()]);
         }
         return $this->success(true);
     }
 
     public function getQuickLoginUrl(Request $request)
     {
-        $user = User::find($request->user()->id);
-        if (!$user) {
-            return $this->fail([400, __('The user does not exist')]);
-        }
+        $user = $request->user();
 
         $url = $this->loginService->generateQuickLoginUrl($user, $request->input('redirect'));
         return $this->success($url);

@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\ApiException;
 use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\User;
@@ -90,8 +91,7 @@ class RegisterService
         }
 
         // 检查邮箱是否存在
-        $email = $request->input('email');
-        $exist = User::where('email', $email)->first();
+        $exist = User::byEmail($request->input('email'))->first();
         if ($exist) {
             return [false, [400201, __('Email already exists')]];
         }
@@ -113,7 +113,7 @@ class RegisterService
 
         if (!$inviteCodeModel) {
             if ((int) admin_setting('invite_force', 0)) {
-                throw new \Exception(__('Invalid invitation code'));
+                throw new ApiException(__('Invalid invitation code'));
             }
             return null;
         }

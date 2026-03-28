@@ -7,7 +7,6 @@ use App\Utils\CacheKey;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\Cache;
-use App\Services\UserOnlineService;
 
 class Kernel extends ConsoleKernel
 {
@@ -32,11 +31,12 @@ class Kernel extends ConsoleKernel
         // v2board
         $schedule->command('xboard:statistics')->dailyAt('0:10')->onOneServer();
         // check
-        $schedule->command('check:order')->everyMinute()->onOneServer();
-        $schedule->command('check:commission')->everyMinute()->onOneServer();
-        $schedule->command('check:ticket')->everyMinute()->onOneServer();
+        $schedule->command('check:order')->everyMinute()->onOneServer()->withoutOverlapping(5);
+        $schedule->command('check:commission')->everyMinute()->onOneServer()->withoutOverlapping(5);
+        $schedule->command('check:ticket')->everyMinute()->onOneServer()->withoutOverlapping(5);
+        $schedule->command('check:traffic-exceeded')->everyMinute()->onOneServer()->withoutOverlapping(10)->runInBackground();
         // reset
-        $schedule->command('reset:traffic')->everyMinute()->onOneServer();
+        $schedule->command('reset:traffic')->everyMinute()->onOneServer()->withoutOverlapping(10);
         $schedule->command('reset:log')->daily()->onOneServer();
         // send
         $schedule->command('send:remindMail', ['--force'])->dailyAt('11:30')->onOneServer();
@@ -46,8 +46,6 @@ class Kernel extends ConsoleKernel
         // if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
         //     $schedule->command('backup:database', ['true'])->daily()->onOneServer();
         // }
-        $schedule->command('cleanup:expired-online-status')->everyMinute()->onOneServer()->withoutOverlapping(4);
-
         app(PluginManager::class)->registerPluginSchedules($schedule);
 
     }

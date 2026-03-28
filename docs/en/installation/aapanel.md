@@ -169,7 +169,42 @@ sh update.sh
 ## Troubleshooting
 
 ### Common Issues
-1. Changes to admin path require service restart to take effect
-2. Any code changes after enabling Octane require restart to take effect
+1. **Empty Admin Dashboard**: If the admin panel is blank, run `git submodule update --init --recursive --force` to restore the theme files.
+2. Changes to admin path require service restart to take effect
+3. Any code changes after enabling Octane require restart to take effect
 3. When PHP extension installation fails, check if PHP version is correct
-4. For database connection failures, check database configuration and permissions 
+4. For database connection failures, check database configuration and permissions
+
+## Enable WebSocket Real-time Sync (Optional)
+
+WebSocket enables real-time synchronization of configurations and user changes to nodes.
+
+### 1. Start WS Server
+
+Add a WebSocket daemon process in aaPanel Supervisor:
+- Name: `Xboard-WS`
+- Run User: `www`
+- Running Directory: Site directory
+- Start Command: `php artisan ws-server start`
+- Process Count: 1
+
+### 2. Configure Nginx
+
+Add the WebSocket location **before** the main `location ^~ /` block in your site's Nginx configuration:
+```nginx
+location /ws/ {
+    proxy_pass http://127.0.0.1:8076;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 60s;
+}
+```
+
+### 3. Restart Services
+
+Restart the Octane and WS Server processes in Supervisor.
+
+> The node will automatically detect WebSocket availability during handshake. No extra configuration is needed on the node side.

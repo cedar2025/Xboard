@@ -143,8 +143,13 @@ class Helper
     }
 
     public static function randomPort($range): int {
-        $portRange = explode('-', $range);
-        return random_int((int)$portRange[0], (int)$portRange[1]);
+        $portRange = explode('-', (string) $range, 2);
+        $min = (int) ($portRange[0] ?? 0);
+        $max = (int) ($portRange[1] ?? $portRange[0] ?? 0);
+        if ($min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+        return random_int($min, $max);
     }
 
     public static function base64EncodeUrlSafe($data)
@@ -184,8 +189,20 @@ class Helper
     public static function getIpByDomainName($domain) {
         return gethostbynamel($domain) ?: [];
     }
+    
+    public static function getTlsFingerprint($utls = null)
+    {
 
-    public static function getRandFingerprint() {
+        if (is_array($utls) || is_object($utls)) {
+            if (!data_get($utls, 'enabled')) {
+                return null;
+            }
+            $fingerprint = data_get($utls, 'fingerprint', 'chrome');
+            if ($fingerprint !== 'random') {
+                return $fingerprint;
+            }
+        }
+
         $fingerprints = ['chrome', 'firefox', 'safari', 'ios', 'edge', 'qq'];
         return Arr::random($fingerprints);
     }

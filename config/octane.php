@@ -79,7 +79,7 @@ return [
         ],
 
         RequestTerminated::class => [
-            // FlushUploadedFiles::class,
+            FlushUploadedFiles::class,
         ],
 
         TaskReceived::class => [
@@ -102,8 +102,8 @@ return [
 
         OperationTerminated::class => [
             FlushTemporaryContainerInstances::class,
-            // DisconnectFromDatabases::class,
-            // CollectGarbage::class,
+            DisconnectFromDatabases::class,
+            CollectGarbage::class,
         ],
 
         WorkerErrorOccurred::class => [
@@ -132,7 +132,7 @@ return [
     ],
 
     'flush' => [
-        //
+        \App\Services\Plugin\HookManager::class,
     ],
 
     /*
@@ -147,8 +147,8 @@ return [
     */
 
     'cache' => [
-        'rows' => 1000,
-        'bytes' => 10000,
+        'rows' => 5000,
+        'bytes' => 20000,
     ],
 
     /*
@@ -203,7 +203,7 @@ return [
     |
     */
 
-    'garbage' => 50,
+    'garbage' => 128,
 
     /*
     |--------------------------------------------------------------------------
@@ -216,6 +216,6 @@ return [
     |
     */
 
-    'max_execution_time' => 30,
+    'max_execution_time' => 60,
 
 ];

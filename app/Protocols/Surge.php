@@ -18,6 +18,9 @@ class Surge extends AbstractProtocol
         Server::TYPE_VMESS,
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
+        Server::TYPE_ANYTLS,
+        Server::TYPE_SOCKS,
+        Server::TYPE_HTTP,
     ];
     protected $protocolRequirements = [
         'surge.hysteria.protocol_settings.version' => [2 => '2398'],
@@ -40,7 +43,9 @@ class Surge extends AbstractProtocol
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
+                    'chacha20-ietf-poly1305',
+                    '2022-blake3-aes-128-gcm',
+                    '2022-blake3-aes-256-gcm'
                 ])
             ) {
                 $proxies .= self::buildShadowsocks($item['password'], $item);
@@ -58,12 +63,22 @@ class Surge extends AbstractProtocol
                 $proxies .= self::buildHysteria($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $proxies .= self::buildAnyTLS($item['password'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === Server::TYPE_SOCKS) {
+                $proxies .= self::buildSocks($item['password'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === Server::TYPE_HTTP) {
+                $proxies .= self::buildHttp($item['password'], $item);
+                $proxyGroup .= $item['name'] . ', ';
+            }
         }
 
 
-        $config = admin_setting('subscribe_template_surge', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
-            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
-            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
+        $config = subscribe_template('surge');
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -80,7 +95,7 @@ class Surge extends AbstractProtocol
         $totalTraffic = round($user['transfer_enable'] / (1024 * 1024 * 1024), 2);
         $unusedTraffic = $totalTraffic - $useTraffic;
         $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{ $unusedTraffic }GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
+        $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{$unusedTraffic}GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
@@ -93,7 +108,7 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=ss",
+            "{$server['name']} = ss",
             "{$server['host']}",
             "{$server['port']}",
             "encrypt-method={$protocol_settings['cipher']}",
@@ -137,7 +152,7 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=vmess",
+            "{$server['name']} = vmess",
             "{$server['host']}",
             "{$server['port']}",
             "username={$uuid}",
@@ -176,16 +191,38 @@ class Surge extends AbstractProtocol
     {
         $protocol_settings = $server['protocol_settings'];
         $config = [
-            "{$server['name']}=trojan",
+            "{$server['name']} = trojan",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            $protocol_settings['server_name'] ? "sni={$protocol_settings['server_name']}" : "",
+            data_get($protocol_settings, 'server_name') ? "sni=" . data_get($protocol_settings, 'server_name') : "",
             'tfo=true',
             'udp-relay=true'
         ];
         if (!empty($protocol_settings['allow_insecure'])) {
             array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    //参考文档: https://manual.nssurge.com/policy/proxy.html
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $config = [
+            "{$server['name']} = anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+        ];
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$serverName}";
+        }
+        if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
@@ -200,7 +237,7 @@ class Surge extends AbstractProtocol
         if ($protocol_settings['version'] != 2)
             return '';
         $config = [
-            "{$server['name']}=hysteria2",
+            "{$server['name']} = hysteria2",
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
@@ -217,6 +254,63 @@ class Surge extends AbstractProtocol
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    //参考文档: https://manual.nssurge.com/policy/proxy.html
+    public static function buildSocks($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $type = data_get($protocol_settings, 'tls') ? 'socks5-tls' : 'socks5';
+        $config = [
+            "{$server['name']} = {$type}",
+            "{$server['host']}",
+            "{$server['port']}",
+            "{$password}",
+            "{$password}",
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $config[] = "sni={$serverName}";
+            }
+            if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
+                $config[] = 'skip-cert-verify=true';
+            }
+        }
+        $config[] = 'udp-relay=true';
+
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    //参考文档: https://manual.nssurge.com/policy/proxy.html
+    public static function buildHttp($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $type = data_get($protocol_settings, 'tls') ? 'https' : 'http';
+        $config = [
+            "{$server['name']} = {$type}",
+            "{$server['host']}",
+            "{$server['port']}",
+            "{$password}",
+            "{$password}",
+        ];
+
+        if (data_get($protocol_settings, 'tls')) {
+            if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                $config[] = "sni={$serverName}";
+            }
+            if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
+                $config[] = 'skip-cert-verify=true';
+            }
+        }
+
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
