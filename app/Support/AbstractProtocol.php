@@ -64,6 +64,7 @@ abstract class AbstractProtocol
         $this->userAgent = $userAgent;
         $this->protocolRequirements = $this->normalizeProtocolRequirements($this->protocolRequirements);
         $this->servers = HookManager::filter('protocol.servers.filtered', $this->filterServersByVersion());
+        $this->resolveShortIds();
     }
 
     /**
@@ -218,6 +219,38 @@ abstract class AbstractProtocol
         }
 
         return true;
+    }
+
+    /**
+     * 为 REALITY 协议解析每客户端类型的 shortID
+     *
+     * 当 reality_settings.short_id 包含逗号分隔的多个值时，
+     * 根据客户端名称确定性地选择一个，使不同客户端类型获得不同的 shortID。
+     * 单值时保持原有行为不变。
+     *
+     * @return void
+     */
+    protected function resolveShortIds(): void
+    {
+        $this->servers = array_map(function ($server) {
+            $shortId = data_get($server, 'protocol_settings.reality_settings.short_id');
+
+            if (empty($shortId) || !str_contains($shortId, ',')) {
+                return $server;
+            }
+
+            $ids = array_values(array_filter(array_map('trim', explode(',', $shortId))));
+
+            if (count($ids) <= 1) {
+                return $server;
+            }
+
+            $key = $this->clientName ?? 'default';
+            $index = abs(crc32($key)) % count($ids);
+            data_set($server, 'protocol_settings.reality_settings.short_id', $ids[$index]);
+
+            return $server;
+        }, $this->servers);
     }
 
     /**
