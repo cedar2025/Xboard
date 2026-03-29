@@ -29,35 +29,13 @@ class TelegramService
 
     public function sendMessage(int $chatId, string $text, string $parseMode = ''): void
     {
-        if ($parseMode === 'markdown') {
-            $text = $this->escapeMarkdown($text);
-        }
+        $text = $parseMode === 'markdown' ? str_replace('_', '\_', $text) : $text;
 
         $this->request('sendMessage', [
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => $parseMode ?: null,
         ]);
-    }
-
-    /**
-     * 转义 Telegram Markdown 特殊字符
-     */
-    protected function escapeMarkdown(string $text): string
-    {
-        $escapeChars = ['_', '*', '`', '['];
-        $escapedText = '';
-        
-        for ($i = 0; $i < strlen($text); $i++) {
-            $char = $text[$i];
-            if (in_array($char, $escapeChars, true)) {
-                $escapedText .= '\\' . $char;
-            } else {
-                $escapedText .= $char;
-            }
-        }
-        
-        return $escapedText;
     }
 
     public function approveChatJoinRequest(int $chatId, int $userId): void
