@@ -77,6 +77,9 @@ class User extends Authenticatable
         'commission_rate' => 'float',
         'next_reset_at' => 'timestamp',
         'last_reset_at' => 'timestamp',
+        'balance' => 'integer',
+        'commission_balance' => 'integer',
+        'discount' => 'integer',
     ];
     protected $hidden = ['password'];
 
