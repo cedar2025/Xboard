@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::table('v2_server', function (Blueprint $table) {
             if (!Schema::hasColumn('v2_server', 'transfer_enable')) {
                 $table->bigInteger('transfer_enable')
-                    ->default(0)
+                    ->default(null)
+                    ->nullable()
                     ->after('rate')
                     ->comment('Traffic limit , 0 or null=no limit');
             }
