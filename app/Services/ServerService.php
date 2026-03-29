@@ -42,6 +42,11 @@ class ServerService
     {
         $servers = Server::whereJsonContains('group_ids', (string) $user->group_id)
             ->where('show', true)
+            ->where(function ($query) {
+                $query->whereNull('transfer_enable')
+                    ->orWhere('transfer_enable', 0)
+                    ->orWhereRaw('u + d < transfer_enable');
+            })
             ->orderBy('sort', 'ASC')
             ->get()
             ->append(['last_check_at', 'last_push_at', 'online', 'is_online', 'available_status', 'cache_key', 'server_key']);
@@ -244,10 +249,10 @@ class ServerService
             default => [],
         };
 
-        $response = array_filter(
-            $response,
-            static fn ($value) => $value !== null
-        );
+        // $response = array_filter(
+        //     $response,
+        //     static fn ($value) => $value !== null
+        // );
 
         if (!empty($node['route_ids'])) {
             $response['routes'] = self::getRoutes($node['route_ids']);

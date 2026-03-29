@@ -82,6 +82,9 @@ class AdminRoute
                 $router->post('/drop', [ManageController::class, 'drop']);
                 $router->post('/copy', [ManageController::class, 'copy']);
                 $router->post('/sort', [ManageController::class, 'sort']);
+                $router->post('/batchDelete', [ManageController::class, 'batchDelete']);
+                $router->post('/resetTraffic', [ManageController::class, 'resetTraffic']);
+                $router->post('/batchResetTraffic', [ManageController::class, 'batchResetTraffic']);
             });
 
             // Order

@@ -3,12 +3,14 @@
 
 namespace App\Jobs;
 
+use App\Models\Server;
 use App\Models\StatServer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -59,10 +61,21 @@ class StatServerJob implements ShouldQueue
 
         try {
             $this->processServerStat($u, $d, $recordAt);
+            $this->updateServerTraffic($u, $d);
         } catch (\Exception $e) {
             Log::error('StatServerJob failed for server ' . $this->server['id'] . ': ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    protected function updateServerTraffic(int $u, int $d): void
+    {
+        DB::table('v2_server')
+            ->where('id', $this->server['id'])
+            ->incrementEach(
+                ['u' => $u, 'd' => $d],
+                ['updated_at' => Carbon::now()]
+            );
     }
 
     protected function processServerStat(int $u, int $d, int $recordAt): void
