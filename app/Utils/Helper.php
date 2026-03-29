@@ -229,4 +229,14 @@ class Helper
     {
         return $transfer_enable / 1073741824;
     }
+
+    /**
+     * 转义 Telegram Markdown 特殊字符
+     * @param string $text
+     * @return string
+     */
+    public static function escapeMarkdown(string $text): string
+    {
+        return str_replace(['_', '*', '`', '['], ['\_', '\*', '\`', '\['], $text);
+    }
 }
