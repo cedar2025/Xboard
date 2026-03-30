@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $id
  * @property int $user_id 用户ID
+ * @property int|null $server_id 节点ID (nullable for legacy data)
  * @property int $u 上行流量
  * @property int $d 下行流量
  * @property int $record_at 记录时间
@@ -25,4 +26,12 @@ class StatUser extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp'
     ];
+
+    /**
+     * Get the server that this traffic stat belongs to
+     */
+    public function server()
+    {
+        return $this->belongsTo(Server::class, 'server_id');
+    }
 }
