@@ -111,6 +111,94 @@ class ManageController extends Controller
         return $this->success(true);
     }
 
+    /**
+     * 批量删除节点
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function batchDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        $ids = $request->input('ids');
+        if (empty($ids)) {
+            return $this->fail([400, '请选择要删除的节点']);
+        }
+
+        try {
+            $deleted = Server::whereIn('id', $ids)->delete();
+            if ($deleted === false) {
+                return $this->fail([500, '批量删除失败']);
+            }
+            return $this->success(true);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return $this->fail([500, '批量删除失败']);
+        }
+    }
+
+    /**
+     * 重置节点流量
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resetTraffic(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        $server = Server::find($request->id);
+        if (!$server) {
+            return $this->fail([400202, '服务器不存在']);
+        }
+
+        try {
+            $server->u = 0;
+            $server->d = 0;
+            $server->save();
+            
+            Log::info("Server {$server->id} ({$server->name}) traffic reset by admin");
+            return $this->success(true);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return $this->fail([500, '重置失败']);
+        }
+    }
+
+    /**
+     * 批量重置节点流量
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function batchResetTraffic(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        $ids = $request->input('ids');
+        if (empty($ids)) {
+            return $this->fail([400, '请选择要重置的节点']);
+        }
+
+        try {
+            Server::whereIn('id', $ids)->update([
+                'u' => 0,
+                'd' => 0,
+            ]);
+            
+            Log::info("Servers " . implode(',', $ids) . " traffic reset by admin");
+            return $this->success(true);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return $this->fail([500, '批量重置失败']);
+        }
+    }
 
     /**
      * 复制节点
@@ -120,11 +208,11 @@ class ManageController extends Controller
     public function copy(Request $request)
     {
         $server = Server::find($request->input('id'));
-        $server->show = 0;
-        $server->code = null;
         if (!$server) {
             return $this->fail([400202, '服务器不存在']);
         }
+        $server->show = 0;
+        $server->code = null;
         Server::create($server->toArray());
         return $this->success(true);
     }

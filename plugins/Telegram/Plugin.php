@@ -58,8 +58,8 @@ class Plugin extends AbstractPlugin
       "支付渠道：%s\n" .
       "本站订单：`%s`",
       $order->total_amount / 100,
-      $payment->payment,
-      $payment->name,
+      Helper::escapeMarkdown($payment->payment),
+      Helper::escapeMarkdown($payment->name),
       $order->trade_no
     );
     $this->telegramService->sendMessageWithAdmin($message, true);
@@ -92,7 +92,7 @@ class Plugin extends AbstractPlugin
     $TGmessage .= "📍 位置: `{$region}`\n";
 
     if ($plan) {
-      $TGmessage .= "📦 套餐: `{$plan->name}`\n";
+      $TGmessage .= "📦 套餐: `" . Helper::escapeMarkdown($plan->name) . "`\n";
       $TGmessage .= "📊 流量: `{$remaining_traffic}G / {$transfer_enable}G` (剩余/总计)\n";
       $TGmessage .= "⬆️⬇️ 已用: `{$u}G / {$d}G`\n";
       $TGmessage .= "⏰ 到期: `{$expired_at}`\n";
@@ -103,8 +103,8 @@ class Plugin extends AbstractPlugin
     $TGmessage .= "💰 余额: `{$money}元`\n";
     $TGmessage .= "💸 佣金: `{$affmoney}元`\n";
     $TGmessage .= "━━━━━━━━━━━━━━━━━━━━\n";
-    $TGmessage .= "📝 *主题*: `{$ticket->subject}`\n";
-    $TGmessage .= "💬 *内容*: `{$message->message}`";
+    $TGmessage .= "📝 *主题*: `" . Helper::escapeMarkdown($ticket->subject) . "`\n";
+    $TGmessage .= "💬 *内容*: `" . Helper::escapeMarkdown($message->message) . "`";
     $this->telegramService->sendMessageWithAdmin($TGmessage, true);
   }
 

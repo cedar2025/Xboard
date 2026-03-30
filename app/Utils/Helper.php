@@ -86,6 +86,7 @@ class Helper
             case 'md5': return md5($password) === $hash;
             case 'sha256': return hash('sha256', $password) === $hash;
             case 'md5salt': return md5($password . $salt) === $hash;
+            case 'sha256salt': return hash('sha256', $password . $salt) === $hash;
             default: return password_verify($password, $hash);
         }
     }
@@ -228,5 +229,15 @@ class Helper
     public static function transferToGB(float $transfer_enable): float
     {
         return $transfer_enable / 1073741824;
+    }
+
+    /**
+     * 转义 Telegram Markdown 特殊字符
+     * @param string $text
+     * @return string
+     */
+    public static function escapeMarkdown(string $text): string
+    {
+        return str_replace(['_', '*', '`', '['], ['\_', '\*', '\`', '\['], $text);
     }
 }
