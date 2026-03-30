@@ -221,7 +221,9 @@ class ServerService
                 ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
-                'padding_scheme' => $protocolSettings['padding_scheme'],
+                'padding_scheme' => is_array($protocolSettings['padding_scheme'])
+                    ? implode("\n", $protocolSettings['padding_scheme'])
+                    : ($protocolSettings['padding_scheme'] ?? ''),
             ],
             'socks' => [
                 ...$baseConfig,
