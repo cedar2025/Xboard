@@ -11,6 +11,14 @@ class Stat extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'order_count' => 'integer',
+        'order_total' => 'integer',
+        'commission_count' => 'integer',
+        'commission_total' => 'integer',
+        'paid_count' => 'integer',
+        'paid_total' => 'integer',
+        'register_count' => 'integer',
+        'invite_count' => 'integer'
     ];
 }

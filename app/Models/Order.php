@@ -50,7 +50,14 @@ class Order extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'surplus_order_ids' => 'array',
-        'handling_amount' => 'integer'
+        'handling_amount' => 'integer',
+        'total_amount' => 'integer',
+        'discount_amount' => 'integer',
+        'balance_amount' => 'integer',
+        'refund_amount' => 'integer',
+        'surplus_amount' => 'integer',
+        'commission_balance' => 'integer',
+        'actual_commission_balance' => 'integer'
     ];
 
     const STATUS_PENDING = 0; // 待支付

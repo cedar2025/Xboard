@@ -23,6 +23,9 @@ class StatUser extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'u' => 'integer',
+        'd' => 'integer',
+        'server_rate' => 'float'
     ];
 }
