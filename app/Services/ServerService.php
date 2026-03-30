@@ -143,6 +143,14 @@ class ServerService
         $serverPort = $node->server_port;
         $host = $node->host;
 
+        // 将逗号分隔的 short_id 展开为 short_ids 数组，供节点端 REALITY 配置使用
+        $shortId = data_get($protocolSettings, 'reality_settings.short_id');
+        if (!empty($shortId) && str_contains($shortId, ',')) {
+            $protocolSettings['reality_settings']['short_ids'] = array_values(
+                array_filter(array_map('trim', explode(',', $shortId)))
+            );
+        }
+
         $baseConfig = [
             'protocol' => $nodeType,
             'listen_ip' => '0.0.0.0',
