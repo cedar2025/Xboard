@@ -52,6 +52,7 @@ class UserController extends Controller
 
         collect($request->input('filter'))->each(function ($filter) use ($builder) {
             $field = $filter['id'];
+            if (!$this->isValidFieldName($field)) return;
             $value = $filter['value'];
             $logic = strtolower($filter['logic'] ?? 'and');
 
@@ -128,6 +129,7 @@ class UserController extends Controller
 
         collect($request->input('sort'))->each(function ($sort) use ($builder) {
             $field = $sort['id'];
+            if (!$this->isValidFieldName($field)) return;
             $direction = $sort['desc'] ? 'DESC' : 'ASC';
             $builder->orderBy($field, $direction);
         });

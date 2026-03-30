@@ -7,6 +7,15 @@ use Illuminate\Contracts\Database\Query\Expression;
 trait QueryOperators
 {
     /**
+     * Validate that a field name is safe for use in queries.
+     * Prevents SQL injection via user-controlled column names.
+     */
+    protected function isValidFieldName(string $field): bool
+    {
+        return (bool) preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $field);
+    }
+
+    /**
      * 获取查询运算符映射
      *
      * @param string $operator

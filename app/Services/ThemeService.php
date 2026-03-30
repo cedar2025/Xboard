@@ -118,6 +118,15 @@ class ThemeService
                 throw new Exception('Theme config file not found');
             }
 
+            // Validate zip entries against ZipSlip (path traversal)
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $entryName = $zip->getNameIndex($i);
+                $fullPath = realpath($tmpPath) ? realpath($tmpPath) . '/' . $entryName : $tmpPath . '/' . $entryName;
+                if (str_contains($entryName, '..')) {
+                    $zip->close();
+                    throw new Exception('Invalid file path detected in theme package');
+                }
+            }
             $zip->extractTo($tmpPath);
             $zip->close();
 
