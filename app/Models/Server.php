@@ -203,6 +203,15 @@ class Server extends Model
             'tls' => ['type' => 'integer', 'default' => 0],
             'tls_settings' => ['type' => 'array', 'default' => null],
             'flow' => ['type' => 'string', 'default' => null],
+            'encryption' => [
+                'type' => 'object',
+                'default' => null,
+                'fields' => [
+                    'enabled' => ['type' => 'boolean', 'default' => false],
+                    'encryption' => ['type' => 'string', 'default' => null],  // 客户端公钥
+                    'decryption' => ['type' => 'string', 'default' => null],   // 服务端私钥
+                ]
+            ],
             'network' => ['type' => 'string', 'default' => null],
             'network_settings' => ['type' => 'array', 'default' => null],
             ...self::REALITY_CONFIGURATION,
