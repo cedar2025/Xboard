@@ -86,6 +86,7 @@ class Helper
             case 'md5': return md5($password) === $hash;
             case 'sha256': return hash('sha256', $password) === $hash;
             case 'md5salt': return md5($password . $salt) === $hash;
+            case 'sha256salt': return hash('sha256', $password . $salt) === $hash;
             default: return password_verify($password, $hash);
         }
     }
