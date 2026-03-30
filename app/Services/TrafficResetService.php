@@ -273,7 +273,7 @@ class TrafficResetService
             $query->where('expired_at', '>', time())
               ->orWhereNull('expired_at');
           })
-          ->where('banned', 0)
+          ->where('banned', false)
           ->whereNotNull('plan_id')
           ->orderBy('id')
           ->limit($batchSize)

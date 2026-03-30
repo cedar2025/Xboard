@@ -26,7 +26,7 @@ class CheckTrafficExceeded extends Command
             ->whereIn('id', $pendingUserIds)
             ->whereRaw('u + d >= transfer_enable')
             ->where('transfer_enable', '>', 0)
-            ->where('banned', 0)
+            ->where('banned', false)
             ->select(['id', 'group_id'])
             ->get();
 
