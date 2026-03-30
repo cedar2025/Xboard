@@ -12,6 +12,7 @@ class AdminAuditLog extends Model
     protected $casts = [
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
+        'admin_id' => 'integer',
     ];
 
     public function admin()

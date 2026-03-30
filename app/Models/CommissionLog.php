@@ -11,6 +11,10 @@ class CommissionLog extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'order_amount' => 'integer',
+        'get_amount' => 'integer',
+        'user_id' => 'integer',
+        'invite_user_id' => 'integer',
     ];
 }
