@@ -154,7 +154,7 @@ location ~ .* {
 cd /www/wwwroot/your-domain
 
 # Execute update script
-git fetch --all && git reset --hard origin/master && git pull origin master
+git fetch --all && git reset --hard origin/my && git pull origin my
 sh update.sh
 
 # If Octane is enabled, restart the daemon process
