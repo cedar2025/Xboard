@@ -15,6 +15,7 @@ class Loon extends AbstractProtocol
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
         Server::TYPE_VLESS,
+        Server::TYPE_ANYTLS,
     ];
 
     protected $protocolRequirements = [
@@ -46,6 +47,9 @@ class Loon extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_VLESS) {
                 $uri .= self::buildVless($item['password'], $item);
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $uri .= self::buildAnyTLS($item['password'], $item);
             }
         }
         return response($uri)
@@ -324,5 +328,30 @@ class Loon extends AbstractProtocol
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
+    }
+    
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+    
+        $config = [
+            "{$server['name']}=anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "{$password}",
+            "udp=true"
+        ];
+    
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$serverName}";
+        }
+         // ✅ 跳过证书校验
+         if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $config[] = 'skip-cert-verify=true';
+        }
+ 
+        $config = array_filter($config);
+    
+        return implode(',', $config) . "\r\n";
     }
 }
