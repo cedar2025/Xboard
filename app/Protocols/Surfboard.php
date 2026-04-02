@@ -14,6 +14,7 @@ class Surfboard extends AbstractProtocol
         Server::TYPE_SHADOWSOCKS,
         Server::TYPE_VMESS,
         Server::TYPE_TROJAN,
+        Server::TYPE_ANYTLS,
     ];
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surfboard.conf';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surfboard.conf';
@@ -36,7 +37,10 @@ class Surfboard extends AbstractProtocol
                     'aes-128-gcm',
                     'aes-192-gcm',
                     'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
+                    'chacha20-ietf-poly1305',
+                    '2022-blake3-aes-128-gcm',
+                    '2022-blake3-aes-256-gcm',
+                    '2022-blake3-chacha20-poly1305'      
                 ])
             ) {
                 // [Proxy]
@@ -54,6 +58,10 @@ class Surfboard extends AbstractProtocol
                 // [Proxy]
                 $proxies .= self::buildTrojan($item['password'], $item);
                 // [Proxy Group]
+                $proxyGroup .= $item['name'] . ', ';
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $proxies .= self::buildAnyTLS($item['password'], $item);
                 $proxyGroup .= $item['name'] . ', ';
             }
         }
@@ -189,5 +197,33 @@ class Surfboard extends AbstractProtocol
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
+    }
+    
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+    
+        $config = [
+            "{$server['name']}=anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+            "tfo=true",
+            "udp-relay=true"
+        ];
+    
+        // SNI
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$serverName}";
+        }
+    
+        // 跳过证书校验
+        if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $config[] = "skip-cert-verify=true";
+        }
+    
+        $config = array_filter($config);
+    
+        return implode(',', $config) . "\r\n";
     }
 }
