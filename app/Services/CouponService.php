@@ -16,37 +16,43 @@ class CouponService
 
     public function __construct($code)
     {
-        $this->coupon = Coupon::where('code', $code)
-            ->lockForUpdate()
-            ->first();
+        $this->coupon = Coupon::where('code', $code)->first();
     }
 
     public function use(Order $order): bool
     {
-        $this->setPlanId($order->plan_id);
-        $this->setUserId($order->user_id);
-        $this->setPeriod($order->period);
-        $this->check();
-        switch ($this->coupon->type) {
-            case 1:
-                $order->discount_amount = $this->coupon->value;
-                break;
-            case 2:
-                $order->discount_amount = $order->total_amount * ($this->coupon->value / 100);
-                break;
-        }
-        if ($order->discount_amount > $order->total_amount) {
-            $order->discount_amount = $order->total_amount;
-        }
-        if ($this->coupon->limit_use !== NULL) {
-            if ($this->coupon->limit_use <= 0)
-                return false;
-            $this->coupon->limit_use = $this->coupon->limit_use - 1;
-            if (!$this->coupon->save()) {
-                return false;
+        return DB::transaction(function () use ($order) {
+            // Re-fetch with lock inside transaction to prevent race conditions
+            $this->coupon = Coupon::where('id', $this->coupon->id)
+                ->lockForUpdate()
+                ->first();
+            if (!$this->coupon) return false;
+
+            $this->setPlanId($order->plan_id);
+            $this->setUserId($order->user_id);
+            $this->setPeriod($order->period);
+            $this->check();
+            switch ($this->coupon->type) {
+                case 1:
+                    $order->discount_amount = $this->coupon->value;
+                    break;
+                case 2:
+                    $order->discount_amount = $order->total_amount * ($this->coupon->value / 100);
+                    break;
             }
-        }
-        return true;
+            if ($order->discount_amount > $order->total_amount) {
+                $order->discount_amount = $order->total_amount;
+            }
+            if ($this->coupon->limit_use !== NULL) {
+                if ($this->coupon->limit_use <= 0)
+                    return false;
+                $this->coupon->limit_use = $this->coupon->limit_use - 1;
+                if (!$this->coupon->save()) {
+                    return false;
+                }
+            }
+            return true;
+        });
     }
 
     public function getId()

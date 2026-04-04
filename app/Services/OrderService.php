@@ -132,7 +132,7 @@ class OrderService
         });
 
         $eventId = match ((int) $order->type) {
-            Order::STATUS_PROCESSING => admin_setting('new_order_event_id', 0),
+            Order::TYPE_NEW_PURCHASE => admin_setting('new_order_event_id', 0),
             Order::TYPE_RENEWAL => admin_setting('renew_order_event_id', 0),
             Order::TYPE_UPGRADE => admin_setting('change_order_event_id', 0),
             default => 0,

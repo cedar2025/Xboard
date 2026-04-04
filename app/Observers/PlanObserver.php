@@ -18,7 +18,7 @@ class PlanObserver
         }
         $trafficResetService = app(TrafficResetService::class);
         User::where('plan_id', $plan->id)
-            ->where('banned', 0)
+            ->where('banned', false)
             ->where(function ($query) {
                 $query->where('expired_at', '>', time())
                     ->orWhereNull('expired_at');
