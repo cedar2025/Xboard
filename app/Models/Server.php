@@ -128,6 +128,8 @@ class Server extends Model
         'updated_at' => 'timestamp',
         'rate_time_ranges' => 'array',
         'rate_time_enable' => 'boolean',
+        'rate' => 'float',
+        'server_port' => 'integer',
         'transfer_enable' => 'integer',
         'u' => 'integer',
         'd' => 'integer',
