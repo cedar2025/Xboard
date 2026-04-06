@@ -164,7 +164,8 @@ class Stash extends AbstractProtocol
         });
         $config['proxy-groups'] = array_values($config['proxy-groups']);
         // Force the current subscription domain to be a direct rule
-        $subsDomain = request()->header('Host');
+        $subsURL = Helper::getSubscribeUrl($user['token']);
+        $subsDomain = parse_url($subsURL, PHP_URL_HOST);
         if ($subsDomain) {
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
