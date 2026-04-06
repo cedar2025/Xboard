@@ -93,7 +93,7 @@ class Clash extends AbstractProtocol
         });
         $config['proxy-groups'] = array_values($config['proxy-groups']);
 
-        $config = $this->buildRules($config);
+        $config = $this->buildRules($config,$user);
 
 
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
@@ -109,10 +109,11 @@ class Clash extends AbstractProtocol
     /**
      * Build the rules for Clash.
      */
-    public function buildRules($config)
+    public function buildRules($config,$user)
     {
         // Force the current subscription domain to be a direct rule
-        $subsDomain = request()->header('Host');
+        $subsURL = Helper::getSubscribeUrl($user['token']);
+        $subsDomain = parse_url($subsURL, PHP_URL_HOST);        
         if ($subsDomain) {
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
