@@ -66,6 +66,12 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             $params['type'] = $paymentType;
         }
 
+        $params['clientip'] = request()->ip();
+        
+        $userAgent = request()->header('User-Agent');
+        $isMobile = $userAgent && preg_match('/Mobile|Android|Silk\/|Kindle|BlackBerry|Opera Mini|Opera Mobi/i', $userAgent);
+        $params['device'] = $isMobile ? 'mobile' : 'pc';
+
         ksort($params);
         $str = stripslashes(urldecode(http_build_query($params))) . $this->getConfig('key');
         $params['sign'] = md5($str);
