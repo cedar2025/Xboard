@@ -143,6 +143,7 @@ class Surge extends AbstractProtocol
             }
         }
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -182,6 +183,7 @@ class Surge extends AbstractProtocol
             }
         }
 
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -203,6 +205,7 @@ class Surge extends AbstractProtocol
             $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -225,6 +228,7 @@ class Surge extends AbstractProtocol
             $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -255,6 +259,7 @@ class Surge extends AbstractProtocol
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -284,6 +289,7 @@ class Surge extends AbstractProtocol
         $config[] = 'udp-relay=true';
 
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -312,6 +318,7 @@ class Surge extends AbstractProtocol
         }
 
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;

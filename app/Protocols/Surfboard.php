@@ -132,6 +132,7 @@ class Surfboard extends AbstractProtocol
         }
 
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -173,6 +174,7 @@ class Surfboard extends AbstractProtocol
             }
         }
 
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -194,6 +196,7 @@ class Surfboard extends AbstractProtocol
             $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -223,6 +226,7 @@ class Surfboard extends AbstractProtocol
         }
     
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
     
         return implode(',', $config) . "\r\n";
     }

@@ -101,6 +101,7 @@ class Loon extends AbstractProtocol
         }
 
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config) . "\r\n";
         return $uri;
     }
@@ -175,6 +176,7 @@ class Loon extends AbstractProtocol
                 break;
         }
 
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -242,6 +244,7 @@ class Loon extends AbstractProtocol
         }
 
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -333,6 +336,7 @@ class Loon extends AbstractProtocol
 		}
 
 		$config = array_filter($config);
+		$config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
 		$uri = implode(',', $config) . "\r\n";
 		return $uri;
 	}
@@ -357,6 +361,7 @@ class Loon extends AbstractProtocol
         }
         $config[] = "udp=true";
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
@@ -383,6 +388,7 @@ class Loon extends AbstractProtocol
         }
  
         $config = array_filter($config);
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
     
         return implode(',', $config) . "\r\n";
     }

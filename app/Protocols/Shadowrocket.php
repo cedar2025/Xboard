@@ -166,6 +166,7 @@ class Shadowrocket extends AbstractProtocol
                 }
                 break;
         }
+        $config['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
         $uri = "vmess://{$userinfo}?{$query}";
         $uri .= "\r\n";
@@ -276,6 +277,7 @@ class Shadowrocket extends AbstractProtocol
                 break;
         }
 
+        $config['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
         $uri = "vless" . "://{$userinfo}?{$query}";
         $uri .= "\r\n";
@@ -338,6 +340,7 @@ class Shadowrocket extends AbstractProtocol
                     $params['mode'] = $mode;
                 break;
         }
+        $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $query = http_build_query($params);
         $addr = Helper::wrapIPv6($server['host']);
 
@@ -370,6 +373,7 @@ class Shadowrocket extends AbstractProtocol
                 $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
                 if (isset($server['ports']))
                     $params['mport'] = $server['ports'];
+                $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
                 $query = http_build_query($params);
                 $addr = Helper::wrapIPv6($server['host']);
 
@@ -395,6 +399,7 @@ class Shadowrocket extends AbstractProtocol
                 if (isset($server['ports'])) {
                     $params['mport'] = $server['ports'];
                 }
+                $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
                 $query = http_build_query($params);
                 $addr = Helper::wrapIPv6($server['host']);
 
@@ -419,6 +424,7 @@ class Shadowrocket extends AbstractProtocol
             $params['uuid'] = $password;
             $params['password'] = $password;
         }
+        $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $query = http_build_query($params);
         $addr = Helper::wrapIPv6($server['host']);
         $uri = "tuic://{$addr}:{$server['port']}?{$query}#{$name}";
@@ -432,7 +438,8 @@ class Shadowrocket extends AbstractProtocol
         $name = rawurlencode($server['name']);
         $params = [
             'sni' => data_get($protocol_settings, 'tls.server_name'),
-            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure'),
+            'ech' => 'cloudflare-ech.com+https://223.5.5.5/dns-query'
         ];
         $query = http_build_query($params);
         $addr = Helper::wrapIPv6($server['host']);

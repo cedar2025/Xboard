@@ -178,6 +178,7 @@ class QuantumultX extends AbstractProtocol
         if ($server['type'] !== Server::TYPE_HTTP) {
             $config[] = 'udp-relay=true';
         }
+        $config[] = 'ech=cloudflare-ech.com+https://223.5.5.5/dns-query';
         $config[] = "tag={$server['name']}";
     }
 

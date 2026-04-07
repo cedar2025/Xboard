@@ -150,6 +150,7 @@ class General extends AbstractProtocol
             default:
                 break;
         }
+        $config['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         return "vmess://" . base64_encode(json_encode($config)) . "\r\n";
     }
 
@@ -234,6 +235,7 @@ class General extends AbstractProtocol
                 break;
         }
 
+        $config['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $user = $uuid . '@' . Helper::wrapIPv6($host) . ':' . $port;
         $query = http_build_query($config);
         $fragment = urlencode($name);
@@ -310,6 +312,7 @@ class General extends AbstractProtocol
             default:
                 break;
         }
+        $array['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         $query = http_build_query($array);
         $addr = Helper::wrapIPv6($server['host']);
 
@@ -340,6 +343,7 @@ class General extends AbstractProtocol
             if (isset($server['ports'])) {
                 $params['mport'] = $server['ports'];
             }
+            $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
 
             $query = http_build_query($params);
             $uri = "hysteria2://{$password}@{$addr}:{$server['port']}?{$query}#{$name}";
@@ -354,6 +358,7 @@ class General extends AbstractProtocol
                 $params['obfs'] = 'xplus';
                 $params['obfsParam'] = $obfsPassword;
             }
+            $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
 
             $query = http_build_query($params);
             $uri = "hysteria://{$addr}:{$server['port']}?{$query}#{$name}";
@@ -400,6 +405,7 @@ class General extends AbstractProtocol
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $queryParams['insecure'] = '1';
         }
+        $queryParams['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
 
         $query = http_build_query($queryParams);
 
@@ -426,7 +432,8 @@ class General extends AbstractProtocol
         $name = rawurlencode($server['name']);
         $params = [
             'sni' => data_get($protocol_settings, 'tls.server_name'),
-            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure'),
+            'ech' => 'cloudflare-ech.com+https://223.5.5.5/dns-query'
         ];
         $query = http_build_query($params);
         $addr = Helper::wrapIPv6($server['host']);
@@ -458,6 +465,7 @@ class General extends AbstractProtocol
             }
             $params['allowInsecure'] = data_get($protocol_settings, 'tls_settings.allow_insecure') ? '1' : '0';
         }
+        $params['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
 
         $uri = "http://{$credentials}@{$addr}:{$server['port']}";
         if (!empty($params)) {
