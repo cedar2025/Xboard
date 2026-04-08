@@ -183,7 +183,10 @@ class ServerService
                 ...$baseConfig,
                 'tls' => (int) $protocolSettings['tls'],
                 'flow' => $protocolSettings['flow'],
-                'decryption' => data_get($protocolSettings, 'encryption.decryption'),
+                'decryption' => match (data_get($protocolSettings, 'encryption.enabled')) {
+                    true => data_get($protocolSettings, 'encryption.decryption'),
+                    default => null,
+                },
                 'tls_settings' => match ((int) $protocolSettings['tls']) {
                         2 => $protocolSettings['reality_settings'],
                         default => $protocolSettings['tls_settings'],
