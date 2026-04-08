@@ -1,6 +1,7 @@
 services:
   web:
     image: ghcr.io/cedar2025/xboard:new
+    init: true
     volumes:
       - redis-data:/data
       - ./.env:/www/.env
