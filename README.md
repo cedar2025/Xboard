@@ -73,6 +73,12 @@ docker compose up -d
 
 This project is for learning and communication purposes only. Users are responsible for any consequences of using this project.
 
+## ❤️ Support The Project
+
+If this project has helped you, donations are appreciated. They help support ongoing maintenance and would make me very happy.
+
+TRC20: `TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB`
+
 ## 🌟 Maintenance Notice
 
 This project is currently under light maintenance. We will:
