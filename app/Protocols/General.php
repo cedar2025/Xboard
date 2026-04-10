@@ -150,6 +150,7 @@ class General extends AbstractProtocol
             default:
                 break;
         }
+        $config['ech'] = 'cloudflare-ech.com+https://223.5.5.5/dns-query';
         return "vmess://" . base64_encode(json_encode($config)) . "\r\n";
     }
 
