@@ -89,14 +89,12 @@ class General extends AbstractProtocol
             "host" => "",
             "path" => "",
             "tls" => $protocol_settings['tls'] ? "tls" : "",
-            "fp" => data_get($protocol_settings, 'fingerprint') ?? data_get($protocol_settings, 'network_settings.fingerprint') ?? Helper::getTlsFingerprint(),
+            "fp" => "chrome",
         ];
         if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $config['sni'] = $serverName;
         }
-        if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-            $config['fp'] = $fp;
-        }
+        $config['fp'] = 'chrome';
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
@@ -175,9 +173,7 @@ class General extends AbstractProtocol
         switch (data_get($server, 'protocol_settings.tls')) {
             case 1:
                 $config['security'] = "tls";
-                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-                    $config['fp'] = $fp;
-                }
+                $config['fp'] = 'chrome';
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['sni'] = $serverName;
                 }
@@ -256,9 +252,7 @@ class General extends AbstractProtocol
                 $array['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
                 $array['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
                 $array['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
-                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-                    $array['fp'] = $fp;
-                }
+                $array['fp'] = 'chrome';
                 break;
             default: // Standard TLS
                 $array['allowInsecure'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
@@ -266,12 +260,10 @@ class General extends AbstractProtocol
                     $array['peer'] = $serverName;
                     $array['sni'] = $serverName;
                 }
-                if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
-                    $array['fp'] = $fp;
-                }
+                $array['fp'] = 'chrome';
                 break;
         }
-        $array['fp'] = data_get($protocol_settings, 'fingerprint') ?? data_get($protocol_settings, 'network_settings.fingerprint') ?? Helper::getTlsFingerprint();
+        $array['fp'] = 'chrome';
         switch ($server['protocol_settings']['network']) {
             case 'ws':
                 $array['type'] = 'ws';

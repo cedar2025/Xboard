@@ -127,6 +127,7 @@ class Loon extends AbstractProtocol
                 $config[] = 'skip-cert-verify=' . (data_get($tls_settings, 'allow_insecure') ? 'true' : 'false');
                 if (data_get($tls_settings, 'server_name'))
                     $config[] = "tls-name={$tls_settings['server_name']}";
+                $config[] = 'fingerprint=chrome';
             }
         }
 
@@ -211,6 +212,7 @@ class Loon extends AbstractProtocol
                     $config[] = "tls-name={$serverName}";
                 }
                 $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'tls_settings.allow_insecure', false) ? 'true' : 'false');
+                $config[] = 'fingerprint=chrome';
                 break;
         }
 
@@ -289,6 +291,7 @@ class Loon extends AbstractProtocol
 				if ($shortid = data_get($protocol_settings, 'reality_settings.short_id')) {
 					$config[] = "short-id={$shortid}";
 				}
+				$config[] = "fingerprint=chrome";
 				break;
 			default:
 				$config[] = "over-tls=false";

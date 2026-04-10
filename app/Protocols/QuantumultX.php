@@ -158,12 +158,14 @@ class QuantumultX extends AbstractProtocol
                 if ($shortId = data_get($settings, 'reality_settings.short_id')) {
                     $config[] = "reality-hex-shortid={$shortId}";
                 }
+                $config[] = 'tls-fingerprint=chrome';
                 break;
             case 1: // TLS
                 $resolved = $tlsData ?? (array) data_get($settings, 'tls_settings', []);
                 $allowInsecure = (bool) ($resolved['allow_insecure'] ?? false);
                 $config[] = 'tls-verification=' . ($allowInsecure ? 'false' : 'true');
                 $host = $host ?? ($resolved['server_name'] ?? null);
+                $config[] = 'tls-fingerprint=chrome';
                 break;
         }
 

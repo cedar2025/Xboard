@@ -913,14 +913,10 @@ class SingBox extends AbstractProtocol
 
     protected function appendUtls(&$tlsConfig, $protocol_settings)
     {
-        if ($utls = data_get($protocol_settings, 'utls')) {
-            if (data_get($utls, 'enabled')) {
-                $tlsConfig['utls'] = [
-                    'enabled' => true,
-                    'fingerprint' => Helper::getTlsFingerprint($utls)
-                ];
-            }
-        }
+        $tlsConfig['utls'] = [
+            'enabled' => true,
+            'fingerprint' => 'chrome'
+        ];
     }
 
     protected function appendEch(&$tlsConfig, $ech): void
