@@ -396,7 +396,9 @@ class ClashMeta extends AbstractProtocol
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $array['h2-opts']['path'] = $path;
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
-                    $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
+                    $array['h2-opts']['host'] = $host;
+                if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
+                    $array['h2-opts']['mode'] = $mode;
                 break;
             case 'httpupgrade':
                 $array['network'] = 'ws';
@@ -406,6 +408,28 @@ class ClashMeta extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $array['xhttp-opts'] = [];
+                
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['xhttp-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $array['xhttp-opts']['host'] = $host;
+                if ($mode = data_get($protocol_settings, 'network_settings.mode'))
+                    $array['xhttp-opts']['mode'] = $mode;
+                if ($headers = data_get($protocol_settings, 'network_settings.headers'))
+                    $array['xhttp-opts']['headers'] = $headers;
+                if ($noGrpcHeader = data_get($protocol_settings, 'network_settings.no-grpc-header'))
+                    $array['xhttp-opts']['no-grpc-header'] = $noGrpcHeader;
+                if ($xPaddingBytes = data_get($protocol_settings, 'network_settings.x-padding-bytes'))
+                    $array['xhttp-opts']['x-padding-bytes'] = $xPaddingBytes;
+                if ($scMaxEachPostBytes = data_get($protocol_settings, 'network_settings.sc-max-each-post-bytes'))
+                    $array['xhttp-opts']['sc-max-each-post-bytes'] = (int)$scMaxEachPostBytes;
+                if ($reuseSettings = data_get($protocol_settings, 'network_settings.reuse-settings'))
+                    $array['xhttp-opts']['reuse-settings'] = $reuseSettings;
+                if ($downloadSettings = data_get($protocol_settings, 'network_settings.download-settings'))
+                    $array['xhttp-opts']['download-settings'] = $downloadSettings;
             default:
                 break;
         }
