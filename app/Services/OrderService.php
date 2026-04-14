@@ -74,11 +74,12 @@ class OrderService
 
             $orderService->setVipDiscount($user);
             $orderService->setOrderType($user);
-            $orderService->setInvite(user: $user);
 
             if ($user->balance && $order->total_amount > 0) {
                 $orderService->handleUserBalance($user, $userService);
             }
+
+            $orderService->setInvite(user: $user);
 
             if (!$order->save()) {
                 throw new ApiException(__('Failed to create order'));
