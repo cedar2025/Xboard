@@ -155,6 +155,18 @@ class ClashMeta extends AbstractProtocol
         $proxy = [];
         $proxies = [];
 
+        // 去重处理: 自动为重名节点添加数字后缀以防止 Clash/Mihomo 解析报错 Duplicate Name
+        $nameCount = [];
+        foreach ($servers as &$item) {
+            if (isset($nameCount[$item['name']])) {
+                $nameCount[$item['name']]++;
+                $item['name'] .= ' ' . $nameCount[$item['name']];
+            } else {
+                $nameCount[$item['name']] = 1;
+            }
+        }
+        unset($item);
+
         foreach ($servers as $item) {
             if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 array_push($proxy, self::buildShadowsocks($item['password'], $item));
