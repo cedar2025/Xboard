@@ -211,9 +211,14 @@ class ManageController extends Controller
         if (!$server) {
             return $this->fail([400202, '服务器不存在']);
         }
-        $server->show = 0;
-        $server->code = null;
-        Server::create($server->toArray());
+
+        $copiedServer = $server->replicate();
+        $copiedServer->show = 0;
+        $copiedServer->code = null;
+        $copiedServer->u = 0;
+        $copiedServer->d = 0;
+        $copiedServer->save();
+
         return $this->success(true);
     }
 }
