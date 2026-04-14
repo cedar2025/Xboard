@@ -36,7 +36,7 @@ class ClashMeta extends AbstractProtocol
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
                 'httpupgrade' => '0.0.0',
-                'xhttp' => '0.0.0',
+                'xhttp' => '1.19.22',
             ],
             'strict' => true,
         ],
@@ -48,6 +48,7 @@ class ClashMeta extends AbstractProtocol
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
                 'httpupgrade' => '0.0.0',
+                'xhttp' => '1.19.22',
             ],
             'strict' => true,
         ],
@@ -57,6 +58,7 @@ class ClashMeta extends AbstractProtocol
                 'ws' => '0.0.0',
                 'grpc' => '0.0.0',
                 'httpupgrade' => '0.0.0',
+                'xhttp' => '1.19.22',
             ],
             'strict' => true,
         ],
@@ -458,6 +460,10 @@ class ClashMeta extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $array['xhttp-opts'] = self::buildXhttpOpts($protocol_settings, $server);
+                break;
             default:
                 break;
         }
@@ -555,15 +561,7 @@ class ClashMeta extends AbstractProtocol
                 break;
             case 'xhttp':
                 $array['network'] = 'xhttp';
-                $xhttpOpts = [];
-                if ($path = data_get($protocol_settings, 'network_settings.path'))
-                    $xhttpOpts['path'] = $path;
-                if ($host = data_get($protocol_settings, 'network_settings.host'))
-                    $xhttpOpts['host'] = $host;
-                if ($mode = data_get($protocol_settings, 'network_settings.mode'))
-                    $xhttpOpts['mode'] = $mode;
-                if (!empty($xhttpOpts))
-                    $array['xhttp-opts'] = $xhttpOpts;
+                $array['xhttp-opts'] = self::buildXhttpOpts($protocol_settings, $server);
                 break;
             default:
                 break;
@@ -641,6 +639,10 @@ class ClashMeta extends AbstractProtocol
                     $array['ws-opts']['path'] = $path;
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
+                break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $array['xhttp-opts'] = self::buildXhttpOpts($protocol_settings, $server);
                 break;
             default:
                 $array['network'] = 'tcp';
@@ -867,6 +869,7 @@ class ClashMeta extends AbstractProtocol
         $array['client-fingerprint'] = 'chrome';
     }
 
+<<<<<<< HEAD
     protected static function appendEch(&$array, $ech): void
     {
         if ($normalized = Helper::normalizeEchSettings($ech)) {
@@ -876,5 +879,21 @@ class ClashMeta extends AbstractProtocol
                 'query-server-name' => data_get($normalized, 'query_server_name'),
             ], fn($value) => $value !== null);
         }
+=======
+    protected static function buildXhttpOpts($protocol_settings, $server)
+    {
+        $extra = data_get($protocol_settings, 'network_settings.extra', []);
+        if (is_string($extra)) {
+            $extra = json_decode($extra, true) ?: [];
+        }
+        $opts = array_merge([
+            'path' => data_get($protocol_settings, 'network_settings.path', '/'),
+            'mode' => data_get($protocol_settings, 'network_settings.mode', 'auto'),
+            'host' => data_get($protocol_settings, 'network_settings.host', $server['host']),
+        ], (array) $extra);
+        return array_filter($opts, function($v) {
+            return $v !== null && $v !== '';
+        });
+>>>>>>> 179bcaa (feat:优化xhttp支持 mihomo 1.19.22)
     }
 }

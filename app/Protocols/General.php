@@ -139,11 +139,12 @@ class General extends AbstractProtocol
                 $config['type'] = 'xhttp';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
-                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $config['host'] = $host;
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $config['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $config['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $config['extra'] = is_string($extra) ? $extra : json_encode($extra);
                 break;
             default:
                 break;
@@ -223,11 +224,12 @@ class General extends AbstractProtocol
             case 'xhttp':
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
-                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $config['host'] = $host;
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $config['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $config['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $config['extra'] = is_string($extra) ? $extra : json_encode($extra);
                 break;
         }
 
@@ -295,11 +297,12 @@ class General extends AbstractProtocol
                 $array['type'] = 'xhttp';
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $array['path'] = $path;
-                $array['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $array['host'] = $host;
                 if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
                     $array['mode'] = $mode;
                 if ($extra = data_get($protocol_settings, 'network_settings.extra'))
-                    $array['extra'] = is_array($extra) && !empty($extra) ? json_encode($extra) : null;
+                    $array['extra'] = is_string($extra) ? $extra : json_encode($extra);
                 break;
             default:
                 break;
