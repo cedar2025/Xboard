@@ -10,7 +10,7 @@ use App\Support\AbstractProtocol;
 
 class ClashMeta extends AbstractProtocol
 {
-    public $flags = ['meta', 'verge', 'flclash', 'nekobox', 'clashmetaforandroid'];
+    public $flags = ['mihomo', 'meta', 'verge', 'flclash', 'nekobox', 'clashmetaforandroid'];
     const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.clashmeta.yaml';
     const CUSTOM_CLASH_TEMPLATE_FILE = 'resources/rules/custom.clash.yaml';
     const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.clash.yaml';
@@ -36,7 +36,6 @@ class ClashMeta extends AbstractProtocol
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
                 'httpupgrade' => '0.0.0',
-                'xhttp' => '1.19.22',
             ],
             'strict' => true,
         ],
@@ -142,6 +141,21 @@ class ClashMeta extends AbstractProtocol
             1 => '1.19.9',
         ],
     ];
+
+    /**
+     * Check if the server is compatible with the current client.
+     * Specific restriction for xhttp: only Mihomo 1.19.22+ is allowed.
+     *
+     * @param array $server
+     * @return bool
+     */
+    protected function isCompatible($server)
+    {
+        if (data_get($server, 'protocol_settings.network') === 'xhttp') {
+            return $this->clientName === 'mihomo' && version_compare($this->clientVersion, '1.19.22', '>=');
+        }
+        return parent::isCompatible($server);
+    }
 
     public function handle()
     {
