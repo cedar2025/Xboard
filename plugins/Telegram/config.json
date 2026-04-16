@@ -14,6 +14,12 @@
             "label": "开启工单通知",
             "description": "是否开启工单创建和回复的 Telegram 通知功能"
         },
+        "enable_register_notify": {
+            "type": "boolean",
+            "default": true,
+            "label": "开启注册通知",
+            "description": "是否开启注册成功的 Telegram 通知功能"
+        },
         "enable_payment_notify": {
             "type": "boolean",
             "default": true,

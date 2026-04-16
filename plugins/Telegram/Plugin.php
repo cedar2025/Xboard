@@ -36,7 +36,26 @@ class Plugin extends AbstractPlugin
     $this->filter('telegram.bot.commands', [$this, 'addBotCommands'], 10);
     $this->listen('ticket.create.after', [$this, 'sendTicketNotify'], 10);
     $this->listen('ticket.reply.user.after', [$this, 'sendTicketNotify'], 10);
+    $this->listen('user.register.after', [$this, 'sendRegisterNotify'], 10);
     $this->listen('payment.notify.success', [$this, 'sendPaymentNotify'], 10);
+  }
+
+  public function sendRegisterNotify(User $user): void
+  {
+    if (!$this->getConfig('enable_register_notify', true)) {
+      return;
+    }
+
+    $message = sprintf(
+      "🎉 *新用户注册*\n" .
+      "━━━━━━━━━━━━━━━━━━━━\n" .
+      "📧 邮箱: `%s`\n" .
+      "⏰ 时间: `%s`",
+      $user->email,
+      date('Y-m-d H:i:s')
+    );
+
+    $this->sendAdminNotification($message);
   }
 
   public function sendPaymentNotify(Order $order): void
@@ -45,24 +64,35 @@ class Plugin extends AbstractPlugin
       return;
     }
 
+    $order->loadMissing(['payment', 'user']);
+
     $payment = $order->payment;
     if (!$payment) {
       Log::warning('支付通知失败：订单关联的支付方式不存在', ['order_id' => $order->id]);
       return;
     }
 
+    $user = $order->user;
+    if (!$user) {
+      Log::warning('支付通知失败：订单关联的用户不存在', ['order_id' => $order->id]);
+      return;
+    }
+
     $message = sprintf(
-      "💰成功收款%s元\n" .
-      "———————————————\n" .
-      "支付接口：%s\n" .
-      "支付渠道：%s\n" .
-      "本站订单：`%s`",
+      "💰 *支付成功*\n" .
+      "━━━━━━━━━━━━━━━━━━━━\n" .
+      "📧 邮箱: `%s`\n" .
+      "💵 金额: `%s元`\n" .
+      "🧾 订单: `%s`\n" .
+      "🏦 支付方式: `%s`\n" .
+      "🔌 支付渠道: `%s`",
+      $user->email,
       $order->total_amount / 100,
-      $payment->payment,
+      $order->trade_no,
       $payment->name,
-      $order->trade_no
+      $payment->payment
     );
-    $this->telegramService->sendMessageWithAdmin($message, true);
+    $this->sendAdminNotification($message);
   }
 
   public function sendTicketNotify(Ticket $ticket): void
@@ -432,6 +462,11 @@ class Plugin extends AbstractPlugin
   private function transferToGBString(float $transfer_enable, int $decimals = 2): string
   {
     return number_format(Helper::transferToGB($transfer_enable), $decimals, '.', '');
+  }
+
+  private function sendAdminNotification(string $message): void
+  {
+    $this->telegramService->sendMessageWithAdmin($message, true);
   }
 
 }

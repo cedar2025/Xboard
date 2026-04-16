@@ -7,7 +7,8 @@ services:
     environment:
       - docker=true
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     ports:
       - "7001:7001"
     command: php artisan octane:start --port=7001 --host=0.0.0.0
@@ -20,10 +21,16 @@ services:
     restart: always
     command: php artisan horizon
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
   redis:
     image: redis:7-alpine
     command: redis-server --port 6379
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     volumes:
       - ./.docker/.data/redis:/data
