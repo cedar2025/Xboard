@@ -47,6 +47,7 @@ class Plugin extends Model
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'config' => 'array',
     ];
 
     public function scopeByType(Builder $query, string $type): Builder

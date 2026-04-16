@@ -162,7 +162,7 @@ abstract class AbstractProtocol
                         return false;
                     }
                     $requiredVersion = $allowedValues[$actualValue];
-                    if ($requiredVersion !== '0.0.0' && version_compare($this->clientVersion, $requiredVersion, '<')) {
+                    if ($requiredVersion !== '0.0.0' && $this->clientVersion !== null && version_compare($this->clientVersion, $requiredVersion, '<')) {
                         return false;
                     }
                     continue;
@@ -182,7 +182,7 @@ abstract class AbstractProtocol
                 continue;
             }
             $requiredVersion = $allowedValues[$actualValue];
-            if ($requiredVersion !== '0.0.0' && version_compare($this->clientVersion, $requiredVersion, '<')) {
+            if ($requiredVersion !== '0.0.0' && $this->clientVersion !== null && version_compare($this->clientVersion, $requiredVersion, '<')) {
                 return false;
             }
         }
@@ -206,7 +206,7 @@ abstract class AbstractProtocol
         }
 
         // 检查版本号
-        if (empty($this->clientVersion) || version_compare($this->clientVersion, $minVersion, '<')) {
+        if (empty($this->clientVersion) || version_compare($this->clientVersion ?? '0.0.0', $minVersion, '<')) {
             return false;
         }
 
