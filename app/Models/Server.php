@@ -429,7 +429,7 @@ class Server extends Model
 
     public function groups()
     {
-        return ServerGroup::whereIn('id', $this->group_ids)->get();
+        return ServerGroup::whereIn('id', $this->group_ids ?? [])->get();
     }
 
     public function routes()

@@ -72,6 +72,7 @@ class MachineController extends Controller
         return $this->success([
             'id' => $machine->id,
             'token' => $machine->token,
+            'install_command' => $this->buildInstallCommand($request, $machine),
         ]);
     }
 
@@ -191,12 +192,12 @@ class MachineController extends Controller
 
     private function buildInstallCommand(Request $request, ServerMachine $machine): string
     {
-        $panelUrl = rtrim((string) (config('app.url') ?: $request->getSchemeAndHttpHost()), '/');
+        $panelUrl = rtrim((string) (admin_setting('app_url') ?: $request->getSchemeAndHttpHost()), '/');
         $installerUrl = 'https://raw.githubusercontent.com/cedar2025/xboard-node/main/install.sh';
 
         return sprintf(
-            'bash <(curl -fsSL %s) --panel %s --token %s --machine-id %d --yes',
-            escapeshellarg($installerUrl),
+            'curl -fsSL %s | sudo bash -s -- --mode machine --panel %s --token %s --machine-id %d',
+            $installerUrl,
             escapeshellarg($panelUrl),
             escapeshellarg($machine->token),
             $machine->id
