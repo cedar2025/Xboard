@@ -5,6 +5,7 @@ namespace App\Protocols;
 use App\Utils\Helper;
 use App\Support\AbstractProtocol;
 use App\Models\Server;
+use Illuminate\Support\Arr;
 
 class Shadowrocket extends AbstractProtocol
 {
@@ -92,106 +93,110 @@ class Shadowrocket extends AbstractProtocol
     public static function buildVmess($uuid, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $userinfo = base64_encode('auto:' . $uuid . '@' . Helper::wrapIPv6($server['host']) . ':' . $server['port']);
         $config = [
-            'tfo' => 1,
-            'remark' => $server['name'],
-            'alterId' => 0
+            "v" => "2",
+            "ps" => $server['name'],
+            "add" => $server['host'],
+            "port" => (string) $server['port'],
+            "id" => $uuid,
+            "aid" => '0',
+            "net" => data_get($server, 'protocol_settings.network'),
+            "type" => "none",
+            "host" => "",
+            "path" => "",
+            "tls" => data_get($protocol_settings, 'tls') ? "tls" : "",
+            "tfo" => 1, // TCP Fast Open
         ];
-        if (data_get($protocol_settings, 'tls')) {
-            $config['tls'] = 1;
-            if (data_get($protocol_settings, 'tls_settings')) {
-                if (!!data_get($protocol_settings, 'tls_settings.allow_insecure'))
-                    $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
-                if (!!data_get($protocol_settings, 'tls_settings.server_name'))
-                    $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
-            }
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+            $config['sni'] = $serverName;
+        }
+        if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
+            $config['fp'] = $fp;
         }
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
-                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                    $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'http');
+                    $config['path'] = Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['host'] =
+                        data_get($protocol_settings, 'network_settings.header.request.headers.Host')
+                        ? Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['/']), )
+                        : null;
                 }
                 break;
             case 'ws':
-                $config['obfs'] = "websocket";
-                $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
-                    $config['obfsParam'] = $host;
-                }
+                $config['type'] = 'ws';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $config['host'] = $host;
                 break;
             case 'grpc':
-                $config['obfs'] = "grpc";
-                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
-                $config['host'] = data_get($protocol_settings, 'tls_settings.server_name') ?? $server['host'];
+                $config['type'] = 'grpc';
+                if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config['path'] = $path;
+                break;
+            case 'h2':
+                $config['net'] = 'h2';
+                $config['type'] = 'h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config['host'] = is_array($host) ? implode(',', $host) : $host;
                 break;
             case 'httpupgrade':
-                $config['obfs'] = "httpupgrade";
-                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                $config['net'] = 'httpupgrade';
+                $config['type'] = 'httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
-                }
-                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
-                    $config['obfsParam'] = $host;
-                }
-            break;
-                case 'h2':
-                $config['obfs'] = "h2";
-                if ($path = data_get($protocol_settings, 'network_settings.path')) {
-                    $config['path'] = $path;
-                }
-                if ($host = data_get($protocol_settings, 'network_settings.host')) {
-                    $config['obfsParam'] = $host[0] ?? $server['host'];
-                    $config['peer'] = $host [0] ?? $server['host'];
-                }
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                break;
+            default:
                 break;
         }
-        $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
-        $uri = "vmess://{$userinfo}?{$query}";
-        $uri .= "\r\n";
-        return $uri;
+        return "vmess://" . base64_encode(json_encode($config)) . "\r\n";
     }
 
     public static function buildVless($uuid, $server)
     {
         $protocol_settings = $server['protocol_settings'];
-        $userinfo = base64_encode('auto:' . $uuid . '@' . Helper::wrapIPv6($server['host']) . ':' . $server['port']);
-        $config = [
-            'tfo' => 1,
-            'remark' => $server['name'],
-            'alterId' => 0
-        ];
+        $host = $server['host']; //节点地址
+        $port = $server['port']; //节点端口
+        $name = $server['name']; //节点名称
 
-        // 判断是否开启xtls
-        if (data_get($protocol_settings, 'flow')) {
-            $xtlsMap = [
-                'none' => 0,
-                'xtls-rprx-direct' => 1,
-                'xtls-rprx-vision' => 2
-            ];
-            if (array_key_exists(data_get($protocol_settings, 'flow'), $xtlsMap)) {
-                $config['tls'] = 1;
-                $config['xtls'] = $xtlsMap[data_get($protocol_settings, 'flow')];
-            }
-        }
-        switch (data_get($protocol_settings, 'tls')) {
+        $config = [
+            'mode' => 'multi', //grpc传输模式
+            'security' => '', //传输层安全 tls/reality
+            'encryption' => match (data_get($protocol_settings, 'encryption.enabled')) {
+                true => data_get($protocol_settings, 'encryption.encryption', 'none'),
+                default => 'none'
+            },
+            'type' => data_get($server, 'protocol_settings.network'), //传输协议
+            'flow' => data_get($protocol_settings, 'flow'),
+            'tfo' => 1,  // TCP Fast Open
+        ];
+        // 处理TLS
+        switch (data_get($server, 'protocol_settings.tls')) {
             case 1:
-                $config['tls'] = 1;
-                $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
-                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
-                    $config['peer'] = $serverName;
-                }
+                $config['security'] = "tls";
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
                     $config['fp'] = $fp;
                 }
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $config['sni'] = $serverName;
+                }
+                if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
+                    $config['allowInsecure'] = '1';
+                }
                 break;
-            case 2:
-                $config['tls'] = 1;
-                $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
+            case 2: //reality
+                $config['security'] = "reality";
                 $config['pbk'] = data_get($protocol_settings, 'reality_settings.public_key');
                 $config['sid'] = data_get($protocol_settings, 'reality_settings.short_id');
+                $config['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $config['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $config['spx'] = "/";
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
                     $config['fp'] = $fp;
                 }
@@ -199,72 +204,48 @@ class Shadowrocket extends AbstractProtocol
             default:
                 break;
         }
-        switch (data_get($protocol_settings, 'network')) {
-            case 'tcp':
-                if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
-                    $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
-                }
-                break;
+        // 处理传输协议
+        switch (data_get($server, 'protocol_settings.network')) {
             case 'ws':
-                $config['obfs'] = "websocket";
-                if (data_get($protocol_settings, 'network_settings.path')) {
-                    $config['path'] = data_get($protocol_settings, 'network_settings.path');
-                }
-
-                if ($host = data_get($protocol_settings, 'network_settings.headers.Host')) {
-                    $config['obfsParam'] = $host;
-                }
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config['path'] = $path;
+                if ($wsHost = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $config['host'] = $wsHost;
                 break;
             case 'grpc':
-                $config['obfs'] = "grpc";
-                $config['path'] = data_get($protocol_settings, 'network_settings.serviceName');
-                $config['host'] = data_get($protocol_settings, 'tls_settings.server_name') ?? $server['host'];
-                break;
-            case 'kcp':
-                $config['obfs'] = "kcp";
-                if ($seed = data_get($protocol_settings, 'network_settings.seed')) {
-                    $config['path'] = $seed;
-                }
-                $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                if ($path = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $config['serviceName'] = $path;
                 break;
             case 'h2':
-                $config['obfs'] = "h2";
-                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                $config['type'] = 'http';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
-                }
-                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
-                    $config['obfsParam'] = $host;
-                }
+                if ($h2Host = data_get($protocol_settings, 'network_settings.host'))
+                    $config['host'] = is_array($h2Host) ? implode(',', $h2Host) : $h2Host;
+                break;
+            case 'kcp':
+                if ($path = data_get($protocol_settings, 'network_settings.seed'))
+                    $config['path'] = $path;
+                $config['type'] = data_get($protocol_settings, 'network_settings.header.type', 'none');
                 break;
             case 'httpupgrade':
-                $config['obfs'] = "httpupgrade";
-                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $config['path'] = $path;
-                }
-                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
-                    $config['obfsParam'] = $host;
-                }
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
                 break;
             case 'xhttp':
-                $config['obfs'] = "xhttp";
-                if ($path = data_get($protocol_settings, 'network_settings.path')) {
-                    $config['path'] = $path;
-                }
-                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
-                    $config['obfsParam'] = $host;
-                }
-                if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto')) {
-                    $config['mode'] = $mode;
-                }
+                $config['path'] = data_get($protocol_settings, 'network_settings.path');
+                $config['host'] = data_get($protocol_settings, 'network_settings.host', $server['host']);
+                $config['mode'] = data_get($protocol_settings, 'network_settings.mode', 'auto');
+                $config['extra'] = json_encode(data_get($protocol_settings, 'network_settings.extra'));
                 break;
         }
 
-        $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
-        $uri = "vless" . "://{$userinfo}?{$query}";
-        $uri .= "\r\n";
-        return $uri;
+        $user = $uuid . '@' . Helper::wrapIPv6($host) . ':' . $port;
+        $query = http_build_query($config);
+        $fragment = urlencode($name);
+        $link = sprintf("vless://%s?%s#%s\r\n", $user, $query, $fragment);
+        return $link;
     }
 
     public static function buildTrojan($password, $server)
