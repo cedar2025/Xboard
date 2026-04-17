@@ -23,6 +23,10 @@ class Shadowrocket extends AbstractProtocol
     protected $protocolRequirements = [
         'shadowrocket.hysteria.protocol_settings.version' => [2 => '1993'],
         'shadowrocket.anytls.base_version' => '2592',
+        'shadowrocket.trojan.protocol_settings.network' => [
+            'whitelist' => ['tcp', 'ws', 'grpc', 'h2', 'httpupgrade'],
+            'strict' => true,
+        ],
     ];
 
     public function handle()
@@ -145,6 +149,18 @@ class Shadowrocket extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host')) {
                     $config['obfsParam'] = $host[0] ?? $server['host'];
                     $config['peer'] = $host [0] ?? $server['host'];
+                }
+                break;
+            case 'xhttp':
+                $config['obfs'] = "xhttp";
+                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                    $config['path'] = $path;
+                }
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+                    $config['obfsParam'] = $host;
+                }
+                if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto')) {
+                    $config['mode'] = $mode;
                 }
                 break;
         }
@@ -282,8 +298,8 @@ class Shadowrocket extends AbstractProtocol
                 $params['sni'] = data_get($protocol_settings, 'reality_settings.server_name');
                 break;
             default: // Standard TLS
-                $params['allowInsecure'] = data_get($protocol_settings, 'allow_insecure');
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                $params['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $params['peer'] = $serverName;
                 }
                 break;
@@ -298,6 +314,29 @@ class Shadowrocket extends AbstractProtocol
                 $host = data_get($protocol_settings, 'network_settings.headers.Host');
                 $path = data_get($protocol_settings, 'network_settings.path');
                 $params['plugin'] = "obfs-local;obfs=websocket;obfs-host={$host};obfs-uri={$path}";
+                break;
+            case 'h2':
+                $params['obfs'] = 'h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $params['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $params['obfsParam'] = is_array($host) ? $host[0] : $host;
+                break;
+            case 'httpupgrade':
+                $params['obfs'] = 'httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $params['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $params['obfsParam'] = $host;
+                break;
+            case 'xhttp':
+                $params['obfs'] = 'xhttp';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $params['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $params['obfsParam'] = $host;
+                if ($mode = data_get($protocol_settings, 'network_settings.mode', 'auto'))
+                    $params['mode'] = $mode;
                 break;
         }
         $query = http_build_query($params);

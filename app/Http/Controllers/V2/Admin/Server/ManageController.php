@@ -225,6 +225,7 @@ class ManageController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'integer',
             'show' => 'nullable|integer|in:0,1',
+            'enabled' => 'nullable|boolean',
         ]);
 
         $ids = $params['ids'];
@@ -235,6 +236,9 @@ class ManageController extends Controller
         $update = [];
         if (array_key_exists('show', $params) && $params['show'] !== null) {
             $update['show'] = (int) $params['show'];
+        }
+        if (array_key_exists('enabled', $params) && $params['enabled'] !== null) {
+            $update['enabled'] = (bool) $params['enabled'];
         }
 
         if (empty($update)) {

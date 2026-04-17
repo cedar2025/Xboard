@@ -17,6 +17,8 @@ class ServerMachineLoadHistory extends Model
         'mem_used' => 'integer',
         'disk_total' => 'integer',
         'disk_used' => 'integer',
+        'net_in_speed' => 'float',
+        'net_out_speed' => 'float',
         'recorded_at' => 'integer',
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
