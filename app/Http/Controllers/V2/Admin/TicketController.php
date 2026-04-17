@@ -56,6 +56,16 @@ class TicketController extends Controller
             return $this->fail([400202, '工单不存在']);
         }
         $result = $ticket->toArray();
+        // Backwards-compat: admin frontend bundle still reads `is_me` on each
+        // message, but the model now exposes `is_from_user` / `is_from_admin`
+        // via $appends. Without this mapping every message renders left-aligned
+        // (received) in the admin panel ticket view.
+        if (isset($result['messages']) && is_array($result['messages'])) {
+            foreach ($result['messages'] as &$message) {
+                $message['is_me'] = !empty($message['is_from_admin']);
+            }
+            unset($message);
+        }
         $result['user'] = UserController::transformUserData($ticket->user);
 
         return $this->success($result);
