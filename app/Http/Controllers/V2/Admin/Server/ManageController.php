@@ -246,7 +246,13 @@ class ManageController extends Controller
         }
 
         try {
-            Server::whereIn('id', $ids)->update($update);
+            $servers = Server::whereIn('id', $ids)->get();
+            DB::transaction(function () use ($servers, $update) {
+                /** @var Server $server */
+                foreach ($servers as $server) {
+                    $server->update($update);
+                }
+            });
             return $this->success(true);
         } catch (\Exception $e) {
             Log::error($e);
