@@ -16,7 +16,7 @@ class ServerRoute
             'prefix' => 'server',
             'middleware' => 'server'
         ], function ($route) {
-            $route->post('handshake', [ServerController::class, 'handshake']);
+            $route->match(['GET', 'POST'], 'handshake', [ServerController::class, 'handshake']);
             $route->post('report', [ServerController::class, 'report']);
             $route->get('config', [UniProxyController::class, 'config']);
             $route->get('user', [UniProxyController::class, 'user']);
