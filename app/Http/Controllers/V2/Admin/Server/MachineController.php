@@ -168,12 +168,19 @@ class MachineController extends Controller
         $params = $request->validate([
             'machine_id' => 'required|integer|exists:v2_server_machine,id',
             'limit' => 'nullable|integer|min:10|max:1440',
+            'range_hours' => 'nullable|integer|min:1|max:24',
         ]);
+
+        $query = ServerMachineLoadHistory::query()
+            ->where('machine_id', $params['machine_id']);
+
+        if (!empty($params['range_hours'])) {
+            $query->where('recorded_at', '>=', now()->subHours((int) $params['range_hours'])->timestamp);
+        }
 
         $limit = (int) ($params['limit'] ?? 60);
 
-        $history = ServerMachineLoadHistory::query()
-            ->where('machine_id', $params['machine_id'])
+        $history = $query
             ->orderByDesc('recorded_at')
             ->limit($limit)
             ->get([
@@ -182,6 +189,8 @@ class MachineController extends Controller
                 'mem_used',
                 'disk_total',
                 'disk_used',
+                'net_in_speed',
+                'net_out_speed',
                 'recorded_at',
             ])
             ->reverse()

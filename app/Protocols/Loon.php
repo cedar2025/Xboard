@@ -225,6 +225,20 @@ class Loon extends AbstractProtocol
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config[] = "grpc-service-name={$serviceName}";
                 break;
+            case 'h2':
+                $config[] = 'transport=h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config[] = "host=" . (is_array($host) ? $host[0] : $host);
+                break;
+            case 'httpupgrade':
+                $config[] = 'transport=httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $config[] = "host={$host}";
+                break;
         }
 
         $config = array_filter($config);
@@ -293,6 +307,24 @@ class Loon extends AbstractProtocol
 				$config[] = "transport=grpc";
 				if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName')) {
 					$config[] = "grpc-service-name={$serviceName}";
+				}
+				break;
+			case 'h2':
+				$config[] = "transport=h2";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host')) {
+					$config[] = "host=" . (is_array($host) ? $host[0] : $host);
+				}
+				break;
+			case 'httpupgrade':
+				$config[] = "transport=httpupgrade";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+					$config[] = "host={$host}";
 				}
 				break;
 			default:

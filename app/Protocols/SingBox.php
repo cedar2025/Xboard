@@ -40,16 +40,25 @@ class SingBox extends AbstractProtocol
                 ],
                 'protocol_settings.tls_settings.ech.enabled' => [
                     1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
                 ]
             ],
             'vmess' => [
                 'protocol_settings.tls_settings.ech.enabled' => [
                     1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
                 ]
             ],
             'trojan' => [
                 'protocol_settings.tls_settings.ech.enabled' => [
                     1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
                 ]
             ],
             'hysteria' => [

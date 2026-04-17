@@ -50,32 +50,46 @@ class MachineController extends Controller
             'swap.used' => 'nullable|integer|min:0',
             'disk.total' => 'nullable|integer|min:0',
             'disk.used' => 'nullable|integer|min:0',
+            'net.in_speed' => 'nullable|numeric|min:0',
+            'net.out_speed' => 'nullable|numeric|min:0',
         ]);
 
         $machine = $this->authenticateMachine($request);
         $recordedAt = now()->timestamp;
 
-        $machine->forceFill([
-            'load_status' => [
-                'cpu' => (float) $request->input('cpu'),
-                'mem' => [
-                    'total' => (int) $request->input('mem.total'),
-                    'used' => (int) $request->input('mem.used'),
-                ],
-                'swap' => [
-                    'total' => (int) $request->input('swap.total', 0),
-                    'used' => (int) $request->input('swap.used', 0),
-                ],
-                'disk' => [
-                    'total' => (int) $request->input('disk.total', 0),
-                    'used' => (int) $request->input('disk.used', 0),
-                ],
-                'updated_at' => $recordedAt,
+        $loadStatus = [
+            'cpu' => (float) $request->input('cpu'),
+            'mem' => [
+                'total' => (int) $request->input('mem.total'),
+                'used' => (int) $request->input('mem.used'),
             ],
+            'swap' => [
+                'total' => (int) $request->input('swap.total', 0),
+                'used' => (int) $request->input('swap.used', 0),
+            ],
+            'disk' => [
+                'total' => (int) $request->input('disk.total', 0),
+                'used' => (int) $request->input('disk.used', 0),
+            ],
+            'updated_at' => $recordedAt,
+        ];
+
+        $netInSpeed = $request->input('net.in_speed');
+        $netOutSpeed = $request->input('net.out_speed');
+
+        if ($netInSpeed !== null && $netOutSpeed !== null) {
+            $loadStatus['net'] = [
+                'in_speed' => (float) $netInSpeed,
+                'out_speed' => (float) $netOutSpeed,
+            ];
+        }
+
+        $machine->forceFill([
+            'load_status' => $loadStatus,
             'last_seen_at' => $recordedAt,
         ])->save();
 
-        ServerMachineLoadHistory::create([
+        $historyData = [
             'machine_id' => $machine->id,
             'cpu' => (float) $request->input('cpu'),
             'mem_total' => (int) $request->input('mem.total'),
@@ -83,7 +97,14 @@ class MachineController extends Controller
             'disk_total' => (int) $request->input('disk.total', 0),
             'disk_used' => (int) $request->input('disk.used', 0),
             'recorded_at' => $recordedAt,
-        ]);
+        ];
+
+        if ($netInSpeed !== null && $netOutSpeed !== null) {
+            $historyData['net_in_speed'] = (float) $netInSpeed;
+            $historyData['net_out_speed'] = (float) $netOutSpeed;
+        }
+
+        ServerMachineLoadHistory::create($historyData);
 
         // Time-based cleanup: keep 24h of data, runs on ~5% of requests
         if (random_int(1, 20) === 1) {
