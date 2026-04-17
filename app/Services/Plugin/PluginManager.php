@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -220,6 +219,20 @@ class PluginManager
     }
 
     /**
+     * 获取 Migrator 实例并确保迁移仓库存在
+     */
+    protected function getMigrator(): \Illuminate\Database\Migrations\Migrator
+    {
+        $migrator = app('migrator');
+
+        if (!$migrator->repositoryExists()) {
+            $migrator->getRepository()->createRepository();
+        }
+
+        return $migrator;
+    }
+
+    /**
      * 运行插件数据库迁移
      */
     protected function runMigrations(string $pluginCode): void
@@ -227,10 +240,8 @@ class PluginManager
         $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
 
         if (File::exists($migrationsPath)) {
-            Artisan::call('migrate', [
-                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
-                '--force' => true
-            ]);
+            $migrator = $this->getMigrator();
+            $migrator->run([$migrationsPath]);
         }
     }
 
@@ -242,10 +253,8 @@ class PluginManager
         $migrationsPath = $this->getPluginPath($pluginCode) . '/database/migrations';
 
         if (File::exists($migrationsPath)) {
-            Artisan::call('migrate:rollback', [
-                '--path' => "plugins/" . Str::studly($pluginCode) . "/database/migrations",
-                '--force' => true
-            ]);
+            $migrator = $this->getMigrator();
+            $migrator->rollback([$migrationsPath]);
         }
     }
 
