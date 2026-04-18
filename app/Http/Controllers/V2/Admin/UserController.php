@@ -83,7 +83,7 @@ class UserController extends Controller
                     [$operator, $filterValue] = explode(':', $value, 2);
                     $this->applyQueryCondition($q, $relationField, $operator, $filterValue);
                 } else {
-                    $q->where($relationField, 'like', "%{$value}%");
+                    $q->whereLike($relationField, "%{$value}%", false);
                 }
             });
             return;
@@ -97,7 +97,7 @@ class UserController extends Controller
 
         // 处理基于运算符的过滤
         if (!is_string($value) || !str_contains($value, ':')) {
-            $query->where($field, 'like', "%{$value}%");
+            $query->whereLike($field, "%{$value}%", false);
             return;
         }
 

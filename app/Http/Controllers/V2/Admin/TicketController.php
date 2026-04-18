@@ -20,7 +20,7 @@ class TicketController extends Controller
                     if (is_array($value)) {
                         $query->whereIn($key, $value);
                     } else {
-                        $query->where($key, 'like', "%{$value}%");
+                        $query->whereLike($key, "%{$value}%", false);
                     }
                 });
             });

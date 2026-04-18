@@ -56,11 +56,16 @@ trait QueryOperators
     protected function applyQueryCondition($query, array|Expression|string $field, string $operator, mixed $value): void
     {
         $queryOperator = $this->getQueryOperator($operator);
-        
+
         if ($queryOperator === 'null') {
             $query->whereNull($field);
         } elseif ($queryOperator === 'notnull') {
             $query->whereNotNull($field);
+        } elseif ($queryOperator === 'like') {
+            // Cross-DB case-insensitive LIKE: PG → ILIKE, MySQL → LIKE (ci collation)
+            $query->whereLike($field, $this->formatQueryValue($operator, $value), false);
+        } elseif ($queryOperator === 'not like') {
+            $query->whereNotLike($field, $this->formatQueryValue($operator, $value), false);
         } else {
             $query->where($field, $queryOperator, $this->formatQueryValue($operator, $value));
         }
