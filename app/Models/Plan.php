@@ -99,6 +99,11 @@ class Plan extends Model
         'prices' => 'array',
         'tags' => 'array',
         'reset_traffic_method' => 'integer',
+        'sort' => 'integer',
+        'device_limit' => 'integer',
+        'speed_limit' => 'integer',
+        'capacity_limit' => 'integer',
+        'transfer_enable' => 'integer',
     ];
 
     /**

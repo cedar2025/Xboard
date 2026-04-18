@@ -13,6 +13,9 @@ class Payment extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'config' => 'array',
-        'enable' => 'boolean'
+        'enable' => 'boolean',
+        'sort' => 'integer',
+        'handling_fee_fixed' => 'float',
+        'handling_fee_percent' => 'float'
     ];
 }
