@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SendEmailJob;
 use App\Models\MailLog;
+use App\Models\MailTemplate;
 use App\Models\User;
 use App\Utils\CacheKey;
 use Illuminate\Support\Facades\Cache;
@@ -249,6 +250,7 @@ class MailService
         }
         $email = $params['email'];
         $subject = $params['subject'];
+        $templateName = $params['template_name'];
 
         $templateValue = $params['template_value'] ?? [];
         $vars = is_array($templateValue) ? ($templateValue['vars'] ?? []) : [];
@@ -262,21 +264,44 @@ class MailService
             }
         }
 
-        // Mass mail default: treat admin content as plain text and escape.
         if ($contentMode === 'text' && is_array($templateValue) && isset($templateValue['content']) && is_string($templateValue['content'])) {
             $templateValue['content'] = e($templateValue['content']);
         }
 
         $params['template_value'] = $templateValue;
-        $params['template_name'] = 'mail.' . admin_setting('email_template', 'default') . '.' . $params['template_name'];
+
+        // Check for DB template override (cached to avoid per-email queries in bulk sends).
+        // Cache 'none' sentinel for templates that don't exist in DB.
+        $cacheKey = "mail_template:{$templateName}";
+        $cached = Cache::get($cacheKey);
+        if ($cached === null) {
+            $dbTemplate = MailTemplate::where('name', $templateName)->first();
+            Cache::put($cacheKey, $dbTemplate ?: 'none', 3600);
+        } else {
+            $dbTemplate = ($cached === 'none') ? null : $cached;
+        }
+
         try {
-            Mail::send(
-                $params['template_name'],
-                $params['template_value'],
-                function ($message) use ($email, $subject) {
+            if ($dbTemplate) {
+                $renderVars = self::buildSafeVars($templateValue);
+                $renderedSubject = self::renderPlaceholders($dbTemplate->subject, $renderVars);
+                $renderedContent = self::renderPlaceholders($dbTemplate->content, $renderVars);
+                $subject = $renderedSubject ?: $subject;
+
+                Mail::html($renderedContent, function ($message) use ($email, $subject) {
                     $message->to($email)->subject($subject);
-                }
-            );
+                });
+                $params['template_name'] = 'db:' . $templateName;
+            } else {
+                $params['template_name'] = 'mail.default.' . $templateName;
+                Mail::send(
+                    $params['template_name'],
+                    $params['template_value'],
+                    function ($message) use ($email, $subject) {
+                        $message->to($email)->subject($subject);
+                    }
+                );
+            }
             $error = null;
         } catch (\Exception $e) {
             Log::error($e);
@@ -291,5 +316,27 @@ class MailService
         ];
         MailLog::create($log);
         return $log;
+    }
+
+    /**
+     * Build HTML-escaped vars for DB template rendering.
+     */
+    private static function buildSafeVars(array $templateValue): array
+    {
+        $safe = [];
+        foreach ($templateValue as $key => $value) {
+            if (is_scalar($value)) {
+                $safe[$key] = e((string) $value);
+            }
+        }
+        // 'content' may be pre-escaped text or admin-authored HTML.
+        // For text mode, apply nl2br so line breaks survive in DB templates
+        // (Blade templates handle this with {!! nl2br($content) !!}).
+        if (isset($templateValue['content'])) {
+            $content = (string) $templateValue['content'];
+            $contentMode = $templateValue['content_mode'] ?? null;
+            $safe['content'] = ($contentMode === 'text') ? nl2br($content) : $content;
+        }
+        return $safe;
     }
 }

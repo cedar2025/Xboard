@@ -147,7 +147,6 @@ class ConfigController extends Controller
                 'server_ws_url' => admin_setting('server_ws_url', ''),
             ],
             'email' => [
-                'email_template' => admin_setting('email_template', 'default'),
                 'email_host' => admin_setting('email_host'),
                 'email_port' => admin_setting('email_port'),
                 'email_username' => admin_setting('email_username'),
