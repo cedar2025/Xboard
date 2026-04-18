@@ -16,9 +16,10 @@ class CouponService
 
     public function __construct($code)
     {
-        $this->coupon = Coupon::where('code', $code)
-            ->lockForUpdate()
-            ->first();
+        // lockForUpdate here is a no-op: it runs outside any transaction
+        // (constructor is called at controller-layer), so the row lock is
+        // released immediately. Lock at use() / check() callsites instead.
+        $this->coupon = Coupon::where('code', $code)->first();
     }
 
     public function use(Order $order): bool
