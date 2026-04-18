@@ -151,6 +151,10 @@ abstract class AbstractProtocol
             if (is_array($filterRule) && isset($filterRule['whitelist'])) {
                 $allowedValues = $filterRule['whitelist'];
                 $strict = $filterRule['strict'] ?? false;
+                // Normalize flat array ['tcp', 'ws'] to ['tcp' => '0.0.0', 'ws' => '0.0.0']
+                if (!empty($allowedValues) && is_int(array_key_first($allowedValues))) {
+                    $allowedValues = array_fill_keys($allowedValues, '0.0.0');
+                }
                 if ($strict) {
                     if ($actualValue === null) {
                         return false;

@@ -141,7 +141,7 @@ class Shadowrocket extends AbstractProtocol
                     $config['obfsParam'] = $host;
                 }
             break;
-                case 'h2':
+            case 'h2':
                 $config['obfs'] = "h2";
                 if ($path = data_get($protocol_settings, 'network_settings.path')) {
                     $config['path'] = $path;
@@ -177,7 +177,6 @@ class Shadowrocket extends AbstractProtocol
         $config = [
             'tfo' => 1,
             'remark' => $server['name'],
-            'alterId' => 0
         ];
 
         // 判断是否开启xtls
