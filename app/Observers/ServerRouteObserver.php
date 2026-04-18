@@ -20,7 +20,7 @@ class ServerRouteObserver
 
     private function notifyAffectedNodes(int $routeId): void
     {
-        $servers = Server::where('show', 1)->get()->filter(
+        $servers = Server::where('show', true)->get()->filter(
             fn ($s) => in_array($routeId, $s->route_ids ?? [])
         );
 

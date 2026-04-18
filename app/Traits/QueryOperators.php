@@ -7,6 +7,21 @@ use Illuminate\Contracts\Database\Query\Expression;
 trait QueryOperators
 {
     /**
+     * Validate that a user-controlled field name is safe for use in query
+     * builder methods (where/orderBy) that take identifiers verbatim. Blocks
+     * SQL injection via column-name payloads like `email, (SELECT …)`.
+     *
+     * Accepts: plain identifier (`email`) or one-level dot notation (`user.email`).
+     *
+     * @param string $field
+     * @return bool
+     */
+    protected function isValidFieldName(string $field): bool
+    {
+        return (bool) preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $field);
+    }
+
+    /**
      * 获取查询运算符映射
      *
      * @param string $operator
@@ -56,11 +71,16 @@ trait QueryOperators
     protected function applyQueryCondition($query, array|Expression|string $field, string $operator, mixed $value): void
     {
         $queryOperator = $this->getQueryOperator($operator);
-        
+
         if ($queryOperator === 'null') {
             $query->whereNull($field);
         } elseif ($queryOperator === 'notnull') {
             $query->whereNotNull($field);
+        } elseif ($queryOperator === 'like') {
+            // Cross-DB case-insensitive LIKE: PG → ILIKE, MySQL → LIKE (ci collation)
+            $query->whereLike($field, $this->formatQueryValue($operator, $value), false);
+        } elseif ($queryOperator === 'not like') {
+            $query->whereNotLike($field, $this->formatQueryValue($operator, $value), false);
         } else {
             $query->where($field, $queryOperator, $this->formatQueryValue($operator, $value));
         }

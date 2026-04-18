@@ -329,7 +329,7 @@ class PluginManager
             ->first();
 
         if ($dbPlugin && !empty($dbPlugin->config)) {
-            $values = json_decode($dbPlugin->config, true) ?: [];
+            $values = is_array($dbPlugin->config) ? $dbPlugin->config : (json_decode($dbPlugin->config, true) ?: []);
             $values = $this->castConfigValuesByType($pluginCode, $values);
             $plugin->setConfig($values);
         }
@@ -467,7 +467,7 @@ class PluginManager
         $plugin = $this->loadPlugin($pluginCode);
             if ($plugin) {
                 if (!empty($dbPlugin->config)) {
-                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = is_array($dbPlugin->config) ? $dbPlugin->config : (json_decode($dbPlugin->config, true) ?: []);
                     $values = $this->castConfigValuesByType($pluginCode, $values);
                     $plugin->setConfig($values);
                 }
@@ -581,7 +581,7 @@ class PluginManager
                 }
 
                 if (!empty($dbPlugin->config)) {
-                    $values = json_decode($dbPlugin->config, true) ?: [];
+                    $values = is_array($dbPlugin->config) ? $dbPlugin->config : (json_decode($dbPlugin->config, true) ?: []);
                     $values = $this->castConfigValuesByType($pluginCode, $values);
                     $pluginInstance->setConfig($values);
                 }
@@ -619,7 +619,7 @@ class PluginManager
                         return;
                     }
                     if (!empty($dbPlugin->config)) {
-                        $values = json_decode($dbPlugin->config, true) ?: [];
+                        $values = is_array($dbPlugin->config) ? $dbPlugin->config : (json_decode($dbPlugin->config, true) ?: []);
                         $values = $this->castConfigValuesByType($dbPlugin->code, $values);
                         $pluginInstance->setConfig($values);
                     }

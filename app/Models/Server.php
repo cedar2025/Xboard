@@ -133,6 +133,9 @@ class Server extends Model
         'u' => 'integer',
         'd' => 'integer',
         'machine_id' => 'integer',
+        'sort' => 'integer',
+        'parent_id' => 'integer',
+        'rate' => 'float',
     ];
 
     private const MULTIPLEX_CONFIGURATION = [

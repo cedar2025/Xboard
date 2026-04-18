@@ -12,6 +12,8 @@ class InviteCode extends Model
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'status' => 'boolean',
+        'user_id' => 'integer',
+        'pv' => 'integer',
     ];
 
     const STATUS_UNUSED = 0;

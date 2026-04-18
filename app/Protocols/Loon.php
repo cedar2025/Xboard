@@ -355,6 +355,10 @@ class Loon extends AbstractProtocol
         if ($down = data_get($protocol_settings, 'bandwidth.down')) {
             $config[] = "download-bandwidth={$down}";
         }
+        if (data_get($protocol_settings, 'obfs.open') && data_get($protocol_settings, 'obfs.type') === 'salamander') {
+            $config[] = 'obfs=salamander';
+            $config[] = "obfs-password=" . data_get($protocol_settings, 'obfs.password');
+        }
         $config[] = "udp=true";
         $config = array_filter($config);
         $uri = implode(',', $config);

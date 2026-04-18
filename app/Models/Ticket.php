@@ -29,7 +29,11 @@ class Ticket extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'user_id' => 'integer',
+        'status' => 'integer',
+        'reply_status' => 'integer',
+        'level' => 'integer'
     ];
 
     const STATUS_OPENING = 0;
