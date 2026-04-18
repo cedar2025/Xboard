@@ -7,9 +7,6 @@ use App\Services\UpdateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use App\Services\Plugin\PluginManager;
-use App\Models\Plugin;
-use Illuminate\Support\Str;
-use App\Console\Commands\XboardInstall;
 
 class XboardUpdate extends Command
 {
@@ -47,8 +44,6 @@ class XboardUpdate extends Command
         $this->info('正在导入数据库请稍等...');
         Artisan::call("migrate", ['--force' => true]);
         $this->info(Artisan::output());
-        $this->info('正在检查内置插件文件...');
-        XboardInstall::restoreProtectedPlugins($this);
         $this->info('正在检查并安装默认插件...');
         PluginManager::installDefaultPlugins();
         $this->info('默认插件检查完成');
