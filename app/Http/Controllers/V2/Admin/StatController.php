@@ -27,10 +27,13 @@ class StatController extends Controller
         $onlineNodes = Server::all()->filter(function ($server) {
             return !!$server->is_online;
         })->count();
-        // 获取在线设备数和在线用户数
-        $onlineDevices = User::where('t', '>=', time() - 600)
+        // 获取在线设备数和在线用户数（`t` 会被订阅/登录等非代理活动刷新 —
+        // 以 `last_online_at` + `online_count > 0` 为准，与 CleanupOnlineStatus 对齐）
+        $onlineDevices = User::where('last_online_at', '>=', now()->subMinutes(10))
+            ->where('online_count', '>', 0)
             ->sum('online_count');
-        $onlineUsers = User::where('t', '>=', time() - 600)
+        $onlineUsers = User::where('last_online_at', '>=', now()->subMinutes(10))
+            ->where('online_count', '>', 0)
             ->count();
 
         // 获取今日流量统计
@@ -270,10 +273,13 @@ class StatController extends Controller
             return !!$server->is_online;
         })->count();
 
-        // 获取在线设备数和在线用户数
-        $onlineDevices = User::where('t', '>=', time() - 600)
+        // 获取在线设备数和在线用户数（`t` 会被订阅/登录等非代理活动刷新 —
+        // 以 `last_online_at` + `online_count > 0` 为准，与 CleanupOnlineStatus 对齐）
+        $onlineDevices = User::where('last_online_at', '>=', now()->subMinutes(10))
+            ->where('online_count', '>', 0)
             ->sum('online_count');
-        $onlineUsers = User::where('t', '>=', time() - 600)
+        $onlineUsers = User::where('last_online_at', '>=', now()->subMinutes(10))
+            ->where('online_count', '>', 0)
             ->count();
 
         // 获取今日流量统计
