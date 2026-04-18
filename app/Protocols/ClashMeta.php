@@ -535,8 +535,8 @@ class ClashMeta extends AbstractProtocol
                 ];
                 break;
             default: // Standard TLS
-                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', data_get($protocol_settings, 'allow_insecure', false));
-                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name', data_get($protocol_settings, 'server_name'))) {
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['sni'] = $serverName;
                 }
                 self::appendEch($array, data_get($protocol_settings, 'tls_settings.ech'));

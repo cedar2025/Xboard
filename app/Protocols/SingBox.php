@@ -546,9 +546,9 @@ class SingBox extends AbstractProtocol
                 ];
                 break;
             default: // Standard TLS
-                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', data_get($protocol_settings, 'allow_insecure', false));
+                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
                 $this->appendEch($tlsConfig, data_get($protocol_settings, 'tls_settings.ech'));
-                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name', data_get($protocol_settings, 'server_name'))) {
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $tlsConfig['server_name'] = $serverName;
                 }
                 break;

@@ -191,8 +191,8 @@ class QuantumultX extends AbstractProtocol
         ];
 
         $tlsData = [
-            'allow_insecure' => data_get($protocol_settings, 'allow_insecure', false),
-            'server_name' => data_get($protocol_settings, 'server_name'),
+            'allow_insecure' => data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+            'server_name' => data_get($protocol_settings, 'tls_settings.server_name'),
         ];
         self::applyTransportSettings($config, $protocol_settings, true, $tlsData);
         self::applyCommonSettings($config, $server);
