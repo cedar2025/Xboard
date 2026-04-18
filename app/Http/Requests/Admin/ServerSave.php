@@ -54,6 +54,7 @@ class ServerSave extends FormRequest
             'tls' => 'required|integer',
             'network' => 'required|string',
             'network_settings' => 'nullable|array',
+            'rules' => 'nullable|array',
         ],
         'trojan' => [
             'tls' => 'nullable|integer',
@@ -90,6 +91,12 @@ class ServerSave extends FormRequest
         ],
         'http' => [
             'tls' => 'required|integer',
+        ],
+        'tuic' => [
+            'version' => 'nullable|integer',
+            'congestion_control' => 'nullable|string',
+            'alpn' => 'nullable|array',
+            'udp_relay_mode' => 'nullable|string',
         ],
         'mieru' => [
             'transport' => 'required|string|in:TCP,UDP',
@@ -160,6 +167,10 @@ class ServerSave extends FormRequest
             'tuic' => array_merge(
                 $rules,
                 $this->buildTlsObjectRules(),
+            ),
+            'mieru' => array_merge(
+                $rules,
+                self::MULTIPLEX_RULES,
             ),
             'vless' => array_merge(
                 $rules,
