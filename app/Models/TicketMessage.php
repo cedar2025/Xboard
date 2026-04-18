@@ -29,6 +29,7 @@ class TicketMessage extends Model
     ];
 
     protected $appends = ['is_from_user', 'is_from_admin'];
+    protected $hidden = ['ticket'];
 
     /**
      * 关联的工单
@@ -43,7 +44,7 @@ class TicketMessage extends Model
      */
     public function getIsFromUserAttribute(): bool
     {
-        return $this->ticket->user_id === $this->user_id;
+        return $this->ticket && $this->ticket->user_id === $this->user_id;
     }
 
     /**
@@ -51,6 +52,6 @@ class TicketMessage extends Model
      */
     public function getIsFromAdminAttribute(): bool
     {
-        return $this->ticket->user_id !== $this->user_id;
+        return $this->ticket && $this->ticket->user_id !== $this->user_id;
     }
 }
