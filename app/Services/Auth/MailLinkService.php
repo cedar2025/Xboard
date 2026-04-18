@@ -63,7 +63,7 @@ class MailLinkService
             'subject' => __('Login to :name', [
                 'name' => admin_setting('app_name', 'XBoard')
             ]),
-            'template_name' => 'login',
+            'template_name' => 'mailLogin',
             'template_value' => [
                 'name' => admin_setting('app_name', 'XBoard'),
                 'link' => $link,
