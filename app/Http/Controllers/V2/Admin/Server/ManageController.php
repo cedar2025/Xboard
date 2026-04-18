@@ -226,6 +226,7 @@ class ManageController extends Controller
             'ids.*' => 'integer',
             'show' => 'nullable|integer|in:0,1',
             'enabled' => 'nullable|boolean',
+            'machine_id' => 'nullable|integer',
         ]);
 
         $ids = $params['ids'];
@@ -239,6 +240,9 @@ class ManageController extends Controller
         }
         if (array_key_exists('enabled', $params) && $params['enabled'] !== null) {
             $update['enabled'] = (bool) $params['enabled'];
+        }
+        if (array_key_exists('machine_id', $params)) {
+            $update['machine_id'] = $params['machine_id'] ?: null;
         }
 
         if (empty($update)) {
