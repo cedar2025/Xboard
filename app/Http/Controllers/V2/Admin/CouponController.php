@@ -7,17 +7,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CouponGenerate;
 use App\Http\Requests\Admin\CouponSave;
 use App\Models\Coupon;
+use App\Traits\QueryOperators;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CouponController extends Controller
 {
+    use QueryOperators;
+
     private function applyFiltersAndSorts(Request $request, $builder)
     {
         if ($request->has('filter')) {
             collect($request->input('filter'))->each(function ($filter) use ($builder) {
                 $key = $filter['id'];
+                if (!$this->isValidFieldName($key)) return;
                 $value = $filter['value'];
                 $builder->where(function ($query) use ($key, $value) {
                     if (is_array($value)) {
@@ -32,6 +36,7 @@ class CouponController extends Controller
         if ($request->has('sort')) {
             collect($request->input('sort'))->each(function ($sort) use ($builder) {
                 $key = $sort['id'];
+                if (!$this->isValidFieldName($key)) return;
                 $value = $sort['desc'] ? 'DESC' : 'ASC';
                 $builder->orderBy($key, $value);
             });
