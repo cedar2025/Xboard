@@ -60,56 +60,67 @@ class PluginController extends Controller
             ->keyBy('code')
             ->toArray();
 
-        $pluginPath = base_path('plugins');
         $plugins = [];
+        $seenCodes = [];
 
-        if (File::exists($pluginPath)) {
+        foreach ($this->pluginManager->getPluginPaths() as $pluginPath) {
+            if (!File::exists($pluginPath)) {
+                continue;
+            }
             $directories = File::directories($pluginPath);
             foreach ($directories as $directory) {
-                $pluginName = basename($directory);
                 $configFile = $directory . '/config.json';
-                if (File::exists($configFile)) {
-                    $config = json_decode(File::get($configFile), true);
-                    $code = $config['code'];
-                    $pluginType = $config['type'] ?? Plugin::TYPE_FEATURE;
-
-                    // 如果指定了类型，过滤插件
-                    if ($type && $pluginType !== $type) {
-                        continue;
-                    }
-
-                    $installed = isset($installedPlugins[$code]);
-                    $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
-                    $readmeFile = collect(['README.md', 'readme.md'])
-                        ->map(fn($f) => $directory . '/' . $f)
-                        ->first(fn($path) => File::exists($path));
-                    $readmeContent = $readmeFile ? File::get($readmeFile) : '';
-                    $needUpgrade = false;
-                    if ($installed) {
-                        $installedVersion = $installedPlugins[$code]['version'] ?? null;
-                        $localVersion = $config['version'] ?? null;
-                        if ($installedVersion && $localVersion && version_compare($localVersion, $installedVersion, '>')) {
-                            $needUpgrade = true;
-                        }
-                    }
-                    $plugins[] = [
-                        'code' => $config['code'],
-                        'name' => $config['name'],
-                        'version' => $config['version'],
-                        'description' => $config['description'],
-                        'author' => $config['author'],
-                        'type' => $pluginType,
-                        'is_installed' => $installed,
-                        'is_enabled' => $installed ? $installedPlugins[$code]['is_enabled'] : false,
-                        'is_protected' => in_array($code, Plugin::PROTECTED_PLUGINS),
-                        'can_be_deleted' => !in_array($code, Plugin::PROTECTED_PLUGINS),
-                        'config' => $pluginConfig,
-                        'readme' => $readmeContent,
-                        'need_upgrade' => $needUpgrade,
-                        'admin_menus' => $config['admin_menus'] ?? null,
-                        'admin_crud' => $config['admin_crud'] ?? null,
-                    ];
+                if (!File::exists($configFile)) {
+                    continue;
                 }
+                $config = json_decode(File::get($configFile), true);
+                if (!$config || !isset($config['code'])) {
+                    continue;
+                }
+                $code = $config['code'];
+
+                if (isset($seenCodes[$code])) {
+                    continue;
+                }
+                $seenCodes[$code] = true;
+
+                $pluginType = $config['type'] ?? Plugin::TYPE_FEATURE;
+                if ($type && $pluginType !== $type) {
+                    continue;
+                }
+
+                $installed = isset($installedPlugins[$code]);
+                $pluginConfig = $installed ? $this->configService->getConfig($code) : ($config['config'] ?? []);
+                $readmeFile = collect(['README.md', 'readme.md'])
+                    ->map(fn($f) => $directory . '/' . $f)
+                    ->first(fn($path) => File::exists($path));
+                $readmeContent = $readmeFile ? File::get($readmeFile) : '';
+                $needUpgrade = false;
+                if ($installed) {
+                    $installedVersion = $installedPlugins[$code]['version'] ?? null;
+                    $localVersion = $config['version'] ?? null;
+                    if ($installedVersion && $localVersion && version_compare($localVersion, $installedVersion, '>')) {
+                        $needUpgrade = true;
+                    }
+                }
+                $isCore = $this->pluginManager->isCorePlugin($code);
+                $plugins[] = [
+                    'code' => $config['code'],
+                    'name' => $config['name'],
+                    'version' => $config['version'],
+                    'description' => $config['description'],
+                    'author' => $config['author'],
+                    'type' => $pluginType,
+                    'is_installed' => $installed,
+                    'is_enabled' => $installed ? $installedPlugins[$code]['is_enabled'] : false,
+                    'is_protected' => $isCore,
+                    'can_be_deleted' => !$isCore,
+                    'config' => $pluginConfig,
+                    'readme' => $readmeContent,
+                    'need_upgrade' => $needUpgrade,
+                    'admin_menus' => $config['admin_menus'] ?? null,
+                    'admin_crud' => $config['admin_crud'] ?? null,
+                ];
             }
         }
 
@@ -314,10 +325,10 @@ class PluginController extends Controller
 
         $code = $request->input('code');
 
-        // 检查是否为受保护的插件
-        if (in_array($code, Plugin::PROTECTED_PLUGINS)) {
+        // 检查是否为核心插件
+        if ($this->pluginManager->isCorePlugin($code)) {
             return response()->json([
-                'message' => '该插件为系统默认插件，不允许删除'
+                'message' => '该插件为系统核心插件，不允许删除'
             ], 403);
         }
 
