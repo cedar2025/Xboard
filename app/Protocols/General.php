@@ -262,8 +262,8 @@ class General extends AbstractProtocol
                 }
                 break;
             default: // Standard TLS
-                $array['allowInsecure'] = data_get($protocol_settings, 'allow_insecure', false);
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                $array['allowInsecure'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['peer'] = $serverName;
                     $array['sni'] = $serverName;
                 }

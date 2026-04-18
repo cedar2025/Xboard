@@ -205,10 +205,10 @@ class Loon extends AbstractProtocol
                 $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'reality_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
             default: // Standard TLS
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config[] = "tls-name={$serverName}";
                 }
-                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'allow_insecure') ? 'true' : 'false');
+                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'tls_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
         }
 

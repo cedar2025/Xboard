@@ -284,15 +284,12 @@ class ServerService
             'trojan' => [
                 ...$baseConfig,
                 'host' => $host,
-                'server_name' => data_get($protocolSettings, 'tls_settings.server_name') ?? $protocolSettings['server_name'],
+                'server_name' => data_get($protocolSettings, 'tls_settings.server_name'),
                 'multiplex' => data_get($protocolSettings, 'multiplex'),
                 'tls' => (int) $protocolSettings['tls'],
                 'tls_settings' => match ((int) $protocolSettings['tls']) {
                         2 => $protocolSettings['reality_settings'],
-                        default => array_merge($protocolSettings['tls_settings'] ?? [], [
-                            'server_name' => data_get($protocolSettings, 'tls_settings.server_name') ?? $protocolSettings['server_name'],
-                            'allow_insecure' => data_get($protocolSettings, 'tls_settings.allow_insecure', $protocolSettings['allow_insecure']),
-                        ]),
+                        default => $protocolSettings['tls_settings'],
                     },
             ],
             'vless' => [

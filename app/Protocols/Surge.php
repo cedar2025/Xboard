@@ -195,12 +195,12 @@ class Surge extends AbstractProtocol
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            data_get($protocol_settings, 'server_name') ? "sni=" . data_get($protocol_settings, 'server_name') : "",
+            data_get($protocol_settings, 'tls_settings.server_name') ? "sni=" . data_get($protocol_settings, 'tls_settings.server_name') : "",
             'tfo=true',
             'udp-relay=true'
         ];
-        if (!empty($protocol_settings['allow_insecure'])) {
-            array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (data_get($protocol_settings, 'tls_settings.allow_insecure', false)) {
+            $config[] = 'skip-cert-verify=true';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
