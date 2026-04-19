@@ -116,13 +116,35 @@ export OCTANE_WORKERS OCTANE_TASK_WORKERS OCTANE_MAX_REQUESTS \
 echo "[entrypoint] Auto-tune (profile=${RESOURCE_PROFILE}): cpus=${CPUS} mem=${MEM_MIB}MiB slots=${SLOTS} -> octane=${OCTANE_WORKERS} horizon(dp/biz/notif)=${HORIZON_DATA_PIPELINE_MAX}/${HORIZON_BUSINESS_MAX}/${HORIZON_NOTIFICATION_MAX} horizon_worker_mem=${HORIZON_WORKER_MEMORY_MB}MB"
 echo "[entrypoint] Horizon supervisors use balance=auto with minProcesses=1, so they scale up to the cap on demand and back down when idle."
 
+redis_reachable() {
+    local host port
+    host=$(grep -E '^REDIS_HOST=' /www/.env 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+    port=$(grep -E '^REDIS_PORT=' /www/.env 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+    command -v redis-cli >/dev/null 2>&1 || return 1
+    [ -n "$host" ] || return 1
+    case "$host" in
+        /*) [ -S "$host" ] && redis-cli -s "$host" ping 2>/dev/null | grep -q PONG ;;
+        *)  redis-cli -h "$host" -p "${port:-6379}" ping 2>/dev/null | grep -q PONG ;;
+    esac
+}
+
 if [ ! -s /www/.env ] || ! grep -qE '^INSTALLED=(1|true)$' /www/.env || echo " $* " | grep -q ' xboard:install '; then
     echo "[entrypoint] Skipping xboard:update (not yet installed or running xboard:install)."
 else
-    echo "[entrypoint] Running xboard:update..."
-    php /www/artisan xboard:update --no-interaction || \
-        echo "[entrypoint] WARNING: xboard:update failed; continuing so supervisor can boot anyway." >&2
+    if redis_reachable; then
+        echo "[entrypoint] Running xboard:update (redis reachable, real drivers)..."
+        php /www/artisan xboard:update --no-interaction || \
+            echo "[entrypoint] WARNING: xboard:update failed; continuing so supervisor can boot anyway." >&2
+    else
+        echo "[entrypoint] Running xboard:update (redis not yet up, using array/sync drivers)..."
+        CACHE_DRIVER=array QUEUE_CONNECTION=sync SESSION_DRIVER=array \
+            php /www/artisan xboard:update --no-interaction || \
+            echo "[entrypoint] WARNING: xboard:update failed; continuing so supervisor can boot anyway." >&2
+    fi
 fi
 
 echo "[entrypoint] Starting services (caddy=${ENABLE_CADDY} web=${ENABLE_WEB} horizon=${ENABLE_HORIZON} ws=${ENABLE_WS_SERVER})..."
+# Drop stale Octane/WorkerMan state files so the new master does not signal
+# PIDs left over from a previous container run (causes Swoole kill EPERM).
+rm -f /www/storage/logs/octane-server-state.json /www/storage/logs/xboard-ws-server.pid 2>/dev/null || true
 exec "$@"

@@ -51,10 +51,14 @@ class XboardUpdate extends Command
         $updateService->updateVersionCache();
         $themeService = app(ThemeService::class);
         $themeService->refreshCurrentTheme();
-        try {
-            Artisan::call('horizon:terminate');
-        } catch (\Throwable $e) {
-            $this->warn('horizon:terminate skipped: ' . $e->getMessage());
+        if (config('queue.default') === 'sync') {
+            $this->info('horizon:terminate skipped (sync queue, no workers to terminate).');
+        } else {
+            try {
+                Artisan::call('horizon:terminate');
+            } catch (\Throwable $e) {
+                $this->warn('horizon:terminate skipped: ' . $e->getMessage());
+            }
         }
         $this->info('更新完毕，队列服务已重启，你无需进行任何操作。');
     }
