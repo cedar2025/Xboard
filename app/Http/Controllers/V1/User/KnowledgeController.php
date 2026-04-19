@@ -90,7 +90,7 @@ class KnowledgeController extends Controller
             $this->formatAccessData($knowledge['body']);
         }
         $subscribeUrl = Helper::getSubscribeUrl($user['token']);
-        $knowledge['body'] = $this->replacePlaceholders($knowledge['body'], $subscribeUrl);
+        $knowledge['body'] = $this->replacePlaceholders($knowledge['body'], $subscribeUrl, $user['token']);
 
         return $knowledge;
     }
@@ -108,7 +108,7 @@ class KnowledgeController extends Controller
         $this->applyReplacementRules($body, $rules);
     }
 
-    private function replacePlaceholders(string $body, string $subscribeUrl): string
+    private function replacePlaceholders(string $body, string $subscribeUrl, string $userToken = ''): string
     {
         $rules = [
             [
@@ -130,6 +130,11 @@ class KnowledgeController extends Controller
                 'type' => 'string',
                 'search' => '{{safeBase64SubscribeUrl}}',
                 'replacement' => str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($subscribeUrl))
+            ],
+            [
+                'type' => 'string',
+                'search' => '{{userToken}}',
+                'replacement' => $userToken
             ]
         ];
 
