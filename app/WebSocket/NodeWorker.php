@@ -19,6 +19,10 @@ class NodeWorker
     private const AUTH_TIMEOUT = 10;
     private const PING_INTERVAL = 55;
 
+    public const HEARTBEAT_CACHE_KEY = 'ws_server:heartbeat';
+    private const HEARTBEAT_INTERVAL = 10;
+    private const HEARTBEAT_TTL = 30;
+
     private Worker $worker;
 
     private array $handlers = [
@@ -70,6 +74,11 @@ class NodeWorker
 
     private function setupTimers(): void
     {
+        Cache::put(self::HEARTBEAT_CACHE_KEY, time(), self::HEARTBEAT_TTL);
+        Timer::add(self::HEARTBEAT_INTERVAL, function () {
+            Cache::put(self::HEARTBEAT_CACHE_KEY, time(), self::HEARTBEAT_TTL);
+        });
+
         Timer::add(self::PING_INTERVAL, function () {
             $seen = [];
 

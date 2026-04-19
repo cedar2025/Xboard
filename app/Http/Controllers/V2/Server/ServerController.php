@@ -4,8 +4,10 @@ namespace App\Http\Controllers\V2\Server;
 
 use App\Http\Controllers\Controller;
 use App\Services\ServerService;
+use App\WebSocket\NodeWorker;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class ServerController extends Controller
 {
@@ -16,14 +18,14 @@ class ServerController extends Controller
     {
         $websocket = ['enabled' => false];
 
-        if ((bool) admin_setting('server_ws_enable', 1)) {
+        if ((bool) admin_setting('server_ws_enable', 1) && Cache::has(NodeWorker::HEARTBEAT_CACHE_KEY)) {
             $customUrl = trim((string) admin_setting('server_ws_url', ''));
 
             if ($customUrl !== '') {
                 $wsUrl = rtrim($customUrl, '/');
             } else {
                 $wsScheme = $request->isSecure() ? 'wss' : 'ws';
-                $wsUrl = "{$wsScheme}://{$request->getHost()}:8076";
+                $wsUrl = "{$wsScheme}://{$request->getHttpHost()}/ws";
             }
 
             $websocket = [
