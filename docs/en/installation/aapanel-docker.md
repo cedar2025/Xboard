@@ -69,7 +69,7 @@ rm -rf .htaccess 404.html 502.html index.html .user.ini
 git clone -b compose --depth 1 https://github.com/cedar2025/Xboard.git ./
 
 # Prepare configuration file
-cp compose.sample.yaml compose.yaml
+cp compose.host.sample.yaml compose.yaml
 
 # Install dependencies and initialize
 docker compose run -it --rm xboard php artisan xboard:install
