@@ -29,4 +29,6 @@ frontend
 docker-compose.yaml
 bun.lockb
 compose.yaml
+compose.host.yaml
+compose.split.yaml
 .scribe

@@ -1,0 +1,19 @@
+services:
+  xboard:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
+      - redis-data:/data
+    environment:
+      - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
+      - ENABLE_HORIZON=true
+      - docker=true
+
+volumes:
+  redis-data:

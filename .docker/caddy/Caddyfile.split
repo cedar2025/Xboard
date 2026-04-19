@@ -1,0 +1,22 @@
+# Caddy config used by compose.split.yaml — the embedded image's Caddy is
+# disabled in this mode and a dedicated Caddy container fronts independent
+# web and ws-server containers reachable via the compose network.
+{
+	admin off
+	auto_https off
+	persist_config off
+	log {
+		output stdout
+		format console
+	}
+}
+
+:7001 {
+	@ws path /ws
+	reverse_proxy @ws ws-server:8076
+
+	reverse_proxy web:7001 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+}

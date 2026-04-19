@@ -1,44 +1,30 @@
+# Default deployment: bridge network with port 7001 published to the host.
+# Suitable for: bare docker-compose, aaPanel + Docker manager, custom reverse
+# proxies (nginx, Caddy on host, Cloudflare Tunnel, etc.) that talk to
+# 127.0.0.1:7001 on the host.
+#
+# For 1Panel users: use compose.1panel.sample.yaml so the container can reach
+# the 1Panel-managed MySQL/Redis on the 1panel-network.
+#
+# For aaPanel native (openresty on host) users that prefer host networking:
+# use compose.host.sample.yaml.
 services:
-  web:
-    image: ghcr.io/cedar2025/xboard:new
-    volumes:
-      - redis-data:/data
-      - ./:/www/
-    environment:
-      - docker=true
-    depends_on:
-      - redis
-    network_mode: host
-    command: php artisan octane:start --port=7001 --host=0.0.0.0
-    restart: always
-  horizon:
-    image: ghcr.io/cedar2025/xboard:new
-    volumes:
-      - redis-data:/data
-      - ./:/www/
-    restart: always
-    network_mode: host
-    command: php artisan horizon
-    depends_on:
-      - redis
-  ws-server:
-    image: ghcr.io/cedar2025/xboard:new
-    volumes:
-      - redis-data:/data
-      - ./:/www/
-    restart: always
-    network_mode: host
-    command: php artisan ws-server start
-    depends_on:
-      - redis
-  redis:
-    image: redis:7-alpine
-    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777
+  xboard:
+    image: ghcr.io/cedar2025/xboard:latest
     restart: unless-stopped
+    ports:
+      - "7001:7001"
     volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
       - redis-data:/data
-    sysctls:
-      net.core.somaxconn: 1024
+    environment:
+      - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
+      - ENABLE_HORIZON=true
+      - docker=true
 
 volumes:
   redis-data:

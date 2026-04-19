@@ -15,11 +15,12 @@ systemctl start docker
 
 ### 2. Deployment Steps
 
-1. Get project files:
-```bash
-git clone -b compose --depth 1 https://github.com/cedar2025/Xboard
-cd Xboard
-```
+1. Clone the `compose` branch (it ships `compose.sample.yaml` and the other `compose.*.sample.yaml` variants):
+   ```bash
+   git clone -b compose --depth 1 https://github.com/cedar2025/Xboard
+   cd Xboard
+   cp compose.sample.yaml compose.yaml
+   ```
 
 2. Install database:  
 
@@ -29,13 +30,23 @@ docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
     -e ENABLE_REDIS=true \
     -e ADMIN_ACCOUNT=admin@demo.com \
-    web php artisan xboard:install
+    xboard php artisan xboard:install
 ```
 - Custom configuration installation (Advanced users)
 ```bash
-docker compose run -it --rm web php artisan xboard:install
+docker compose run -it --rm xboard php artisan xboard:install
 ```
 > Please save the admin dashboard URL, username, and password shown after installation
+> The repository ships **four** compose templates in the `compose` branch — pick the one matching your setup, copy it to `compose.yaml`, then run the install command:
+>
+> | File | Network | When to use |
+> |------|---------|-------------|
+> | `compose.sample.yaml` | bridge + ports `7001:7001` | bare docker, custom reverse proxy, aaPanel + Docker (default) |
+> | `compose.host.sample.yaml` | `network_mode: host` | aaPanel native (openresty on host) |
+> | `compose.1panel.sample.yaml` | bridge + external `1panel-network` | 1Panel users (so the container can reach 1Panel-managed MySQL/Redis) |
+> | `compose.split.sample.yaml` | multi-container (web/horizon/ws-server/redis split) | K8s migration, advanced scaling |
+>
+> The local `compose.yaml` is gitignored so your edits survive `git pull` when you do clone the repo.
 
 3. Start services:
 ```bash
@@ -48,22 +59,10 @@ docker compose up -d
 
 ### 3. Version Updates
 
-> 💡 Important Note: Update commands may vary depending on your installed version:
-> - For recent installations (new version), use:
 ```bash
 cd Xboard
-docker compose pull && \
-docker compose run -it --rm web php artisan xboard:update && \
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
-> - For older installations, replace `web` with `xboard`:
-```bash
-cd Xboard
-docker compose pull && \
-docker compose run -it --rm xboard php artisan xboard:update && \
-docker compose up -d
-```
-> 🤔 Not sure which to use? Try the new version command first, if it fails, use the old version command.
 
 ### 4. Version Rollback
 
