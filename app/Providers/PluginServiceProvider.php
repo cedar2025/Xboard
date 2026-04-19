@@ -22,11 +22,8 @@ class PluginServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        foreach (['plugins', 'plugins-core'] as $dir) {
-            $path = base_path($dir);
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
-            }
+        if (!file_exists(base_path('plugins'))) {
+            mkdir(base_path('plugins'), 0755, true);
         }
     }
 }

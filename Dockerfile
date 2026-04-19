@@ -32,6 +32,7 @@ COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN composer install --no-cache --no-dev \
     && php artisan storage:link \
+    && cp -r plugins/ /opt/default-plugins/ \
     && chown -R www:www /www \
     && chmod -R 775 /www \
     && mkdir -p /data \
@@ -43,7 +44,4 @@ ENV ENABLE_WEB=true \
     ENABLE_WS_SERVER=false
 
 EXPOSE 7001
-COPY .docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
