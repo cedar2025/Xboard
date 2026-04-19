@@ -1,55 +1,30 @@
+# Default deployment: bridge network with port 7001 published to the host.
+# Suitable for: bare docker-compose, aaPanel + Docker manager, custom reverse
+# proxies (nginx, Caddy on host, Cloudflare Tunnel, etc.) that talk to
+# 127.0.0.1:7001 on the host.
+#
+# For 1Panel users: use compose.1panel.sample.yaml so the container can reach
+# the 1Panel-managed MySQL/Redis on the 1panel-network.
+#
+# For aaPanel native (openresty on host) users that prefer host networking:
+# use compose.host.sample.yaml.
 services:
-  web:
-    image: ghcr.io/cedar2025/xboard:new
+  xboard:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
     volumes:
-      - redis-data:/data
       - ./.env:/www/.env
       - ./.docker/.data/:/www/.docker/.data
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
       - ./plugins:/www/plugins
+      - redis-data:/data
     environment:
+      - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
+      - ENABLE_HORIZON=true
       - docker=true
-    depends_on:
-      - redis
-    # network_mode: host
-    command: php artisan octane:start --host=0.0.0.0 --port=7001
-    restart: on-failure
-    ports:
-      - 7001:7001
-  horizon:
-    image: ghcr.io/cedar2025/xboard:new
-    volumes:
-      - redis-data:/data
-      - ./.env:/www/.env
-      - ./.docker/.data/:/www/.docker/.data
-      - ./storage/logs:/www/storage/logs
-      - ./plugins:/www/plugins
-    restart: on-failure
-    # network_mode: host
-    command: php artisan horizon
-    depends_on:
-      - redis
-  ws-server:
-    image: ghcr.io/cedar2025/xboard:new
-    volumes:
-      - redis-data:/data
-      - ./.env:/www/.env
-      - ./.docker/.data/:/www/.docker/.data
-      - ./storage/logs:/www/storage/logs
-      - ./plugins:/www/plugins
-    # network_mode: host
-    command: php artisan ws-server start
-    depends_on:
-      - redis
-    restart: on-failure
-    ports:
-      - 8076:8076
-  redis:
-    image: redis:8-alpine
-    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
-    restart: unless-stopped
-    volumes:
-      - redis-data:/data
+
 volumes:
   redis-data:

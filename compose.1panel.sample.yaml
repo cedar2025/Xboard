@@ -1,0 +1,38 @@
+# Deployment for 1Panel users.
+#
+# 1Panel runs MySQL/Redis as separate containers on a Docker network named
+# `1panel-network`. To let Xboard reach them by their container hostname
+# (e.g. `1Panel-mysql-xxxx`), this compose file joins that external network
+# in addition to publishing port 7001 for 1Panel's reverse proxy / website.
+#
+# During `php artisan xboard:install`, set:
+#   - Database Host: the container name shown in 1Panel under
+#                    Database -> Connection Info -> Host
+#   - Redis: choose the built-in Redis (already provided by this image)
+services:
+  xboard:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    networks:
+      - default
+      - 1panel-network
+    volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
+      - redis-data:/data
+    environment:
+      - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
+      - ENABLE_HORIZON=true
+      - docker=true
+
+networks:
+  1panel-network:
+    external: true
+
+volumes:
+  redis-data:
