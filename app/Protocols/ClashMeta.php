@@ -144,7 +144,7 @@ class ClashMeta extends AbstractProtocol
 
     /**
      * Check if the server is compatible with the current client.
-     * Specific restriction for xhttp: only Mihomo 1.19.22+ is allowed.
+     * Specific restriction for xhttp: allowed clients and minimum versions.
      *
      * @param array $server
      * @return bool
@@ -152,7 +152,22 @@ class ClashMeta extends AbstractProtocol
     protected function isCompatible($server)
     {
         if (data_get($server, 'protocol_settings.network') === 'xhttp') {
-            return $this->clientName === 'mihomo' && version_compare($this->clientVersion, '1.19.22', '>=');
+            $allowedClients = [
+                'flclash' => '0.8.92',
+                'clashmetaforandroid' => '2.11.27',
+                'mihomo.party' => '1.9.4',
+                'mihomo' => '1.19.22',
+                'clash-verge' => '2.4.7',
+                'verge' => '2.4.7',
+            ];
+
+            $clientName = strtolower($this->clientName);
+            if (isset($allowedClients[$clientName])) {
+                $clientVersion = ltrim(strtolower($this->clientVersion), 'v');
+                return version_compare($clientVersion, $allowedClients[$clientName], '>=');
+            }
+
+            return false;
         }
         return parent::isCompatible($server);
     }
