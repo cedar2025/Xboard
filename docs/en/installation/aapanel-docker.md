@@ -109,6 +109,11 @@ docker compose pull && docker compose up -d
 
 The container always runs `php artisan xboard:update` (migrate + plugin install + version cache + theme refresh) on boot, so no extra command is required.
 
+> **Using a `compose.yaml` from before 2026-04-19?** That template did not auto-run `xboard:update` on container start, so use the following command to upgrade instead:
+> ```bash
+> docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+> ```
+
 ### Routine Maintenance
 - Regular log checking: `docker compose logs`
 - Monitor system resource usage
