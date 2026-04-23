@@ -42,6 +42,15 @@ docker compose up -d
 ### 🔄 Upgrade Notice
 > 🚨 **Important:** This version involves significant changes. Please strictly follow the upgrade documentation and backup your database before upgrading. Note that upgrading and migration are different processes, do not confuse them.
 
+### 🐳 Image Channels
+
+| Tag | Branch | Audience |
+|---|---|---|
+| `ghcr.io/cedar2025/xboard:latest` | `master` | Production users — only stable releases land here |
+| `ghcr.io/cedar2025/xboard:new-dev` | `new-dev` | Early adopters / testing — newest features, may be unstable |
+
+All development happens on `new-dev`; once verified it is fast-forwarded into `master`, which automatically publishes `:latest`.
+
 ### Development Guides
 - [Plugin Development Guide](./docs/en/development/plugin-development-guide.md) - Complete guide for developing XBoard plugins
 
