@@ -14,7 +14,7 @@ class ServerRoute
     {
         $router->group([
             'prefix' => 'server',
-            'middleware' => 'server'
+            'middleware' => 'server.v2'
         ], function ($route) {
             $route->match(['GET', 'POST'], 'handshake', [ServerController::class, 'handshake']);
             $route->post('report', [ServerController::class, 'report']);
