@@ -9,6 +9,9 @@
 		output stdout
 		format console
 	}
+	servers {
+		trusted_proxies static 0.0.0.0/0 ::/0
+	}
 }
 
 :7001 {
