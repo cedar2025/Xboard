@@ -13,6 +13,9 @@
 		output stdout
 		format console
 	}
+	servers {
+		trusted_proxies static 0.0.0.0/0 ::/0
+	}
 }
 
 :{$CADDY_LISTEN_PORT:7001} {
@@ -21,6 +24,12 @@
 
 	reverse_proxy 127.0.0.1:{$OCTANE_INTERNAL_PORT:7002} {
 		header_up Host {host}
+		# X-Forwarded-For is auto-appended with our remote_addr by Caddy
+		# (enabled by the global trusted_proxies above), so Octane receives the
+		# full proxy chain and Laravel's TrustProxies middleware resolves the
+		# real client IP using its own trust list. We additionally surface the
+		# directly-connected peer as X-Real-IP for downstream consumers (logs,
+		# admin tools) that read it directly without TrustProxies.
 		header_up X-Real-IP {remote_host}
 	}
 }
