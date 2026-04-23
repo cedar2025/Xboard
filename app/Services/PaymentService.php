@@ -29,14 +29,14 @@ class PaymentService
             if (!$paymentModel) {
                 throw new ApiException('payment not found');
             }
-            $payment = $paymentModel->toArray();
+            $payment = $paymentModel->makeVisible('config')->toArray();
         }
         if ($uuid) {
             $paymentModel = Payment::where('uuid', $uuid)->first();
             if (!$paymentModel) {
                 throw new ApiException('payment not found');
             }
-            $payment = $paymentModel->toArray();
+            $payment = $paymentModel->makeVisible('config')->toArray();
         }
 
         $this->config = [];
