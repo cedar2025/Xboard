@@ -13,6 +13,7 @@ use App\Services\Plugin\HookManager;
 use App\Services\TrafficResetService;
 use App\Models\TrafficResetLog;
 use App\Utils\Helper;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserService
@@ -58,9 +59,9 @@ class UserService
         return User::whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
-                    ->orWhere('expired_at', NULL);
+                    ->orWhereNull('expired_at');
             })
-            ->where('banned', 0)
+            ->where('banned', false)
             ->get();
     }
 
@@ -71,7 +72,7 @@ class UserService
                 ->orWhere('expired_at', 0);
         })
             ->where(function ($query) {
-                $query->where('plan_id', NULL)
+                $query->whereNull('plan_id')
                     ->orWhere('transfer_enable', 0);
             })
             ->get();
@@ -89,18 +90,23 @@ class UserService
 
     public function addBalance(int $userId, int $balance): bool
     {
-        $user = User::lockForUpdate()->find($userId);
-        if (!$user) {
-            return false;
-        }
-        $user->balance = $user->balance + $balance;
-        if ($user->balance < 0) {
-            return false;
-        }
-        if (!$user->save()) {
-            return false;
-        }
-        return true;
+        // lockForUpdate only takes effect inside a transaction — outside, the
+        // SELECT ... FOR UPDATE lock is released immediately, so two concurrent
+        // addBalance() calls on the same user could overwrite each other.
+        return DB::transaction(function () use ($userId, $balance) {
+            $user = User::lockForUpdate()->find($userId);
+            if (!$user) {
+                return false;
+            }
+            $user->balance = $user->balance + $balance;
+            if ($user->balance < 0) {
+                return false;
+            }
+            if (!$user->save()) {
+                return false;
+            }
+            return true;
+        });
     }
 
     public function isNotCompleteOrderByUserId(int $userId): bool

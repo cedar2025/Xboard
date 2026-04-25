@@ -100,7 +100,7 @@ class ServerService
                 $query->where('expired_at', '>=', time())
                     ->orWhere('expired_at', NULL);
             })
-            ->where('banned', 0)
+            ->where('banned', false)
             ->select([
                 'id',
                 'uuid',
@@ -340,7 +340,9 @@ class ServerService
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
                 'tls_settings' => $protocolSettings['tls'],
-                'padding_scheme' => $protocolSettings['padding_scheme'],
+                'padding_scheme' => is_array($protocolSettings['padding_scheme'])
+                    ? implode("\n", $protocolSettings['padding_scheme'])
+                    : ($protocolSettings['padding_scheme'] ?? ''),
             ],
             'socks' => [
                 ...$baseConfig,

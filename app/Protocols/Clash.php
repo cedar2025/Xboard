@@ -17,6 +17,9 @@ class Clash extends AbstractProtocol
         Server::TYPE_SHADOWSOCKS,
         Server::TYPE_VMESS,
         Server::TYPE_TROJAN,
+        Server::TYPE_VLESS,
+        Server::TYPE_HYSTERIA,
+        Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
@@ -53,6 +56,18 @@ class Clash extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_TROJAN) {
                 array_push($proxy, self::buildTrojan($item['password'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === Server::TYPE_VLESS) {
+                array_push($proxy, self::buildVless($item['password'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === Server::TYPE_HYSTERIA) {
+                array_push($proxy, self::buildHysteria($item['password'], $item, $user));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                array_push($proxy, self::buildAnyTLS($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === Server::TYPE_SOCKS) {
@@ -263,6 +278,126 @@ class Clash extends AbstractProtocol
                 $array['network'] = 'tcp';
                 break;
         }
+        return $array;
+    }
+
+    public static function buildVless($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'vless',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'uuid' => $password,
+            'alterId' => 0,
+            'cipher' => 'auto',
+            'udp' => true,
+            'flow' => data_get($protocol_settings, 'flow'),
+            'tls' => false
+        ];
+
+        switch (data_get($protocol_settings, 'tls')) {
+            case 1:
+                $array['tls'] = true;
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $array['servername'] = $serverName;
+                }
+                break;
+            case 2:
+                $array['tls'] = true;
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false);
+                $array['servername'] = data_get($protocol_settings, 'reality_settings.server_name');
+                $array['reality-opts'] = [
+                    'public-key' => data_get($protocol_settings, 'reality_settings.public_key'),
+                    'short-id' => data_get($protocol_settings, 'reality_settings.short_id')
+                ];
+                break;
+            default:
+                break;
+        }
+
+        switch (data_get($protocol_settings, 'network')) {
+            case 'tcp':
+                $array['network'] = 'tcp';
+                break;
+            case 'ws':
+                $array['network'] = 'ws';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $array['ws-opts']['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.headers.Host'))
+                    $array['ws-opts']['headers'] = ['Host' => $host];
+                break;
+            case 'grpc':
+                $array['network'] = 'grpc';
+                if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
+                    $array['grpc-opts']['grpc-service-name'] = $serviceName;
+                break;
+            default:
+                break;
+        }
+
+        return $array;
+    }
+
+    public static function buildHysteria($password, $server, $user)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'up' => data_get($protocol_settings, 'bandwidth.up'),
+            'down' => data_get($protocol_settings, 'bandwidth.down'),
+            'skip-cert-verify' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
+        ];
+        if (isset($server['ports'])) {
+            $array['ports'] = $server['ports'];
+        }
+        switch (data_get($protocol_settings, 'version')) {
+            case 1:
+                $array['type'] = 'hysteria';
+                $array['auth_str'] = $password;
+                $array['protocol'] = 'udp';
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $array['obfs'] = data_get($protocol_settings, 'obfs.password');
+                }
+                $array['fast-open'] = true;
+                break;
+            case 2:
+                $array['type'] = 'hysteria2';
+                $array['password'] = $password;
+                if (data_get($protocol_settings, 'obfs.open')) {
+                    $array['obfs'] = data_get($protocol_settings, 'obfs.type');
+                    $array['obfs-password'] = data_get($protocol_settings, 'obfs.password');
+                }
+                break;
+        }
+
+        return $array;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'anytls',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'udp' => true,
+        ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+        if ($allowInsecure = data_get($protocol_settings, 'tls.allow_insecure')) {
+            $array['skip-cert-verify'] = (bool) $allowInsecure;
+        }
+
         return $array;
     }
 

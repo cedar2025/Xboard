@@ -5,22 +5,26 @@ namespace App\Http\Controllers\V2\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Services\TicketService;
+use App\Traits\QueryOperators;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
+    use QueryOperators;
+
     private function applyFiltersAndSorts(Request $request, $builder)
     {
         if ($request->has('filter')) {
             collect($request->input('filter'))->each(function ($filter) use ($builder) {
                 $key = $filter['id'];
+                if (!$this->isValidFieldName($key)) return;
                 $value = $filter['value'];
                 $builder->where(function ($query) use ($key, $value) {
                     if (is_array($value)) {
                         $query->whereIn($key, $value);
                     } else {
-                        $query->where($key, 'like', "%{$value}%");
+                        $query->whereLike($key, "%{$value}%", false);
                     }
                 });
             });
@@ -29,6 +33,7 @@ class TicketController extends Controller
         if ($request->has('sort')) {
             collect($request->input('sort'))->each(function ($sort) use ($builder) {
                 $key = $sort['id'];
+                if (!$this->isValidFieldName($key)) return;
                 $value = $sort['desc'] ? 'DESC' : 'ASC';
                 $builder->orderBy($key, $value);
             });
@@ -57,6 +62,16 @@ class TicketController extends Controller
         }
         $ticket->messages->each(fn($msg) => $msg->setRelation('ticket', $ticket));
         $result = $ticket->toArray();
+        // Backwards-compat: admin frontend bundle still reads `is_me` on each
+        // message, but the model now exposes `is_from_user` / `is_from_admin`
+        // via $appends. Without this mapping every message renders left-aligned
+        // (received) in the admin panel ticket view.
+        if (isset($result['messages']) && is_array($result['messages'])) {
+            foreach ($result['messages'] as &$message) {
+                $message['is_me'] = !empty($message['is_from_admin']);
+            }
+            unset($message);
+        }
         $result['user'] = UserController::transformUserData($ticket->user);
 
         return $this->success($result);

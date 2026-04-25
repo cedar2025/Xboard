@@ -140,7 +140,14 @@ class SingBox extends AbstractProtocol
             $protocol_settings = $item['protocol_settings'];
             if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
                 $ssConfig = $this->buildShadowsocks($item['password'], $item);
-                $proxies[] = $ssConfig;
+                if (isset($ssConfig[0]) && is_array($ssConfig[0])) {
+                    // shadow-tls returns [ss_outbound, shadowtls_outbound]
+                    foreach ($ssConfig as $outbound) {
+                        $proxies[] = $outbound;
+                    }
+                } else {
+                    $proxies[] = $ssConfig;
+                }
             }
             if ($item['type'] === Server::TYPE_TROJAN) {
                 $trojanConfig = $this->buildTrojan($this->user['uuid'], $item);
@@ -180,7 +187,7 @@ class SingBox extends AbstractProtocol
         }
         foreach ($outbounds as &$outbound) {
             if (in_array($outbound['type'], ['urltest', 'selector'])) {
-                array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
+                array_push($outbound['outbounds'], ...array_values(array_filter(array_column($proxies, 'tag'), fn($t) => !str_ends_with($t, '-shadowtls'))));
             }
         }
 
@@ -422,9 +429,44 @@ class SingBox extends AbstractProtocol
         $array['server_port'] = $server['port'];
         $array['method'] = data_get($protocol_settings, 'cipher');
         $array['password'] = data_get($server, 'password', $password);
-        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
-            $array['plugin'] = data_get($protocol_settings, 'plugin');
-            $array['plugin_opts'] = data_get($protocol_settings, 'plugin_opts', '');
+
+        $plugin = data_get($protocol_settings, 'plugin');
+        $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+
+        if ($plugin === 'shadow-tls' && $pluginOpts) {
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [trim($pair) => true];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+
+            $stlsTag = $server['name'] . '-shadowtls';
+            $stlsOutbound = [
+                'type' => 'shadowtls',
+                'tag' => $stlsTag,
+                'server' => $server['host'],
+                'server_port' => $server['port'],
+                'version' => (int) ($parsedOpts['version'] ?? 3),
+                'password' => $parsedOpts['password'] ?? '',
+                'tls' => [
+                    'enabled' => true,
+                    'server_name' => $parsedOpts['host'] ?? '',
+                ],
+            ];
+
+            $array['detour'] = $stlsTag;
+
+            return [$array, $stlsOutbound];
+        }
+
+        if ($plugin && $pluginOpts) {
+            $array['plugin'] = $plugin;
+            $array['plugin_opts'] = $pluginOpts;
         }
 
         return $array;

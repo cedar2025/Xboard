@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PlanService;
 use App\Services\UserService;
+use App\Traits\QueryOperators;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    use QueryOperators;
+
 
     public function detail(Request $request)
     {
@@ -77,6 +80,7 @@ class OrderController extends Controller
 
         collect($request->input('filter'))->each(function ($filter) use ($builder) {
             $field = $filter['id'];
+            if (!$this->isValidFieldName($field)) return;
             $value = $filter['value'];
 
             $builder->where(function ($query) use ($field, $value) {
@@ -95,7 +99,7 @@ class OrderController extends Controller
 
         // Handle operator-based filtering
         if (!is_string($value) || !str_contains($value, ':')) {
-            $query->where($field, 'like', "%{$value}%");
+            $query->whereLike($field, "%{$value}%", false);
             return;
         }
 
@@ -108,23 +112,28 @@ class OrderController extends Controller
                 : (int) $filterValue;
         }
 
-        // Apply operator
-        $query->where($field, match (strtolower($operator)) {
+        // Apply operator (use whereLike so PG gets ILIKE automatically)
+        $op = strtolower($operator);
+        if (in_array($op, ['like', 'notlike'], true) || !in_array($op, ['eq','gt','gte','lt','lte','null','notnull'], true)) {
+            $method = $op === 'notlike' ? 'whereNotLike' : 'whereLike';
+            $query->{$method}($field, "%{$filterValue}%", false);
+            return;
+        }
+        if ($op === 'null') {
+            $query->whereNull($field);
+            return;
+        }
+        if ($op === 'notnull') {
+            $query->whereNotNull($field);
+            return;
+        }
+        $query->where($field, match ($op) {
             'eq' => '=',
             'gt' => '>',
             'gte' => '>=',
             'lt' => '<',
             'lte' => '<=',
-            'like' => 'like',
-            'notlike' => 'not like',
-            'null' => static fn($q) => $q->whereNull($field),
-            'notnull' => static fn($q) => $q->whereNotNull($field),
-            default => 'like'
-        }, match (strtolower($operator)) {
-            'like', 'notlike' => "%{$filterValue}%",
-            'null', 'notnull' => null,
-            default => $filterValue
-        });
+        }, $filterValue);
     }
 
     private function applySorting(Request $request, Builder $builder): void
@@ -135,6 +144,7 @@ class OrderController extends Controller
 
         collect($request->input('sort'))->each(function ($sort) use ($builder) {
             $field = $sort['id'];
+            if (!$this->isValidFieldName($field)) return;
             $direction = $sort['desc'] ? 'DESC' : 'ASC';
             $builder->orderBy($field, $direction);
         });
