@@ -102,8 +102,8 @@ return [
 
         OperationTerminated::class => [
             FlushTemporaryContainerInstances::class,
-            DisconnectFromDatabases::class,
-            CollectGarbage::class,
+            // DisconnectFromDatabases::class,
+            // CollectGarbage::class,
         ],
 
         WorkerErrorOccurred::class => [
@@ -129,6 +129,7 @@ return [
 
     'warm' => [
         ...Octane::defaultServicesToWarm(),
+        \App\Services\Plugin\PluginManager::class,
     ],
 
     'flush' => [
@@ -147,8 +148,8 @@ return [
     */
 
     'cache' => [
-        'rows' => 5000,
-        'bytes' => 20000,
+        'rows' => (int) env('OCTANE_CACHE_ROWS', 1000),
+        'bytes' => (int) env('OCTANE_CACHE_BYTES', 8192),
     ],
 
     /*
@@ -163,10 +164,7 @@ return [
     */
 
     'tables' => [
-        'example:1000' => [
-            'name' => 'string:1000',
-            'votes' => 'int',
-        ],
+        //
     ],
 
     /*
@@ -203,7 +201,7 @@ return [
     |
     */
 
-    'garbage' => 128,
+    'garbage' => (int) env('OCTANE_GARBAGE_MB', 128),
 
     /*
     |--------------------------------------------------------------------------
@@ -216,6 +214,6 @@ return [
     |
     */
 
-    'max_execution_time' => 60,
+    'max_execution_time' => (int) env('OCTANE_MAX_EXECUTION_TIME', 60),
 
 ];

@@ -1,0 +1,73 @@
+# Split deployment for K8s users or operators who want to scale, restart and
+# limit each process independently. The single image is reused across services
+# by overriding the command and disabling the supervisor programs that are not
+# relevant to that role.
+#
+# Topology:
+#   caddy        ──┬─→ web        (HTTP)        :7001 → octane :7001
+#                  └─→ ws-server  (WebSocket)   /api/v2/server/ws → :8076
+#   horizon      (queue worker, no public port)
+#   redis        (state)
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    depends_on:
+      - web
+      - ws-server
+    volumes:
+      - ./.docker/caddy/Caddyfile.split:/etc/caddy/Caddyfile:ro
+
+  web:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes: &shared-volumes
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
+    environment:
+      docker: "true"
+      ENABLE_CADDY: "false"
+      ENABLE_HORIZON: "false"
+      ENABLE_WS_SERVER: "false"
+
+  horizon:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes: *shared-volumes
+    environment:
+      docker: "true"
+      ENABLE_CADDY: "false"
+      ENABLE_WEB: "false"
+      ENABLE_WS_SERVER: "false"
+
+  ws-server:
+    image: ghcr.io/cedar2025/xboard:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes: *shared-volumes
+    environment:
+      docker: "true"
+      ENABLE_CADDY: "false"
+      ENABLE_WEB: "false"
+      ENABLE_HORIZON: "false"
+      WS_HOST: "0.0.0.0"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

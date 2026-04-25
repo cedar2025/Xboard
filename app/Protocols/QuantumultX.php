@@ -14,6 +14,7 @@ class QuantumultX extends AbstractProtocol
         Server::TYPE_VMESS,
         Server::TYPE_VLESS,
         Server::TYPE_TROJAN,
+        Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
@@ -29,6 +30,7 @@ class QuantumultX extends AbstractProtocol
                 Server::TYPE_VMESS => self::buildVmess($item['password'], $item),
                 Server::TYPE_VLESS => self::buildVless($item['password'], $item),
                 Server::TYPE_TROJAN => self::buildTrojan($item['password'], $item),
+                Server::TYPE_ANYTLS => self::buildAnyTLS($item['password'], $item),
                 Server::TYPE_SOCKS => self::buildSocks5($item['password'], $item),
                 Server::TYPE_HTTP => self::buildHttp($item['password'], $item),
                 default => ''
@@ -189,11 +191,37 @@ class QuantumultX extends AbstractProtocol
         ];
 
         $tlsData = [
-            'allow_insecure' => data_get($protocol_settings, 'allow_insecure', false),
-            'server_name' => data_get($protocol_settings, 'server_name'),
+            'allow_insecure' => data_get($protocol_settings, 'tls_settings.allow_insecure', false),
+            'server_name' => data_get($protocol_settings, 'tls_settings.server_name'),
         ];
         self::applyTransportSettings($config, $protocol_settings, true, $tlsData);
         self::applyCommonSettings($config, $server);
+
+        return implode(',', array_filter($config)) . "\r\n";
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $addr = Helper::wrapIPv6($server['host']);
+        $config = [
+            "anytls={$addr}:{$server['port']}",
+            "password={$password}",
+            'udp-relay=true',
+            "tag={$server['name']}",
+            "over-tls=true",
+        ];
+
+        // allow_insecure=false => tls-verification=true；
+        // allow_insecure=true 时不写，沿用 QX 默认 false
+        $allowInsecure = (bool) data_get($protocol_settings, 'tls.allow_insecure', false);
+        if (!$allowInsecure) {
+            $config[] = 'tls-verification=true';
+        }
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "tls-host=$serverName";
+        }
 
         return implode(',', array_filter($config)) . "\r\n";
     }

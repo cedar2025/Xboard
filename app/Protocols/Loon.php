@@ -205,10 +205,10 @@ class Loon extends AbstractProtocol
                 $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'reality_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
             default: // Standard TLS
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config[] = "tls-name={$serverName}";
                 }
-                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'allow_insecure') ? 'true' : 'false');
+                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'tls_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
         }
 
@@ -224,6 +224,20 @@ class Loon extends AbstractProtocol
                 $config[] = 'transport=grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config[] = "grpc-service-name={$serviceName}";
+                break;
+            case 'h2':
+                $config[] = 'transport=h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config[] = "host=" . (is_array($host) ? $host[0] : $host);
+                break;
+            case 'httpupgrade':
+                $config[] = 'transport=httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $config[] = "host={$host}";
                 break;
         }
 
@@ -293,6 +307,24 @@ class Loon extends AbstractProtocol
 				$config[] = "transport=grpc";
 				if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName')) {
 					$config[] = "grpc-service-name={$serviceName}";
+				}
+				break;
+			case 'h2':
+				$config[] = "transport=h2";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host')) {
+					$config[] = "host=" . (is_array($host) ? $host[0] : $host);
+				}
+				break;
+			case 'httpupgrade':
+				$config[] = "transport=httpupgrade";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+					$config[] = "host={$host}";
 				}
 				break;
 			default:

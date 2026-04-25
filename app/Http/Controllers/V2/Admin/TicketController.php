@@ -55,6 +55,7 @@ class TicketController extends Controller
         if (!$ticket) {
             return $this->fail([400202, '工单不存在']);
         }
+        $ticket->messages->each(fn($msg) => $msg->setRelation('ticket', $ticket));
         $result = $ticket->toArray();
         $result['user'] = UserController::transformUserData($ticket->user);
 
@@ -144,11 +145,12 @@ class TicketController extends Controller
         $ticket = Ticket::with([
             'user',
             'messages' => function ($query) {
-                $query->with(['user']); // 如果需要用户信息
+                $query->with(['user']);
             }
         ])->findOrFail($ticketId);
 
-        // 自动包含 is_me 属性
+        $ticket->messages->each(fn($msg) => $msg->setRelation('ticket', $ticket));
+
         return response()->json([
             'data' => $ticket
         ]);

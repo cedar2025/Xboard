@@ -238,10 +238,10 @@ class Clash extends AbstractProtocol
         $array['port'] = $server['port'];
         $array['password'] = $password;
         $array['udp'] = true;
-        if ($serverName = data_get($protocol_settings, 'server_name')) {
+        if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
             $array['sni'] = $serverName;
         }
-        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure');
+        $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':

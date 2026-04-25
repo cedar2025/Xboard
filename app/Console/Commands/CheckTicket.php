@@ -40,7 +40,7 @@ class CheckTicket extends Command
     {
         Ticket::where('status', 0)
             ->where('updated_at', '<=', time() - 24 * 3600)
-            ->where('reply_status', 0)
+            ->where('reply_status', Ticket::REPLY_STATUS_REPLIED)
             ->lazyById(200)
             ->each(function ($ticket) {
                 if ($ticket->user_id === $ticket->last_reply_user_id) return;

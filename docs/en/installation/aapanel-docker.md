@@ -65,14 +65,14 @@ cd /www/wwwroot/your-domain
 chattr -i .user.ini
 rm -rf .htaccess 404.html 502.html index.html .user.ini
 
-# Clone repository
-git clone https://github.com/cedar2025/Xboard.git ./
+# Clone the compose branch
+git clone -b compose --depth 1 https://github.com/cedar2025/Xboard.git ./
 
 # Prepare configuration file
-cp compose.sample.yaml compose.yaml
+cp compose.host.sample.yaml compose.yaml
 
 # Install dependencies and initialize
-docker compose run -it --rm web sh init.sh
+docker compose run -it --rm xboard php artisan xboard:install
 ```
 > ⚠️ Please save the admin dashboard URL, username, and password shown after installation
 
@@ -84,54 +84,35 @@ docker compose up -d
 #### 3.4 Configure Reverse Proxy
 Add the following content to your site configuration:
 ```nginx
-location /ws/ {
-    proxy_pass http://127.0.0.1:8076;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_read_timeout 60s;
-}
-
 location ^~ / {
     proxy_pass http://127.0.0.1:7001;
     proxy_http_version 1.1;
-    proxy_set_header Connection "";
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Real-PORT $remote_port;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header Host $http_host;
-    proxy_set_header Scheme $scheme;
-    proxy_set_header Server-Protocol $server_protocol;
-    proxy_set_header Server-Name $server_name;
-    proxy_set_header Server-Addr $server_addr;
-    proxy_set_header Server-Port $server_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $http_connection;
+    proxy_read_timeout 60s;
+    proxy_buffering off;
     proxy_cache off;
 }
 ```
-> The `/ws/` location enables real-time node synchronization via `ws-server`. This service is enabled by default and can be toggled in Admin Panel > System Settings > Server.
+> The all-in-one container's embedded Caddy fuses HTTP and the panel↔node WebSocket on port 7001. The single `Upgrade`/`Connection` pair above is enough; no separate `/ws/` location is needed. To opt out and expose Octane / `:8076` directly, set `ENABLE_CADDY=false` in `compose.yaml`.
 
 ## Maintenance Guide
 
 ### Version Updates
 
-> 💡 Important Note: Update commands may vary depending on your installed version:
-> - For recent installations (new version), use:
 ```bash
-docker compose pull && \
-docker compose run -it --rm web sh update.sh && \
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
-> - For older installations, replace `web` with `xboard`:
-```bash
-git config --global --add safe.directory $(pwd)
-git fetch --all && git reset --hard origin/master && git pull origin master
-docker compose pull && \
-docker compose run -it --rm xboard sh update.sh && \
-docker compose up -d
-```
-> 🤔 Not sure which to use? Try the new version command first, if it fails, use the old version command.
+
+The container always runs `php artisan xboard:update` (migrate + plugin install + version cache + theme refresh) on boot, so no extra command is required.
+
+> **Using a `compose.yaml` from before 2026-04-19?** That template did not auto-run `xboard:update` on container start, so use the following command to upgrade instead:
+> ```bash
+> docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+> ```
 
 ### Routine Maintenance
 - Regular log checking: `docker compose logs`

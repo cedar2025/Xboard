@@ -16,8 +16,6 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\note;
 use function Laravel\Prompts\select;
-use App\Models\Plugin;
-use Illuminate\Support\Str;
 
 class XboardInstall extends Command
 {
@@ -103,15 +101,17 @@ class XboardInstall extends Command
             $isReidsValid = false;
             while (!$isReidsValid) {
                 // 判断是否为Docker环境
-                if ($isDocker == 'true' && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'))) {
+                $useBuiltinRedis = $isDocker && ($enableRedis || confirm(label: '是否启用Docker内置的Redis', default: true, yes: '启用', no: '不启用'));
+                if ($useBuiltinRedis) {
                     $envConfig['REDIS_HOST'] = '/data/redis.sock';
                     $envConfig['REDIS_PORT'] = 0;
                     $envConfig['REDIS_PASSWORD'] = null;
-                } else {
-                    $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
-                    $envConfig['REDIS_PORT'] = text(label: '请输入Redis端口', default: '6379', required: true);
-                    $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
+                    $isReidsValid = true;
+                    break;
                 }
+                $envConfig['REDIS_HOST'] = text(label: '请输入Redis地址', default: '127.0.0.1', required: true);
+                $envConfig['REDIS_PORT'] = text(label: '请输入Redis端口', default: '6379', required: true);
+                $envConfig['REDIS_PASSWORD'] = text(label: '请输入redis密码(默认: null)', default: '');
                 $redisConfig = [
                     'client' => 'phpredis',
                     'default' => [
@@ -150,6 +150,20 @@ class XboardInstall extends Command
             $password = Helper::guid(false);
             $this->saveToEnv($envConfig);
 
+            $installDriverOverrides = [
+                'CACHE_DRIVER' => 'array',
+                'QUEUE_CONNECTION' => 'sync',
+                'SESSION_DRIVER' => 'array',
+            ];
+            foreach ($installDriverOverrides as $key => $value) {
+                putenv("{$key}={$value}");
+                $_ENV[$key] = $value;
+                $_SERVER[$key] = $value;
+            }
+            Config::set('cache.default', 'array');
+            Config::set('queue.default', 'sync');
+            Config::set('session.driver', 'array');
+
             $this->call('config:cache');
             Artisan::call('cache:clear');
             $this->info('正在导入数据库请稍等...');
@@ -160,7 +174,6 @@ class XboardInstall extends Command
             if (!self::registerAdmin($email, $password)) {
                 abort(500, '管理员账号注册失败，请重试');
             }
-            self::restoreProtectedPlugins($this);
             $this->info('正在安装默认插件...');
             PluginManager::installDefaultPlugins();
             $this->info('默认插件安装完成');
@@ -173,6 +186,11 @@ class XboardInstall extends Command
             $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
             $envConfig['INSTALLED'] = true;
             $this->saveToEnv($envConfig);
+            foreach (array_keys($installDriverOverrides) as $key) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+            }
+            Artisan::call('config:clear');
         } catch (\Exception $e) {
             $this->error($e);
         }
@@ -362,36 +380,6 @@ class XboardInstall extends Command
                 $this->error("PostgreSQL数据库连接失败：" . $e->getMessage());
                 $this->info("请重新输入PostgreSQL数据库配置");
             }
-        }
-    }
-
-    /**
-     * 还原内置受保护插件（可在安装和更新时调用）
-     * Docker 部署时 plugins/ 目录被外部挂载覆盖，需要从镜像备份中还原默认插件
-     */
-    public static function restoreProtectedPlugins(Command $console = null)
-    {
-        $backupBase = '/opt/default-plugins';
-        $pluginsBase = base_path('plugins');
-
-        if (!File::isDirectory($backupBase)) {
-            $console?->info('非 Docker 环境或备份目录不存在，跳过插件还原。');
-            return;
-        }
-
-        foreach (Plugin::PROTECTED_PLUGINS as $pluginCode) {
-            $dirName = Str::studly($pluginCode);
-            $source = "{$backupBase}/{$dirName}";
-            $target = "{$pluginsBase}/{$dirName}";
-
-            if (!File::isDirectory($source)) {
-                continue;
-            }
-
-            // 先清除旧文件再复制，避免重命名后残留旧文件
-            File::deleteDirectory($target);
-            File::copyDirectory($source, $target);
-            $console?->info("已同步默认插件 [{$dirName}]");
         }
     }
 }

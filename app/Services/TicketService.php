@@ -22,11 +22,11 @@ class TicketService
                 'ticket_id' => $ticket->id,
                 'message' => $message
             ]);
-            if ($userId !== $ticket->user_id) {
-                $ticket->reply_status = Ticket::STATUS_OPENING;
-            } else {
-                $ticket->reply_status = Ticket::STATUS_CLOSED;
-            }
+            $isAdmin = $userId !== $ticket->user_id;
+            $ticket->reply_status = $isAdmin
+                ? Ticket::REPLY_STATUS_REPLIED
+                : Ticket::REPLY_STATUS_WAITING;
+            $ticket->last_reply_user_id = $userId;
             if (!$ticketMessage || !$ticket->save()) {
                 throw new \Exception();
             }
@@ -40,33 +40,15 @@ class TicketService
 
     public function replyByAdmin($ticketId, $message, $userId): void
     {
-        $ticket = Ticket::where('id', $ticketId)
-            ->first();
+        $ticket = Ticket::where('id', $ticketId)->first();
         if (!$ticket) {
             throw new ApiException('工单不存在');
         }
-        $ticket->status = Ticket::STATUS_OPENING;
-        try {
-            DB::beginTransaction();
-            $ticketMessage = TicketMessage::create([
-                'user_id' => $userId,
-                'ticket_id' => $ticket->id,
-                'message' => $message
-            ]);
-            if ($userId !== $ticket->user_id) {
-                $ticket->reply_status = Ticket::STATUS_OPENING;
-            } else {
-                $ticket->reply_status = Ticket::STATUS_CLOSED;
-            }
-            if (!$ticketMessage || !$ticket->save()) {
-                throw new ApiException('工单回复失败');
-            }
-            DB::commit();
-            HookManager::call('ticket.reply.admin.after', [$ticket, $ticketMessage]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
+        $ticketMessage = $this->reply($ticket, $message, $userId);
+        if (!$ticketMessage) {
+            throw new ApiException('工单回复失败');
         }
+        HookManager::call('ticket.reply.admin.after', [$ticket, $ticketMessage]);
         $this->sendEmailNotify($ticket, $ticketMessage);
     }
 
@@ -81,7 +63,9 @@ class TicketService
             $ticket = Ticket::create([
                 'user_id' => $userId,
                 'subject' => $subject,
-                'level' => $level
+                'level' => $level,
+                'reply_status' => Ticket::REPLY_STATUS_WAITING,
+                'last_reply_user_id' => $userId,
             ]);
             if (!$ticket) {
                 throw new ApiException('工单创建失败');

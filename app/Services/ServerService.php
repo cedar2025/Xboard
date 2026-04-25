@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Server;
+use App\Models\ServerMachine;
 use App\Models\ServerRoute;
 use App\Models\User;
 use App\Services\Plugin\HookManager;
+use App\Utils\CacheKey;
 use App\Utils\Helper;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 
 class ServerService
@@ -31,6 +34,17 @@ class ServerService
             'metrics',
             'online_conn'
         ]);
+    }
+
+    /**
+     * 获取机器下所有已启用节点
+     */
+    public static function getMachineNodes(ServerMachine $machine): Collection
+    {
+        return Server::where('machine_id', $machine->id)
+            ->where('enabled', true)
+            ->orderBy('sort', 'ASC')
+            ->get();
     }
 
     /**
@@ -75,8 +89,12 @@ class ServerService
      */
     public static function getAvailableUsers(Server $node)
     {
+        $groupIds = $node->group_ids ?? [];
+        if (empty($groupIds)) {
+            return collect();
+        }
         $users = User::toBase()
-            ->whereIn('group_id', $node->group_ids)
+            ->whereIn('group_id', $groupIds)
             ->whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
@@ -98,6 +116,100 @@ class ServerService
     {
         $routes = ServerRoute::select(['id', 'match', 'action', 'action_value'])->whereIn('id', $routeIds)->get();
         return $routes;
+    }
+
+    /**
+     * 处理节点流量数据汇报
+     */
+    public static function processTraffic(Server $node, array $traffic): void
+    {
+        $data = array_filter($traffic, fn($item) =>
+            is_array($item) && count($item) === 2
+            && is_numeric($item[0]) && is_numeric($item[1])
+        );
+
+        if (empty($data)) {
+            return;
+        }
+
+        $nodeType = strtoupper($node->type);
+        $nodeId = $node->id;
+
+        Cache::put(CacheKey::get("SERVER_{$nodeType}_ONLINE_USER", $nodeId), count($data), 3600);
+        Cache::put(CacheKey::get("SERVER_{$nodeType}_LAST_PUSH_AT", $nodeId), time(), 3600);
+
+        (new UserService())->trafficFetch($node, $node->type, $data);
+    }
+
+    /**
+     * 处理节点在线设备汇报
+     */
+    public static function processAlive(int $nodeId, array $alive): void
+    {
+        $service = app(DeviceStateService::class);
+        foreach ($alive as $uid => $ips) {
+            $service->setDevices((int) $uid, $nodeId, (array) $ips);
+        }
+    }
+
+    /**
+     * 处理节点连接数汇报
+     */
+    public static function processOnline(Server $node, array $online): void
+    {
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+        $nodeType = $node->type;
+        $nodeId = $node->id;
+
+        foreach ($online as $uid => $conn) {
+            $cacheKey = CacheKey::get("USER_ONLINE_CONN_{$nodeType}_{$nodeId}", $uid);
+            Cache::put($cacheKey, (int) $conn, $cacheTime);
+        }
+    }
+
+    /**
+     * 处理节点负载状态汇报
+     */
+    public static function processStatus(Server $node, array $status): void
+    {
+        $nodeType = strtoupper($node->type);
+        $nodeId = $node->id;
+
+        $statusData = [
+            'cpu' => (float) ($status['cpu'] ?? 0),
+            'mem' => [
+                'total' => (int) ($status['mem']['total'] ?? 0),
+                'used' => (int) ($status['mem']['used'] ?? 0),
+            ],
+            'swap' => [
+                'total' => (int) ($status['swap']['total'] ?? 0),
+                'used' => (int) ($status['swap']['used'] ?? 0),
+            ],
+            'disk' => [
+                'total' => (int) ($status['disk']['total'] ?? 0),
+                'used' => (int) ($status['disk']['used'] ?? 0),
+            ],
+            'updated_at' => now()->timestamp,
+            'kernel_status' => $status['kernel_status'] ?? null,
+        ];
+
+        $cacheTime = max(300, (int) admin_setting('server_push_interval', 60) * 3);
+        cache([
+            CacheKey::get("SERVER_{$nodeType}_LOAD_STATUS", $nodeId) => $statusData,
+            CacheKey::get("SERVER_{$nodeType}_LAST_LOAD_AT", $nodeId) => now()->timestamp,
+        ], $cacheTime);
+    }
+
+    /**
+     * 标记节点心跳
+     */
+    public static function touchNode(Server $node): void
+    {
+        Cache::put(
+            CacheKey::get('SERVER_' . strtoupper($node->type) . '_LAST_CHECK_AT', $node->id),
+            time(),
+            3600
+        );
     }
 
     /**
@@ -129,8 +241,8 @@ class ServerService
             'kernel_status' => (bool) ($metrics['kernel_status'] ?? false),
         ];
 
-        \Illuminate\Support\Facades\Cache::put(
-            \App\Utils\CacheKey::get('SERVER_' . $nodeType . '_METRICS', $nodeId),
+        Cache::put(
+            CacheKey::get('SERVER_' . $nodeType . '_METRICS', $nodeId),
             $metricsData,
             $cacheTime
         );
@@ -166,17 +278,18 @@ class ServerService
             'vmess' => [
                 ...$baseConfig,
                 'tls' => (int) $protocolSettings['tls'],
+                'tls_settings' => $protocolSettings['tls_settings'],
                 'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             'trojan' => [
                 ...$baseConfig,
                 'host' => $host,
-                'server_name' => $protocolSettings['server_name'],
+                'server_name' => data_get($protocolSettings, 'tls_settings.server_name'),
                 'multiplex' => data_get($protocolSettings, 'multiplex'),
                 'tls' => (int) $protocolSettings['tls'],
                 'tls_settings' => match ((int) $protocolSettings['tls']) {
                         2 => $protocolSettings['reality_settings'],
-                        default => null,
+                        default => $protocolSettings['tls_settings'],
                     },
             ],
             'vless' => [
@@ -199,6 +312,7 @@ class ServerService
                 'version' => (int) $protocolSettings['version'],
                 'host' => $host,
                 'server_name' => $protocolSettings['tls']['server_name'],
+                'tls_settings' => $protocolSettings['tls'],
                 'up_mbps' => (int) $protocolSettings['bandwidth']['up'],
                 'down_mbps' => (int) $protocolSettings['bandwidth']['down'],
                 ...match ((int) $protocolSettings['version']) {
@@ -216,7 +330,7 @@ class ServerService
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
                 'congestion_control' => $protocolSettings['congestion_control'],
-                'tls_settings' => data_get($protocolSettings, 'tls_settings'),
+                'tls_settings' => $protocolSettings['tls'],
                 'auth_timeout' => '3s',
                 'zero_rtt_handshake' => false,
                 'heartbeat' => '3s',
@@ -225,11 +339,14 @@ class ServerService
                 ...$baseConfig,
                 'server_port' => (int) $serverPort,
                 'server_name' => $protocolSettings['tls']['server_name'],
+                'tls_settings' => $protocolSettings['tls'],
                 'padding_scheme' => $protocolSettings['padding_scheme'],
             ],
             'socks' => [
                 ...$baseConfig,
                 'server_port' => (int) $serverPort,
+                'tls' => (int) data_get($protocolSettings, 'tls', 0),
+                'tls_settings' => data_get($protocolSettings, 'tls_settings'),
             ],
             'naive' => [
                 ...$baseConfig,
@@ -248,15 +365,9 @@ class ServerService
                 'server_port' => (int) $serverPort,
                 'transport' => data_get($protocolSettings, 'transport', 'TCP'),
                 'traffic_pattern' => $protocolSettings['traffic_pattern'],
-                // 'multiplex' => data_get($protocolSettings, 'multiplex'),
             ],
             default => [],
         };
-
-        // $response = array_filter(
-        //     $response,
-        //     static fn ($value) => $value !== null
-        // );
 
         if (!empty($node['route_ids'])) {
             $response['routes'] = self::getRoutes($node['route_ids']);
@@ -270,8 +381,16 @@ class ServerService
             $response['custom_routes'] = $node['custom_routes'];
         }
 
-        if (!empty($node['cert_config']) && data_get($node['cert_config'],'cert_mode') !== 'none' ) {
-            $response['cert_config'] = $node['cert_config'];
+        if (!empty($node['cert_config'])) {
+            $certConfig = $node['cert_config'];
+            // Normalize: accept both "mode" and "cert_mode" from the database
+            if (isset($certConfig['mode']) && !isset($certConfig['cert_mode'])) {
+                $certConfig['cert_mode'] = $certConfig['mode'];
+                unset($certConfig['mode']);
+            }
+            if (data_get($certConfig, 'cert_mode') !== 'none') {
+                $response['cert_config'] = $certConfig;
+            }
         }
 
         return $response;

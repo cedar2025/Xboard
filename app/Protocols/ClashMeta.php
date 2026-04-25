@@ -36,6 +36,27 @@ class ClashMeta extends AbstractProtocol
                 'http' => '0.0.0',
                 'h2' => '0.0.0',
                 'httpupgrade' => '0.0.0',
+                'xhttp' => '0.0.0',
+            ],
+            'strict' => true,
+        ],
+        '*.vmess.protocol_settings.network' => [
+            'whitelist' => [
+                'tcp' => '0.0.0',
+                'ws' => '0.0.0',
+                'grpc' => '0.0.0',
+                'http' => '0.0.0',
+                'h2' => '0.0.0',
+                'httpupgrade' => '0.0.0',
+            ],
+            'strict' => true,
+        ],
+        '*.trojan.protocol_settings.network' => [
+            'whitelist' => [
+                'tcp' => '0.0.0',
+                'ws' => '0.0.0',
+                'grpc' => '0.0.0',
+                'httpupgrade' => '0.0.0',
             ],
             'strict' => true,
         ],
@@ -57,6 +78,66 @@ class ClashMeta extends AbstractProtocol
         ],
         'flclash.hysteria.protocol_settings.version' => [
             2 => '0.8.0',
+        ],
+        'meta.vmess.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'meta.vless.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'meta.trojan.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'meta.anytls.protocol_settings.tls.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'verge.vmess.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'verge.vless.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'verge.trojan.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'verge.anytls.protocol_settings.tls.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'flclash.vmess.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'flclash.vless.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'flclash.trojan.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'flclash.anytls.protocol_settings.tls.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'nekobox.vmess.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'nekobox.vless.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'nekobox.trojan.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'nekobox.anytls.protocol_settings.tls.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'clashmetaforandroid.vmess.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'clashmetaforandroid.vless.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'clashmetaforandroid.trojan.protocol_settings.tls_settings.ech.enabled' => [
+            1 => '1.19.9',
+        ],
+        'clashmetaforandroid.anytls.protocol_settings.tls.ech.enabled' => [
+            1 => '1.19.9',
         ],
     ];
 
@@ -264,6 +345,7 @@ class ClashMeta extends AbstractProtocol
             $array['tls'] = (bool) data_get($protocol_settings, 'tls');
             $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
             $array['servername'] = data_get($protocol_settings, 'tls_settings.server_name');
+            self::appendEch($array, data_get($protocol_settings, 'tls_settings.ech'));
         }
 
         self::appendUtls($array, $protocol_settings);
@@ -346,6 +428,7 @@ class ClashMeta extends AbstractProtocol
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['servername'] = $serverName;
                 }
+                self::appendEch($array, data_get($protocol_settings, 'tls_settings.ech'));
                 self::appendUtls($array, $protocol_settings);
                 break;
             case 2:
@@ -406,6 +489,18 @@ class ClashMeta extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['ws-opts']['headers'] = ['Host' => $host];
                 break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $xhttpOpts = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $xhttpOpts['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $xhttpOpts['host'] = $host;
+                if ($mode = data_get($protocol_settings, 'network_settings.mode'))
+                    $xhttpOpts['mode'] = $mode;
+                if (!empty($xhttpOpts))
+                    $array['xhttp-opts'] = $xhttpOpts;
+                break;
             default:
                 break;
         }
@@ -440,10 +535,11 @@ class ClashMeta extends AbstractProtocol
                 ];
                 break;
             default: // Standard TLS
-                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'allow_insecure', false);
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                $array['skip-cert-verify'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['sni'] = $serverName;
                 }
+                self::appendEch($array, data_get($protocol_settings, 'tls_settings.ech'));
                 break;
         }
 
@@ -584,6 +680,7 @@ class ClashMeta extends AbstractProtocol
         if ($allowInsecure = data_get($protocol_settings, 'tls.allow_insecure')) {
             $array['skip-cert-verify'] = (bool) $allowInsecure;
         }
+        self::appendEch($array, data_get($protocol_settings, 'tls.ech'));
 
         return $array;
     }
@@ -703,6 +800,17 @@ class ClashMeta extends AbstractProtocol
             if (data_get($utls, 'enabled')) {
                 $array['client-fingerprint'] = Helper::getTlsFingerprint($utls);
             }
+        }
+    }
+
+    protected static function appendEch(&$array, $ech): void
+    {
+        if ($normalized = Helper::normalizeEchSettings($ech)) {
+            $array['ech-opts'] = array_filter([
+                'enable' => true,
+                'config' => Helper::toMihomoEchConfig(data_get($normalized, 'config')),
+                'query-server-name' => data_get($normalized, 'query_server_name'),
+            ], fn($value) => $value !== null);
         }
     }
 }
