@@ -111,7 +111,7 @@ The container always runs `php artisan xboard:update` (migrate + plugin install 
 
 > **Using a `compose.yaml` from before 2026-04-19?** That template did not auto-run `xboard:update` on container start, so use the following command to upgrade instead:
 > ```bash
-> docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
+> docker compose pull && docker compose run -it --rm web sh update.sh && docker compose up -d
 > ```
 
 ### Routine Maintenance
