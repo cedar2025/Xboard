@@ -95,8 +95,7 @@ class General extends AbstractProtocol
         }
         if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
             $config['fp'] = $fp;
-        }
-
+        } 
         switch (data_get($protocol_settings, 'network')) {
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
@@ -175,12 +174,36 @@ class General extends AbstractProtocol
                 $config['security'] = "tls";
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
                     $config['fp'] = $fp;
+                } elseif ($fp = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.fingerprint')) {
+                    $config['fp'] = $fp;
                 }
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config['sni'] = $serverName;
                 }
                 if (data_get($protocol_settings, 'tls_settings.allow_insecure')) {
                     $config['allowInsecure'] = '1';
+                }
+                // ALPN
+                if ($alpn = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.alpn')) {
+                    $config['alpn'] = is_array($alpn)
+                        ? implode(',', $alpn)
+                        : $alpn;
+                }
+                // ECH
+                $ech = data_get($protocol_settings, 'tls_settings.ech');
+                if (data_get($ech, 'enabled')) {
+                    $queryServerName = data_get($ech, 'query_server_name', 'cloudflare-ech.com');
+                    $echConfig = data_get($ech, 'config', '');
+                    // Strip PEM headers and collapse to a single base64 string
+                    $echBase64 = preg_replace('/-----[^-]+-----/', '', $echConfig);
+                    $echBase64 = str_replace(["\r", "\n", ' '], '', trim($echBase64));
+                    if ($echBase64) {
+                        // Embed the config directly; client uses it as echConfigList
+                        $config['ech'] = $echBase64;
+                    } else {
+                        // Fall back to query-server-name so the client fetches via DoH
+                        $config['ech'] = $queryServerName;
+                    }
                 }
                 break;
             case 2: //reality
