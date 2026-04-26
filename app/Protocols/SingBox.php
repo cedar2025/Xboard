@@ -179,14 +179,127 @@ class SingBox extends AbstractProtocol
             }
         }
         foreach ($outbounds as &$outbound) {
-            if (in_array($outbound['type'], ['urltest', 'selector'])) {
-                array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
+            if (!in_array($outbound['type'], ['urltest', 'selector'])) {
+                continue;
+            }
+
+            $include = $outbound['include'] ?? null;
+            $exclude = $outbound['exclude'] ?? null;
+            $fallback = $outbound['fallback'] ?? null;
+            unset($outbound['include'], $outbound['exclude'], $outbound['fallback']);
+
+            $allTags = array_column($proxies, 'tag');
+            $tags = $allTags;
+
+            if ($include !== null && $include !== '') {
+                $tags = array_values(array_filter(
+                    $tags,
+                    fn($tag) => $this->matchesPattern($include, $tag)
+                ));
+            }
+
+            if ($exclude !== null && $exclude !== '') {
+                $tags = array_values(array_filter(
+                    $tags,
+                    fn($tag) => !$this->matchesPattern($exclude, $tag)
+                ));
+            }
+
+            if (empty($tags) && $fallback !== null) {
+                $tags = $this->resolveFallback($fallback, $allTags, $outbounds, $outbound['tag'] ?? '');
+            }
+
+            if (!empty($tags)) {
+                array_push($outbound['outbounds'], ...$tags);
             }
         }
+        unset($outbound);
 
         $outbounds = array_merge($outbounds, $proxies);
         $this->config['outbounds'] = $outbounds;
         return $outbounds;
+    }
+
+    /**
+     * Safely match a user-supplied pattern against a node tag.
+     *
+     * Accepts either:
+     *   - a bare pattern (e.g. "HK|香港") — wrapped with `~...~ui` delimiters
+     *   - a fully-delimited pattern (e.g. "/foo/i", "#bar#u") — used as-is
+     *
+     * Uses `~` as the default delimiter (rare in node names) and escapes any
+     * literal `~` in bare patterns. Invalid patterns never throw; they log a
+     * warning and return false so the outbound simply stays empty rather than
+     * breaking subscription generation.
+     */
+    protected function matchesPattern(string $pattern, string $subject): bool
+    {
+        static $cache = [];
+
+        if (!isset($cache[$pattern])) {
+            $trimmed = trim($pattern);
+            $first = $trimmed !== '' ? $trimmed[0] : '';
+            $looksDelimited = in_array($first, ['/', '#', '~', '@', '%'], true)
+                && preg_match('/^(.)(.*)\1[a-zA-Z]*$/us', $trimmed) === 1;
+
+            $cache[$pattern] = $looksDelimited
+                ? $trimmed
+                : '~' . str_replace('~', '\~', $pattern) . '~ui';
+        }
+
+        $compiled = $cache[$pattern];
+
+        $result = @preg_match($compiled, $subject);
+
+        if ($result === false) {
+            $err = preg_last_error_msg();
+            Log::warning("[SingBox] invalid outbound pattern {$pattern}: {$err}");
+            $cache[$pattern] = '~(*FAIL)~';
+            return false;
+        }
+
+        return $result === 1;
+    }
+
+    /**
+     * Resolve a fallback value into a list of usable outbound tags.
+     *
+     * Accepted shapes (string or array, mixed freely):
+     *   - "direct"                 → built-in outbound tag (direct/block/...)
+     *   - "Singapore-03"           → exact node tag
+     *   - "节点选择"                → another group's tag defined in template
+     *   - "JP|日本"                → pattern matched against available node tags
+     *   - ["HK-01", "JP-02"]       → list, each resolved in order, first hit wins
+     *   - ["JP|日本", "direct"]    → pattern first, then hard fallback
+     *
+     * Returns the first non-empty resolution. Logs if nothing resolves.
+     */
+    protected function resolveFallback($fallback, array $allTags, array $outbounds, string $groupTag): array
+    {
+        $candidates = is_array($fallback) ? $fallback : [$fallback];
+        $templateTags = array_column($outbounds, 'tag');
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+
+            if (in_array($candidate, $allTags, true) || in_array($candidate, $templateTags, true)) {
+                return [$candidate];
+            }
+
+            $matched = array_values(array_filter(
+                $allTags,
+                fn($tag) => $this->matchesPattern($candidate, $tag)
+            ));
+
+            if (!empty($matched)) {
+                return $matched;
+            }
+        }
+
+        Log::warning("[SingBox] outbound group '{$groupTag}' fallback unresolved; group left empty");
+        return [];
     }
 
     /**
