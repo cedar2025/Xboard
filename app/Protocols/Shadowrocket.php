@@ -264,6 +264,8 @@ class Shadowrocket extends AbstractProtocol
                 }
                 break;
             case 'xhttp':
+                // 暂时禁用 xhttp 节点订阅
+                return '';
                 $config['obfs'] = "xhttp";
                 if ($path = data_get($protocol_settings, 'network_settings.path')) {
                     $config['path'] = $path;
