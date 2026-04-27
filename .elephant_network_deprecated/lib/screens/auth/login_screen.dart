@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/navigation_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -55,6 +57,8 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     if (success && mounted) {
+      context.read<NavigationProvider>().setPage(NavigationPage.dashboard);
+      context.read<UserProvider>().refresh();
       Navigator.of(context).pushReplacementNamed('/home');
     }
   }

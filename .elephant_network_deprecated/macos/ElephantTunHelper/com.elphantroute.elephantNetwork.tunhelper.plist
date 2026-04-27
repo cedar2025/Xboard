@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.elphantroute.elephantNetwork.tunhelper</string>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>com.elphantroute.elephantNetwork</string>
+	</array>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/ElephantTunHelper</string>
+	<key>MachServices</key>
+	<dict>
+		<key>com.elphantroute.elephantNetwork.tunhelper</key>
+		<true/>
+	</dict>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>KeepAlive</key>
+	<false/>
+	<key>StandardOutPath</key>
+	<string>/Library/Logs/ElephantRoute/tun-helper-stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Library/Logs/ElephantRoute/tun-helper-stderr.log</string>
+</dict>
+</plist>

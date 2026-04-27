@@ -361,9 +361,14 @@ class MacosVpnService implements VpnManager {
       return VpnFailureReason.routeConflict;
     }
     if (code == 'PERMISSION_DENIED' ||
+        code == 'HELPER_NOT_ENABLED' ||
+        code == 'HELPER_NOT_REGISTERED' ||
+        code == 'HELPER_REQUIRES_APPROVAL' ||
+        code == 'HELPER_NOT_FOUND' ||
         errorText.contains('permission') ||
         errorText.contains('administrator') ||
-        errorText.contains('授权')) {
+        errorText.contains('授权') ||
+        errorText.contains('后台网络组件')) {
       return VpnFailureReason.permissionDenied;
     }
     if (errorText.contains('proxy')) {
@@ -439,8 +444,10 @@ class MacosVpnService implements VpnManager {
               inbound.remove('interface_name');
               inbound['inet4_address'] = '172.19.0.1/30';
               inbound['inet6_address'] = 'fdfe:dcba:9876::1/126';
+              inbound['mtu'] = 1500;
               inbound['auto_route'] = true;
               inbound['strict_route'] = false;
+              inbound['stack'] = 'system';
             }
           }
           if (!hasTunInbound) {
@@ -449,6 +456,7 @@ class MacosVpnService implements VpnManager {
               'tag': 'tun-in',
               'inet4_address': '172.19.0.1/30',
               'inet6_address': 'fdfe:dcba:9876::1/126',
+              'mtu': 1500,
               'auto_route': true,
               'strict_route': false,
               'stack': 'system',

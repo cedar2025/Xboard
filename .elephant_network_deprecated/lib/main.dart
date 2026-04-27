@@ -16,6 +16,7 @@ import 'providers/node_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/config_provider.dart';
+import 'providers/app_update_provider.dart';
 import 'core/services/tray_service.dart';
 import 'core/services/app_logger.dart';
 import 'core/singbox/vpn_manager.dart';
@@ -117,6 +118,9 @@ class MyApp extends StatelessWidget {
         // 提供 ConfigProvider (前置, 核心网络依赖)
         ChangeNotifierProvider<ConfigProvider>(
           create: (_) => ConfigProvider(),
+        ),
+        ChangeNotifierProvider<AppUpdateProvider>(
+          create: (context) => AppUpdateProvider(context.read<DioClient>()),
         ),
         // 提供 NodeProvider
         ChangeNotifierProvider<NodeProvider>(

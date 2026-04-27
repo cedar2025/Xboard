@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,18 +6,19 @@ import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/vpn_provider.dart';
 import '../../providers/node_provider.dart';
+import '../../providers/app_update_provider.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/config_provider.dart';
 import '../../models/user.dart';
+import '../../core/services/mac_runtime_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../utils/helpers.dart';
-import '../../utils/avatar_helper.dart';
 import '../../utils/flag_helper.dart';
 import '../../utils/platform_utils.dart';
 import '../../core/singbox/vpn_state.dart';
+import '../../widgets/app_update_dialog.dart';
 import 'node_selection_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -31,8 +31,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   bool _isPowerButtonPressed = false;
+  bool _isPowerActionPending = false;
   Timer? _syncTimer;
 
   @override
@@ -59,9 +59,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
-    );
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     _pulseController.repeat(reverse: true);
   }
@@ -677,7 +674,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       builder: (context, vpnProvider, _) {
         final vpnState = vpnProvider.state;
         final isConnected = vpnState.isConnected;
-        final isProcessing = vpnState.isProcessing;
+        final isProcessing = vpnState.isProcessing || _isPowerActionPending;
 
         return Container(
           constraints: const BoxConstraints(minHeight: 260),
@@ -741,7 +738,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   Text(
-                    _statusTitle(vpnProvider.state),
+                    _isPowerActionPending
+                        ? '正在准备...'
+                        : _statusTitle(vpnProvider.state),
                     style: AppTextStyles.displaySmall.copyWith(
                       color: _getCardTitleColor(isConnected, isDark),
                       fontSize: 24,
@@ -749,25 +748,51 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _statusDescription(vpnProvider.state),
+                    _isPowerActionPending
+                        ? '正在检查后台 TUN 网络组件，请稍候...'
+                        : _statusDescription(vpnProvider.state),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: _getCardDescriptionColor(isConnected, isDark),
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 8),
+                  _buildTunModeBadge(isDark),
                   const SizedBox(height: 16),
                   _buildPowerButton(
                       isConnected, isProcessing, isDark, vpnProvider),
                   const SizedBox(height: 20),
                   _buildNodeSelectionButton(isConnected, isDark),
-                  const SizedBox(height: 16),
-                  _buildTunSwitch(isDark),
                 ],
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTunModeBadge(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.primary.withOpacity(0.12)
+            : AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isDark
+              ? AppColors.primaryLight.withOpacity(0.22)
+              : AppColors.primary.withOpacity(0.18),
+        ),
+      ),
+      child: Text(
+        'TUN 模式',
+        style: AppTextStyles.labelSmall.copyWith(
+          color: isDark ? AppColors.primaryLight : AppColors.primaryDark,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
@@ -811,121 +836,137 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  /// TUN 模式开关
-  Widget _buildTunSwitch(bool isDark) {
-    return Consumer<ConfigProvider>(
-      builder: (context, config, _) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.darkInputBackground.withOpacity(0.5)
-                : AppColors.slate50,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-            border: Border.all(
-              color: isDark ? AppColors.darkCardBorder : AppColors.slate100,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.security_rounded,
-                    size: 14,
-                    color: config.useTunMode
-                        ? (isDark ? AppColors.primaryLight : AppColors.primary)
-                        : (isDark
-                            ? AppColors.darkTextTertiary
-                            : AppColors.slate400),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '开启 TUN 模式',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
-                      fontSize: 12,
-                      fontWeight: config.useTunMode
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Transform.scale(
-                    scale: 0.75,
-                    child: Switch(
-                      value: config.useTunMode,
-                      onChanged: (value) async {
-                        final vpnProvider = context.read<VpnProvider>();
-                        if (vpnProvider.state.isConnected) {
-                          // 如果已连接，提示需要重启
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('提示'),
-                              content: const Text(
-                                  '切换 TUN 模式需要重新连接 VPN 才能生效。是否现在重启连接？'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('取消'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('确定'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirmed == true) {
-                            await config.setUseTunMode(value);
-                            await vpnProvider.disconnect();
-                            await vpnProvider.connect();
-                          }
-                        } else {
-                          await config.setUseTunMode(value);
-                        }
-                      },
-                      activeColor:
-                          isDark ? AppColors.primaryLight : AppColors.primary,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '接管本机全局流量，遇到部分软件无法走普通代理时在此开启。',
-                style: AppTextStyles.labelTiny.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextSecondary.withOpacity(0.8),
-                  fontSize: 10,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+  Future<void> _handlePowerButtonTap(VpnProvider vpnProvider) async {
+    if (_isPowerActionPending || vpnProvider.state.isProcessing) {
+      return;
+    }
+
+    setState(() => _isPowerActionPending = true);
+    if (vpnProvider.state.isConnected) {
+      try {
+        await vpnProvider.toggle();
+      } finally {
+        if (mounted) {
+          setState(() => _isPowerActionPending = false);
+        }
+      }
+      return;
+    }
+
+    try {
+      final updateProvider = context.read<AppUpdateProvider>();
+      final update = await updateProvider.checkForUpdate(silent: true);
+      if (update != null && updateProvider.forceUpdateRequired) {
+        if (mounted) {
+          await showAppUpdateDialog(context, update);
+        }
+        return;
+      }
+
+      if (PlatformUtils.isMacOS) {
+        final ready = await _ensureMacTunHelperReady();
+        if (!ready) return;
+      }
+
+      await vpnProvider.toggle();
+    } finally {
+      if (mounted) {
+        setState(() => _isPowerActionPending = false);
+      }
+    }
+  }
+
+  Future<bool> _ensureMacTunHelperReady() async {
+    final runtime = MacRuntimeService.instance;
+    final status = await runtime.getTunHelperStatus();
+    if (status['status'] == 'enabled' && status['code'] == 'OK') {
+      final result = await runtime.ensureTunHelper();
+      if (result['status'] != 'enabled') {
+        if (!mounted) return false;
+        final message = (result['message'] as String?) ??
+            (result['error'] as String?) ??
+            '后台网络组件未启用，请在系统设置中允许后重试';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
         );
-      },
+        return false;
+      }
+      return true;
+    }
+
+    final bundledPlistExists = status['bundledPlistExists'] == true;
+    final bundledHelperExists = status['bundledHelperExists'] == true;
+    if (status['status'] == 'notFound' &&
+        (!bundledPlistExists || !bundledHelperExists)) {
+      if (!mounted) return false;
+      final message =
+          (status['message'] as String?) ?? '未在应用包中找到后台网络组件，请重新安装客户端';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      return false;
+    }
+
+    if (status['status'] == 'requiresApproval') {
+      if (!mounted) return false;
+      final message =
+          (status['message'] as String?) ?? '后台网络组件未启用，请在系统设置中允许后重试';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      return false;
+    }
+
+    if (!mounted) return false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('启用后台网络组件'),
+        content: const Text(
+          '首次使用 TUN 加速需要启用后台网络组件，用于接管本机全局流量。启用后，之后开关加速将尽量不再打扰你。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('启用'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed != true) return false;
+
+    final result = await runtime.ensureTunHelper();
+    if (result['status'] == 'enabled') {
+      return true;
+    }
+
+    if (!mounted) return false;
+    final message = (result['message'] as String?) ??
+        (result['error'] as String?) ??
+        '后台网络组件未启用，请在系统设置中允许后重试';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    return false;
   }
 
   /// 电源按钮 ⭐⭐⭐ 最核心的元素
   Widget _buildPowerButton(bool isConnected, bool isProcessing, bool isDark,
       VpnProvider vpnProvider) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _isPowerButtonPressed = true),
       onTapUp: (_) {
         setState(() => _isPowerButtonPressed = false);
+      },
+      onTap: () {
         if (!isProcessing) {
-          vpnProvider.toggle();
+          _handlePowerButtonTap(vpnProvider);
         }
       },
       onTapCancel: () => setState(() => _isPowerButtonPressed = false),
@@ -1143,33 +1184,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           : AppColors.lightTextSecondary;
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary;
-  }
-
-  Color _getStatusBgColor(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return isDark
-          ? AppColors.primary.withOpacity(0.1)
-          : Colors.white.withOpacity(0.1);
-    }
-    return isDark ? AppColors.darkCardSecondary : AppColors.primaryUltraLight;
-  }
-
-  Color _getStatusBorderColor(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return isDark
-          ? AppColors.primary.withOpacity(0.2)
-          : Colors.white.withOpacity(0.2);
-    }
-    return isDark
-        ? AppColors.darkCardBorder
-        : AppColors.primaryLight.withOpacity(0.3);
-  }
-
-  Color _getStatusTextColor(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return isDark ? AppColors.primaryLight : AppColors.primary;
-    }
-    return isDark ? AppColors.primaryLight : AppColors.primaryDark;
   }
 
   Color _getPowerButtonColor(bool isConnected, bool isDark) {

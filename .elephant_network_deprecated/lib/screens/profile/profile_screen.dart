@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -22,8 +23,24 @@ import 'about_screen.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  static final Future<PackageInfo> _packageInfoFuture =
+      PackageInfo.fromPlatform();
+
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.read<UserProvider>();
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.hasValidatedSession &&
+        userProvider.user == null &&
+        !userProvider.isLoading &&
+        userProvider.errorMessage == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.read<UserProvider>().refresh();
+        }
+      });
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tr = context.read<LanguageProvider>();
 
@@ -94,6 +111,9 @@ class ProfileScreen extends StatelessWidget {
                 builder: (context, provider, child) {
                   final user = provider.user;
                   if (user == null) {
+                    if (provider.errorMessage != null) {
+                      return _buildLoadError(context, provider, isDark);
+                    }
                     return Center(
                       child: CircularProgressIndicator(
                         color:
@@ -131,6 +151,48 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadError(
+      BuildContext context, UserProvider provider, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 44,
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              provider.errorMessage ?? '用户信息加载失败',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: provider.isLoading ? null : () => provider.refresh(),
+              child: provider.isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('重试'),
             ),
           ],
         ),
@@ -499,19 +561,27 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
-          _buildActionItem(
-            context,
-            Icons.info_outline,
-            '关于大象网络',
-            'v1.0.0',
-            isDark,
-            () {
-              Navigator.push(
+          FutureBuilder<PackageInfo>(
+            future: _packageInfoFuture,
+            builder: (context, snapshot) {
+              final version = snapshot.hasData
+                  ? 'v${snapshot.data!.version}'
+                  : '查看版本';
+              return _buildActionItem(
                 context,
-                MaterialPageRoute(builder: (_) => const AboutScreen()),
+                Icons.info_outline,
+                '关于大象网络',
+                version,
+                isDark,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  );
+                },
+                isLast: true,
               );
             },
-            isLast: true,
           ),
         ],
       ),

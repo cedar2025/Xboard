@@ -1,12 +1,23 @@
 import Cocoa
 import FlutterMacOS
 import Security
+import ServiceManagement
+
+@objc(ElephantTunHelperProtocol)
+protocol ElephantTunHelperProtocol {
+  func getStatus(withReply reply: @escaping (NSDictionary) -> Void)
+  func startTun(configPath: String, withReply reply: @escaping (NSDictionary) -> Void)
+  func stopTun(withReply reply: @escaping (NSDictionary) -> Void)
+  func exportDiagnostics(withReply reply: @escaping (NSString?) -> Void)
+}
 
 @main
 class AppDelegate: FlutterAppDelegate {
   private let runtimeChannelName = "com.elephant.network/runtime"
   private let proxyChannelName = "com.elephant.network/proxy"
   private let secureServiceName = "com.elphantroute.elephantNetwork.secure"
+  private let tunHelperLabel = "com.elphantroute.elephantNetwork.tunhelper"
+  private let tunHelperPlistName = "com.elphantroute.elephantNetwork.tunhelper.plist"
 
   private var coreProcess: Process?
   private var runtimeState: [String: Any] = [
@@ -103,6 +114,14 @@ class AppDelegate: FlutterAppDelegate {
       }
       performAsync(result) {
         self.startTunMode(configPath: configPath, binaryPath: binaryPath)
+      }
+    case "ensureTunHelper":
+      performAsync(result) {
+        self.ensureTunHelper()
+      }
+    case "getTunHelperStatus":
+      performAsync(result) {
+        self.getTunHelperStatus()
       }
     case "stopCore":
       performAsync(result) {
@@ -206,35 +225,39 @@ class AppDelegate: FlutterAppDelegate {
 
   private func startTunMode(configPath: String, binaryPath: String) -> [String: Any] {
     log("Starting TUN mode with binary=\(binaryPath)")
-    _ = stopCoreInternal(restoreProxy: true, updateRuntime: false, allowPrivilegedCleanup: false)
+    _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
 
     if let conflict = activeTunnelConflictDescription() {
       updateRuntimeState(status: "error", mode: "tun", lastError: conflict, configPath: configPath, binaryPath: binaryPath)
       return ["ok": false, "error": conflict, "code": "TUN_CONFLICT"]
     }
 
-    guard launchTunCore(binaryPath: binaryPath, configPath: configPath) else {
-      let error = "Failed to launch TUN core with admin privileges"
+    let helperStatus = getTunHelperStatus()
+    if helperStatus["status"] as? String != "enabled" {
+      let error = helperStatus["message"] as? String ?? "后台网络组件未启用"
       updateRuntimeState(status: "error", mode: "tun", lastError: error, configPath: configPath, binaryPath: binaryPath)
-      return ["ok": false, "error": error, "code": "PERMISSION_DENIED"]
+      return ["ok": false, "error": error, "code": helperStatus["code"] as? String ?? "HELPER_NOT_ENABLED"]
     }
 
-    guard waitForHealthCheck() else {
-      _ = stopCoreInternal(restoreProxy: true, updateRuntime: false, allowPrivilegedCleanup: false)
-      let error = recentTunFailureMessage() ?? "Health check failed after TUN launch"
+    let startResult = callTunHelper { helper, reply in
+      helper.startTun(configPath: configPath, withReply: reply)
+    }
+
+    guard startResult["ok"] as? Bool == true else {
+      let error = (startResult["error"] as? String) ?? "Failed to launch TUN core"
       updateRuntimeState(status: "error", mode: "tun", lastError: error, configPath: configPath, binaryPath: binaryPath)
       return [
         "ok": false,
         "error": error,
-        "code": error.contains("其他 TUN/VPN 会话") || error.contains("冲突路由") ? "TUN_ROUTE_CONFLICT" : "HEALTH_CHECK_FAILED"
+        "code": (startResult["code"] as? String) ?? "CORE_START_FAILED"
       ]
     }
 
     updateRuntimeState(status: "connected", mode: "tun", lastError: "", configPath: configPath, binaryPath: binaryPath)
-    return ["ok": true, "mode": "tun"]
+    return ["ok": true, "mode": "tun", "helper": startResult]
   }
 
-  private func stopCoreInternal(restoreProxy: Bool, updateRuntime: Bool, allowPrivilegedCleanup: Bool = true) -> [String: Any] {
+  private func stopCoreInternal(restoreProxy: Bool, updateRuntime: Bool) -> [String: Any] {
     log("Stopping macOS runtime")
     if let process = coreProcess, process.isRunning {
       process.terminate()
@@ -244,11 +267,8 @@ class AppDelegate: FlutterAppDelegate {
 
     _ = runCommand("/usr/bin/pkill", args: ["-f", coreProcessPattern])
 
-    var privilegedCleanupAttempted = false
-    var privilegedCleanupSucceeded = true
-    if allowPrivilegedCleanup && hasPrivilegedCoreProcess() {
-      privilegedCleanupAttempted = true
-      privilegedCleanupSucceeded = runAppleScriptCommand("/usr/bin/pkill -f \(shellQuote(coreProcessPattern)) || true")
+    let helperStopResult = callTunHelperIfAvailable { helper, reply in
+      helper.stopTun(withReply: reply)
     }
 
     waitForCoreExit(timeout: 2.0)
@@ -265,8 +285,7 @@ class AppDelegate: FlutterAppDelegate {
     return [
       "stopped": true,
       "proxyRestored": restored,
-      "privilegedCleanupAttempted": privilegedCleanupAttempted,
-      "privilegedCleanupSucceeded": privilegedCleanupSucceeded
+      "helperStop": helperStopResult ?? [:]
     ]
   }
 
@@ -275,6 +294,7 @@ class AppDelegate: FlutterAppDelegate {
     status["coreRunning"] = isCoreRunning()
     status["activeNetworkServices"] = activeNetworkServices().map { $0["name"] as? String ?? "" }
     status["hasProxyBackup"] = FileManager.default.fileExists(atPath: proxyBackupURL.path)
+    status["tunHelper"] = getTunHelperStatus()
     return status
   }
 
@@ -286,7 +306,7 @@ class AppDelegate: FlutterAppDelegate {
     let hadBackup = FileManager.default.fileExists(atPath: proxyBackupURL.path)
     if hadBackup || isCoreRunning() {
       log("Recovering previous runtime state")
-      _ = stopCoreInternal(restoreProxy: true, updateRuntime: false, allowPrivilegedCleanup: false)
+      _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
       updateRuntimeState(status: "disconnected", mode: "unknown", lastError: "Recovered previous unfinished session")
     } else {
       persistRuntimeState()
@@ -504,48 +524,9 @@ class AppDelegate: FlutterAppDelegate {
     }
   }
 
-  private func launchTunCore(binaryPath: String, configPath: String) -> Bool {
-    let command = [
-      "/usr/bin/pkill -f \(shellQuote(coreProcessPattern)) || true",
-      "while /usr/bin/pgrep -f \(shellQuote(coreProcessPattern)) >/dev/null; do /bin/sleep 0.2; done",
-      "/sbin/route -n delete -net 0.0.0.0/1 >/dev/null 2>&1 || true",
-      "/sbin/route -n delete -net 128.0.0.0/1 >/dev/null 2>&1 || true",
-      "/sbin/route -n delete -net 1.0.0.0/8 >/dev/null 2>&1 || true",
-      "/sbin/route -n delete -net 198.18.0.0/15 >/dev/null 2>&1 || true",
-      "\(shellQuote(binaryPath)) run -c \(shellQuote(configPath)) >> \(shellQuote(nativeLogURL.path)) 2>&1 &"
-    ].joined(separator: "; ")
-    return runAppleScriptCommand(command)
-  }
-
-  private func waitForHealthCheck() -> Bool {
-    guard let url = URL(string: "http://127.0.0.1:9090/proxies") else { return false }
-    for _ in 0..<12 {
-      if let data = try? Data(contentsOf: url), !data.isEmpty {
-        return true
-      }
-      Thread.sleep(forTimeInterval: 0.5)
-    }
-    return false
-  }
-
   private func isCoreRunning() -> Bool {
     let output = runCommand("/usr/bin/pgrep", args: ["-f", coreProcessPattern])
     return !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-  }
-
-  private func hasPrivilegedCoreProcess() -> Bool {
-    let output = runCommand("/bin/ps", args: ["-ax", "-o", "user=,command="])
-    let currentUser = NSUserName()
-    for rawLine in output.split(separator: "\n") {
-      let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard line.contains(coreProcessPattern) else { continue }
-      let parts = line.split(maxSplits: 1, whereSeparator: { $0 == " " || $0 == "\t" })
-      guard let user = parts.first else { continue }
-      if String(user) != currentUser {
-        return true
-      }
-    }
-    return false
   }
 
   private func waitForCoreExit(timeout: TimeInterval) {
@@ -584,17 +565,6 @@ class AppDelegate: FlutterAppDelegate {
     return "检测到系统中已有其他 TUN/VPN 会话（\(interfaceName)）。请先断开其他 VPN 或网络过滤器后再启动 TUN 模式。"
   }
 
-  private func recentTunFailureMessage() -> String? {
-    guard let logContents = try? String(contentsOf: nativeLogURL, encoding: .utf8) else {
-      return nil
-    }
-    let recentLines = logContents.split(separator: "\n").suffix(80).map(String.init)
-    if recentLines.contains(where: { $0.contains("configure tun interface: add route:") && $0.contains("file exists") }) {
-      return "检测到系统中存在冲突路由。请先断开其他 TUN/VPN 会话后再启动 TUN 模式。"
-    }
-    return nil
-  }
-
   // MARK: - Diagnostics and state
 
   private func ensureSupportDirectories() {
@@ -626,11 +596,249 @@ class AppDelegate: FlutterAppDelegate {
       if fileManager.fileExists(atPath: dartLogURL.path) {
         try? fileManager.copyItem(at: dartLogURL, to: exportRoot.appendingPathComponent("dart.log"))
       }
+      if let helperExport = callTunHelperIfAvailableString({ helper, reply in
+        helper.exportDiagnostics(withReply: reply)
+      }) {
+        let helperURL = URL(fileURLWithPath: helperExport)
+        if fileManager.fileExists(atPath: helperURL.path) {
+          try? fileManager.copyItem(at: helperURL, to: exportRoot.appendingPathComponent("tun-helper", isDirectory: true))
+        }
+      }
       return exportRoot.path
     } catch {
       log("Failed to export diagnostics: \(error)")
       return nil
     }
+  }
+
+  // MARK: - TUN helper management
+
+  private func tunHelperService() -> SMAppService {
+    SMAppService.daemon(plistName: tunHelperPlistName)
+  }
+
+  private func ensureTunHelper() -> [String: Any] {
+    let service = tunHelperService()
+    let status = service.status
+    if status == .enabled {
+      if helperLaunchdNeedsRefresh() {
+        log("TUN helper launchd registration is stale, refreshing registration")
+        do {
+          try? service.unregister()
+          try service.register()
+          return helperStatusMap(status: service.status, error: nil)
+        } catch {
+          return helperStatusMap(status: service.status, error: error as NSError)
+        }
+      }
+      let ping = callTunHelperIfAvailable(timeout: 2) { helper, reply in
+        helper.getStatus(withReply: reply)
+      }
+      if ping?["ok"] as? Bool == true {
+        return getTunHelperStatus()
+      }
+      log("TUN helper enabled but unreachable, refreshing registration")
+      do {
+        try? service.unregister()
+        try service.register()
+        return helperStatusMap(status: service.status, error: nil)
+      } catch {
+        return helperStatusMap(status: service.status, error: error as NSError)
+      }
+    }
+
+    do {
+      if status == .notFound && bundledTunHelperPlistExists() {
+        try? service.unregister()
+      }
+      try service.register()
+      return helperStatusMap(status: service.status, error: nil)
+    } catch {
+      let nextStatus = service.status
+      if nextStatus == .enabled || nextStatus == .requiresApproval {
+        return helperStatusMap(status: nextStatus, error: error as NSError)
+      }
+      return helperStatusMap(status: nextStatus, error: error as NSError)
+    }
+  }
+
+  private func getTunHelperStatus() -> [String: Any] {
+    var status = helperStatusMap(status: tunHelperService().status, error: nil)
+    if tunHelperService().status == .enabled && helperLaunchdNeedsRefresh() {
+      status["ok"] = false
+      status["code"] = "HELPER_REQUIRES_REFRESH"
+      status["message"] = "后台网络组件需要刷新注册"
+      status["requiresRefresh"] = true
+    }
+    return status
+  }
+
+  private func bundledTunHelperPlistExists() -> Bool {
+    let path = Bundle.main.bundlePath + "/Contents/Library/LaunchDaemons/" + tunHelperPlistName
+    return FileManager.default.fileExists(atPath: path)
+  }
+
+  private func bundledTunHelperBinaryExists() -> Bool {
+    let path = Bundle.main.bundlePath + "/Contents/MacOS/ElephantTunHelper"
+    return FileManager.default.fileExists(atPath: path)
+  }
+
+  private func helperStatusMap(status: SMAppService.Status, error: NSError?) -> [String: Any] {
+    var value: [String: Any] = [
+      "ok": status == .enabled,
+      "status": helperStatusName(status),
+      "code": helperStatusCode(status),
+      "message": helperStatusMessage(status),
+      "bundlePath": Bundle.main.bundlePath,
+      "bundledPlistExists": bundledTunHelperPlistExists(),
+      "bundledHelperExists": bundledTunHelperBinaryExists()
+    ]
+    if let error {
+      value["error"] = error.localizedDescription
+      value["errorCode"] = error.code
+      value["errorDomain"] = error.domain
+    }
+    return value
+  }
+
+  private func helperLaunchdNeedsRefresh() -> Bool {
+    let output = runCommand("/bin/launchctl", args: ["print", "system/\(tunHelperLabel)"])
+    return output.contains("needs LWCR update")
+      || output.contains("last exit code = 78")
+      || output.contains("job state = spawn failed")
+  }
+
+  private func helperStatusName(_ status: SMAppService.Status) -> String {
+    switch status {
+    case .notRegistered:
+      return "notRegistered"
+    case .enabled:
+      return "enabled"
+    case .requiresApproval:
+      return "requiresApproval"
+    case .notFound:
+      return "notFound"
+    @unknown default:
+      return "unknown"
+    }
+  }
+
+  private func helperStatusCode(_ status: SMAppService.Status) -> String {
+    switch status {
+    case .notRegistered:
+      return "HELPER_NOT_REGISTERED"
+    case .enabled:
+      return "OK"
+    case .requiresApproval:
+      return "HELPER_REQUIRES_APPROVAL"
+    case .notFound:
+      return "HELPER_NOT_FOUND"
+    @unknown default:
+      return "HELPER_UNKNOWN"
+    }
+  }
+
+  private func helperStatusMessage(_ status: SMAppService.Status) -> String {
+    switch status {
+    case .notRegistered:
+      return "后台网络组件尚未注册"
+    case .enabled:
+      return "后台网络组件已启用"
+    case .requiresApproval:
+      return "后台网络组件需要在系统设置中允许后才能接管全局流量"
+    case .notFound:
+      return "未在应用包中找到后台网络组件，请重新安装客户端"
+    @unknown default:
+      return "后台网络组件状态未知"
+    }
+  }
+
+  private func callTunHelper(_ body: @escaping (ElephantTunHelperProtocol, @escaping (NSDictionary) -> Void) -> Void) -> [String: Any] {
+    callTunHelperIfAvailable(timeout: 5, body) ?? [
+      "ok": false,
+      "code": "HELPER_CONNECTION_FAILED",
+      "error": "无法连接后台网络组件"
+    ]
+  }
+
+  private func callTunHelperIfAvailable(
+    timeout: TimeInterval = 5,
+    _ body: @escaping (ElephantTunHelperProtocol, @escaping (NSDictionary) -> Void) -> Void
+  ) -> [String: Any]? {
+    let connection = NSXPCConnection(machServiceName: tunHelperLabel, options: .privileged)
+    connection.remoteObjectInterface = NSXPCInterface(with: ElephantTunHelperProtocol.self)
+    connection.resume()
+    defer { connection.invalidate() }
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var response: [String: Any]?
+    let proxy = connection.remoteObjectProxyWithErrorHandler { error in
+      self.log("TUN helper XPC failed: \(error)")
+      response = [
+        "ok": false,
+        "code": "HELPER_CONNECTION_FAILED",
+        "error": error.localizedDescription
+      ]
+      semaphore.signal()
+    } as? ElephantTunHelperProtocol
+
+    guard let proxy else {
+      return nil
+    }
+
+    body(proxy) { result in
+      response = self.dictionary(from: result)
+      semaphore.signal()
+    }
+
+    if semaphore.wait(timeout: .now() + timeout) == .timedOut {
+      self.log("TUN helper XPC timed out")
+      return [
+        "ok": false,
+        "code": "HELPER_TIMEOUT",
+        "error": "后台网络组件响应超时"
+      ]
+    }
+    return response
+  }
+
+  private func dictionary(from value: NSDictionary) -> [String: Any] {
+    var result = [String: Any]()
+    for (key, item) in value {
+      if let key = key as? String {
+        result[key] = item
+      }
+    }
+    return result
+  }
+
+  private func callTunHelperIfAvailableString(_ body: @escaping (ElephantTunHelperProtocol, @escaping (NSString?) -> Void) -> Void) -> String? {
+    let connection = NSXPCConnection(machServiceName: tunHelperLabel, options: .privileged)
+    connection.remoteObjectInterface = NSXPCInterface(with: ElephantTunHelperProtocol.self)
+    connection.resume()
+    defer { connection.invalidate() }
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var response: String?
+    let proxy = connection.remoteObjectProxyWithErrorHandler { error in
+      self.log("TUN helper XPC string call failed: \(error)")
+      semaphore.signal()
+    } as? ElephantTunHelperProtocol
+
+    guard let proxy else {
+      return nil
+    }
+
+    body(proxy) { result in
+      response = result as String?
+      semaphore.signal()
+    }
+
+    if semaphore.wait(timeout: .now() + 5) == .timedOut {
+      self.log("TUN helper XPC string call timed out")
+      return nil
+    }
+    return response
   }
 
   private func updateRuntimeState(
@@ -756,26 +964,4 @@ class AppDelegate: FlutterAppDelegate {
     return String(data: data, encoding: .utf8) ?? ""
   }
 
-  private func runAppleScriptCommand(_ command: String) -> Bool {
-    let source = "do shell script \(appleScriptQuote(command)) with administrator privileges"
-    var error: NSDictionary?
-    let script = NSAppleScript(source: source)
-    _ = script?.executeAndReturnError(&error)
-    if let error {
-      log("AppleScript command failed: \(error)")
-      return false
-    }
-    return true
-  }
-
-  private func shellQuote(_ value: String) -> String {
-    "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
-  }
-
-  private func appleScriptQuote(_ value: String) -> String {
-    let escaped = value
-      .replacingOccurrences(of: "\\", with: "\\\\")
-      .replacingOccurrences(of: "\"", with: "\\\"")
-    return "\"\(escaped)\""
-  }
 }

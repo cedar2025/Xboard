@@ -131,9 +131,10 @@ class VpnProvider with ChangeNotifier {
         return false;
       }
 
-      // 注入 TUN 模式标志
+      // macOS 主按钮固定使用 TUN 模式，避免用户在代理/TUN 之间来回切换。
       final Map<String, dynamic> configMap = jsonDecode(config);
-      configMap['use_tun_mode'] = _configProvider.useTunMode;
+      configMap['use_tun_mode'] =
+          Platform.isMacOS ? true : _configProvider.useTunMode;
       config = jsonEncode(configMap);
 
       // 注入用户自定义 DNS 配置

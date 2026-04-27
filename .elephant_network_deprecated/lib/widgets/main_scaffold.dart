@@ -4,12 +4,36 @@ import '../screens/home/dashboard_screen.dart';
 import '../screens/plan/plan_selection_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/app_update_provider.dart';
 import '../utils/platform_utils.dart';
 import 'app_navigation_bar.dart';
+import 'app_update_dialog.dart';
 import 'desktop_sidebar.dart';
 
-class MainScaffold extends StatelessWidget {
+class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
+
+  @override
+  State<MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<MainScaffold> {
+  bool _checkedUpdate = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_checkedUpdate) return;
+    _checkedUpdate = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final provider = context.read<AppUpdateProvider>();
+      final update = await provider.checkForUpdate(silent: true);
+      if (!mounted || update == null || !provider.shouldPrompt) return;
+      await showAppUpdateDialog(context, update);
+    });
+  }
 
   Widget _buildPage(NavigationPage page) {
     switch (page) {

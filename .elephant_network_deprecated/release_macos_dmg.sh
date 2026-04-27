@@ -20,6 +20,10 @@ if [[ -z "${DEVELOPER_ID_APP}" ]]; then
 fi
 
 echo "==> Signing ${APP_PATH}"
+if [[ -f "${APP_PATH}/Contents/MacOS/ElephantTunHelper" ]]; then
+  codesign --force --options runtime --sign "${DEVELOPER_ID_APP}" \
+    "${APP_PATH}/Contents/MacOS/ElephantTunHelper"
+fi
 codesign --deep --force --options runtime --sign "${DEVELOPER_ID_APP}" "${APP_PATH}"
 
 echo "==> Packaging DMG ${DMG_NAME}"

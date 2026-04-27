@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/services/app_logger.dart';
 import '../../core/services/mac_runtime_service.dart';
@@ -8,7 +9,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../providers/app_update_provider.dart';
 import '../../utils/constants.dart';
+import '../../widgets/app_update_dialog.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -84,6 +87,16 @@ class _AboutScreenState extends State<AboutScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'v${data.packageInfo.version} (${data.packageInfo.buildNumber})',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           _buildInfoRow('版本', data.packageInfo.version, isDark),
                           _buildInfoRow(
@@ -141,6 +154,12 @@ class _AboutScreenState extends State<AboutScreen> {
                             spacing: 12,
                             runSpacing: 12,
                             children: [
+                              _buildActionButton(
+                                label: '检查更新',
+                                icon: Icons.system_update_alt_rounded,
+                                isDark: isDark,
+                                onPressed: _checkForUpdate,
+                              ),
                               _buildActionButton(
                                 label: '导出诊断',
                                 icon: Icons.download_rounded,
@@ -267,6 +286,20 @@ class _AboutScreenState extends State<AboutScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  Future<void> _checkForUpdate() async {
+    final provider = context.read<AppUpdateProvider>();
+    final update = await provider.checkForUpdate();
+    if (!mounted) return;
+
+    if (update != null) {
+      await showAppUpdateDialog(context, update);
+      return;
+    }
+
+    final message = provider.errorMessage ?? '当前已是最新版本';
+    _showCopiedMessage(message);
   }
 }
 

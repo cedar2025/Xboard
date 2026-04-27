@@ -42,6 +42,12 @@ class MacRuntimeService {
     });
   }
 
+  Future<Map<String, dynamic>> ensureTunHelper() =>
+      _invokeMap('ensureTunHelper');
+
+  Future<Map<String, dynamic>> getTunHelperStatus() =>
+      _invokeMap('getTunHelperStatus');
+
   Future<Map<String, dynamic>> stopCore() => _invokeMap('stopCore');
 
   Future<Map<String, dynamic>> applySystemProxy(int proxyPort) {

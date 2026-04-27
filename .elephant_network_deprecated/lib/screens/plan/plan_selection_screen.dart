@@ -213,6 +213,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     required int planId,
     bool isHot = false,
   }) {
+    final detailScrollController = ScrollController();
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -301,31 +302,52 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           // Features
           if (PlatformUtils.isDesktop)
             Expanded(
-              child: Markdown(
-                data: content,
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                styleSheet: MarkdownStyleSheet(
-                  p: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                    height: 1.5,
+              child: RawScrollbar(
+                controller: detailScrollController,
+                thumbVisibility: true,
+                trackVisibility: false,
+                thickness: 6,
+                radius: const Radius.circular(999),
+                thumbColor: isDark
+                    ? AppColors.darkTextTertiary.withOpacity(0.55)
+                    : AppColors.lightTextTertiary.withOpacity(0.55),
+                trackColor: Colors.transparent,
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    scrollbars: false,
                   ),
-                  h2: AppTextStyles.titleSmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  h3: AppTextStyles.titleSmall.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  listBullet: TextStyle(
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                  child: SingleChildScrollView(
+                    controller: detailScrollController,
+                    padding: const EdgeInsets.only(right: 14),
+                    physics: const ClampingScrollPhysics(),
+                    child: MarkdownBody(
+                      data: content,
+                      styleSheet: MarkdownStyleSheet(
+                        p: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                          height: 1.5,
+                        ),
+                        h2: AppTextStyles.titleSmall.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        h3: AppTextStyles.titleSmall.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        listBullet: TextStyle(
+                          color: isDark
+                              ? AppColors.primaryLight
+                              : AppColors.primary,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

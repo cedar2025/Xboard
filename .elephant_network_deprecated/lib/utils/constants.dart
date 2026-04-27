@@ -37,6 +37,7 @@ class ApiConstants {
   static const String sendEmailVerify = '/api/v1/passport/comm/sendEmailVerify';
   static const String changePassword = '/api/v1/user/changePassword';
   static const String quickLogin = '/api/v1/passport/auth/getQuickLoginUrl';
+  static const String appUpdate = '/api/v1/app/update';
 
   // Clash API(本地流量监控)
   static const String clashTraffic = 'http://127.0.0.1:9090/traffic';

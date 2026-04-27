@@ -18,6 +18,7 @@ use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
 use App\Http\Controllers\V2\Admin\TrafficResetController;
+use App\Http\Controllers\V2\Admin\AppVersionController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -137,6 +138,17 @@ class AdminRoute
                 $router->post('/drop', [NoticeController::class, 'drop']);
                 $router->post('/show', [NoticeController::class, 'show']);
                 $router->post('/sort', [NoticeController::class, 'sort']);
+            });
+
+            // Client App Version
+            $router->group([
+                'prefix' => 'app-version'
+            ], function ($router) {
+                $router->get('/fetch', [AppVersionController::class, 'fetch']);
+                $router->post('/save', [AppVersionController::class, 'save']);
+                $router->post('/publish', [AppVersionController::class, 'publish']);
+                $router->post('/disable', [AppVersionController::class, 'disable']);
+                $router->post('/drop', [AppVersionController::class, 'drop']);
             });
 
             // Ticket
