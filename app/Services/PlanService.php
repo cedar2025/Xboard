@@ -158,7 +158,12 @@ class PlanService
         }
 
         if (!$this->plan->show && $this->plan->renew && !app(UserService::class)->isAvailable($user)) {
+        // 只有当用户不是当前套餐时才拒绝
+        if ($user->plan_id !== $this->plan->id) {
             throw new ApiException(__('This subscription has expired, please change to another subscription'));
+            }
+        // 如果是续费原套餐，允许操作
+        return;
         }
     }
 
