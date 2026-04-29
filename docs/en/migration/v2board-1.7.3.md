@@ -35,13 +35,13 @@ This guide explains how to migrate from V2board version 1.7.3 to Xboard.
 docker compose down
 
 # 2. Clear database
-docker compose run -it --rm web php artisan db:wipe
+docker compose run -it --rm xboard php artisan db:wipe
 
 # 3. Import old database (Important)
 # Please manually import the V2board 1.7.3 database
 
 # 4. Execute migration
-docker compose run -it --rm web php artisan migratefromv2b 1.7.3
+docker compose run -it --rm xboard php artisan migratefromv2b 1.7.3
 ```
 
 #### aaPanel Environment
