@@ -200,6 +200,15 @@ class Shadowrocket extends AbstractProtocol
                 }
                 if ($fp = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
                     $config['fp'] = $fp;
+                } elseif ($fp = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.fingerprint')) {
+                    $config['fp'] = $fp;
+                }
+                $ech = data_get($protocol_settings, 'tls_settings.ech');
+                if (data_get($ech, 'enabled')) {
+                    $echConfig = data_get($ech, 'config', '');
+                    $echBase64 = preg_replace('/-----[^-]+-----/', '', $echConfig);
+                    $echBase64 = str_replace(["\r", "\n", ' '], '', trim($echBase64));
+                    $config['ech'] = $echBase64 ?: data_get($ech, 'query_server_name', 'cloudflare-ech.com');
                 }
                 break;
             case 2:

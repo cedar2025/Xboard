@@ -288,6 +288,20 @@ class Stash extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
                 break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $xhttpOpts = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $xhttpOpts['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $xhttpOpts['headers'] = ['Host' => $host];
+                if ($mode = data_get($protocol_settings, 'network_settings.mode'))
+                    $xhttpOpts['mode'] = $mode;
+                if ($alpn = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.alpn'))
+                    $xhttpOpts['alpn'] = is_array($alpn) ? $alpn : [$alpn];
+                if (!empty($xhttpOpts))
+                    $array['xhttp-opts'] = $xhttpOpts;
+                break;    
             default:
                 break;
         }
@@ -307,6 +321,8 @@ class Stash extends AbstractProtocol
 
         if ($fingerprint = Helper::getTlsFingerprint(data_get($protocol_settings, 'utls'))) {
             $array['client-fingerprint'] = $fingerprint;
+        } elseif ($fingerprint = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.fingerprint')) {
+            $array['client-fingerprint'] = $fingerprint;
         }
 
         switch (data_get($protocol_settings, 'tls')) {
@@ -315,6 +331,9 @@ class Stash extends AbstractProtocol
                 $array['skip-cert-verify'] = data_get($protocol_settings, 'tls_settings.allow_insecure');
                 if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $array['servername'] = $serverName;
+                }
+                if (data_get($protocol_settings, 'tls_settings.ech.enabled')) {
+                    $array['ech-opts'] = ['enable' => true];
                 }
                 break;
             case 2:
@@ -366,6 +385,20 @@ class Stash extends AbstractProtocol
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
                     $array['h2-opts']['host'] = is_array($host) ? $host : [$host];
                 break;
+            case 'xhttp':
+                $array['network'] = 'xhttp';
+                $xhttpOpts = [];
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $xhttpOpts['path'] = $path;
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $xhttpOpts['headers'] = ['Host' => $host];
+                if ($mode = data_get($protocol_settings, 'network_settings.mode'))
+                    $xhttpOpts['mode'] = $mode;
+                if ($alpn = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.alpn'))
+                    $xhttpOpts['alpn'] = is_array($alpn) ? $alpn : [$alpn];
+                if (!empty($xhttpOpts))
+                    $array['xhttp-opts'] = $xhttpOpts;
+                break;                
         }
 
         return $array;
