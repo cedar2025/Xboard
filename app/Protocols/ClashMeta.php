@@ -495,9 +495,11 @@ class ClashMeta extends AbstractProtocol
                 if ($path = data_get($protocol_settings, 'network_settings.path'))
                     $xhttpOpts['path'] = $path;
                 if ($host = data_get($protocol_settings, 'network_settings.host'))
-                    $xhttpOpts['host'] = $host;
+                    $xhttpOpts['headers'] = ['Host' => $host];
                 if ($mode = data_get($protocol_settings, 'network_settings.mode'))
                     $xhttpOpts['mode'] = $mode;
+                if ($alpn = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.alpn'))
+                    $xhttpOpts['alpn'] = is_array($alpn) ? $alpn : [$alpn];
                 if (!empty($xhttpOpts))
                     $array['xhttp-opts'] = $xhttpOpts;
                 break;
@@ -799,18 +801,19 @@ class ClashMeta extends AbstractProtocol
         if ($utls = data_get($protocol_settings, 'utls')) {
             if (data_get($utls, 'enabled')) {
                 $array['client-fingerprint'] = Helper::getTlsFingerprint($utls);
+                return;
             }
+        }
+        // fallback: read fingerprint from downloadSettings
+        if ($fp = data_get($protocol_settings, 'network_settings.extra.downloadSettings.tlsSettings.fingerprint')) {
+            $array['client-fingerprint'] = $fp;
         }
     }
 
     protected static function appendEch(&$array, $ech): void
     {
         if ($normalized = Helper::normalizeEchSettings($ech)) {
-            $array['ech-opts'] = array_filter([
-                'enable' => true,
-                'config' => Helper::toMihomoEchConfig(data_get($normalized, 'config')),
-                'query-server-name' => data_get($normalized, 'query_server_name'),
-            ], fn($value) => $value !== null);
+            $array['ech-opts'] = ['enable' => true];
         }
     }
-}
+}    
