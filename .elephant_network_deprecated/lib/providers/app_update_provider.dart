@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/api/dio_client.dart';
 import '../core/api/services/app_update_service.dart';
 import '../core/services/app_logger.dart';
 import '../models/app_update.dart';
 
 class AppUpdateProvider with ChangeNotifier {
-  AppUpdateProvider(DioClient dioClient)
-      : _service = AppUpdateService(dioClient);
+  AppUpdateProvider() : _service = AppUpdateService();
 
   static const _dismissedBuildKey = 'app_update_dismissed_build';
+  static const _reportedInstallBuildKey = 'app_update_reported_install_build';
 
   final AppUpdateService _service;
   AppUpdateInfo? _latest;
@@ -38,7 +38,7 @@ class AppUpdateProvider with ChangeNotifier {
 
     try {
       final result = await _service.checkForUpdate();
-      if (result.hasUpdate && result.latest != null) {
+      if ((result.hasUpdate || result.force) && result.latest != null) {
         _latest = result.latest;
         await _loadDismissedState();
       } else {
@@ -76,7 +76,17 @@ class AppUpdateProvider with ChangeNotifier {
     final uri = Uri.tryParse(update.downloadUrl);
     if (uri == null) return false;
 
-    return launchUrl(uri, mode: LaunchMode.externalApplication);
+    await _safeTelemetry('download_clicked');
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (opened) {
+      await _safeTelemetry('download_opened');
+    }
+    return opened;
+  }
+
+  Future<void> sendHeartbeat() async {
+    await _safeCall(() => _service.sendHeartbeat(), silent: true);
+    await _sendInstalledAfterUpdateIfNeeded();
   }
 
   Future<void> _loadDismissedState() async {
@@ -88,5 +98,38 @@ class AppUpdateProvider with ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     _promptDismissed = prefs.getInt(_dismissedBuildKey) == update.buildNumber;
+  }
+
+  Future<void> _safeTelemetry(String event) async {
+    await _safeCall(() => _service.sendUpdateResult(event), silent: true);
+  }
+
+  Future<void> _sendInstalledAfterUpdateIfNeeded() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
+      if (currentBuild <= 0) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getInt(_reportedInstallBuildKey) == currentBuild) return;
+
+      await _service.sendUpdateResult('installed_after_update');
+      await prefs.setInt(_reportedInstallBuildKey, currentBuild);
+    } catch (e, stackTrace) {
+      await AppLogger.instance.error('App update install report failed',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _safeCall(Future<void> Function() action,
+      {required bool silent}) async {
+    try {
+      await action();
+    } catch (e, stackTrace) {
+      if (!silent) {
+        await AppLogger.instance.error('App update telemetry failed',
+            error: e, stackTrace: stackTrace);
+      }
+    }
   }
 }

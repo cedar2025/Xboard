@@ -120,7 +120,7 @@ class MyApp extends StatelessWidget {
           create: (_) => ConfigProvider(),
         ),
         ChangeNotifierProvider<AppUpdateProvider>(
-          create: (context) => AppUpdateProvider(context.read<DioClient>()),
+          create: (_) => AppUpdateProvider(),
         ),
         // 提供 NodeProvider
         ChangeNotifierProvider<NodeProvider>(

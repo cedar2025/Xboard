@@ -20,6 +20,17 @@ class ApiConstants {
     return 'https://www.elphantroute.com';
   }
 
+  static String get appDistributionBaseUrl {
+    const envBaseUrl = String.fromEnvironment('APP_DISTRIBUTION_URL');
+    if (envBaseUrl.isNotEmpty) return envBaseUrl;
+    return baseUrl;
+  }
+
+  static const String appDistributionAppKey = String.fromEnvironment(
+    'APP_DISTRIBUTION_APP_KEY',
+    defaultValue: 'elephant-route-desktop',
+  );
+
   // API 路径
   static const String login = '/api/v1/passport/auth/login';
   static const String register = '/api/v1/passport/auth/register';
@@ -37,7 +48,9 @@ class ApiConstants {
   static const String sendEmailVerify = '/api/v1/passport/comm/sendEmailVerify';
   static const String changePassword = '/api/v1/user/changePassword';
   static const String quickLogin = '/api/v1/passport/auth/getQuickLoginUrl';
-  static const String appUpdate = '/api/v1/app/update';
+  static const String appUpdate = '/api/v1/update/check';
+  static const String appHeartbeat = '/api/v1/telemetry/heartbeat';
+  static const String appUpdateResult = '/api/v1/telemetry/update-result';
 
   // Clash API(本地流量监控)
   static const String clashTraffic = 'http://127.0.0.1:9090/traffic';

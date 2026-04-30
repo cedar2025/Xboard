@@ -29,6 +29,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final provider = context.read<AppUpdateProvider>();
+      await provider.sendHeartbeat();
       final update = await provider.checkForUpdate(silent: true);
       if (!mounted || update == null || !provider.shouldPrompt) return;
       await showAppUpdateDialog(context, update);
