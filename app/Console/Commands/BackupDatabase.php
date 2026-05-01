@@ -18,7 +18,9 @@ class BackupDatabase extends Command
         $isUpload = $this->argument('upload');
         // 如果是上传到云端则判断是否存在必要配置
         if($isUpload){
-            $requiredConfigs = ['database.connections.mysql', 'cloud_storage.google_cloud.key_file', 'cloud_storage.google_cloud.storage_bucket'];
+            $driver = config('database.default');
+            $connKey = "database.connections.{$driver}";
+            $requiredConfigs = [$connKey, 'cloud_storage.google_cloud.key_file', 'cloud_storage.google_cloud.storage_bucket'];
             foreach ($requiredConfigs as $config) {
                 if (blank(config($config))) {
                     $this->error("❌：缺少必要配置项: $config ， 取消备份");
@@ -40,6 +42,23 @@ class BackupDatabase extends Command
                     ->setPassword(config('database.connections.mysql.password'))
                     ->dumpToFile($databaseBackupPath);
                 $this->info("2️⃣：Mysql备份完成");
+            }elseif(config('database.default') === 'pgsql'){
+                $dbConfig = config('database.connections.pgsql');
+                $databaseBackupPath = storage_path('backup/' . now()->format('Y-m-d_H-i-s') . '_' . $dbConfig['database'] . '_database_backup.sql');
+                $this->info("1️⃣：开始备份PostgreSQL");
+                $env = array_merge($_ENV, ['PGPASSWORD' => $dbConfig['password']]);
+                $cmd = new Process([
+                    'pg_dump', '-h', $dbConfig['host'], '-p', (string)$dbConfig['port'],
+                    '-U', $dbConfig['username'], '-Fc', $dbConfig['database'],
+                    '-f', $databaseBackupPath
+                ], null, $env);
+                $cmd->setTimeout(600);
+                $cmd->run();
+                if (!$cmd->isSuccessful()) {
+                    $this->error('PostgreSQL备份失败: ' . $cmd->getErrorOutput());
+                    return;
+                }
+                $this->info("2️⃣：PostgreSQL备份完成");
             }elseif(config('database.default') === 'sqlite'){
                 $databaseBackupPath = storage_path('backup/' .  now()->format('Y-m-d_H-i-s') . '_sqlite'  . '_database_backup.sql');
                 $this->info("1️⃣：开始备份Sqlite");
@@ -48,7 +67,7 @@ class BackupDatabase extends Command
                     ->dumpToFile($databaseBackupPath);
                 $this->info("2️⃣：Sqlite备份完成");
             }else{
-                $this->error('备份失败，你的数据库不是sqlite或者mysql');
+                $this->error('备份失败，你的数据库不是sqlite、mysql或pgsql');
                 return;
             }
             $this->info('3️⃣：开始压缩备份文件');

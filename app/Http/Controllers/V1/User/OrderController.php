@@ -182,7 +182,7 @@ class OrderController extends Controller
             'handling_fee_fixed',
             'handling_fee_percent'
         ])
-            ->where('enable', 1)
+            ->where('enable', true)
             ->orderBy('sort', 'ASC')
             ->get();
 

@@ -19,7 +19,8 @@ class Server
             'token' => [
                 'string', 'required',
                 function ($attribute, $value, $fail) {
-                    if ($value !== admin_setting('server_token')) {
+                    // Timing-safe comparison to avoid leaking server_token via response-time side channel
+                    if (!hash_equals((string) admin_setting('server_token'), (string) $value)) {
                         $fail("Invalid {$attribute}");
                     }
                 },

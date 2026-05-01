@@ -25,7 +25,9 @@ class TicketMessage extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'created_at' => 'timestamp',
-        'updated_at' => 'timestamp'
+        'updated_at' => 'timestamp',
+        'user_id' => 'integer',
+        'ticket_id' => 'integer'
     ];
 
     protected $appends = ['is_from_user', 'is_from_admin'];

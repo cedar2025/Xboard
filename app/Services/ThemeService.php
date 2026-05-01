@@ -118,6 +118,15 @@ class ThemeService
                 throw new Exception('Theme config file not found');
             }
 
+            // Guard against ZipSlip — refuse packages whose entries traverse outside $tmpPath
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $entryName = $zip->getNameIndex($i);
+                if ($entryName === false || str_contains($entryName, '..') || str_starts_with($entryName, '/')) {
+                    $zip->close();
+                    throw new Exception('Invalid file path detected in theme package');
+                }
+            }
+
             $zip->extractTo($tmpPath);
             $zip->close();
 

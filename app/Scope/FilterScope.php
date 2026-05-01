@@ -40,7 +40,7 @@ trait FilterScope
                     continue;
                 }
                 if ($filter['condition'] === 'like') {
-                    $builder->where($filter['key'], 'like', "%{$filter['value']}%");
+                    $builder->whereLike($filter['key'], "%{$filter['value']}%", false);
                     continue;
                 }
             }

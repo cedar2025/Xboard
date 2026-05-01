@@ -77,7 +77,7 @@ class KnowledgeController extends Controller
 
     private function buildKnowledgeQuery(array $select = ['*'])
     {
-        return Knowledge::select($select)->where('show', 1);
+        return Knowledge::select($select)->where('show', true);
     }
 
     private function processKnowledgeContent(array $knowledge, User $user): array

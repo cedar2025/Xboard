@@ -16,6 +16,12 @@ class Coupon extends Model
         'limit_plan_ids' => 'array',
         'limit_period' => 'array',
         'show' => 'boolean',
+        'ended_at' => 'integer',
+        'started_at' => 'integer',
+        'type' => 'integer',
+        'limit_use_with_user' => 'integer',
+        'limit_use' => 'integer',
+        'value' => 'float',
     ];
 
     public function getLimitPeriodAttribute($value)

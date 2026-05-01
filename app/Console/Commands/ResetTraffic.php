@@ -255,7 +255,7 @@ class ResetTraffic extends Command
         $query->where('expired_at', '>', time())
           ->orWhereNull('expired_at');
       })
-      ->where('banned', 0)
+      ->where('banned', false)
       ->whereNotNull('plan_id');
   }
 
@@ -269,7 +269,7 @@ class ResetTraffic extends Command
         $query->where('expired_at', '>', time())
           ->orWhereNull('expired_at');
       })
-      ->where('banned', 0)
+      ->where('banned', false)
       ->with('plan:id,name,reset_traffic_method')
       ->get();
   }
@@ -281,7 +281,7 @@ class ResetTraffic extends Command
         $query->where('expired_at', '>', time())
           ->orWhereNull('expired_at');
       })
-      ->where('banned', 0)
+      ->where('banned', false)
       ->with('plan:id,name,reset_traffic_method')
       ->get();
   }

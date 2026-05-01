@@ -60,7 +60,7 @@ trait HasPluginConfig
                         return [];
                     }
 
-                    return json_decode($plugin->config, true) ?? [];
+                    return is_array($plugin->config) ? $plugin->config : (json_decode($plugin->config, true) ?? []);
                 }
             );
         }
