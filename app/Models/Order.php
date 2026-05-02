@@ -91,7 +91,7 @@ class Order extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id')->withTrashed();
     }
 
     /**
@@ -99,7 +99,7 @@ class Order extends Model
      */
     public function invite_user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invite_user_id', 'id');
+        return $this->belongsTo(User::class, 'invite_user_id', 'id')->withTrashed();
     }
 
     /**

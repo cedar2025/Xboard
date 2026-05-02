@@ -191,8 +191,11 @@ class UserController extends Controller
     }
 
     // Transform user fields for API response.
-    public static function transformUserData(User $user): array
+    public static function transformUserData(?User $user): ?array
     {
+        if ($user === null) {
+            return null;
+        }
         $user = $user->toArray();
         $user['balance'] = $user['balance'] / 100;
         $user['commission_balance'] = $user['commission_balance'] / 100;
