@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,7 +62,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class User extends Authenticatable
 {
-    use HasApiTokens;
+    use HasApiTokens, SoftDeletes;
     protected $table = 'v2_user';
     protected $dateFormat = 'U';
     protected $guarded = ['id'];

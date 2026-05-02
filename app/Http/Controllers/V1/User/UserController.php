@@ -19,6 +19,7 @@ use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -219,5 +220,77 @@ class UserController extends Controller
 
         $url = $this->loginService->generateQuickLoginUrl($user, $request->input('redirect'));
         return $this->success($url);
+    }
+
+    public function destroy(Request $request)
+    {
+        $request->validate([
+            'password' => 'required',
+        ]);
+
+        $user = $request->user();
+
+        if (
+            !Helper::multiPasswordVerify(
+                $user->password_algo,
+                $user->password_salt,
+                $request->input('password'),
+                $user->password
+            )
+        ) {
+            return $this->fail([400, __('The password is incorrect')]);
+        }
+
+        if ($user->is_admin) {
+            return $this->fail([400, __('Admin accounts cannot be deleted this way')]);
+        }
+
+        try {
+            DB::transaction(function () use ($user) {
+                $user = User::lockForUpdate()->find($user->id);
+                if (!$user) {
+                    throw new \Exception(__('The user does not exist'));
+                }
+
+                // Anonymize PII
+                $user->email = "deleted_{$user->id}@deleted.invalid";
+                $user->password = password_hash(Helper::guid(), PASSWORD_DEFAULT);
+                $user->password_algo = null;
+                $user->password_salt = null;
+                $user->last_login_ip = null;
+                $user->telegram_id = null;
+                $user->uuid = Helper::guid(true);
+                $user->token = Helper::guid();
+
+                // Revoke access
+                $user->banned = true;
+                $user->plan_id = null;
+                $user->group_id = null;
+                $user->transfer_enable = 0;
+                $user->remind_expire = false;
+                $user->remind_traffic = false;
+
+                $user->save();
+
+                // Kill all sessions
+                $user->tokens()->delete();
+                $authService = new AuthService($user);
+                $authService->removeAllSessions();
+
+                // Remove invite codes
+                $user->codes()->delete();
+
+                // Soft delete
+                $user->delete();
+            });
+        } catch (\Exception $e) {
+            Log::error('Account deletion failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->fail([500, __('Account deletion failed')]);
+        }
+
+        return $this->success(true);
     }
 }
