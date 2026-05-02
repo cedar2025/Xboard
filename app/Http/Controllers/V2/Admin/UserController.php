@@ -670,7 +670,7 @@ class UserController extends Controller
             $user->codes()->delete();
             $user->stat()->delete();
             $user->tickets()->delete();
-            $user->delete();
+            $user->forceDelete();
             DB::commit();
             return $this->success(true);
         } catch (\Exception $e) {
