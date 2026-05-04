@@ -148,5 +148,10 @@ echo "[entrypoint] Starting services (caddy=${ENABLE_CADDY} web=${ENABLE_WEB} ho
 # PIDs left over from a previous container run (causes Swoole kill EPERM).
 rm -f /www/storage/logs/octane-server-state.json /www/storage/logs/xboard-ws-server.pid 2>/dev/null || true
 chown -R www:www /www 2>/dev/null || true
-chown redis:redis /data 2>/dev/null || true
+# Only adjust /data ownership when running the built-in Redis (all-in-one mode).
+# In split deployments the redis-data volume is shared with redis:7-alpine which
+# uses a different UID/GID; unconditional chown breaks its write permissions.
+if [ "${ENABLE_REDIS}" = "true" ]; then
+    chown redis:redis /data 2>/dev/null || true
+fi
 exec "$@"
