@@ -46,13 +46,19 @@ class Plugin extends AbstractPlugin
       return;
     }
 
+    $todayRegisterCount = User::where('created_at', '>=', strtotime(date('Y-m-d')))->count();
+    $monthRegisterCount = User::where('created_at', '>=', strtotime(date('Y-m-01')))->count();
+
     $message = sprintf(
       "🎉 *新用户注册*\n" .
       "━━━━━━━━━━━━━━━━━━━━\n" .
       "📧 邮箱: `%s`\n" .
-      "⏰ 时间: `%s`",
+      "⏰ 时间: `%s`\n" .
+      "📈 当日/当月新增用户量: `%d / %d`",
       $user->email,
-      date('Y-m-d H:i:s')
+      date('Y-m-d H:i:s'),
+      $todayRegisterCount,
+      $monthRegisterCount
     );
 
     $this->sendAdminNotification($message);
