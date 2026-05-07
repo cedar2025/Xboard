@@ -47,6 +47,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $created_at
  * @property int $updated_at
  * @property bool $commission_auto_check 是否自动计算佣金
+ * @property string|null $hiddify_user_id Hiddify 用户 ID
+ * @property string|null $hiddify_subscribe_url Hiddify 订阅链接
  *
  * @property-read User|null $invite_user 邀请人信息
  * @property-read \App\Models\Plan|null $plan 用户订阅计划

@@ -1,0 +1,50 @@
+{
+  "name": "Hiddify Panel",
+  "code": "hiddify",
+  "type": "feature",
+  "version": "1.0.0",
+  "description": "Connect XBoard to a Hiddify panel and auto-create subscription users after payment.",
+  "author": "XBoard Team",
+  "require": {
+    "xboard": ">=1.0.0"
+  },
+  "config": {
+    "auto_sale_enable": {
+      "type": "boolean",
+      "default": true,
+      "label": "启用自动销售",
+      "description": "订单完成后自动在 Hiddify 面板创建用户并生成订阅链接。"
+    },
+    "admin_url": {
+      "type": "string",
+      "default": "",
+      "label": "Hiddify 管理面板地址",
+      "placeholder": "https://hiddify.example.com",
+      "description": "请输入 Hiddify 面板管理地址，不要包含尾部斜杠。"
+    },
+    "admin_user": {
+      "type": "string",
+      "default": "",
+      "label": "管理员账号",
+      "description": "Hiddify 面板管理员登录账号（用户名或邮箱）。"
+    },
+    "admin_password": {
+      "type": "password",
+      "default": "",
+      "label": "管理员密码",
+      "description": "Hiddify 面板管理员登录密码。"
+    },
+    "verify_ssl": {
+      "type": "boolean",
+      "default": false,
+      "label": "SSL 验证",
+      "description": "如果 Hiddify 面板使用自签名证书，请关闭 SSL 验证。"
+    },
+    "subscribe_path_template": {
+      "type": "string",
+      "default": "/sub/{username}",
+      "label": "订阅链接模板",
+      "description": "如果 Hiddify API 未返回订阅链接，系统会使用此模板生成。支持 {admin_url}、{username}、{id}。"
+    }
+  }
+}
