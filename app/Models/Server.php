@@ -66,6 +66,7 @@ class Server extends Model
     public const TYPE_TUIC = 'tuic';
     public const TYPE_SHADOWSOCKS = 'shadowsocks';
     public const TYPE_ANYTLS = 'anytls';
+    public const TYPE_TSUNAMI = 'tsunami';
     public const TYPE_SOCKS = 'socks';
     public const TYPE_NAIVE = 'naive';
     public const TYPE_HTTP = 'http';
@@ -104,6 +105,7 @@ class Server extends Model
         self::TYPE_TUIC,
         self::TYPE_SHADOWSOCKS,
         self::TYPE_ANYTLS,
+        self::TYPE_TSUNAMI,
         self::TYPE_SOCKS,
         self::TYPE_NAIVE,
         self::TYPE_HTTP,
@@ -303,6 +305,27 @@ class Server extends Model
                 ]
             ],
             'tls' => self::TLS_CONFIGURATION
+        ],
+        self::TYPE_TSUNAMI => [
+            'padding_scheme' => [
+                'type' => 'array',
+                'default' => [
+                    "stop=8",
+                    "0=30-30",
+                    "1=100-400",
+                    "2=400-500,c,500-1000,c,500-1000,c,500-1000,c,500-1000",
+                    "3=9-9,500-1000",
+                    "4=500-1000",
+                    "5=500-1000",
+                    "6=500-1000",
+                    "7=500-1000"
+                ]
+            ],
+            'fallback_addr' => ['type' => 'string', 'default' => null],
+            'surge_mode' => ['type' => 'string', 'default' => 'auto'],
+            'max_connections' => ['type' => 'integer', 'default' => 4],
+            'surge_threshold' => ['type' => 'integer', 'default' => 8],
+            'tls' => self::TLS_CONFIGURATION,
         ],
         self::TYPE_SOCKS => [
             'tls' => ['type' => 'integer', 'default' => 0],

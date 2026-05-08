@@ -18,6 +18,7 @@ class SingBox extends AbstractProtocol
         Server::TYPE_HYSTERIA,
         Server::TYPE_TUIC,
         Server::TYPE_ANYTLS,
+        Server::TYPE_TSUNAMI,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
     ];
@@ -168,6 +169,10 @@ class SingBox extends AbstractProtocol
             if ($item['type'] === Server::TYPE_ANYTLS) {
                 $anytlsConfig = $this->buildAnyTLS($this->user['uuid'], $item);
                 $proxies[] = $anytlsConfig;
+            }
+            if ($item['type'] === Server::TYPE_TSUNAMI) {
+                $tsunamiConfig = $this->buildTsunami($this->user['uuid'], $item);
+                $proxies[] = $tsunamiConfig;
             }
             if ($item['type'] === Server::TYPE_SOCKS) {
                 $socksConfig = $this->buildSocks($this->user['uuid'], $item);
@@ -783,6 +788,36 @@ class SingBox extends AbstractProtocol
 
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['tls']['server_name'] = $serverName;
+        }
+        $this->appendEch($array['tls'], data_get($protocol_settings, 'tls.ech'));
+
+        return $array;
+    }
+
+    protected function buildTsunami($password, $server): array
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'type' => 'tsunami',
+            'tag' => $server['name'],
+            'server' => $server['host'],
+            'password' => $password,
+            'server_port' => $server['port'],
+            'tls' => [
+                'enabled' => true,
+                'insecure' => (bool) data_get($protocol_settings, 'tls.allow_insecure', false),
+                'alpn' => ['h2'],
+            ]
+        ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['tls']['server_name'] = $serverName;
+        }
+        if ($maxConn = data_get($protocol_settings, 'max_connections')) {
+            $array['max_connections'] = (int) $maxConn;
+        }
+        if ($threshold = data_get($protocol_settings, 'surge_threshold')) {
+            $array['surge_threshold'] = (int) $threshold;
         }
         $this->appendEch($array['tls'], data_get($protocol_settings, 'tls.ech'));
 

@@ -22,6 +22,7 @@ class ClashMeta extends AbstractProtocol
         Server::TYPE_HYSTERIA,
         Server::TYPE_TUIC,
         Server::TYPE_ANYTLS,
+        Server::TYPE_TSUNAMI,
         Server::TYPE_SOCKS,
         Server::TYPE_HTTP,
         Server::TYPE_MIERU,
@@ -180,6 +181,10 @@ class ClashMeta extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_ANYTLS) {
                 array_push($proxy, self::buildAnyTLS($item['password'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === Server::TYPE_TSUNAMI) {
+                array_push($proxy, self::buildTsunami($item['password'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === Server::TYPE_SOCKS) {
@@ -679,6 +684,35 @@ class ClashMeta extends AbstractProtocol
         }
         if ($allowInsecure = data_get($protocol_settings, 'tls.allow_insecure')) {
             $array['skip-cert-verify'] = (bool) $allowInsecure;
+        }
+        self::appendEch($array, data_get($protocol_settings, 'tls.ech'));
+
+        return $array;
+    }
+
+    public static function buildTsunami($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $array = [
+            'name' => $server['name'],
+            'type' => 'tsunami',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'password' => $password,
+            'udp' => true,
+        ];
+
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $array['sni'] = $serverName;
+        }
+        if ($allowInsecure = data_get($protocol_settings, 'tls.allow_insecure')) {
+            $array['skip-cert-verify'] = (bool) $allowInsecure;
+        }
+        if ($maxConn = data_get($protocol_settings, 'max_connections')) {
+            $array['max-connections'] = (int) $maxConn;
+        }
+        if ($threshold = data_get($protocol_settings, 'surge_threshold')) {
+            $array['surge-threshold'] = (int) $threshold;
         }
         self::appendEch($array, data_get($protocol_settings, 'tls.ech'));
 

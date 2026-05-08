@@ -342,6 +342,17 @@ class ServerService
                 'tls_settings' => $protocolSettings['tls'],
                 'padding_scheme' => $protocolSettings['padding_scheme'],
             ],
+            'tsunami' => [
+                ...$baseConfig,
+                'server_port' => (int) $serverPort,
+                'server_name' => $protocolSettings['tls']['server_name'],
+                'tls_settings' => $protocolSettings['tls'],
+                'padding_scheme' => $protocolSettings['padding_scheme'],
+                'fallback_addr' => $protocolSettings['fallback_addr'],
+                'surge_mode' => $protocolSettings['surge_mode'],
+                'max_connections' => (int) $protocolSettings['max_connections'],
+                'surge_threshold' => (int) $protocolSettings['surge_threshold'],
+            ],
             'socks' => [
                 ...$baseConfig,
                 'server_port' => (int) $serverPort,
