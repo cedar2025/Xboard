@@ -25,7 +25,7 @@ class PaymentController extends Controller
 
     public function fetch()
     {
-        $payments = Payment::orderBy('sort', 'ASC')->get();
+        $payments = Payment::orderBy('sort', 'ASC')->get()->makeVisible('config');
         foreach ($payments as $k => $v) {
             $notifyUrl = url("/api/v1/guest/payment/notify/{$v->payment}/{$v->uuid}");
             if ($v->notify_domain) {

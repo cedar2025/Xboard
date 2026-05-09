@@ -15,6 +15,7 @@ class Loon extends AbstractProtocol
         Server::TYPE_TROJAN,
         Server::TYPE_HYSTERIA,
         Server::TYPE_VLESS,
+        Server::TYPE_ANYTLS,
     ];
 
     protected $protocolRequirements = [
@@ -46,6 +47,9 @@ class Loon extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_VLESS) {
                 $uri .= self::buildVless($item['password'], $item);
+            }
+            if ($item['type'] === Server::TYPE_ANYTLS) {
+                $uri .= self::buildAnyTLS($item['password'], $item);
             }
         }
         return response($uri)
@@ -201,10 +205,10 @@ class Loon extends AbstractProtocol
                 $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'reality_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
             default: // Standard TLS
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $config[] = "tls-name={$serverName}";
                 }
-                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'allow_insecure') ? 'true' : 'false');
+                $config[] = 'skip-cert-verify=' . (data_get($protocol_settings, 'tls_settings.allow_insecure', false) ? 'true' : 'false');
                 break;
         }
 
@@ -220,6 +224,20 @@ class Loon extends AbstractProtocol
                 $config[] = 'transport=grpc';
                 if ($serviceName = data_get($protocol_settings, 'network_settings.serviceName'))
                     $config[] = "grpc-service-name={$serviceName}";
+                break;
+            case 'h2':
+                $config[] = 'transport=h2';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host'))
+                    $config[] = "host=" . (is_array($host) ? $host[0] : $host);
+                break;
+            case 'httpupgrade':
+                $config[] = 'transport=httpupgrade';
+                if ($path = data_get($protocol_settings, 'network_settings.path'))
+                    $config[] = "path={$path}";
+                if ($host = data_get($protocol_settings, 'network_settings.host', $server['host']))
+                    $config[] = "host={$host}";
                 break;
         }
 
@@ -291,6 +309,24 @@ class Loon extends AbstractProtocol
 					$config[] = "grpc-service-name={$serviceName}";
 				}
 				break;
+			case 'h2':
+				$config[] = "transport=h2";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host')) {
+					$config[] = "host=" . (is_array($host) ? $host[0] : $host);
+				}
+				break;
+			case 'httpupgrade':
+				$config[] = "transport=httpupgrade";
+				if ($path = data_get($protocol_settings, 'network_settings.path')) {
+					$config[] = "path={$path}";
+				}
+				if ($host = data_get($protocol_settings, 'network_settings.host', $server['host'])) {
+					$config[] = "host={$host}";
+				}
+				break;
 			default:
 				$config[] = "transport=tcp";
 				break;
@@ -324,5 +360,30 @@ class Loon extends AbstractProtocol
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
+    }
+    
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+    
+        $config = [
+            "{$server['name']}=anytls",
+            "{$server['host']}",
+            "{$server['port']}",
+            "{$password}",
+            "udp=true"
+        ];
+    
+        if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
+            $config[] = "sni={$serverName}";
+        }
+         // ✅ 跳过证书校验
+         if (data_get($protocol_settings, 'tls.allow_insecure')) {
+            $config[] = 'skip-cert-verify=true';
+        }
+ 
+        $config = array_filter($config);
+    
+        return implode(',', $config) . "\r\n";
     }
 }

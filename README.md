@@ -30,7 +30,7 @@ docker compose run -it --rm \
     -e ENABLE_SQLITE=true \
     -e ENABLE_REDIS=true \
     -e ADMIN_ACCOUNT=admin@demo.com \
-    web php artisan xboard:install && \
+    xboard php artisan xboard:install && \
 docker compose up -d
 ```
 
@@ -72,6 +72,12 @@ docker compose up -d
 ## ⚠️ Disclaimer
 
 This project is for learning and communication purposes only. Users are responsible for any consequences of using this project.
+
+## ❤️ Support The Project
+
+If this project has helped you, donations are appreciated. They help support ongoing maintenance and would make me very happy.
+
+TRC20: `TLypStEWsVrj6Wz9mCxbXffqgt5yz3Y4XB`
 
 ## 🌟 Maintenance Notice
 

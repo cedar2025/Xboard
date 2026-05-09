@@ -11,13 +11,11 @@
 .env.backup
 .phpunit.result.cache
 .idea
-.lock
 Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
 composer.phar
-composer.lock
 yarn.lock
 docker-compose.yml
 .DS_Store
@@ -31,4 +29,6 @@ frontend
 docker-compose.yaml
 bun.lockb
 compose.yaml
+compose.host.yaml
+compose.split.yaml
 .scribe

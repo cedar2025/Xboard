@@ -2,10 +2,12 @@
 namespace App\Http\Routes\V2;
 
 use App\Http\Controllers\V2\Admin\ConfigController;
+use App\Http\Controllers\V2\Admin\MailTemplateController;
 use App\Http\Controllers\V2\Admin\PlanController;
 use App\Http\Controllers\V2\Admin\Server\GroupController;
 use App\Http\Controllers\V2\Admin\Server\RouteController;
 use App\Http\Controllers\V2\Admin\Server\ManageController;
+use App\Http\Controllers\V2\Admin\Server\MachineController;
 use App\Http\Controllers\V2\Admin\OrderController;
 use App\Http\Controllers\V2\Admin\UserController;
 use App\Http\Controllers\V2\Admin\StatController;
@@ -40,6 +42,17 @@ class AdminRoute
                 $router->post('/testSendMail', [ConfigController::class, 'testSendMail']);
             });
 
+            // Mail Templates
+            $router->group([
+                'prefix' => 'mail/template'
+            ], function ($router) {
+                $router->get('/list', [MailTemplateController::class, 'list']);
+                $router->get('/get', [MailTemplateController::class, 'get']);
+                $router->post('/save', [MailTemplateController::class, 'save']);
+                $router->post('/reset', [MailTemplateController::class, 'reset']);
+                $router->post('/test', [MailTemplateController::class, 'test']);
+            });
+
             // Plan
             $router->group([
                 'prefix' => 'plan'
@@ -66,25 +79,35 @@ class AdminRoute
                 $router->post('/save', [RouteController::class, 'save']);
                 $router->post('/drop', [RouteController::class, 'drop']);
             });
+            // 节点管理接口
             $router->group([
                 'prefix' => 'server/manage'
             ], function ($router) {
                 $router->get('/getNodes', [ManageController::class, 'getNodes']);
-                $router->post('/sort', [ManageController::class, 'sort']);
-            });
-
-            // 节点更新接口
-            $router->group([
-                'prefix' => 'server/manage'
-            ], function ($router) {
                 $router->post('/update', [ManageController::class, 'update']);
                 $router->post('/save', [ManageController::class, 'save']);
                 $router->post('/drop', [ManageController::class, 'drop']);
                 $router->post('/copy', [ManageController::class, 'copy']);
                 $router->post('/sort', [ManageController::class, 'sort']);
                 $router->post('/batchDelete', [ManageController::class, 'batchDelete']);
+                $router->post('/batchUpdate', [ManageController::class, 'batchUpdate']);
                 $router->post('/resetTraffic', [ManageController::class, 'resetTraffic']);
                 $router->post('/batchResetTraffic', [ManageController::class, 'batchResetTraffic']);
+                $router->get('/generateEchKey', [ManageController::class, 'generateEchKey']);
+            });
+
+            // 机器管理接口
+            $router->group([
+                'prefix' => 'server/machine'
+            ], function ($router) {
+                $router->get('/fetch', [MachineController::class, 'fetch']);
+                $router->post('/save', [MachineController::class, 'save']);
+                $router->post('/drop', [MachineController::class, 'drop']);
+                $router->post('/resetToken', [MachineController::class, 'resetToken']);
+                $router->get('/getToken', [MachineController::class, 'getToken']);
+                $router->get('/installCommand', [MachineController::class, 'installCommand']);
+                $router->get('/nodes', [MachineController::class, 'nodes']);
+                $router->get('/history', [MachineController::class, 'history']);
             });
 
             // Order

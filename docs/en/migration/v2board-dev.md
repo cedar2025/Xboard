@@ -33,13 +33,13 @@ This guide explains how to migrate from V2board Dev version (2023/10/27) to Xboa
 docker compose down
 
 # 2. Clear database
-docker compose run -it --rm web php artisan db:wipe
+docker compose run -it --rm xboard php artisan db:wipe
 
 # 3. Import old database (Important)
 # Please manually import the V2board Dev database
 
 # 4. Execute migration
-docker compose run -it --rm web php artisan migratefromv2b dev231027
+docker compose run -it --rm xboard php artisan migratefromv2b dev231027
 ```
 
 #### aaPanel Environment

@@ -45,6 +45,10 @@ class NodeEventHandlers
     {
         $service = app(DeviceStateService::class);
 
+        if (isset($data['devices']) && is_array($data['devices'])) {
+            $data = $data['devices'];
+        }
+
         // Get old data
         $oldDevices = $service->getNodeDevices($nodeId);
 
@@ -89,10 +93,9 @@ class NodeEventHandlers
         $service = app(DeviceStateService::class);
         $devices = $service->getUsersDevices($userIds);
 
-        $conn->send(json_encode([
-            'event' => 'sync.devices',
-            'data' => ['users' => $devices],
-        ]));
+        NodeRegistry::send($nodeId, 'sync.devices', [
+            'users' => $devices,
+        ]);
 
         Log::debug("[WS] Node#{$nodeId} requested devices, sent " . count($devices) . " users");
     }
@@ -121,21 +124,19 @@ class NodeEventHandlers
      */
     public static function pushFullSync(TcpConnection $conn, Server $node): void
     {
-        $nodeId = $conn->nodeId;
+        $nodeId = (int) $node->id;
 
         // Push config
         $config = ServerService::buildNodeConfig($node);
-        $conn->send(json_encode([
-            'event' => 'sync.config',
-            'data' => ['config' => $config]
-        ]));
+        NodeRegistry::send($nodeId, 'sync.config', [
+            'config' => $config,
+        ]);
 
         // Push users
         $users = ServerService::getAvailableUsers($node)->toArray();
-        $conn->send(json_encode([
-            'event' => 'sync.users',
-            'data' => ['users' => $users]
-        ]));
+        NodeRegistry::send($nodeId, 'sync.users', [
+            'users' => $users,
+        ]);
 
         Log::info("[WS] Full sync pushed to node#{$nodeId}", [
             'users' => count($users),

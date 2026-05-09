@@ -39,6 +39,9 @@ class Ticket extends Model
         self::STATUS_CLOSED => '关闭'
     ];
 
+    const REPLY_STATUS_WAITING = 0;
+    const REPLY_STATUS_REPLIED = 1;
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

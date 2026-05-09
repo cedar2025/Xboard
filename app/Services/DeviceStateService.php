@@ -32,6 +32,9 @@ class DeviceStateService
 
         $this->removeNodeDevices($nodeId, $userId);
 
+        // Normalize: strip port suffix and deduplicate
+        $ips = array_values(array_unique(array_map([self::class, 'normalizeIP'], $ips)));
+
         if (!empty($ips)) {
             $fields = [];
             foreach ($ips as $ip) {
@@ -98,6 +101,7 @@ class DeviceStateService
                     Redis::hdel($key, $field);
                 }
             }
+            $this->notifyUpdate($userId);
         }
 
         return array_keys($oldDevices);
@@ -164,6 +168,22 @@ class DeviceStateService
         }
 
         return $result;
+    }
+
+    /**
+     * Strip port from IP address: "1.2.3.4:12345" → "1.2.3.4", "[::1]:443" → "::1"
+     */
+    private static function normalizeIP(string $ip): string
+    {
+        // [IPv6]:port
+        if (preg_match('/^\[(.+)\]:\d+$/', $ip, $m)) {
+            return $m[1];
+        }
+        // IPv4:port
+        if (preg_match('/^(\d+\.\d+\.\d+\.\d+):\d+$/', $ip, $m)) {
+            return $m[1];
+        }
+        return $ip;
     }
 
     /**

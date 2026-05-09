@@ -1,0 +1,35 @@
+# Xboard protocol fusion entrypoint.
+#
+# Caddy listens on a single public port and dispatches HTTP traffic to Octane
+# while transparently upgrading WebSocket requests to the ws-server worker.
+# This lets every external reverse proxy (nginx, Cloudflare, the user's own
+# Caddy, ...) treat the panel as a single upstream and avoids exposing the
+# 8076 WebSocket port directly.
+{
+	admin off
+	auto_https off
+	persist_config off
+	log {
+		output stdout
+		format console
+	}
+	servers {
+		trusted_proxies static 0.0.0.0/0 ::/0
+	}
+}
+
+:{$CADDY_LISTEN_PORT:7001} {
+	@ws path /ws
+	reverse_proxy @ws 127.0.0.1:{$WS_PORT:8076}
+
+	reverse_proxy 127.0.0.1:{$OCTANE_INTERNAL_PORT:7002} {
+		header_up Host {host}
+		# X-Forwarded-For is auto-appended with our remote_addr by Caddy
+		# (enabled by the global trusted_proxies above), so Octane receives the
+		# full proxy chain and Laravel's TrustProxies middleware resolves the
+		# real client IP using its own trust list. We additionally surface the
+		# directly-connected peer as X-Real-IP for downstream consumers (logs,
+		# admin tools) that read it directly without TrustProxies.
+		header_up X-Real-IP {remote_host}
+	}
+}

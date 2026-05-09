@@ -37,16 +37,44 @@ class SingBox extends AbstractProtocol
                 ],
                 'protocol_settings.tls' => [
                     '2' => '1.6.0' // Reality
+                ],
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
+                ]
+            ],
+            'vmess' => [
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
+                ]
+            ],
+            'trojan' => [
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ],
+                'protocol_settings.network' => [
+                    'xhttp' => '9999.0.0'
                 ]
             ],
             'hysteria' => [
                 'base_version' => '1.5.0',
                 'protocol_settings.version' => [
                     '2' => '1.5.0' // Hysteria 2
+                ],
+                'protocol_settings.tls.ech.enabled' => [
+                    1 => '1.5.0'
                 ]
             ],
             'tuic' => [
-                'base_version' => '1.5.0'
+                'base_version' => '1.5.0',
+                'protocol_settings.tls.ech.enabled' => [
+                    1 => '1.5.0'
+                ]
             ],
             'ssh' => [
                 'base_version' => '1.8.0'
@@ -58,7 +86,25 @@ class SingBox extends AbstractProtocol
                 'base_version' => '1.5.0'
             ],
             'anytls' => [
-                'base_version' => '1.12.0'
+                'base_version' => '1.12.0',
+                'protocol_settings.tls.ech.enabled' => [
+                    1 => '1.12.0'
+                ]
+            ],
+            'socks' => [
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ]
+            ],
+            'naive' => [
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ]
+            ],
+            'http' => [
+                'protocol_settings.tls_settings.ech.enabled' => [
+                    1 => '1.5.0'
+                ]
             ],
         ]
     ];
@@ -133,14 +179,127 @@ class SingBox extends AbstractProtocol
             }
         }
         foreach ($outbounds as &$outbound) {
-            if (in_array($outbound['type'], ['urltest', 'selector'])) {
-                array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
+            if (!in_array($outbound['type'], ['urltest', 'selector'])) {
+                continue;
+            }
+
+            $include = $outbound['include'] ?? null;
+            $exclude = $outbound['exclude'] ?? null;
+            $fallback = $outbound['fallback'] ?? null;
+            unset($outbound['include'], $outbound['exclude'], $outbound['fallback']);
+
+            $allTags = array_column($proxies, 'tag');
+            $tags = $allTags;
+
+            if ($include !== null && $include !== '') {
+                $tags = array_values(array_filter(
+                    $tags,
+                    fn($tag) => $this->matchesPattern($include, $tag)
+                ));
+            }
+
+            if ($exclude !== null && $exclude !== '') {
+                $tags = array_values(array_filter(
+                    $tags,
+                    fn($tag) => !$this->matchesPattern($exclude, $tag)
+                ));
+            }
+
+            if (empty($tags) && $fallback !== null) {
+                $tags = $this->resolveFallback($fallback, $allTags, $outbounds, $outbound['tag'] ?? '');
+            }
+
+            if (!empty($tags)) {
+                array_push($outbound['outbounds'], ...$tags);
             }
         }
+        unset($outbound);
 
         $outbounds = array_merge($outbounds, $proxies);
         $this->config['outbounds'] = $outbounds;
         return $outbounds;
+    }
+
+    /**
+     * Safely match a user-supplied pattern against a node tag.
+     *
+     * Accepts either:
+     *   - a bare pattern (e.g. "HK|香港") — wrapped with `~...~ui` delimiters
+     *   - a fully-delimited pattern (e.g. "/foo/i", "#bar#u") — used as-is
+     *
+     * Uses `~` as the default delimiter (rare in node names) and escapes any
+     * literal `~` in bare patterns. Invalid patterns never throw; they log a
+     * warning and return false so the outbound simply stays empty rather than
+     * breaking subscription generation.
+     */
+    protected function matchesPattern(string $pattern, string $subject): bool
+    {
+        static $cache = [];
+
+        if (!isset($cache[$pattern])) {
+            $trimmed = trim($pattern);
+            $first = $trimmed !== '' ? $trimmed[0] : '';
+            $looksDelimited = in_array($first, ['/', '#', '~', '@', '%'], true)
+                && preg_match('/^(.)(.*)\1[a-zA-Z]*$/us', $trimmed) === 1;
+
+            $cache[$pattern] = $looksDelimited
+                ? $trimmed
+                : '~' . str_replace('~', '\~', $pattern) . '~ui';
+        }
+
+        $compiled = $cache[$pattern];
+
+        $result = @preg_match($compiled, $subject);
+
+        if ($result === false) {
+            $err = preg_last_error_msg();
+            Log::warning("[SingBox] invalid outbound pattern {$pattern}: {$err}");
+            $cache[$pattern] = '~(*FAIL)~';
+            return false;
+        }
+
+        return $result === 1;
+    }
+
+    /**
+     * Resolve a fallback value into a list of usable outbound tags.
+     *
+     * Accepted shapes (string or array, mixed freely):
+     *   - "direct"                 → built-in outbound tag (direct/block/...)
+     *   - "Singapore-03"           → exact node tag
+     *   - "节点选择"                → another group's tag defined in template
+     *   - "JP|日本"                → pattern matched against available node tags
+     *   - ["HK-01", "JP-02"]       → list, each resolved in order, first hit wins
+     *   - ["JP|日本", "direct"]    → pattern first, then hard fallback
+     *
+     * Returns the first non-empty resolution. Logs if nothing resolves.
+     */
+    protected function resolveFallback($fallback, array $allTags, array $outbounds, string $groupTag): array
+    {
+        $candidates = is_array($fallback) ? $fallback : [$fallback];
+        $templateTags = array_column($outbounds, 'tag');
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+
+            if (in_array($candidate, $allTags, true) || in_array($candidate, $templateTags, true)) {
+                return [$candidate];
+            }
+
+            $matched = array_values(array_filter(
+                $allTags,
+                fn($tag) => $this->matchesPattern($candidate, $tag)
+            ));
+
+            if (!empty($matched)) {
+                return $matched;
+            }
+        }
+
+        Log::warning("[SingBox] outbound group '{$groupTag}' fallback unresolved; group left empty");
+        return [];
     }
 
     /**
@@ -405,6 +564,7 @@ class SingBox extends AbstractProtocol
             ];
 
             $this->appendUtls($array['tls'], $protocol_settings);
+            $this->appendEch($array['tls'], data_get($protocol_settings, 'tls_settings.ech'));
 
             if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                 $array['tls']['server_name'] = $serverName;
@@ -447,6 +607,7 @@ class SingBox extends AbstractProtocol
 
             switch ($tlsMode) {
                 case 1:
+                    $this->appendEch($tlsConfig, data_get($protocol_settings, 'tls_settings.ech'));
                     if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                         $tlsConfig['server_name'] = $serverName;
                     }
@@ -498,8 +659,9 @@ class SingBox extends AbstractProtocol
                 ];
                 break;
             default: // Standard TLS
-                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'allow_insecure', false);
-                if ($serverName = data_get($protocol_settings, 'server_name')) {
+                $tlsConfig['insecure'] = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                $this->appendEch($tlsConfig, data_get($protocol_settings, 'tls_settings.ech'));
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                     $tlsConfig['server_name'] = $serverName;
                 }
                 break;
@@ -541,6 +703,7 @@ class SingBox extends AbstractProtocol
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $baseConfig['tls']['server_name'] = $serverName;
         }
+        $this->appendEch($baseConfig['tls'], data_get($protocol_settings, 'tls.ech'));
         $speedConfig = [
             'up_mbps' => data_get($protocol_settings, 'bandwidth.up'),
             'down_mbps' => data_get($protocol_settings, 'bandwidth.down'),
@@ -590,6 +753,7 @@ class SingBox extends AbstractProtocol
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['tls']['server_name'] = $serverName;
         }
+        $this->appendEch($array['tls'], data_get($protocol_settings, 'tls.ech'));
 
         if (data_get($protocol_settings, 'version') === 4) {
             $array['token'] = $password;
@@ -620,6 +784,7 @@ class SingBox extends AbstractProtocol
         if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
             $array['tls']['server_name'] = $serverName;
         }
+        $this->appendEch($array['tls'], data_get($protocol_settings, 'tls.ech'));
 
         return $array;
     }
@@ -673,6 +838,7 @@ class SingBox extends AbstractProtocol
             if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
                 $array['tls']['server_name'] = $serverName;
             }
+            $this->appendEch($array['tls'], data_get($protocol_settings, 'tls_settings.ech'));
         }
 
         return $array;
@@ -752,6 +918,18 @@ class SingBox extends AbstractProtocol
                     'fingerprint' => Helper::getTlsFingerprint($utls)
                 ];
             }
+        }
+    }
+
+    protected function appendEch(&$tlsConfig, $ech): void
+    {
+        if ($normalized = Helper::normalizeEchSettings($ech)) {
+            // Client outbound only needs the public ECH config, not the server's private key
+            $tlsConfig['ech'] = array_filter([
+                'enabled' => true,
+                'config' => data_get($normalized, 'config') ? [data_get($normalized, 'config')] : null,
+                'query_server_name' => data_get($normalized, 'query_server_name'),
+            ], fn($value) => $value !== null);
         }
     }
 }
