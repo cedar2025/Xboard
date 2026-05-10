@@ -304,11 +304,21 @@ class SingBox extends AbstractProtocol
 
     /**
      * Build rule
+     *
+     * Inject a DIRECT route rule for the current subscription (panel) host so that
+     * users importing the subscription do not lose access to the panel through their
+     * proxy outbound. Mirrors the behaviour already implemented in Clash / ClashMeta
+     * / Stash protocols.
      */
     protected function buildRule()
     {
-        $rules = $this->config['route']['rules'];
-        $this->config['route']['rules'] = $rules;
+        $subsDomain = request()->header('Host');
+        if ($subsDomain && isset($this->config['route']['rules']) && is_array($this->config['route']['rules'])) {
+            array_unshift($this->config['route']['rules'], [
+                'domain' => [$subsDomain],
+                'outbound' => 'direct',
+            ]);
+        }
     }
 
     /**
