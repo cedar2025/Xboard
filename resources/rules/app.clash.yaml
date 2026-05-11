@@ -7,37 +7,111 @@ allow-lan: false
 bind-address: 127.0.0.1
 mode: rule
 log-level: info
-external-controller: '127.0.0.1:9090'
+external-controller: "127.0.0.1:9090"
 unified-delay: true
 tcp-concurrent: true
 dns:
-    enable: true
-    listen: '127.0.0.1:21883'
-    ipv6: false
-    enhanced-mode: fake-ip
-    fake-ip-range: 198.18.0.1/16
-    fake-ip-filter: ['*', +.lan, +.local, 'time.*.com', 'ntp.*.com', +.market.xiaomi.com]
-    use-hosts: true
-    respect-rules: true
-    nameserver-policy: { 'geosite:cn,private': ['https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query', 'https://223.5.5.5/dns-query#h3=true'], 'geosite:!cn,!private': ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query', 'https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query','https://1.0.0.1/dns-query', 'https://8.8.4.4/dns-query'] }
-    proxy-server-nameserver: ['https://223.5.5.5/dns-query', 'https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query#h3=true']
-    default-nameserver: ['https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query', 'https://223.6.6.6/dns-query']
-    nameserver: ['https://1.1.1.1/dns-query', 'https://8.8.4.4/dns-query','https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query', 'https://8.8.8.8/dns-query', 'https://1.0.0.1/dns-query']
-    fallback: ['https://1.1.1.1/dns-query', 'https://8.8.4.4/dns-query', 'https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query','https://8.8.8.8/dns-query', 'https://1.0.0.1/dns-query']
-    fallback-filter: { geoip: true, geoip-code: CN, ipcidr: [240.0.0.0/4, 127.0.0.0/8], domain: [+.google.com, +.facebook.com, +.youtube.com, +.twitter.com] }
+  enable: true
+  listen: "127.0.0.1:21883"
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    ["*", +.lan, +.local, "time.*.com", "ntp.*.com", +.market.xiaomi.com]
+  use-hosts: true
+  respect-rules: true
+  nameserver-policy:
+    {
+      "geosite:cn,private":
+        [
+          "https://120.53.53.53/dns-query",
+          "https://223.5.5.5/dns-query",
+          "https://223.5.5.5/dns-query#h3=true",
+        ],
+      "geosite:!cn,!private":
+        [
+          "https://1.1.1.1/dns-query",
+          "https://8.8.8.8/dns-query",
+          "https://120.53.53.53/dns-query",
+          "https://223.5.5.5/dns-query",
+          "https://1.0.0.1/dns-query",
+          "https://8.8.4.4/dns-query",
+        ],
+    }
+  proxy-server-nameserver:
+    [
+      "https://223.5.5.5/dns-query",
+      "https://120.53.53.53/dns-query",
+      "https://223.5.5.5/dns-query#h3=true",
+    ]
+  default-nameserver:
+    [
+      "https://120.53.53.53/dns-query",
+      "https://223.5.5.5/dns-query",
+      "https://223.6.6.6/dns-query",
+    ]
+  nameserver:
+    [
+      "https://1.1.1.1/dns-query",
+      "https://8.8.4.4/dns-query",
+      "https://120.53.53.53/dns-query",
+      "https://223.5.5.5/dns-query",
+      "https://8.8.8.8/dns-query",
+      "https://1.0.0.1/dns-query",
+    ]
+  fallback:
+    [
+      "https://1.1.1.1/dns-query",
+      "https://8.8.4.4/dns-query",
+      "https://120.53.53.53/dns-query",
+      "https://223.5.5.5/dns-query",
+      "https://8.8.8.8/dns-query",
+      "https://1.0.0.1/dns-query",
+    ]
+  fallback-filter:
+    {
+      geoip: true,
+      geoip-code: CN,
+      ipcidr: [240.0.0.0/4, 127.0.0.0/8],
+      domain: [+.google.com, +.facebook.com, +.youtube.com, +.twitter.com],
+    }
 ntp:
-    enable: true
-    write-to-system: false
-    server: time.windows.com
-    port: 123
-    interval: 30
+  enable: true
+  write-to-system: false
+  server: time.windows.com
+  port: 123
+  interval: 30
 
 proxies:
 
 proxy-groups:
-  - { name: "SELECT", type: select, proxies: ["自动选择", "故障转移"] }
-  - { name: "自动选择", type: url-test, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 86400 }
-  - { name: "故障转移", type: fallback, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 7200 }
+  - { name: "$app_name", type: select, proxies: ["自动选择", "故障转移","特殊优化"] }
+
+  # 【自动选择】组
+  - name: "自动选择"
+    type: url-test
+    # 🌟 重点在这里！直接写 FILTER::关键词
+    # 后端会自动把它替换成所有带“推荐”的节点
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    tolerance: 50
+
+  # 【故障转移】组 (可以保留全部节点，或者筛“备用”)
+  - name: "故障转移"
+    type: fallback
+    proxies: [] # 这里的 [] 依然代表“全部节点”（保持原样）
+    url: "http://www.gstatic.com/generate_204"
+    interval: 7200
+
+  - name: "特殊优化"
+    type: url-test
+    # 🌟 重点在这里！直接写 FILTER::关键词
+    # 后端会自动把它替换成所有带“推荐”的节点
+    proxies: ["FILTER::特殊"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    tolerance: 50
 
 rules:
   # 自定义规则
