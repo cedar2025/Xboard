@@ -20,6 +20,11 @@ services:
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
       - ./plugins:/www/plugins
+      # 调试专用：取消下面行的注释，可以直接在宿主机修改代码并测试（修改后需 docker-compose restart）
+      # - ./app:/www/app
+      # - ./resources:/www/resources
+      # - ./routes:/www/routes
+      # - ./config:/www/config
       - redis-data:/data
     environment:
       - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto

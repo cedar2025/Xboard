@@ -1,0 +1,69 @@
+# 1Panel 调试专用配置
+# 场景：在服务器直接修改代码测试，无需重新打包镜像
+# 注意：使用此配置前，请确保宿主机目录下已存在 app, resources, routes, config 文件夹
+
+services:
+  web:
+    image: ghcr.io/xxntmctx/xboard:latest
+    container_name: xboard-web-debug
+    volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./storage/theme:/www/storage/theme
+      - ./plugins:/www/plugins
+      # === 代码实时映射 (核心) ===
+      - ./app:/www/app
+      - ./resources:/www/resources
+      - ./routes:/www/routes
+      - ./config:/www/config
+      - ./database:/www/database
+      # ========================
+    environment:
+      - docker=true
+      - ENABLE_HORIZON=false # Web 容器关闭 Horizon，由专用容器运行
+      - ENABLE_REDIS=false   # 使用外部或共享 Redis
+    command: php artisan octane:start --host=0.0.0.0 --port=7001
+    restart: unless-stopped
+    ports:
+      - "7001:7001"
+    networks:
+      - 1panel-network
+    depends_on:
+      - redis
+
+  horizon:
+    image: ghcr.io/xxntmctx/xboard:latest
+    container_name: xboard-horizon-debug
+    volumes:
+      - ./.env:/www/.env
+      - ./.docker/.data/:/www/.docker/.data
+      - ./storage/logs:/www/storage/logs
+      - ./plugins:/www/plugins
+      # === 代码实时映射 (核心) ===
+      - ./app:/www/app
+      - ./resources:/www/resources
+      - ./routes:/www/routes
+      - ./config:/www/config
+      - ./database:/www/database
+      # ========================
+    restart: unless-stopped
+    command: php artisan horizon
+    networks:
+      - 1panel-network
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: xboard-redis-debug
+    command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777
+    restart: unless-stopped
+    networks:
+      - 1panel-network
+    volumes:
+      - ./.docker/.data/redis:/data
+
+networks:
+  1panel-network:
+    external: true
