@@ -1,0 +1,29 @@
+.er-dashboard-download-shortcut {
+  cursor: pointer;
+}
+
+.er-dashboard-download-shortcut,
+.er-dashboard-download-shortcut:hover,
+.er-dashboard-download-shortcut:focus {
+  text-decoration: none;
+}
+
+.er-dashboard-download-shortcut:focus-visible {
+  outline: 3px solid rgba(49, 108, 114, 0.2);
+  outline-offset: 3px;
+}
+
+.er-dashboard-download-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  color: #2f3437;
+}
+
+.er-dashboard-download-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}

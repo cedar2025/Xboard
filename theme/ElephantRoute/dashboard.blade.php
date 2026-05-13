@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
+  <title>{{$title}}</title>
+  <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-auth.css?v={{$version}}-er20260514h">
+  <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-dashboard.css?v={{$version}}-er20260514h">
+  <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js"></script>
+  
+  <!-- Fluid Ripple Effect Styles -->
+  <style>
+    /* Canvas container for ripple effect */
+    #ripple-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ensure app content is above canvas */
+    #app {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Fluid Ripple Effect Canvas -->
+  <canvas id="ripple-canvas"></canvas>
+
+  <script>
+    window.routerBase = "/";
+    window.settings = {
+      title: '{{$title}}',
+      assets_path: '/theme/{{$theme}}/assets',
+      theme: {
+        color: '{{ $theme_config['theme_color'] ?? "default" }}',
+      },
+      version: '{{$version}}',
+      background_url: '{{$theme_config['background_url']}}',
+      description: '{{$description}}',
+      i18n: [
+        'zh-CN',
+        'en-US',
+        'ja-JP',
+        'vi-VN',
+        'ko-KR',
+        'zh-TW',
+        'fa-IR'
+      ],
+      logo: '{{$logo}}'
+    }
+  </script>
+  <div id="app"></div>
+  {!! $theme_config['custom_html'] !!}
+  <script src="/theme/{{$theme}}/assets/elephant-route-auth.js?v={{$version}}-er20260514h"></script>
+  <script src="/theme/{{$theme}}/assets/elephant-route-dashboard.js?v={{$version}}-er20260514h"></script>
+  <script>
+    (function() {
+      function insertLoginLogo() {
+        // Fix persistence: Allow query params like #/login?redirect=... or #/register
+        const hash = window.location.hash;
+        if (!hash.startsWith('#/login') && !hash.startsWith('#/register')) return;
+        
+        // Prevent duplicate injection
+        if (document.getElementById('custom-login-logo')) return;
+
+        // Naive UI Card selectors
+        const card = document.querySelector('.n-card.n-card--bordered.mx-auto.max-w-md');
+        const cardContent = document.querySelector('.n-card__content');
+
+        if (card && cardContent) {
+          // Create anchor wrapper for native HTML navigation
+          const logoLink = document.createElement('a');
+          logoLink.href = '/';
+          logoLink.id = 'custom-login-logo-link';
+          logoLink.style.display = 'block';
+          logoLink.style.textDecoration = 'none';
+          logoLink.style.margin = '10px auto -15px auto';
+          logoLink.style.width = 'fit-content';
+          logoLink.style.position = 'relative';
+          logoLink.style.zIndex = '9999';
+          
+          // Create logo image
+          const logo = document.createElement('img');
+          logo.src = '/home_logo.jpeg';
+          logo.id = 'custom-login-logo';
+          logo.style.display = 'block';
+          logo.style.maxWidth = '120px';
+          logo.style.height = 'auto';
+          logo.style.objectFit = 'contain';
+          logo.style.cursor = 'pointer';
+          logo.style.transition = 'opacity 0.2s';
+          
+          // Add hover effect
+          logoLink.addEventListener('mouseenter', function() {
+            logo.style.opacity = '0.8';
+          });
+          logoLink.addEventListener('mouseleave', function() {
+            logo.style.opacity = '1';
+          });
+          
+          // Append logo to link
+          logoLink.appendChild(logo);
+          
+          // Insert inside the card, before the content area
+          card.insertBefore(logoLink, cardContent);
+          console.log('Logo link inserted successfully');
+        }
+      }
+
+      function insertSidebarLogo() {
+        // Only run if NOT on login page
+        if (window.location.hash.startsWith('#/login')) return;
+
+        // Prevent duplicate injection
+        if (document.getElementById('custom-sidebar-logo')) return;
+
+        // Try multiple selectors
+        let titleEl = document.querySelector('.title-text') || 
+                      document.querySelector('h2');
+
+        // Fallback: finding the sidebar content container if title specific class missing
+        if (!titleEl) {
+            const sidebar = document.querySelector('.n-layout-sider');
+            if (sidebar) {
+                 const scrollbar = sidebar.querySelector('.n-scrollbar');
+                 if (scrollbar && scrollbar.firstChild) {
+                     // Check if first child seems to be the title (text node or element with text)
+                     // Using the scrollbar's first child as the reference to insert BEFORE
+                     titleEl = scrollbar.firstChild;
+                 }
+            }
+        }
+
+        if (titleEl) {
+            console.log('Xboard Theme: Found sidebar target, injecting logo.');
+            const logo = document.createElement('img');
+            logo.src = '/home_logo.jpeg';
+            logo.id = 'custom-sidebar-logo';
+            logo.style.height = '40px'; 
+            logo.style.width = 'auto';
+            logo.style.marginRight = '12px';
+            logo.style.marginTop = '0px';
+            logo.style.borderRadius = '4px';
+            logo.style.objectFit = 'contain';
+            logo.style.display = 'inline-block'; // Ensure it's not hidden
+            
+            // Insert before the title/reference element
+            if (titleEl.parentNode) {
+                titleEl.parentNode.insertBefore(logo, titleEl);
+            }
+        }
+      }
+
+      // Make logo clickable to navigate to landing page
+      function makeLogoClickable() {
+        const logo = document.getElementById('custom-login-logo');
+        if (logo && !logo.hasAttribute('data-clickable')) {
+          logo.setAttribute('data-clickable', 'true');
+          logo.style.cursor = 'pointer';
+          logo.style.transition = 'opacity 0.2s';
+          
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Logo clicked! Navigating to home page');
+            window.location.assign(window.location.origin + '/');
+          });
+          
+          logo.addEventListener('mouseenter', function() {
+            logo.style.opacity = '0.8';
+          });
+          
+          logo.addEventListener('mouseleave', function() {
+            logo.style.opacity = '1';
+          });
+          
+          console.log('Logo made clickable');
+        }
+      }
+
+      // Use a combination of MutationObserver and setInterval for robustness
+      const observer = new MutationObserver((mutations) => {
+        insertLoginLogo();
+        insertSidebarLogo();
+        makeLogoClickable();
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Periodic check in case MutationObserver misses it (common in some frameworks)
+      setInterval(() => {
+          insertLoginLogo();
+          insertSidebarLogo();
+          makeLogoClickable();
+      }, 1000);
+
+      // Initial try
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            insertLoginLogo();
+            insertSidebarLogo();
+        });
+      } else {
+        insertLoginLogo();
+        insertSidebarLogo();
+      }
+    })();
+
+
+    // Mouse Particle Effect (same as landing page)
+    (function() {
+      const canvas = document.getElementById('ripple-canvas');
+      
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationId;
+      
+      // Set canvas size
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      
+      // Particle class
+      function createParticle(x, y) {
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD'];
+        return {
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          life: 1,
+          size: Math.random() * 3 + 1,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        };
+      }
+      
+      // Show particle effect on login and register pages
+      function updateParticleVisibility() {
+        const hash = window.location.hash;
+        if (hash.includes('login') || hash.includes('register')) {
+          canvas.style.display = 'block';
+          if (!animationId) animate();
+        } else {
+          canvas.style.display = 'none';
+          particles = [];
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        }
+      }
+      
+      // Initial check
+      updateParticleVisibility();
+      
+      // Listen to hash changes
+      window.addEventListener('hashchange', updateParticleVisibility);
+      
+      // Mouse move handler
+      document.addEventListener('mousemove', function(e) {
+        if (canvas.style.display === 'none') return;
+        
+        // Spawn 3 particles on mouse move
+        for (let i = 0; i < 3; i++) {
+          particles.push(createParticle(e.clientX, e.clientY));
+        }
+      });
+      
+      // Animation loop
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Update and draw particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.02;
+          p.size *= 0.95;
+          
+          // Remove dead particles
+          if (p.life <= 0 || p.size < 0.1) {
+            particles.splice(i, 1);
+            continue;
+          }
+          
+          // Draw particle
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.life;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        
+        // Connect particles with lines
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.1)';
+        ctx.lineWidth = 0.5;
+        
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 100) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        
+        animationId = requestAnimationFrame(animate);
+      }
+    })();
+  </script>
+</body>
+
+</html>
