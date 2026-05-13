@@ -129,14 +129,6 @@ class SingBox extends AbstractProtocol
     {
         $jsonData = subscribe_template('singbox');
 
-        if (empty($jsonData)) {
-            if (file_exists(base_path(self::CUSTOM_TEMPLATE_FILE))) {
-                $jsonData = file_get_contents(base_path(self::CUSTOM_TEMPLATE_FILE));
-            } elseif (file_exists(base_path(self::DEFAULT_TEMPLATE_FILE))) {
-                $jsonData = file_get_contents(base_path(self::DEFAULT_TEMPLATE_FILE));
-            }
-        }
-
         return is_array($jsonData) ? $jsonData : json_decode($jsonData, true);
     }
 
@@ -596,7 +588,7 @@ class SingBox extends AbstractProtocol
             "server" => $server['host'],
             "server_port" => $server['port'],
             "uuid" => $password,
-            "packet_encoding" => "metadata", // Modified: 增强与旧版 Xray 后端的兼容性
+            "packet_encoding" => "metadata",
         ];
         if ($flow = data_get($protocol_settings, 'flow')) {
             $array['flow'] = $flow;
@@ -606,11 +598,9 @@ class SingBox extends AbstractProtocol
             $tlsMode = (int) data_get($protocol_settings, 'tls', 0);
             $tlsConfig = [
                 'enabled' => true,
-                'insecure' => (bool) data_get($protocol_settings, 'tls_settings.allow_insecure'),
-                'utls' => [
-                    'enabled' => true,
-                    'fingerprint' => 'chrome'
-                ]
+                'insecure' => $tlsMode === 2
+                    ? (bool) data_get($protocol_settings, 'reality_settings.allow_insecure', false)
+                    : (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false),
             ];
 
             $this->appendUtls($tlsConfig, $protocol_settings);
@@ -864,10 +854,10 @@ class SingBox extends AbstractProtocol
             ] : null,
             'ws' => [
                 'type' => 'ws',
-                'path' => $path = data_get($protocol_settings, 'network_settings.path'),
+                'path' => $path = explode('?', (string)data_get($protocol_settings, 'network_settings.path'))[0],
                 'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
-                'max_early_data' => str_contains((string)$path, 'ed=') ? 2048 : 0,
-                'early_data_header_name' => str_contains((string)$path, 'ed=') ? 'Sec-WebSocket-Protocol' : null
+                'max_early_data' => str_contains((string)data_get($protocol_settings, 'network_settings.path'), 'ed=') ? 2048 : 0,
+                'early_data_header_name' => str_contains((string)data_get($protocol_settings, 'network_settings.path'), 'ed=') ? 'Sec-WebSocket-Protocol' : null
             ],
             'grpc' => [
                 'type' => 'grpc',
