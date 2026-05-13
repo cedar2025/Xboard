@@ -910,7 +910,6 @@ class ClashMeta extends AbstractProtocol
         $array['client-fingerprint'] = 'chrome';
     }
 
-<<<<<<< HEAD
     protected static function appendEch(&$array, $ech): void
     {
         if ($normalized = Helper::normalizeEchSettings($ech)) {
@@ -920,7 +919,8 @@ class ClashMeta extends AbstractProtocol
                 'query-server-name' => data_get($normalized, 'query_server_name'),
             ], fn($value) => $value !== null);
         }
-=======
+    }
+
     protected static function buildXhttpOpts($protocol_settings, $server)
     {
         $extra = data_get($protocol_settings, 'network_settings.extra', []);
@@ -935,6 +935,5 @@ class ClashMeta extends AbstractProtocol
         return array_filter($opts, function($v) {
             return $v !== null && $v !== '';
         });
->>>>>>> 179bcaa (feat:优化xhttp支持 mihomo 1.19.22)
     }
 }
