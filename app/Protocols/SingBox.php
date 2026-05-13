@@ -129,6 +129,14 @@ class SingBox extends AbstractProtocol
     {
         $jsonData = subscribe_template('singbox');
 
+        if (empty($jsonData)) {
+            if (file_exists(base_path(self::CUSTOM_TEMPLATE_FILE))) {
+                $jsonData = file_get_contents(base_path(self::CUSTOM_TEMPLATE_FILE));
+            } elseif (file_exists(base_path(self::DEFAULT_TEMPLATE_FILE))) {
+                $jsonData = file_get_contents(base_path(self::DEFAULT_TEMPLATE_FILE));
+            }
+        }
+
         return is_array($jsonData) ? $jsonData : json_decode($jsonData, true);
     }
 
@@ -588,7 +596,7 @@ class SingBox extends AbstractProtocol
             "server" => $server['host'],
             "server_port" => $server['port'],
             "uuid" => $password,
-            "packet_encoding" => "xudp",
+            "packet_encoding" => "metadata", // Modified: 增强与旧版 Xray 后端的兼容性
         ];
         if ($flow = data_get($protocol_settings, 'flow')) {
             $array['flow'] = $flow;
@@ -856,10 +864,10 @@ class SingBox extends AbstractProtocol
             ] : null,
             'ws' => [
                 'type' => 'ws',
-                'path' => data_get($protocol_settings, 'network_settings.path'),
+                'path' => $path = data_get($protocol_settings, 'network_settings.path'),
                 'headers' => ($host = data_get($protocol_settings, 'network_settings.headers.Host')) ? ['Host' => $host] : null,
-                'max_early_data' => 0,
-                // 'early_data_header_name' => 'Sec-WebSocket-Protocol'
+                'max_early_data' => str_contains((string)$path, 'ed=') ? 2048 : 0,
+                'early_data_header_name' => str_contains((string)$path, 'ed=') ? 'Sec-WebSocket-Protocol' : null
             ],
             'grpc' => [
                 'type' => 'grpc',
