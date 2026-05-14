@@ -152,10 +152,7 @@ class Stash extends AbstractProtocol
                 continue;
             $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
-        $config['proxy-groups'] = array_filter($config['proxy-groups'], function ($group) {
-            return $group['proxies'];
-        });
-        $config['proxy-groups'] = array_values($config['proxy-groups']);
+        $config['proxy-groups'] = $this->ensureProxyGroupsHaveFallback($config['proxy-groups']);
         // Force the current subscription domain to be a direct rule
         $subsDomain = request()->header('Host');
         if ($subsDomain) {

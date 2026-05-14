@@ -229,6 +229,39 @@ abstract class AbstractProtocol
     }
 
     /**
+     * Keep generated Clash-compatible proxy groups importable even when every
+     * node was filtered out for the current client.
+     */
+    protected function ensureProxyGroupsHaveFallback(array $proxyGroups, string $fallback = 'DIRECT'): array
+    {
+        return collect($proxyGroups)
+            ->map(function ($group) use ($fallback) {
+                if (!isset($group['proxies']) || !is_array($group['proxies'])) {
+                    $group['proxies'] = [];
+                }
+
+                $group['proxies'] = array_values(array_unique(array_filter($group['proxies'], function ($proxy) {
+                    return is_string($proxy) && trim($proxy) !== '';
+                })));
+
+                if (empty($group['proxies'])) {
+                    $group['proxies'] = [$fallback];
+                }
+
+                return $group;
+            })
+            ->values()
+            ->all();
+    }
+
+    protected function proxyGroupOrFallback(string $proxyGroup, string $fallback = 'DIRECT'): string
+    {
+        $proxyGroup = trim($proxyGroup, " \t\n\r\0\x0B,");
+
+        return $proxyGroup === '' ? $fallback : $proxyGroup;
+    }
+
+    /**
      * 将平铺的协议需求转换为树形结构
      *
      * @param array $flat 平铺的协议需求

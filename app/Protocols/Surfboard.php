@@ -68,7 +68,7 @@ class Surfboard extends AbstractProtocol
         $config = str_replace('$subs_link', $subsURL, $config);
         $config = str_replace('$subs_domain', $subsDomain, $config);
         $config = str_replace('$proxies', $proxies, $config);
-        $config = str_replace('$proxy_group', rtrim($proxyGroup, ', '), $config);
+        $config = str_replace('$proxy_group', $this->proxyGroupOrFallback($proxyGroup), $config);
 
         $upload = round($user['u'] / (1024 * 1024 * 1024), 2);
         $download = round($user['d'] / (1024 * 1024 * 1024), 2);

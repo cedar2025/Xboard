@@ -142,10 +142,7 @@ class ClashMeta extends AbstractProtocol
                 continue;
             $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
-        $config['proxy-groups'] = array_filter($config['proxy-groups'], function ($group) {
-            return $group['proxies'];
-        });
-        $config['proxy-groups'] = array_values($config['proxy-groups']);
+        $config['proxy-groups'] = $this->ensureProxyGroupsHaveFallback($config['proxy-groups']);
         $config = $this->buildRules($config);
 
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
