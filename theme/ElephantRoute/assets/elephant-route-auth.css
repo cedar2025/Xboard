@@ -436,6 +436,18 @@ body.er-auth-page button[type="submit"] {
     min-height: auto !important;
   }
 
+  .er-auth-form-copy {
+    margin-bottom: 12px;
+  }
+
+  body.er-auth-page .n-card.n-card--bordered.mx-auto.max-w-md .n-card__content > .p-6 {
+    padding-top: 8px !important;
+  }
+
+  body.er-auth-page .n-card.n-card--bordered.mx-auto.max-w-md .n-card__content > .p-6 > .mt-5 {
+    margin-top: 8px !important;
+  }
+
   .er-auth-visual {
     position: relative;
     left: auto;
@@ -474,6 +486,14 @@ body.er-auth-page button[type="submit"] {
     padding-top: 0;
   }
 
+  .er-auth-form-copy {
+    margin-bottom: 10px;
+  }
+
+  .er-auth-brand-row {
+    margin-bottom: 18px;
+  }
+
   .er-auth-kicker {
     font-size: 10px;
     letter-spacing: 0.24em;
@@ -481,6 +501,11 @@ body.er-auth-page button[type="submit"] {
 
   .er-auth-title {
     font-size: 30px;
+  }
+
+  .er-auth-form-title,
+  .er-auth-form-subtitle {
+    display: none;
   }
 
   .er-auth-art {
