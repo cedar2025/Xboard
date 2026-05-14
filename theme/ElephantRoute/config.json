@@ -13,7 +13,12 @@
         "default": "默认(绿色)",
         "blue": "蓝色",
         "black": "黑色",
-        "darkblue": "暗蓝色"
+        "darkblue": "暗蓝色",
+        "titianred": "提香红",
+        "kleinblue": "克莱因蓝",
+        "chinared": "中国红",
+        "hermesorange": "爱马仕橙",
+        "marsgreen": "马尔斯绿"
       },
       "default_value": "default"
     },
