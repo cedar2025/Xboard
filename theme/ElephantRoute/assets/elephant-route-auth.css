@@ -424,8 +424,16 @@ body.er-auth-page button[type="submit"] {
   }
 
   body.er-auth-page #app {
-    justify-content: center;
-    padding: 26px 18px 34px;
+    height: auto !important;
+    min-height: auto;
+    justify-content: flex-start;
+    padding: 8px 18px 34px;
+  }
+
+  body.er-auth-page #app > *,
+  body.er-auth-page #app .wh-full {
+    height: auto !important;
+    min-height: auto !important;
   }
 
   .er-auth-visual {
@@ -435,7 +443,7 @@ body.er-auth-page button[type="submit"] {
     width: 100%;
     max-width: 430px;
     transform: none;
-    margin: 18px auto 18px;
+    margin: 18px auto 10px;
     padding: 0 18px;
     box-sizing: border-box;
     text-align: left;
@@ -462,6 +470,10 @@ body.er-auth-page button[type="submit"] {
 }
 
 @media (max-width: 560px) {
+  body.er-auth-page #app {
+    padding-top: 0;
+  }
+
   .er-auth-kicker {
     font-size: 10px;
     letter-spacing: 0.24em;

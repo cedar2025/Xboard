@@ -66,55 +66,8 @@
   <script>
     (function() {
       function insertLoginLogo() {
-        // Fix persistence: Allow query params like #/login?redirect=... or #/register
-        const hash = window.location.hash;
-        if (!hash.startsWith('#/login') && !hash.startsWith('#/register')) return;
-        
-        // Prevent duplicate injection
-        if (document.getElementById('custom-login-logo')) return;
-
-        // Naive UI Card selectors
-        const card = document.querySelector('.n-card.n-card--bordered.mx-auto.max-w-md');
-        const cardContent = document.querySelector('.n-card__content');
-
-        if (card && cardContent) {
-          // Create anchor wrapper for native HTML navigation
-          const logoLink = document.createElement('a');
-          logoLink.href = '/';
-          logoLink.id = 'custom-login-logo-link';
-          logoLink.style.display = 'block';
-          logoLink.style.textDecoration = 'none';
-          logoLink.style.margin = '10px auto -15px auto';
-          logoLink.style.width = 'fit-content';
-          logoLink.style.position = 'relative';
-          logoLink.style.zIndex = '9999';
-          
-          // Create logo image
-          const logo = document.createElement('img');
-          logo.src = '/home_logo.jpeg';
-          logo.id = 'custom-login-logo';
-          logo.style.display = 'block';
-          logo.style.maxWidth = '120px';
-          logo.style.height = 'auto';
-          logo.style.objectFit = 'contain';
-          logo.style.cursor = 'pointer';
-          logo.style.transition = 'opacity 0.2s';
-          
-          // Add hover effect
-          logoLink.addEventListener('mouseenter', function() {
-            logo.style.opacity = '0.8';
-          });
-          logoLink.addEventListener('mouseleave', function() {
-            logo.style.opacity = '1';
-          });
-          
-          // Append logo to link
-          logoLink.appendChild(logo);
-          
-          // Insert inside the card, before the content area
-          card.insertBefore(logoLink, cardContent);
-          console.log('Logo link inserted successfully');
-        }
+        // Auth pages are handled by elephant-route-auth.js.
+        return;
       }
 
       function insertSidebarLogo() {
