@@ -327,6 +327,7 @@ body.er-auth-register #app {
 }
 
 .er-auth-form-title {
+  display: none;
   margin: 0;
   color: var(--er-ink);
   font-size: 28px;
@@ -336,6 +337,7 @@ body.er-auth-register #app {
 }
 
 .er-auth-form-subtitle {
+  display: none;
   margin: 10px 0 0;
   color: var(--er-muted);
   font-size: 14px;
@@ -501,11 +503,6 @@ body.er-auth-page button[type="submit"] {
 
   .er-auth-title {
     font-size: 30px;
-  }
-
-  .er-auth-form-title,
-  .er-auth-form-subtitle {
-    display: none;
   }
 
   .er-auth-art {
