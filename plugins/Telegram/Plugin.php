@@ -84,16 +84,25 @@ class Plugin extends AbstractPlugin
       return;
     }
 
+    $todayStartAt = strtotime(date('Y-m-d'));
+    $tomorrowStartAt = strtotime('+1 day', $todayStartAt);
+    $todayPaidTotal = Order::where('paid_at', '>=', $todayStartAt)
+      ->where('paid_at', '<', $tomorrowStartAt)
+      ->whereNotIn('status', [Order::STATUS_PENDING, Order::STATUS_CANCELLED])
+      ->sum('total_amount');
+
     $message = sprintf(
       "💰 *支付成功*\n" .
       "━━━━━━━━━━━━━━━━━━━━\n" .
       "📧 邮箱: `%s`\n" .
-      "💵 金额: `%s元`\n" .
+      "💵 本次支付金额: `%s元`\n" .
+      "📊 当日总收入: `%s元`\n" .
       "🧾 订单: `%s`\n" .
       "🏦 支付方式: `%s`\n" .
       "🔌 支付渠道: `%s`",
       $user->email,
       $order->total_amount / 100,
+      $todayPaidTotal / 100,
       $order->trade_no,
       $payment->name,
       $payment->payment
