@@ -18,9 +18,7 @@ class ServerService
      */
     public static function getAllServers(): Collection
     {
-        $query = Server::orderBy('sort', 'ASC');
-
-        return $query->get()->append([
+        return self::sortByDisplayNodeId(Server::query()->get())->append([
             'last_check_at',
             'last_push_at',
             'online',
@@ -40,8 +38,9 @@ class ServerService
     {
         $servers = Server::whereJsonContains('group_ids', (string) $user->group_id)
             ->where('show', true)
-            ->orderBy('sort', 'ASC')
-            ->get()
+            ->get();
+
+        $servers = self::sortByDisplayNodeId($servers)
             ->append(['last_check_at', 'last_push_at', 'online', 'is_online', 'available_status', 'cache_key', 'server_key']);
 
         $servers = collect($servers)->map(function ($server) use ($user) {
@@ -58,6 +57,19 @@ class ServerService
         })->toArray();
 
         return $servers;
+    }
+
+    private static function sortByDisplayNodeId(Collection $servers): Collection
+    {
+        return $servers->sort(function (Server $left, Server $right): int {
+            $leftDisplayId = (string) ($left->code ?: $left->id);
+            $rightDisplayId = (string) ($right->code ?: $right->id);
+            $displayIdComparison = strnatcasecmp($leftDisplayId, $rightDisplayId);
+
+            return $displayIdComparison !== 0
+                ? $displayIdComparison
+                : $left->id <=> $right->id;
+        })->values();
     }
 
     /**
