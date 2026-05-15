@@ -100,6 +100,10 @@
             .nav-link:hover::after {
                 width: 100%;
             }
+
+            .footer-pricing-link {
+                display: none;
+            }
             
             .landing-page .header-buttons {
                 display: flex;
@@ -351,16 +355,37 @@
 
             @media (max-width: 768px) {
                 .landing-page header {
-                    padding: 0 20px;
+                    padding: 0 16px;
+                    gap: 12px;
+                }
+                .landing-page .brand {
+                    flex: 0 0 auto;
+                    font-size: 1.05rem;
+                    line-height: 1.15;
+                    white-space: nowrap;
+                }
+                .landing-page .brand img {
+                    flex: 0 0 auto;
                 }
                 .pricing-section {
                     padding: 100px 24px 80px;
                 }
                 .header-left {
-                    gap: 20px;
+                    gap: 12px;
                 }
                 .nav-link {
-                    display: none; /* Optionally hide on very small screens, or put in menu */
+                    display: none;
+                }
+                .footer-pricing-link {
+                    display: inline;
+                }
+                .landing-page .header-buttons {
+                    flex: 0 0 auto;
+                    gap: 8px;
+                }
+                .landing-page .btn-login,
+                .landing-page .btn-primary {
+                    padding: 8px 16px;
                 }
             }
         </style>
@@ -384,7 +409,6 @@
                     <button class="btn-primary" id="registerBtn">注册</button>
                 </div>
             </header>
-
             <section class="pricing-section" id="pricing">
                 <div class="pricing-header">
                     <div class="pricing-label">方案选择</div>
@@ -397,6 +421,7 @@
 
             <footer>
                 <div class="footer-links">
+                    <a href="/pricing.html" class="footer-pricing-link">定价方案</a>
                     <a href="/terms.html">服务条款</a>
                     <a href="/privacy.html">隐私政策</a>
                 </div>
