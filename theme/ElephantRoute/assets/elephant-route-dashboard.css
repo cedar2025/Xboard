@@ -28,6 +28,34 @@
   height: 32px;
 }
 
+.er-sidebar-brand-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+}
+
+.er-sidebar-brand-logo {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: 40px !important;
+  margin: 0 !important;
+  border-radius: 4px !important;
+  object-fit: contain !important;
+}
+
+.er-sidebar-brand-title {
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+  color: #111827 !important;
+  text-align: left !important;
+}
+
 .carousel-img[data-v-2492d831] {
   height: 80px !important;
   padding: 8px 14px !important;

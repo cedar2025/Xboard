@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
   <title>{{$title}}</title>
   <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-auth.css?v={{$version}}-er20260515d">
-  <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-dashboard.css?v={{$version}}-er20260515a">
+  <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-dashboard.css?v={{$version}}-er20260516a">
   <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js"></script>
   
   <!-- Fluid Ripple Effect Styles -->
@@ -75,7 +75,7 @@
         if (window.location.hash.startsWith('#/login')) return;
 
         // Prevent duplicate injection
-        if (document.getElementById('custom-sidebar-logo')) return;
+        if (document.getElementById('custom-sidebar-brand-row')) return;
 
         // Try multiple selectors
         let titleEl = document.querySelector('.title-text') || 
@@ -94,23 +94,25 @@
             }
         }
 
-        if (titleEl) {
+        if (titleEl && titleEl.parentNode) {
             console.log('Xboard Theme: Found sidebar target, injecting logo.');
+            const brandRow = document.createElement('div');
+            brandRow.id = 'custom-sidebar-brand-row';
+            brandRow.className = 'er-sidebar-brand-row';
+
             const logo = document.createElement('img');
             logo.src = '/home_logo.jpeg';
             logo.id = 'custom-sidebar-logo';
-            logo.style.height = '40px'; 
-            logo.style.width = 'auto';
-            logo.style.marginRight = '12px';
-            logo.style.marginTop = '0px';
-            logo.style.borderRadius = '4px';
-            logo.style.objectFit = 'contain';
-            logo.style.display = 'inline-block'; // Ensure it's not hidden
-            
-            // Insert before the title/reference element
-            if (titleEl.parentNode) {
-                titleEl.parentNode.insertBefore(logo, titleEl);
+            logo.alt = '大象网络';
+            logo.className = 'er-sidebar-brand-logo';
+
+            if (titleEl.nodeType === Node.ELEMENT_NODE) {
+              titleEl.classList.add('er-sidebar-brand-title');
             }
+
+            titleEl.parentNode.insertBefore(brandRow, titleEl);
+            brandRow.appendChild(logo);
+            brandRow.appendChild(titleEl);
         }
       }
 
