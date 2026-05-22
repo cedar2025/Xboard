@@ -7,7 +7,7 @@
   <title>{{$title}}</title>
   <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-auth.css?v={{$version}}-er20260515d">
   <link rel="stylesheet" href="/theme/{{$theme}}/assets/elephant-route-dashboard.css?v={{$version}}-er20260516a">
-  <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js"></script>
+  <script type="module" crossorigin src="/theme/{{$theme}}/assets/umi.js?v={{$version}}-er20260523a"></script>
   
   <!-- Fluid Ripple Effect Styles -->
   <style>
