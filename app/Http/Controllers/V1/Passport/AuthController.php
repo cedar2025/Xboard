@@ -21,6 +21,16 @@ use ReCaptcha\ReCaptcha;
 
 class AuthController extends Controller
 {
+    private function isValidEmailCode(string $email, $emailCode): bool
+    {
+        if (!is_scalar($emailCode) || !preg_match('/^\d{6}$/', (string)$emailCode)) {
+            return false;
+        }
+
+        $cachedEmailCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+        return $cachedEmailCode !== null && hash_equals((string)$cachedEmailCode, (string)$emailCode);
+    }
+
     public function loginWithMailLink(Request $request)
     {
         if (!(int)admin_setting('login_with_mail_link_enable')) {
@@ -113,7 +123,7 @@ class AuthController extends Controller
             if (empty($request->input('email_code'))) {
                 return $this->fail([422,__('Email verification code cannot be empty')]);
             }
-            if ((string)Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email'))) !== (string)$request->input('email_code')) {
+            if (!$this->isValidEmailCode($request->input('email'), $request->input('email_code'))) {
                 return $this->fail([400,__('Incorrect email verification code')]);
             }
         }
@@ -282,7 +292,7 @@ class AuthController extends Controller
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $request->input('email'));
         $forgetRequestLimit = (int)Cache::get($forgetRequestLimitKey);
         if ($forgetRequestLimit >= 3) return $this->fail([429, __('Reset failed, Please try again later')]);
-        if ((string)Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email'))) !== (string)$request->input('email_code')) {
+        if (!$this->isValidEmailCode($request->input('email'), $request->input('email_code'))) {
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
             return $this->fail([400,__('Incorrect email verification code')]);
         }
