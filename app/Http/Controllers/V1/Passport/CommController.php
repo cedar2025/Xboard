@@ -25,7 +25,7 @@ class CommController extends Controller
             return $this->fail($captchaError);
         }
 
-        $email = $request->input('email');
+        $email = strtolower(trim((string) $request->input('email')));
 
         // 检查白名单后缀限制
         if ((int) admin_setting('email_whitelist_enable', 0)) {
