@@ -82,10 +82,13 @@ class RegisterService
 
         // 检查邮箱验证
         if ((int) admin_setting('email_verify', 0)) {
-            if (empty($request->input('email_code'))) {
+            $emailCode = trim((string) $request->input('email_code'));
+            if (!preg_match('/^\d{6}$/', $emailCode)) {
                 return [false, [422, __('Email verification code cannot be empty')]];
             }
-            if ((string) Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email'))) !== (string) $request->input('email_code')) {
+            $email = strtolower(trim((string) $request->input('email')));
+            $cachedCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+            if ($cachedCode === null || $cachedCode === '' || !hash_equals((string) $cachedCode, $emailCode)) {
                 return [false, [400, __('Incorrect email verification code')]];
             }
         }
@@ -144,7 +147,7 @@ class RegisterService
 
         HookManager::call('user.register.before', $request);
 
-        $email = $request->input('email');
+        $email = strtolower(trim((string) $request->input('email')));
         $password = $request->input('password');
         $inviteCode = $request->input('invite_code');
 
