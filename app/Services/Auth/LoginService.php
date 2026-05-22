@@ -85,6 +85,9 @@ class LoginService
      */
     public function resetPassword(string $email, string $emailCode, string $password): array
     {
+        $email = strtolower(trim($email));
+        $emailCode = trim($emailCode);
+
         // 检查重置请求限制
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $email);
         $forgetRequestLimit = (int) Cache::get($forgetRequestLimitKey);
@@ -93,7 +96,13 @@ class LoginService
         }
 
         // 验证邮箱验证码
-        if ((string) Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email)) !== (string) $emailCode) {
+        $cachedCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $email));
+        if (
+            !preg_match('/^\d{6}$/', $emailCode)
+            || $cachedCode === null
+            || $cachedCode === ''
+            || !hash_equals((string) $cachedCode, $emailCode)
+        ) {
             Cache::put($forgetRequestLimitKey, $forgetRequestLimit ? $forgetRequestLimit + 1 : 1, 300);
             return [false, [400, __('Incorrect email verification code')]];
         }
