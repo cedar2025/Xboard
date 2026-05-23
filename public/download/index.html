@@ -5,6 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>软件下载 - 大象网络</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+            async
+            defer
+        ></script>
         <script>
             tailwind.config = {
                 darkMode: "class",
@@ -74,6 +79,12 @@
                     black,
                     transparent
                 );
+            }
+            .download-link[aria-disabled="true"] {
+                opacity: 0.48;
+                cursor: not-allowed;
+                pointer-events: auto;
+                box-shadow: none;
             }
         </style>
     </head>
@@ -145,6 +156,25 @@
                 </p>
             </div>
 
+            <section
+                id="download-verification"
+                class="mb-10 w-full max-w-xl rounded-2xl border border-slate-200 bg-white/90 p-5 text-center shadow-lg shadow-slate-200/50"
+            >
+                <h2 class="text-lg font-semibold text-slate-900">
+                    下载前验证
+                </h2>
+                <p
+                    id="download-verification-status"
+                    class="mt-2 text-sm text-slate-500"
+                >
+                    完成一次人机检测后，本页面下载按钮会临时放行。
+                </p>
+                <div
+                    id="download-turnstile"
+                    class="mt-4 flex min-h-[70px] justify-center"
+                ></div>
+            </section>
+
             <div
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full px-4"
             >
@@ -185,8 +215,10 @@
                         适用于所有 Android 手机和平板
                     </p>
                     <a
-                        href="/download/ElephantNetwork-Android.apk"
-                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-emerald-500/25"
+                        href="#download-verification"
+                        data-download-url="/download/ElephantNetwork-Android.apk"
+                        aria-disabled="true"
+                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-emerald-500/25"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -238,8 +270,10 @@
                         适用于 Win10 / Win11 系统
                     </p>
                     <a
-                        href="/download/Hiddify-Windows-Setup-x64.exe"
-                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/25"
+                        href="#download-verification"
+                        data-download-url="/download/Hiddify-Windows-Setup-x64.msix"
+                        aria-disabled="true"
+                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/25"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -297,8 +331,10 @@
                         支持 Intel 和 Apple Silicon (M1/M2)
                     </p>
                     <a
-                        href="/download/Hiddify-MacOS.dmg"
-                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-zinc-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-zinc-500/25"
+                        href="#download-verification"
+                        data-download-url="/download/ElephantNetwork-MacOS.zip"
+                        aria-disabled="true"
+                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-zinc-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-zinc-500/25"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -354,9 +390,11 @@
                         * 请使用美区 Apple ID
                     </p>
                     <a
-                        href="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
+                        href="#download-verification"
+                        data-download-url="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
                         target="_blank"
-                        class="mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-sky-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-sky-500/25"
+                        aria-disabled="true"
+                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-sky-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-sky-500/25"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -386,5 +424,127 @@
         >
             <p>&copy; 2024 大象网络 Inc. All rights reserved.</p>
         </footer>
+        <script>
+            (function () {
+                var PASS_KEY = "er_download_turnstile_passed_at";
+                var PASS_TTL_MS = 30 * 60 * 1000;
+                var statusEl = document.getElementById(
+                    "download-verification-status"
+                );
+                var widgetEl = document.getElementById("download-turnstile");
+                var links = Array.prototype.slice.call(
+                    document.querySelectorAll(".download-link[data-download-url]")
+                );
+
+                function setStatus(message, tone) {
+                    statusEl.textContent = message;
+                    statusEl.className =
+                        "mt-2 text-sm " +
+                        (tone === "success"
+                            ? "text-emerald-600"
+                            : tone === "error"
+                              ? "text-rose-500"
+                              : "text-slate-500");
+                }
+
+                function hasFreshPass() {
+                    var value = Number(sessionStorage.getItem(PASS_KEY) || 0);
+                    return value && Date.now() - value < PASS_TTL_MS;
+                }
+
+                function lockDownloads() {
+                    links.forEach(function (link) {
+                        link.href = "#download-verification";
+                        link.setAttribute("aria-disabled", "true");
+                    });
+                }
+
+                function unlockDownloads() {
+                    sessionStorage.setItem(PASS_KEY, String(Date.now()));
+                    links.forEach(function (link) {
+                        link.href = link.dataset.downloadUrl;
+                        link.setAttribute("aria-disabled", "false");
+                    });
+                    setStatus("验证已通过，可以选择需要的客户端。", "success");
+                    widgetEl.classList.add("hidden");
+                }
+
+                links.forEach(function (link) {
+                    link.addEventListener("click", function (event) {
+                        if (link.getAttribute("aria-disabled") === "true") {
+                            event.preventDefault();
+                            document
+                                .getElementById("download-verification")
+                                .scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                });
+                            setStatus("请先完成人机检测，然后再下载。");
+                        }
+                    });
+                });
+
+                function waitForTurnstile() {
+                    return new Promise(function (resolve, reject) {
+                        var startedAt = Date.now();
+                        var timer = window.setInterval(function () {
+                            if (window.turnstile && window.turnstile.render) {
+                                window.clearInterval(timer);
+                                resolve();
+                            } else if (Date.now() - startedAt > 10000) {
+                                window.clearInterval(timer);
+                                reject(new Error("Turnstile script timeout"));
+                            }
+                        }, 100);
+                    });
+                }
+
+                async function initTurnstile() {
+                    lockDownloads();
+                    if (hasFreshPass()) {
+                        unlockDownloads();
+                        return;
+                    }
+
+                    try {
+                        var response = await fetch("/api/v1/guest/comm/config", {
+                            headers: { Accept: "application/json" },
+                        });
+                        var payload = await response.json();
+                        var siteKey =
+                            payload &&
+                            payload.data &&
+                            payload.data.turnstile_site_key;
+
+                        if (!siteKey) {
+                            setStatus("验证组件暂不可用，请稍后刷新。", "error");
+                            return;
+                        }
+
+                        await waitForTurnstile();
+                        window.turnstile.render(widgetEl, {
+                            sitekey: siteKey,
+                            theme: "auto",
+                            callback: unlockDownloads,
+                            "expired-callback": function () {
+                                sessionStorage.removeItem(PASS_KEY);
+                                widgetEl.classList.remove("hidden");
+                                lockDownloads();
+                                setStatus("验证已过期，请重新检测。");
+                            },
+                            "error-callback": function () {
+                                sessionStorage.removeItem(PASS_KEY);
+                                lockDownloads();
+                                setStatus("验证加载失败，请刷新页面重试。", "error");
+                            },
+                        });
+                    } catch (error) {
+                        setStatus("验证组件暂不可用，请稍后刷新。", "error");
+                    }
+                }
+
+                initTurnstile();
+            })();
+        </script>
     </body>
 </html>

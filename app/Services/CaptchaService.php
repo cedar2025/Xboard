@@ -4,7 +4,9 @@ namespace App\Services;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use ReCaptcha\ReCaptcha;
+use Throwable;
 
 class CaptchaService
 {
@@ -38,23 +40,75 @@ class CaptchaService
      */
     private function verifyTurnstile(Request $request): array
     {
-        $turnstileToken = $request->input('turnstile_token');
+        $turnstileToken = $request->input('turnstile_token')
+            ?: $request->input('cf-turnstile-response');
         if (!$turnstileToken) {
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
-        $response = Http::post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-            'secret' => admin_setting('turnstile_secret_key'),
-            'response' => $turnstileToken,
-            'remoteip' => $request->ip()
-        ]);
+        $secretKey = admin_setting('turnstile_secret_key');
+        if (!$secretKey) {
+            Log::warning('Turnstile verification skipped because secret key is missing');
+            return [false, [400, __('Invalid code is incorrect')]];
+        }
+
+        try {
+            $response = Http::asForm()
+                ->timeout(5)
+                ->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret' => $secretKey,
+                    'response' => $turnstileToken,
+                    'remoteip' => $request->ip()
+                ]);
+        } catch (Throwable $e) {
+            Log::warning('Turnstile verification request failed', [
+                'error' => $e->getMessage(),
+                'host' => $request->getHost()
+            ]);
+            return [false, [400, __('Invalid code is incorrect')]];
+        }
+
+        if (!$response->ok()) {
+            Log::warning('Turnstile verification returned non-OK response', [
+                'status' => $response->status(),
+                'host' => $request->getHost()
+            ]);
+            return [false, [400, __('Invalid code is incorrect')]];
+        }
 
         $result = $response->json();
-        if (!$result['success']) {
+        if (!is_array($result) || empty($result['success'])) {
+            Log::info('Turnstile verification rejected token', [
+                'host' => $request->getHost(),
+                'error_codes' => $result['error-codes'] ?? []
+            ]);
+            return [false, [400, __('Invalid code is incorrect')]];
+        }
+
+        $hostname = strtolower((string) ($result['hostname'] ?? ''));
+        if (!$hostname || !in_array($hostname, $this->allowedTurnstileHosts($request), true)) {
+            Log::warning('Turnstile verification rejected hostname', [
+                'hostname' => $hostname,
+                'request_host' => $request->getHost()
+            ]);
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
         return [true, null];
+    }
+
+    private function allowedTurnstileHosts(Request $request): array
+    {
+        $hosts = [$request->getHost()];
+        $appUrl = admin_setting('app_url');
+        if ($appUrl) {
+            $hosts[] = parse_url($appUrl, PHP_URL_HOST);
+        }
+
+        return array_values(array_unique(array_filter(array_map(
+            fn ($host) => strtolower((string) $host),
+            $hosts
+        ))));
     }
 
     /**
@@ -109,4 +163,4 @@ class CaptchaService
 
         return [true, null];
     }
-} 
+}
