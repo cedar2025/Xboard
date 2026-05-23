@@ -1,0 +1,38 @@
+- generic [ref=e1]:
+  - region "大象网络品牌介绍" [ref=e2]:
+    - paragraph [ref=e3]: Elephant Route
+    - heading "全球连接，尽在掌握" [level=1] [ref=e4]
+    - paragraph [ref=e5]: 大象网络为你的设备提供清晰、稳定、易管理的连接体验。
+  - generic [ref=e31]:
+    - generic [ref=e32]:
+      - link "打开大象网络主页" [ref=e33] [cursor=pointer]:
+        - /url: /welcome
+        - img "大象网络" [ref=e34]
+        - generic [ref=e35]:
+          - strong [ref=e36]: 大象网络
+          - generic [ref=e37]: Elephant Route
+      - paragraph [ref=e38]: 欢迎回来
+    - generic [ref=e39]:
+      - generic [ref=e44]:
+        - textbox "邮箱" [active] [ref=e45]
+        - generic:
+          - generic: 邮箱
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - textbox "密码" [ref=e50]
+          - generic:
+            - generic: 密码
+        - img [ref=e54] [cursor=pointer]
+      - button "登入" [ref=e61] [cursor=pointer]:
+        - img [ref=e63]
+        - generic [ref=e66]: 登入
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - link "注册" [ref=e69] [cursor=pointer]:
+          - /url: "#/register"
+        - separator [ref=e70]
+        - link "忘记密码" [ref=e71] [cursor=pointer]:
+          - /url: "#/forgetpassword"
+      - button "简体中文" [ref=e73] [cursor=pointer]:
+        - img [ref=e75]
+        - generic [ref=e79]: 简体中文

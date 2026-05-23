@@ -1,0 +1,3 @@
+[    2650ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://www.elphantroute.com/app#/login:0
+[    2650ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://www.elphantroute.com/app#/login:0
+[    3398ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.elphantroute.com/favicon.ico:0
