@@ -10,6 +10,12 @@ use Throwable;
 
 class CaptchaService
 {
+    private const TURNSTILE_TEST_SECRET_KEYS = [
+        '1x0000000000000000000000000000000AA',
+        '2x0000000000000000000000000000000AA',
+        '3x0000000000000000000000000000000AA',
+    ];
+
     /**
      * 验证人机验证码
      *
@@ -38,7 +44,7 @@ class CaptchaService
      * @param Request $request
      * @return array
      */
-    private function verifyTurnstile(Request $request): array
+    private function verifyTurnstile(Request $request, ?string $secretKey = null): array
     {
         $turnstileToken = $request->input('turnstile_token')
             ?: $request->input('cf-turnstile-response');
@@ -46,7 +52,7 @@ class CaptchaService
             return [false, [400, __('Invalid code is incorrect')]];
         }
 
-        $secretKey = admin_setting('turnstile_secret_key');
+        $secretKey = $secretKey ?: admin_setting('turnstile_secret_key');
         if (!$secretKey) {
             Log::warning('Turnstile verification skipped because secret key is missing');
             return [false, [400, __('Invalid code is incorrect')]];
@@ -86,7 +92,10 @@ class CaptchaService
         }
 
         $hostname = strtolower((string) ($result['hostname'] ?? ''));
-        if (!$hostname || !in_array($hostname, $this->allowedTurnstileHosts($request), true)) {
+        if (
+            !$this->isTurnstileTestSecret($secretKey)
+            && (!$hostname || !in_array($hostname, $this->allowedTurnstileHosts($request), true))
+        ) {
             Log::warning('Turnstile verification rejected hostname', [
                 'hostname' => $hostname,
                 'request_host' => $request->getHost()
@@ -95,6 +104,16 @@ class CaptchaService
         }
 
         return [true, null];
+    }
+
+    public function verifyTurnstileChallenge(Request $request, ?string $secretKey = null): array
+    {
+        return $this->verifyTurnstile($request, $secretKey);
+    }
+
+    private function isTurnstileTestSecret(string $secretKey): bool
+    {
+        return in_array($secretKey, self::TURNSTILE_TEST_SECRET_KEYS, true);
     }
 
     private function allowedTurnstileHosts(Request $request): array

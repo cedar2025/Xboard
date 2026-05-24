@@ -1,5 +1,5 @@
 (function () {
-  var DOWNLOAD_URL = 'https://www.elphantroute.com/download/index.html';
+  var DOWNLOAD_URL = '/download/index.html';
   var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
   var AUTH_ROUTES = ['/sign-in', '/sign-up', '/login', '/register', '/forgetpassword', '/forgot-password'];

@@ -14,6 +14,7 @@ use App\Http\Controllers\V1\User\StatController;
 use App\Http\Controllers\V1\User\TelegramController;
 use App\Http\Controllers\V1\User\TicketController;
 use App\Http\Controllers\V1\User\UserController;
+use App\Http\Controllers\V1\User\AppDownloadController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class UserRoute
@@ -36,6 +37,8 @@ class UserRoute
             $router->post('/getQuickLoginUrl', [UserController::class, 'getQuickLoginUrl']);
             $router->get('/getActiveSession', [UserController::class, 'getActiveSession']);
             $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession']);
+            $router->post('/app-downloads/{artifact}/prepare', [AppDownloadController::class, 'prepare'])
+                ->middleware('throttle:10,1');
             // Order
             $router->post('/order/save', [OrderController::class, 'save']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);

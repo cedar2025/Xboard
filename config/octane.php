@@ -153,6 +153,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Swoole Options
+    |--------------------------------------------------------------------------
+    |
+    | App package uploads are handled by Octane/Swoole directly. Keep these
+    | limits aligned with the backend artifact validator so large installers do
+    | not fail before the request reaches Laravel validation.
+    |
+    */
+
+    'swoole' => [
+        'php_options' => [
+            '-d', 'upload_max_filesize=2048M',
+            '-d', 'post_max_size=2048M',
+            '-d', 'memory_limit=512M',
+        ],
+        'options' => [
+            'package_max_length' => 2 * 1024 * 1024 * 1024,
+            'socket_buffer_size' => 2 * 1024 * 1024 * 1024,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Octane Swoole Tables
     |--------------------------------------------------------------------------
     |

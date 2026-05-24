@@ -19,6 +19,7 @@ use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
 use App\Http\Controllers\V2\Admin\TrafficResetController;
 use App\Http\Controllers\V2\Admin\AppVersionController;
+use App\Http\Controllers\V2\Admin\AppPackageController;
 use Illuminate\Contracts\Routing\Registrar;
 
 class AdminRoute
@@ -149,6 +150,23 @@ class AdminRoute
                 $router->post('/publish', [AppVersionController::class, 'publish']);
                 $router->post('/disable', [AppVersionController::class, 'disable']);
                 $router->post('/drop', [AppVersionController::class, 'drop']);
+            });
+
+            // Protected App Packages
+            $router->group([
+                'prefix' => 'app-package'
+            ], function ($router) {
+                $router->get('/settings', [AppPackageController::class, 'settings']);
+                $router->post('/settings', [AppPackageController::class, 'saveSettings']);
+                $router->get('/apps', [AppPackageController::class, 'apps']);
+                $router->post('/apps/save', [AppPackageController::class, 'saveApp']);
+                $router->post('/apps/drop', [AppPackageController::class, 'dropApp']);
+                $router->get('/versions', [AppPackageController::class, 'versions']);
+                $router->post('/versions/save', [AppPackageController::class, 'saveVersion']);
+                $router->post('/versions/publish', [AppPackageController::class, 'publish']);
+                $router->post('/versions/disable', [AppPackageController::class, 'disable']);
+                $router->post('/versions/drop', [AppPackageController::class, 'drop']);
+                $router->get('/logs', [AppPackageController::class, 'logs']);
             });
 
             // Ticket

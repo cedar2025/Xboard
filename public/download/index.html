@@ -1,721 +1,372 @@
 <!doctype html>
-<html lang="zh-CN" class="overflow-x-hidden">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>软件下载 - 大象网络</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        colors: {
-                            slate: {
-                                850: "#1e293b",
-                                900: "#0f172a",
-                                950: "#020617",
-                            },
-                            emerald: {
-                                400: "#34d399",
-                                500: "#10b981",
-                                600: "#059669",
-                            },
-                        },
-                        animation: {
-                            "fade-in": "fadeIn 0.5s ease-out forwards",
-                            "slide-up": "slideUp 0.5s ease-out forwards",
-                        },
-                        keyframes: {
-                            fadeIn: {
-                                "0%": { opacity: "0" },
-                                "100%": { opacity: "1" },
-                            },
-                            slideUp: {
-                                "0%": {
-                                    transform: "translateY(20px)",
-                                    opacity: "0",
-                                },
-                                "100%": {
-                                    transform: "translateY(0)",
-                                    opacity: "1",
-                                },
-                            },
-                        },
-                    },
-                },
-            };
-        </script>
-        <style>
-            body {
-                font-family:
-                    "Inter",
-                    system-ui,
-                    -apple-system,
-                    sans-serif;
-                background-color: #ffffff;
-                color: #0f172a;
-            }
-            .download-card {
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .download-card:hover {
-                transform: translateY(-5px);
-                box-shadow:
-                    0 20px 25px -5px rgb(0 0 0 / 0.1),
-                    0 8px 10px -6px rgb(0 0 0 / 0.1);
-                border-color: #10b981;
-            }
-            .bg-grid-slate-900 {
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(203 213 225 / 0.5)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
-                mask-image: linear-gradient(
-                    to bottom,
-                    transparent,
-                    black,
-                    transparent
-                );
-            }
-            .download-link[aria-disabled="true"] {
-                opacity: 0.48;
-                cursor: not-allowed;
-                pointer-events: auto;
-                box-shadow: none;
-            }
-            .verification-modal[aria-hidden="true"] {
-                display: none;
-            }
-            .verification-retry[hidden] {
-                display: none;
-            }
-        </style>
-    </head>
-    <body
-        class="bg-white min-h-screen relative overflow-x-hidden flex flex-col w-full"
-    >
-        <!-- Background Decoration -->
-        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-            <div
-                class="absolute inset-0 bg-grid-slate-900 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] opacity-20"
-            ></div>
-            <div
-                class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] mix-blend-screen pointer-events-none"
-            ></div>
-        </div>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>软件下载 - 大象网络</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #0f172a;
+      background: #f8fafc;
+    }
+    .verification-modal[aria-hidden="true"] {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
+    <a href="/" class="flex items-center gap-3">
+      <img src="/landing/assets/elephant-route-logo.jpg" alt="大象网络" class="h-10 w-10 rounded-full">
+      <span class="text-xl font-semibold">大象网络</span>
+    </a>
+    <a href="/" class="text-sm text-slate-500 hover:text-slate-900">返回首页</a>
+  </header>
 
-        <!-- Header -->
-        <header
-            class="relative z-10 w-full px-6 py-6 flex justify-between items-center max-w-7xl mx-auto"
-        >
-            <a
-                href="/"
-                class="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-                <img
-                    src="/landing/assets/elephant-route-logo.jpg"
-                    alt="Logo"
-                    class="w-10 h-10 rounded-full"
-                />
-                <span class="text-2xl font-bold text-slate-900">大象网络</span>
-            </a>
-            <a
-                href="/"
-                class="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 group"
-            >
-                <span>返回首页</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M5 12h14"></path>
-                    <path d="m12 5 7 7-7 7"></path>
-                </svg>
-            </a>
-        </header>
+  <main class="mx-auto max-w-7xl px-5 pb-20 pt-8">
+    <section class="mb-10">
+      <h1 class="text-4xl font-semibold tracking-tight md:text-5xl">软件下载</h1>
+      <p class="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+        登录后完成安全验证即可下载客户端。安装包由后端私有存储提供，链接短期有效。
+      </p>
+    </section>
 
-        <!-- Main Content -->
-        <main
-            class="relative z-10 flex-grow flex flex-col justify-center items-center px-4 py-12 pb-24 md:pb-12"
-        >
-            <div class="text-center mb-16 animate-fade-in">
-                <h1
-                    class="text-4xl md:text-6xl font-bold text-slate-900 mb-6 tracking-tight"
-                >
-                    全平台<span class="text-emerald-400">高速</span>连接
-                </h1>
-                <p
-                    class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed"
-                >
-                    为您打造的下一代网络加速客户端，多端同步，一键连接。
-                    <br class="hidden md:block" />
-                    随时随地享受极速、稳定的网络体验。
-                </p>
-            </div>
+    <div id="download-status" class="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-500">正在加载安装包...</div>
+    <div id="download-grid" class="hidden space-y-10"></div>
+  </main>
 
-            <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full px-4"
-            >
-                <!-- Android Card -->
-                <div
-                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
-                    style="animation-delay: 0.1s"
-                >
-                    <div
-                        class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-10 h-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M3 17a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2z"
-                            ></path>
-                            <path
-                                d="M4 16V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"
-                            ></path>
-                            <line x1="8" y1="21" x2="8" y2="16"></line>
-                            <line x1="16" y1="21" x2="16" y2="16"></line>
-                            <line x1="9" y1="3" x2="9" y2="6"></line>
-                            <line x1="15" y1="3" x2="15" y2="6"></line>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-2">
-                        Android
-                    </h3>
-                    <p class="text-slate-500 mb-8 text-sm">
-                        适用于所有 Android 手机和平板
-                    </p>
-                    <a
-                        href="/download/ElephantNetwork-Android.apk"
-                        data-download-url="/download/ElephantNetwork-Android.apk"
-                        aria-disabled="false"
-                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-emerald-500/25"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            ></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        立即下载
-                    </a>
-                </div>
+  <div
+    id="download-verification-modal"
+    class="verification-modal fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="download-verification-title"
+  >
+    <div class="w-full max-w-[520px] rounded-lg bg-white p-5 shadow-2xl">
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <h2 id="download-verification-title" class="text-xl font-medium text-slate-800">下载安全验证</h2>
+        <button type="button" id="download-verification-close" class="rounded-md p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="关闭验证">
+          <span aria-hidden="true">X</span>
+        </button>
+      </div>
+      <div class="rounded-sm border border-slate-200 bg-slate-50 px-4 py-6">
+        <div id="download-turnstile" class="flex min-h-[70px] justify-center"></div>
+        <p id="download-verification-status" class="mt-4 text-center text-sm text-slate-500">
+          完成 Cloudflare 安全校验后将生成短期下载链接。
+        </p>
+      </div>
+    </div>
+  </div>
 
-                <!-- Windows Card -->
-                <div
-                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
-                    style="animation-delay: 0.2s"
-                >
-                    <div
-                        class="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-10 h-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-                            ></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-2">
-                        Windows
-                    </h3>
-                    <p class="text-slate-500 mb-8 text-sm">
-                        适用于 Win10 / Win11 系统
-                    </p>
-                    <a
-                        href="/download/Hiddify-Windows-Setup-x64.msix"
-                        data-download-url="/download/Hiddify-Windows-Setup-x64.msix"
-                        aria-disabled="false"
-                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/25"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            ></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        立即下载
-                    </a>
-                </div>
+  <script>
+    (function () {
+      var TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      var TURNSTILE_TIMEOUT_MS = 30000;
+      var platforms = [];
+      var selectedArtifactId = null;
+      var turnstileConfig = { enabled: true, site_key: "" };
+      var turnstileWidgetId = null;
+      var turnstileScriptPromise = null;
+      var lastFocusedElement = null;
 
-                <!-- macOS Card -->
-                <div
-                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
-                    style="animation-delay: 0.3s"
-                >
-                    <div
-                        class="w-20 h-20 bg-zinc-100 text-zinc-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-10 h-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <rect
-                                x="5"
-                                y="2"
-                                width="14"
-                                height="20"
-                                rx="2"
-                                ry="2"
-                            ></rect>
-                            <path d="M12 18h.01"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-2">
-                        macOS
-                    </h3>
-                    <p class="text-slate-500 mb-8 text-sm">
-                        支持 Intel 和 Apple Silicon (M1/M2)
-                    </p>
-                    <a
-                        href="/download/ElephantNetwork-MacOS.zip"
-                        data-download-url="/download/ElephantNetwork-MacOS.zip"
-                        aria-disabled="false"
-                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-zinc-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-zinc-500/25"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            ></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        立即下载
-                    </a>
-                </div>
+      var gridEl = document.getElementById("download-grid");
+      var statusEl = document.getElementById("download-status");
+      var modalEl = document.getElementById("download-verification-modal");
+      var closeEl = document.getElementById("download-verification-close");
+      var widgetEl = document.getElementById("download-turnstile");
+      var verificationStatusEl = document.getElementById("download-verification-status");
 
-                <!-- iOS Card -->
-                <div
-                    class="download-card group bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center animate-slide-up shadow-lg shadow-slate-200/50"
-                    style="animation-delay: 0.4s"
-                >
-                    <div
-                        class="w-20 h-20 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-10 h-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M12 20h.01"></path>
-                            <path d="M7 20h.01"></path>
-                            <path d="M17 20h.01"></path>
-                            <path
-                                d="M5 21a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z"
-                            ></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-2">iOS</h3>
-                    <p class="text-slate-500 mb-3 text-sm">
-                        iPhone / iPad (App Store)
-                    </p>
-                    <p class="text-rose-500 text-xs font-medium mb-5">
-                        * 请使用美区 Apple ID
-                    </p>
-                    <a
-                        href="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
-                        data-download-url="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
-                        target="_blank"
-                        aria-disabled="false"
-                        class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-sky-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-sky-500/25"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            ></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        App Store
-                    </a>
-                </div>
-            </div>
-        </main>
+      var platformLabels = {
+        android: "Android",
+        windows: "Windows",
+        macos: "macOS",
+        ios: "iOS",
+        linux: "Linux"
+      };
 
-        <!-- Footer -->
-        <footer
-            class="relative z-10 w-full text-center py-6 text-slate-500 text-sm"
-        >
-            <p>&copy; 2024 大象网络 Inc. All rights reserved.</p>
-        </footer>
+      function getStoredToken() {
+        var direct = localStorage.getItem("VUE_NAIVE_ACCESS_TOKEN");
+        if (!direct) {
+          return "";
+        }
+        try {
+          var parsed = JSON.parse(direct);
+          if (parsed && parsed.expire && parsed.expire <= Date.now()) {
+            return "";
+          }
+          return parsed && parsed.value ? parsed.value : direct;
+        } catch (e) {
+          return direct;
+        }
+      }
 
-        <div
-            id="download-verification-modal"
-            class="verification-modal fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
-            aria-hidden="true"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="download-verification-title"
-        >
-            <div class="w-full max-w-[660px] rounded-lg bg-white p-5 shadow-2xl">
-                <div class="mb-4 flex items-start justify-between gap-4">
-                    <h2
-                        id="download-verification-title"
-                        class="text-2xl font-medium text-slate-700"
-                    >
-                        告诉我们您是人类
-                    </h2>
-                    <button
-                        type="button"
-                        id="download-verification-close"
-                        class="rounded-md p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                        aria-label="关闭验证"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M18 6 6 18"></path>
-                            <path d="m6 6 12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-4 py-6"
-                >
-                    <div
-                        id="download-turnstile"
-                        class="flex min-h-[70px] justify-center"
-                    ></div>
-                    <p
-                        id="download-verification-status"
-                        class="mt-4 text-center text-sm text-slate-500"
-                    >
-                        完成 Cloudflare 安全校验后将自动开始下载。
-                    </p>
-                    <div class="mt-4 flex justify-center">
-                        <button
-                            type="button"
-                            id="download-verification-retry"
-                            class="verification-retry rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-600"
-                            hidden
-                        >
-                            重新加载验证
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <script>
-            (function () {
-                var PASS_KEY = "er_download_turnstile_passed_at";
-                var PASS_TTL_MS = 30 * 60 * 1000;
-                var TURNSTILE_SCRIPT_SRC =
-                    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-                var TURNSTILE_TIMEOUT_MS = 30000;
-                var pendingDownloadUrl = "";
-                var turnstileWidgetId = null;
-                var turnstileSiteKey = "";
-                var turnstileLoadPromise = null;
-                var turnstileScriptPromise = null;
-                var lastFocusedElement = null;
-                var modalEl = document.getElementById(
-                    "download-verification-modal"
-                );
-                var closeEl = document.getElementById(
-                    "download-verification-close"
-                );
-                var statusEl = document.getElementById(
-                    "download-verification-status"
-                );
-                var retryEl = document.getElementById(
-                    "download-verification-retry"
-                );
-                var widgetEl = document.getElementById("download-turnstile");
-                var links = Array.prototype.slice.call(
-                    document.querySelectorAll(".download-link[data-download-url]")
-                );
+      function redirectToLogin() {
+        alert("请先登录后下载");
+        var downloadPath = "/download/index.html";
+        var appRedirect = "/dashboard?download_redirect=" + encodeURIComponent(downloadPath);
+        window.location.href = "/app#/login?redirect=" + encodeURIComponent(appRedirect);
+      }
 
-                function setStatus(message, tone) {
-                    statusEl.textContent = message;
-                    statusEl.className =
-                        "mt-4 text-center text-sm " +
-                        (tone === "success"
-                            ? "text-emerald-600"
-                            : tone === "error"
-                              ? "text-rose-500"
-                              : "text-slate-500");
-                    retryEl.hidden = tone !== "error";
-                }
+      function setStatus(message, tone) {
+        statusEl.textContent = message;
+        statusEl.className = "rounded-lg border p-5 text-sm " + (
+          tone === "error"
+            ? "border-rose-200 bg-rose-50 text-rose-600"
+            : "border-slate-200 bg-white text-slate-500"
+        );
+        statusEl.classList.remove("hidden");
+        gridEl.classList.add("hidden");
+      }
 
-                function hasFreshPass() {
-                    var value = Number(sessionStorage.getItem(PASS_KEY) || 0);
-                    return value && Date.now() - value < PASS_TTL_MS;
-                }
+      function setVerificationStatus(message, tone) {
+        verificationStatusEl.textContent = message;
+        verificationStatusEl.className = "mt-4 text-center text-sm " + (
+          tone === "error"
+            ? "text-rose-500"
+            : tone === "success"
+              ? "text-emerald-600"
+              : "text-slate-500"
+        );
+      }
 
-                function rememberPass() {
-                    sessionStorage.setItem(PASS_KEY, String(Date.now()));
-                    links.forEach(function (link) {
-                        link.href = link.dataset.downloadUrl;
-                        link.setAttribute("aria-disabled", "false");
-                    });
-                }
+      function formatBytes(bytes) {
+        if (!bytes) {
+          return "未知大小";
+        }
+        var units = ["B", "KB", "MB", "GB"];
+        var value = Number(bytes);
+        var index = 0;
+        while (value >= 1024 && index < units.length - 1) {
+          value = value / 1024;
+          index += 1;
+        }
+        return value.toFixed(index === 0 ? 0 : 1) + " " + units[index];
+      }
 
-                function forgetPass() {
-                    sessionStorage.removeItem(PASS_KEY);
-                }
+      function renderPackages() {
+        gridEl.innerHTML = "";
+        var renderedCount = 0;
 
-                function closeModal() {
-                    modalEl.setAttribute("aria-hidden", "true");
-                    document.body.classList.remove("overflow-hidden");
-                    if (lastFocusedElement && lastFocusedElement.focus) {
-                        lastFocusedElement.focus();
-                    }
-                }
+        platforms.forEach(function (platform) {
+          var packagesCount = platform.apps.reduce(function (count, app) {
+            return count + app.packages.length;
+          }, 0);
+          if (!packagesCount) {
+            return;
+          }
 
-                function openModal(downloadUrl) {
-                    pendingDownloadUrl = downloadUrl;
-                    lastFocusedElement = document.activeElement;
-                    modalEl.setAttribute("aria-hidden", "false");
-                    document.body.classList.add("overflow-hidden");
-                    startTurnstile();
-                }
+          var section = document.createElement("section");
+          section.className = "space-y-4";
+          section.innerHTML = [
+            '<div class="flex items-center gap-3">',
+            '  <h2 class="text-2xl font-semibold tracking-tight text-slate-900"></h2>',
+            '  <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-500"></span>',
+            '</div>',
+            '<div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>'
+          ].join("");
+          section.querySelector("h2").textContent = platformLabels[platform.platform] || platform.platform;
+          section.querySelector("span").textContent = packagesCount + " 个安装包";
+          var cards = section.querySelector(".grid");
 
-                function startTurnstile() {
-                    setStatus("正在加载 Cloudflare 安全校验...");
-                    widgetEl.innerHTML =
-                        '<div class="flex min-h-[70px] items-center justify-center text-sm text-slate-500">正在连接 Cloudflare...</div>';
-                    ensureTurnstile().catch(function () {
-                        setStatus(
-                            "验证组件加载失败，请关闭代理或广告拦截后重试。",
-                            "error"
-                        );
-                    });
-                }
+          platform.apps.forEach(function (app) {
+            app.packages.forEach(function (pkg) {
+              var card = document.createElement("article");
+              card.className = "flex min-h-[240px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm";
+              card.innerHTML = [
+                '<div class="mb-4">',
+                '  <div>',
+                '    <h3 class="text-lg font-semibold text-slate-900"></h3>',
+                '    <p class="mt-1 text-sm text-slate-500"></p>',
+                '  </div>',
+                '</div>',
+                '<p class="line-clamp-3 min-h-[60px] text-sm leading-6 text-slate-600"></p>',
+                '<div class="mt-auto space-y-3 pt-5">',
+                '  <div class="text-xs text-slate-500">',
+                '    <span class="rounded-md bg-slate-50 px-3 py-2"></span>',
+                '  </div>',
+                '  <button type="button" class="download-button w-full rounded-md bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-600">立即下载</button>',
+                '</div>'
+              ].join("");
 
-                function continueDownload() {
-                    rememberPass();
-                    setStatus("验证已通过，正在开始下载。", "success");
-                    var downloadUrl = pendingDownloadUrl;
-                    pendingDownloadUrl = "";
-                    closeModal();
-                    if (downloadUrl) {
-                        window.location.href = downloadUrl;
-                    }
-                }
+              card.querySelector("h3").textContent = app.name;
+              card.querySelector("h3 + p").textContent = "v" + pkg.version + " build " + pkg.build_number;
+              card.querySelector("p.line-clamp-3").textContent = pkg.release_notes || app.description || "适用于 " + (platformLabels[pkg.platform] || pkg.platform) + " 的安装包。";
+              card.querySelector(".text-xs span").textContent = formatBytes(pkg.file_size);
+              card.querySelector(".download-button").addEventListener("click", function () {
+                beginDownload(pkg.artifact_id);
+              });
+              cards.appendChild(card);
+              renderedCount += 1;
+            });
+          });
 
-                links.forEach(function (link) {
-                    link.addEventListener("click", function (event) {
-                        if (!hasFreshPass()) {
-                            event.preventDefault();
-                            openModal(link.dataset.downloadUrl);
-                        }
-                    });
-                });
+          gridEl.appendChild(section);
+        });
 
-                closeEl.addEventListener("click", closeModal);
-                retryEl.addEventListener("click", function () {
-                    turnstileLoadPromise = null;
-                    turnstileScriptPromise = null;
-                    turnstileWidgetId = null;
-                    widgetEl.innerHTML = "";
-                    startTurnstile();
-                });
-                modalEl.addEventListener("click", function (event) {
-                    if (event.target === modalEl) {
-                        closeModal();
-                    }
-                });
-                document.addEventListener("keydown", function (event) {
-                    if (
-                        event.key === "Escape" &&
-                        modalEl.getAttribute("aria-hidden") === "false"
-                    ) {
-                        closeModal();
-                    }
-                });
+        if (!renderedCount) {
+          setStatus("暂无可下载安装包。");
+          return;
+        }
 
-                function loadTurnstileScript() {
-                    if (window.turnstile && window.turnstile.render) {
-                        return Promise.resolve();
-                    }
+        statusEl.classList.add("hidden");
+        gridEl.classList.remove("hidden");
+      }
 
-                    if (turnstileScriptPromise) {
-                        return turnstileScriptPromise;
-                    }
+      async function loadPackages() {
+        try {
+          var response = await fetch("/api/v1/app-downloads", { headers: { Accept: "application/json" } });
+          var payload = await response.json();
+          var data = payload && payload.data ? payload.data : {};
+          platforms = data.platforms || [];
+          turnstileConfig = data.turnstile || turnstileConfig;
+          if (!platforms.length) {
+            setStatus("暂无可下载安装包。");
+            return;
+          }
+          renderPackages();
+        } catch (e) {
+          setStatus("安装包加载失败，请稍后重试。", "error");
+        }
+      }
 
-                    turnstileScriptPromise = new Promise(function (
-                        resolve,
-                        reject
-                    ) {
-                        var existingScript = document.querySelector(
-                            'script[data-er-turnstile="true"]'
-                        );
-                        var script =
-                            existingScript || document.createElement("script");
-                        var timer = window.setTimeout(function () {
-                            reject(new Error("Turnstile script timeout"));
-                        }, TURNSTILE_TIMEOUT_MS);
+      function beginDownload(artifactId) {
+        if (!getStoredToken()) {
+          redirectToLogin();
+          return;
+        }
+        selectedArtifactId = artifactId;
+        if (!turnstileConfig.enabled) {
+          prepareDownload("");
+          return;
+        }
+        openModal();
+      }
 
-                        function finish(error) {
-                            window.clearTimeout(timer);
-                            if (error) {
-                                if (script.parentNode) {
-                                    script.parentNode.removeChild(script);
-                                }
-                                turnstileScriptPromise = null;
-                                reject(error);
-                                return;
-                            }
+      function openModal() {
+        lastFocusedElement = document.activeElement;
+        modalEl.setAttribute("aria-hidden", "false");
+        document.body.classList.add("overflow-hidden");
+        setVerificationStatus("正在加载 Cloudflare 安全校验...");
+        ensureTurnstile().catch(function () {
+          setVerificationStatus("验证组件加载失败，请检查下载验证配置或稍后重试。", "error");
+        });
+      }
 
-                            if (window.turnstile && window.turnstile.render) {
-                                resolve();
-                                return;
-                            }
+      function closeModal() {
+        modalEl.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("overflow-hidden");
+        if (lastFocusedElement && lastFocusedElement.focus) {
+          lastFocusedElement.focus();
+        }
+      }
 
-                            turnstileScriptPromise = null;
-                            reject(new Error("Turnstile script unavailable"));
-                        }
+      function loadTurnstileScript() {
+        if (window.turnstile && window.turnstile.render) {
+          return Promise.resolve();
+        }
+        if (turnstileScriptPromise) {
+          return turnstileScriptPromise;
+        }
+        turnstileScriptPromise = new Promise(function (resolve, reject) {
+          var script = document.createElement("script");
+          var timer = window.setTimeout(function () {
+            reject(new Error("Turnstile script timeout"));
+          }, TURNSTILE_TIMEOUT_MS);
+          script.async = true;
+          script.defer = true;
+          script.src = TURNSTILE_SCRIPT_SRC;
+          script.onload = function () {
+            window.clearTimeout(timer);
+            window.turnstile && window.turnstile.render ? resolve() : reject(new Error("Turnstile unavailable"));
+          };
+          script.onerror = function () {
+            window.clearTimeout(timer);
+            reject(new Error("Turnstile script failed"));
+          };
+          document.head.appendChild(script);
+        });
+        return turnstileScriptPromise;
+      }
 
-                        script.setAttribute("data-er-turnstile", "true");
-                        script.async = true;
-                        script.defer = true;
-                        script.src = TURNSTILE_SCRIPT_SRC;
-                        script.onload = function () {
-                            finish();
-                        };
-                        script.onerror = function () {
-                            finish(new Error("Turnstile script failed"));
-                        };
+      async function ensureTurnstile() {
+        if (!turnstileConfig.site_key) {
+          throw new Error("Turnstile site key missing");
+        }
+        await loadTurnstileScript();
+        widgetEl.innerHTML = "";
+        setVerificationStatus("完成 Cloudflare 安全校验后将生成短期下载链接。");
+        if (turnstileWidgetId !== null && window.turnstile.reset) {
+          window.turnstile.reset(turnstileWidgetId);
+          return;
+        }
+        turnstileWidgetId = window.turnstile.render(widgetEl, {
+          sitekey: turnstileConfig.site_key,
+          theme: "auto",
+          callback: prepareDownload,
+          "expired-callback": function () {
+            setVerificationStatus("验证已过期，请重新检测。");
+          },
+          "error-callback": function () {
+            setVerificationStatus("验证加载失败，请刷新页面重试。", "error");
+          }
+        });
+      }
 
-                        if (!existingScript) {
-                            document.head.appendChild(script);
-                        }
-                    });
+      async function prepareDownload(turnstileToken) {
+        var token = getStoredToken();
+        if (!token) {
+          closeModal();
+          redirectToLogin();
+          return;
+        }
+        setVerificationStatus("验证通过，正在生成下载链接...");
+        try {
+          var response = await fetch("/api/v1/user/app-downloads/" + selectedArtifactId + "/prepare", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              Authorization: token
+            },
+            body: JSON.stringify({ turnstile_token: turnstileToken })
+          });
+          var payload = await response.json();
+          if (response.status === 401 || response.status === 403) {
+            closeModal();
+            redirectToLogin();
+            return;
+          }
+          if (!response.ok || !payload.data || !payload.data.download_url) {
+            throw new Error(payload.message || "下载链接生成失败");
+          }
+          setVerificationStatus("下载链接已生成，正在开始下载。", "success");
+          closeModal();
+          window.location.href = payload.data.download_url;
+        } catch (e) {
+          setVerificationStatus(e.message || "下载链接生成失败，请重试。", "error");
+          if (window.turnstile && turnstileWidgetId !== null) {
+            window.turnstile.reset(turnstileWidgetId);
+          }
+        }
+      }
 
-                    return turnstileScriptPromise;
-                }
+      closeEl.addEventListener("click", closeModal);
+      modalEl.addEventListener("click", function (event) {
+        if (event.target === modalEl) {
+          closeModal();
+        }
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && modalEl.getAttribute("aria-hidden") === "false") {
+          closeModal();
+        }
+      });
 
-                async function ensureTurnstile() {
-                    if (turnstileWidgetId !== null) {
-                        if (window.turnstile && window.turnstile.reset) {
-                            window.turnstile.reset(turnstileWidgetId);
-                        }
-                        setStatus(
-                            "完成 Cloudflare 安全校验后将自动开始下载。"
-                        );
-                        return;
-                    }
-
-                    if (turnstileLoadPromise) {
-                        return turnstileLoadPromise;
-                    }
-
-                    turnstileLoadPromise = (async function () {
-                        var response = await fetch("/api/v1/guest/comm/config", {
-                            headers: { Accept: "application/json" },
-                        });
-                        var payload = await response.json();
-                        turnstileSiteKey =
-                            payload &&
-                            payload.data &&
-                            payload.data.turnstile_site_key;
-
-                        if (!turnstileSiteKey) {
-                            throw new Error("Turnstile site key is missing");
-                        }
-
-                        await loadTurnstileScript();
-                        widgetEl.innerHTML = "";
-                        setStatus(
-                            "完成 Cloudflare 安全校验后将自动开始下载。"
-                        );
-                        turnstileWidgetId = window.turnstile.render(widgetEl, {
-                            sitekey: turnstileSiteKey,
-                            theme: "auto",
-                            callback: continueDownload,
-                            "expired-callback": function () {
-                                forgetPass();
-                                setStatus("验证已过期，请重新检测。");
-                            },
-                            "error-callback": function () {
-                                forgetPass();
-                                setStatus("验证加载失败，请刷新页面重试。", "error");
-                            },
-                        });
-                    })();
-
-                    return turnstileLoadPromise;
-                }
-
-                if (hasFreshPass()) {
-                    rememberPass();
-                }
-            })();
-        </script>
-    </body>
+      loadPackages();
+    })();
+  </script>
+</body>
 </html>

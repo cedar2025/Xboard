@@ -55,6 +55,12 @@ return [
             'visibility' => 'public',
         ],
 
+        'app_downloads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/app-downloads'),
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
