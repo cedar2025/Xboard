@@ -86,6 +86,9 @@
                 pointer-events: auto;
                 box-shadow: none;
             }
+            .verification-modal[aria-hidden="true"] {
+                display: none;
+            }
         </style>
     </head>
     <body
@@ -156,25 +159,6 @@
                 </p>
             </div>
 
-            <section
-                id="download-verification"
-                class="mb-10 w-full max-w-xl rounded-2xl border border-slate-200 bg-white/90 p-5 text-center shadow-lg shadow-slate-200/50"
-            >
-                <h2 class="text-lg font-semibold text-slate-900">
-                    下载前验证
-                </h2>
-                <p
-                    id="download-verification-status"
-                    class="mt-2 text-sm text-slate-500"
-                >
-                    完成一次人机检测后，本页面下载按钮会临时放行。
-                </p>
-                <div
-                    id="download-turnstile"
-                    class="mt-4 flex min-h-[70px] justify-center"
-                ></div>
-            </section>
-
             <div
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full px-4"
             >
@@ -215,9 +199,9 @@
                         适用于所有 Android 手机和平板
                     </p>
                     <a
-                        href="#download-verification"
+                        href="/download/ElephantNetwork-Android.apk"
                         data-download-url="/download/ElephantNetwork-Android.apk"
-                        aria-disabled="true"
+                        aria-disabled="false"
                         class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-emerald-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-emerald-500/25"
                     >
                         <svg
@@ -270,9 +254,9 @@
                         适用于 Win10 / Win11 系统
                     </p>
                     <a
-                        href="#download-verification"
+                        href="/download/Hiddify-Windows-Setup-x64.msix"
                         data-download-url="/download/Hiddify-Windows-Setup-x64.msix"
-                        aria-disabled="true"
+                        aria-disabled="false"
                         class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/25"
                     >
                         <svg
@@ -331,9 +315,9 @@
                         支持 Intel 和 Apple Silicon (M1/M2)
                     </p>
                     <a
-                        href="#download-verification"
+                        href="/download/ElephantNetwork-MacOS.zip"
                         data-download-url="/download/ElephantNetwork-MacOS.zip"
-                        aria-disabled="true"
+                        aria-disabled="false"
                         class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-zinc-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-zinc-500/25"
                     >
                         <svg
@@ -390,10 +374,10 @@
                         * 请使用美区 Apple ID
                     </p>
                     <a
-                        href="#download-verification"
+                        href="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
                         data-download-url="https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532"
                         target="_blank"
-                        aria-disabled="true"
+                        aria-disabled="false"
                         class="download-link mt-auto w-full py-3 px-6 rounded-xl bg-slate-900 hover:bg-sky-600 text-white font-medium transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-sky-500/25"
                     >
                         <svg
@@ -424,10 +408,75 @@
         >
             <p>&copy; 2024 大象网络 Inc. All rights reserved.</p>
         </footer>
+
+        <div
+            id="download-verification-modal"
+            class="verification-modal fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm"
+            aria-hidden="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="download-verification-title"
+        >
+            <div class="w-full max-w-[660px] rounded-lg bg-white p-5 shadow-2xl">
+                <div class="mb-4 flex items-start justify-between gap-4">
+                    <h2
+                        id="download-verification-title"
+                        class="text-2xl font-medium text-slate-700"
+                    >
+                        告诉我们您是人类
+                    </h2>
+                    <button
+                        type="button"
+                        id="download-verification-close"
+                        class="rounded-md p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="关闭验证"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M18 6 6 18"></path>
+                            <path d="m6 6 12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-4 py-6"
+                >
+                    <div
+                        id="download-turnstile"
+                        class="flex min-h-[70px] justify-center"
+                    ></div>
+                    <p
+                        id="download-verification-status"
+                        class="mt-4 text-center text-sm text-slate-500"
+                    >
+                        完成 Cloudflare 安全校验后将自动开始下载。
+                    </p>
+                </div>
+            </div>
+        </div>
         <script>
             (function () {
                 var PASS_KEY = "er_download_turnstile_passed_at";
                 var PASS_TTL_MS = 30 * 60 * 1000;
+                var pendingDownloadUrl = "";
+                var turnstileWidgetId = null;
+                var turnstileSiteKey = "";
+                var turnstileLoadPromise = null;
+                var lastFocusedElement = null;
+                var modalEl = document.getElementById(
+                    "download-verification-modal"
+                );
+                var closeEl = document.getElementById(
+                    "download-verification-close"
+                );
                 var statusEl = document.getElementById(
                     "download-verification-status"
                 );
@@ -439,7 +488,7 @@
                 function setStatus(message, tone) {
                     statusEl.textContent = message;
                     statusEl.className =
-                        "mt-2 text-sm " +
+                        "mt-4 text-center text-sm " +
                         (tone === "success"
                             ? "text-emerald-600"
                             : tone === "error"
@@ -452,36 +501,70 @@
                     return value && Date.now() - value < PASS_TTL_MS;
                 }
 
-                function lockDownloads() {
-                    links.forEach(function (link) {
-                        link.href = "#download-verification";
-                        link.setAttribute("aria-disabled", "true");
-                    });
-                }
-
-                function unlockDownloads() {
+                function rememberPass() {
                     sessionStorage.setItem(PASS_KEY, String(Date.now()));
                     links.forEach(function (link) {
                         link.href = link.dataset.downloadUrl;
                         link.setAttribute("aria-disabled", "false");
                     });
-                    setStatus("验证已通过，可以选择需要的客户端。", "success");
-                    widgetEl.classList.add("hidden");
+                }
+
+                function forgetPass() {
+                    sessionStorage.removeItem(PASS_KEY);
+                }
+
+                function closeModal() {
+                    modalEl.setAttribute("aria-hidden", "true");
+                    document.body.classList.remove("overflow-hidden");
+                    if (lastFocusedElement && lastFocusedElement.focus) {
+                        lastFocusedElement.focus();
+                    }
+                }
+
+                function openModal(downloadUrl) {
+                    pendingDownloadUrl = downloadUrl;
+                    lastFocusedElement = document.activeElement;
+                    modalEl.setAttribute("aria-hidden", "false");
+                    document.body.classList.add("overflow-hidden");
+                    setStatus("完成 Cloudflare 安全校验后将自动开始下载。");
+                    ensureTurnstile().catch(function () {
+                        setStatus("验证组件暂不可用，请稍后刷新。", "error");
+                    });
+                }
+
+                function continueDownload() {
+                    rememberPass();
+                    setStatus("验证已通过，正在开始下载。", "success");
+                    var downloadUrl = pendingDownloadUrl;
+                    pendingDownloadUrl = "";
+                    closeModal();
+                    if (downloadUrl) {
+                        window.location.href = downloadUrl;
+                    }
                 }
 
                 links.forEach(function (link) {
                     link.addEventListener("click", function (event) {
-                        if (link.getAttribute("aria-disabled") === "true") {
+                        if (!hasFreshPass()) {
                             event.preventDefault();
-                            document
-                                .getElementById("download-verification")
-                                .scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                });
-                            setStatus("请先完成人机检测，然后再下载。");
+                            openModal(link.dataset.downloadUrl);
                         }
                     });
+                });
+
+                closeEl.addEventListener("click", closeModal);
+                modalEl.addEventListener("click", function (event) {
+                    if (event.target === modalEl) {
+                        closeModal();
+                    }
+                });
+                document.addEventListener("keydown", function (event) {
+                    if (
+                        event.key === "Escape" &&
+                        modalEl.getAttribute("aria-hidden") === "false"
+                    ) {
+                        closeModal();
+                    }
                 });
 
                 function waitForTurnstile() {
@@ -499,51 +582,54 @@
                     });
                 }
 
-                async function initTurnstile() {
-                    lockDownloads();
-                    if (hasFreshPass()) {
-                        unlockDownloads();
+                async function ensureTurnstile() {
+                    if (turnstileWidgetId !== null) {
+                        if (window.turnstile && window.turnstile.reset) {
+                            window.turnstile.reset(turnstileWidgetId);
+                        }
                         return;
                     }
 
-                    try {
+                    if (turnstileLoadPromise) {
+                        return turnstileLoadPromise;
+                    }
+
+                    turnstileLoadPromise = (async function () {
                         var response = await fetch("/api/v1/guest/comm/config", {
                             headers: { Accept: "application/json" },
                         });
                         var payload = await response.json();
-                        var siteKey =
+                        turnstileSiteKey =
                             payload &&
                             payload.data &&
                             payload.data.turnstile_site_key;
 
-                        if (!siteKey) {
-                            setStatus("验证组件暂不可用，请稍后刷新。", "error");
-                            return;
+                        if (!turnstileSiteKey) {
+                            throw new Error("Turnstile site key is missing");
                         }
 
                         await waitForTurnstile();
-                        window.turnstile.render(widgetEl, {
-                            sitekey: siteKey,
+                        turnstileWidgetId = window.turnstile.render(widgetEl, {
+                            sitekey: turnstileSiteKey,
                             theme: "auto",
-                            callback: unlockDownloads,
+                            callback: continueDownload,
                             "expired-callback": function () {
-                                sessionStorage.removeItem(PASS_KEY);
-                                widgetEl.classList.remove("hidden");
-                                lockDownloads();
+                                forgetPass();
                                 setStatus("验证已过期，请重新检测。");
                             },
                             "error-callback": function () {
-                                sessionStorage.removeItem(PASS_KEY);
-                                lockDownloads();
+                                forgetPass();
                                 setStatus("验证加载失败，请刷新页面重试。", "error");
                             },
                         });
-                    } catch (error) {
-                        setStatus("验证组件暂不可用，请稍后刷新。", "error");
-                    }
+                    })();
+
+                    return turnstileLoadPromise;
                 }
 
-                initTurnstile();
+                if (hasFreshPass()) {
+                    rememberPass();
+                }
             })();
         </script>
     </body>
