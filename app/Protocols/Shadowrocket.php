@@ -412,6 +412,7 @@ class Shadowrocket extends AbstractProtocol
             'alpn' => data_get($protocol_settings, 'alpn'),
             'sni' => data_get($protocol_settings, 'tls.server_name'),
             'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+            'congestion_control' => data_get($protocol_settings, 'congestion_control', 'cubic')
         ];
         if (data_get($protocol_settings, 'version') === 4) {
             $params['token'] = $password;
