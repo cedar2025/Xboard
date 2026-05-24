@@ -5,11 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>软件下载 - 大象网络</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        <script
-            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-            async
-            defer
-        ></script>
         <script>
             tailwind.config = {
                 darkMode: "class",
@@ -87,6 +82,9 @@
                 box-shadow: none;
             }
             .verification-modal[aria-hidden="true"] {
+                display: none;
+            }
+            .verification-retry[hidden] {
                 display: none;
             }
         </style>
@@ -459,6 +457,16 @@
                     >
                         完成 Cloudflare 安全校验后将自动开始下载。
                     </p>
+                    <div class="mt-4 flex justify-center">
+                        <button
+                            type="button"
+                            id="download-verification-retry"
+                            class="verification-retry rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-600"
+                            hidden
+                        >
+                            重新加载验证
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -466,10 +474,14 @@
             (function () {
                 var PASS_KEY = "er_download_turnstile_passed_at";
                 var PASS_TTL_MS = 30 * 60 * 1000;
+                var TURNSTILE_SCRIPT_SRC =
+                    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+                var TURNSTILE_TIMEOUT_MS = 30000;
                 var pendingDownloadUrl = "";
                 var turnstileWidgetId = null;
                 var turnstileSiteKey = "";
                 var turnstileLoadPromise = null;
+                var turnstileScriptPromise = null;
                 var lastFocusedElement = null;
                 var modalEl = document.getElementById(
                     "download-verification-modal"
@@ -479,6 +491,9 @@
                 );
                 var statusEl = document.getElementById(
                     "download-verification-status"
+                );
+                var retryEl = document.getElementById(
+                    "download-verification-retry"
                 );
                 var widgetEl = document.getElementById("download-turnstile");
                 var links = Array.prototype.slice.call(
@@ -494,6 +509,7 @@
                             : tone === "error"
                               ? "text-rose-500"
                               : "text-slate-500");
+                    retryEl.hidden = tone !== "error";
                 }
 
                 function hasFreshPass() {
@@ -526,9 +542,18 @@
                     lastFocusedElement = document.activeElement;
                     modalEl.setAttribute("aria-hidden", "false");
                     document.body.classList.add("overflow-hidden");
-                    setStatus("完成 Cloudflare 安全校验后将自动开始下载。");
+                    startTurnstile();
+                }
+
+                function startTurnstile() {
+                    setStatus("正在加载 Cloudflare 安全校验...");
+                    widgetEl.innerHTML =
+                        '<div class="flex min-h-[70px] items-center justify-center text-sm text-slate-500">正在连接 Cloudflare...</div>';
                     ensureTurnstile().catch(function () {
-                        setStatus("验证组件暂不可用，请稍后刷新。", "error");
+                        setStatus(
+                            "验证组件加载失败，请关闭代理或广告拦截后重试。",
+                            "error"
+                        );
                     });
                 }
 
@@ -553,6 +578,13 @@
                 });
 
                 closeEl.addEventListener("click", closeModal);
+                retryEl.addEventListener("click", function () {
+                    turnstileLoadPromise = null;
+                    turnstileScriptPromise = null;
+                    turnstileWidgetId = null;
+                    widgetEl.innerHTML = "";
+                    startTurnstile();
+                });
                 modalEl.addEventListener("click", function (event) {
                     if (event.target === modalEl) {
                         closeModal();
@@ -567,19 +599,65 @@
                     }
                 });
 
-                function waitForTurnstile() {
-                    return new Promise(function (resolve, reject) {
-                        var startedAt = Date.now();
-                        var timer = window.setInterval(function () {
-                            if (window.turnstile && window.turnstile.render) {
-                                window.clearInterval(timer);
-                                resolve();
-                            } else if (Date.now() - startedAt > 10000) {
-                                window.clearInterval(timer);
-                                reject(new Error("Turnstile script timeout"));
+                function loadTurnstileScript() {
+                    if (window.turnstile && window.turnstile.render) {
+                        return Promise.resolve();
+                    }
+
+                    if (turnstileScriptPromise) {
+                        return turnstileScriptPromise;
+                    }
+
+                    turnstileScriptPromise = new Promise(function (
+                        resolve,
+                        reject
+                    ) {
+                        var existingScript = document.querySelector(
+                            'script[data-er-turnstile="true"]'
+                        );
+                        var script =
+                            existingScript || document.createElement("script");
+                        var timer = window.setTimeout(function () {
+                            reject(new Error("Turnstile script timeout"));
+                        }, TURNSTILE_TIMEOUT_MS);
+
+                        function finish(error) {
+                            window.clearTimeout(timer);
+                            if (error) {
+                                if (script.parentNode) {
+                                    script.parentNode.removeChild(script);
+                                }
+                                turnstileScriptPromise = null;
+                                reject(error);
+                                return;
                             }
-                        }, 100);
+
+                            if (window.turnstile && window.turnstile.render) {
+                                resolve();
+                                return;
+                            }
+
+                            turnstileScriptPromise = null;
+                            reject(new Error("Turnstile script unavailable"));
+                        }
+
+                        script.setAttribute("data-er-turnstile", "true");
+                        script.async = true;
+                        script.defer = true;
+                        script.src = TURNSTILE_SCRIPT_SRC;
+                        script.onload = function () {
+                            finish();
+                        };
+                        script.onerror = function () {
+                            finish(new Error("Turnstile script failed"));
+                        };
+
+                        if (!existingScript) {
+                            document.head.appendChild(script);
+                        }
                     });
+
+                    return turnstileScriptPromise;
                 }
 
                 async function ensureTurnstile() {
@@ -587,6 +665,9 @@
                         if (window.turnstile && window.turnstile.reset) {
                             window.turnstile.reset(turnstileWidgetId);
                         }
+                        setStatus(
+                            "完成 Cloudflare 安全校验后将自动开始下载。"
+                        );
                         return;
                     }
 
@@ -608,7 +689,11 @@
                             throw new Error("Turnstile site key is missing");
                         }
 
-                        await waitForTurnstile();
+                        await loadTurnstileScript();
+                        widgetEl.innerHTML = "";
+                        setStatus(
+                            "完成 Cloudflare 安全校验后将自动开始下载。"
+                        );
                         turnstileWidgetId = window.turnstile.render(widgetEl, {
                             sitekey: turnstileSiteKey,
                             theme: "auto",
