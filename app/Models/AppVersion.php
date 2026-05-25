@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class AppVersion extends Model
 {
     protected $table = 'v2_app_versions';
-    protected $dateFormat = 'U';
     protected $guarded = ['id'];
 
     protected $casts = [

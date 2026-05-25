@@ -103,6 +103,35 @@
       color: #c2410c;
       background: #fff7ed;
     }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+    .upload-progress {
+      display: none;
+      margin-top: 14px;
+    }
+    .upload-progress.show {
+      display: block;
+    }
+    .upload-progress-track {
+      overflow: hidden;
+      height: 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+    }
+    .upload-progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: #0f172a;
+      transition: width 180ms ease;
+    }
+    .upload-progress-text {
+      margin-top: 6px;
+      color: #475569;
+      font-size: 13px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -216,6 +245,12 @@
           <button class="primary" type="submit">发布安装包</button>
           <button type="button" id="reset-package">清空</button>
         </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="upload-progress-track">
+            <div class="upload-progress-bar" id="upload-progress-bar"></div>
+          </div>
+          <div class="upload-progress-text" id="upload-progress-text">等待上传</div>
+        </div>
       </form>
     </section>
   </main>
@@ -258,6 +293,11 @@
       var downloadSettingsHint = document.getElementById("download-settings-hint");
       var appInput = packageForm.querySelector('[name="app_id"]');
       var artifactInput = packageForm.querySelector('[name="artifact"]');
+      var packageSubmitButton = packageForm.querySelector('button[type="submit"]');
+      var resetPackageButton = document.getElementById("reset-package");
+      var uploadProgress = document.getElementById("upload-progress");
+      var uploadProgressBar = document.getElementById("upload-progress-bar");
+      var uploadProgressText = document.getElementById("upload-progress-text");
       var versionRows = document.getElementById("version-rows");
 
       function token() {
@@ -281,6 +321,25 @@
         }, 3500);
       }
 
+      function setPackageBusy(busy) {
+        packageSubmitButton.disabled = busy;
+        resetPackageButton.disabled = busy;
+        packageSubmitButton.textContent = busy ? "上传中..." : "发布安装包";
+      }
+
+      function updateUploadProgress(percent, message) {
+        var normalized = Math.max(0, Math.min(100, Math.round(percent)));
+        uploadProgress.className = "upload-progress show";
+        uploadProgressBar.style.width = normalized + "%";
+        uploadProgressText.textContent = message || ("正在上传 " + normalized + "%");
+      }
+
+      function resetUploadProgress() {
+        uploadProgress.className = "upload-progress";
+        uploadProgressBar.style.width = "0%";
+        uploadProgressText.textContent = "等待上传";
+      }
+
       async function request(path, options) {
         var headers = options && options.headers ? options.headers : {};
         headers.Accept = "application/json";
@@ -291,6 +350,52 @@
           throw new Error(payload.message || "请求失败");
         }
         return payload;
+      }
+
+      function uploadRequest(path, data, onProgress) {
+        return new Promise(function (resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", apiBase + path);
+          xhr.setRequestHeader("Accept", "application/json");
+          xhr.setRequestHeader("Authorization", token());
+
+          xhr.upload.onprogress = function (event) {
+            if (!event.lengthComputable) {
+              onProgress(null);
+              return;
+            }
+            onProgress(event.loaded / event.total * 100);
+          };
+
+          xhr.onload = function () {
+            var payload;
+            try {
+              payload = JSON.parse(xhr.responseText || "{}");
+            } catch (e) {
+              if (xhr.status === 413) {
+                reject(new Error("安装包超过服务器上传大小限制，请调整网关上传限制后重试"));
+                return;
+              }
+              reject(new Error("服务器返回了非 JSON 响应，HTTP " + xhr.status));
+              return;
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || payload.status === "fail") {
+              reject(new Error(payload.message || "上传失败"));
+              return;
+            }
+            resolve(payload);
+          };
+
+          xhr.onerror = function () {
+            reject(new Error("上传失败，请检查网络后重试"));
+          };
+
+          xhr.onabort = function () {
+            reject(new Error("上传已取消"));
+          };
+
+          xhr.send(data);
+        });
       }
 
       function formDataToObject(form) {
@@ -529,10 +634,15 @@
         });
       }
 
-      artifactInput.addEventListener("change", autofillPackageFromArtifact);
+      artifactInput.addEventListener("change", function () {
+        resetUploadProgress();
+        autofillPackageFromArtifact();
+      });
 
       packageForm.addEventListener("submit", async function (event) {
         event.preventDefault();
+        setPackageBusy(true);
+        updateUploadProgress(0, "准备发布安装包...");
         try {
           setPackageDefaults(false);
           var appName = packageForm.querySelector('[name="app_name"]').value.trim();
@@ -558,25 +668,38 @@
             body: JSON.stringify(appPayload)
           });
           var app = appResponse.data || {};
+          updateUploadProgress(1, "应用信息已保存，开始上传安装包...");
 
           var data = new FormData(packageForm);
           data.set("app_id", app.id);
           data.delete("id");
           data.delete("app_name");
           data.delete("app_key");
-          await request("/versions/save", { method: "POST", body: data });
+          await uploadRequest("/versions/save", data, function (percent) {
+            if (percent === null) {
+              updateUploadProgress(5, "正在上传安装包...");
+              return;
+            }
+            var capped = percent >= 100 ? 99 : percent;
+            updateUploadProgress(capped, "正在上传 " + Math.round(capped) + "%");
+          });
+          updateUploadProgress(100, "上传完成，版本已发布");
           showStatus("安装包已发布", true);
           packageForm.reset();
           setPackageDefaults(true);
           await refreshAll();
         } catch (e) {
           showStatus(e.message, false);
+          updateUploadProgress(0, e.message);
+        } finally {
+          setPackageBusy(false);
         }
       });
 
-      document.getElementById("reset-package").addEventListener("click", function () {
+      resetPackageButton.addEventListener("click", function () {
         packageForm.reset();
         packageForm.querySelector('[name="app_id"]').value = "";
+        resetUploadProgress();
         setPackageDefaults(true);
       });
       document.getElementById("refresh").addEventListener("click", function () {

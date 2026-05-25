@@ -72,7 +72,6 @@ class AppPackageController extends Controller
                 'string',
                 'max:64',
                 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/',
-                Rule::unique('v2_distribution_apps', 'app_key')->ignore($request->input('id')),
             ],
             'description' => 'nullable|string|max:2000',
             'is_active' => 'nullable|boolean',
@@ -83,6 +82,26 @@ class AppPackageController extends Controller
             $data['app_key'] = 'app-' . Str::lower(Str::random(8));
         }
         $data['is_active'] = (bool) ($data['is_active'] ?? true);
+
+        $existingByKey = DistributionApp::query()
+            ->where('app_key', $data['app_key'])
+            ->first();
+        if ($existingByKey && (empty($data['id']) || (int) $existingByKey->id !== (int) $data['id'])) {
+            if (!empty($data['id'])) {
+                return $this->fail([400, '应用标识已存在，请更换应用名称或标识']);
+            }
+            $data['id'] = $existingByKey->id;
+        }
+
+        if (empty($data['id'])) {
+            $existingByName = DistributionApp::query()
+                ->where('name', $data['name'])
+                ->first();
+            if ($existingByName) {
+                $data['id'] = $existingByName->id;
+                $data['app_key'] = $existingByName->app_key;
+            }
+        }
 
         $app = empty($data['id'])
             ? DistributionApp::create($data)
@@ -143,6 +162,7 @@ class AppPackageController extends Controller
             'published_at' => 'nullable|integer|min:0',
             'artifact' => 'nullable|file|max:2097152',
         ]);
+        unset($data['artifact']);
 
         $data['platform'] = strtolower($data['platform']);
         $data['channel'] = strtolower($data['channel'] ?? 'stable');
