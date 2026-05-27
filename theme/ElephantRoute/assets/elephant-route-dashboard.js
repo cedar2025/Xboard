@@ -1,6 +1,8 @@
 (function () {
   var DOWNLOAD_URL = '/download/index.html';
   var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
+  var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
+  var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
   var AUTH_ROUTES = ['/sign-in', '/sign-up', '/login', '/register', '/forgetpassword', '/forgot-password'];
   var maxAttempts = 80;
@@ -36,11 +38,27 @@
     if (existing) existing.remove();
   }
 
+  function removeSubscribeActions() {
+    var existing = document.getElementById('er-subscribe-action-panel');
+    if (existing) existing.remove();
+
+    document.querySelectorAll('.er-subscribe-layout').forEach(function (layout) {
+      var main = layout.querySelector('.er-subscribe-main');
+      if (main) {
+        while (main.firstChild) {
+          layout.parentElement.insertBefore(main.firstChild, layout);
+        }
+      }
+      layout.remove();
+    });
+  }
+
   function findTextElement(text) {
     var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function (node) {
         if (!node.nodeValue || node.nodeValue.indexOf(text) === -1) return NodeFilter.FILTER_REJECT;
         if (node.parentElement && node.parentElement.closest('#er-dashboard-download')) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement && node.parentElement.closest('#er-subscribe-action-panel')) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -53,12 +71,21 @@
     var node = element;
     while (node && node !== document.body) {
       if (node.id === 'er-dashboard-download') return null;
-      if (node.matches('a, button, [role="button"], .n-card, .v2board-shortcuts-item, [class*="shortcut"], [class*="Shortcut"]')) {
+      if (node.matches('a, button, [role="button"], .cursor-pointer, .n-list-item, .n-card, .v2board-shortcuts-item, [class*="shortcut"], [class*="Shortcut"]')) {
         return node;
       }
       node = node.parentElement;
     }
     return element;
+  }
+
+  function closestCard(element) {
+    var node = element;
+    while (node && node !== document.body) {
+      if (node.classList && node.classList.contains('n-card')) return node;
+      node = node.parentElement;
+    }
+    return null;
   }
 
   function getNodeText(node) {
@@ -73,6 +100,273 @@
       }
     }
     return null;
+  }
+
+  function getStoredAccessToken() {
+    var raw = window.localStorage ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) : null;
+    if (!raw) return '';
+
+    try {
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.value) return '';
+      if (parsed.expire && parsed.expire <= Date.now()) return '';
+      return parsed.value;
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function notify(type, message) {
+    if (window.$message && typeof window.$message[type] === 'function') {
+      window.$message[type](message);
+      return;
+    }
+    if (type === 'error') console.error(message);
+  }
+
+  function copyTextWithExecCommand(text) {
+    return new Promise(function (resolve, reject) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        if (document.execCommand('copy')) {
+          resolve();
+        } else {
+          reject(new Error('copy command failed'));
+        }
+      } catch (error) {
+        reject(error);
+      } finally {
+        textarea.remove();
+      }
+    });
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return copyTextWithExecCommand(text);
+      });
+    }
+
+    return copyTextWithExecCommand(text);
+  }
+
+  function copySubscribeUrl() {
+    var token = getStoredAccessToken();
+    if (!token) {
+      notify('error', '未登录');
+      return Promise.resolve(false);
+    }
+
+    return fetch(SUBSCRIBE_API_PATH + '?t=' + Date.now(), {
+      method: 'GET',
+      headers: {
+        Authorization: token,
+        'Content-Language': document.documentElement.lang || 'zh-CN'
+      },
+      credentials: 'same-origin'
+    }).then(function (response) {
+      return response.json();
+    }).then(function (payload) {
+      var subscribeUrl = payload && payload.data && payload.data.subscribe_url;
+      if (!subscribeUrl) throw new Error('missing subscribe url');
+      return copyText(subscribeUrl);
+    }).then(function () {
+      notify('success', '复制成功');
+      return true;
+    }).catch(function (error) {
+      console.error('复制订阅链接失败:', error);
+      notify('error', '复制失败');
+      return false;
+    });
+  }
+
+  function findSubscribeShortcut() {
+    var subscribeText = findTextElement('一键订阅');
+    return subscribeText ? closestShortcut(subscribeText) : null;
+  }
+
+  function cleanupDirectQrState() {
+    document.body.classList.remove('er-subscribe-direct-qr-active');
+    document.querySelectorAll('.er-subscribe-source-menu-hidden, .er-subscribe-source-modal-hidden').forEach(function (node) {
+      node.classList.remove('er-subscribe-source-menu-hidden');
+      node.classList.remove('er-subscribe-source-modal-hidden');
+    });
+  }
+
+  function scheduleDirectQrCleanup() {
+    var checks = 0;
+    var cleanupTimer = window.setInterval(function () {
+      checks += 1;
+      var hasQrPanel = document.body.textContent.indexOf('选择协议') !== -1 &&
+        document.body.textContent.indexOf('使用支持扫码的客户端进行订阅') !== -1;
+      if (!hasQrPanel || checks >= 120) {
+        window.clearInterval(cleanupTimer);
+        cleanupDirectQrState();
+      }
+    }, 500);
+  }
+
+  function hideSourceSubscribeMenu(item) {
+    var card = item && item.closest ? item.closest('.n-card') : null;
+    var modal = item && item.closest ? item.closest('.n-modal-container') : null;
+    var target = modal || card;
+    if (!target) return;
+
+    var mask = modal ? modal.querySelector('.n-modal-mask') : null;
+    if (mask && document.body.contains(mask)) {
+      mask.dispatchEvent(new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+    }
+
+    target.classList.add(modal ? 'er-subscribe-source-modal-hidden' : 'er-subscribe-source-menu-hidden');
+  }
+
+  function clickMenuItemByText(text, options) {
+    var targetText = findTextElement(text);
+    if (!targetText) return false;
+
+    var item = targetText.closest('button, a, [role="button"], .cursor-pointer, .n-list-item') || closestShortcut(targetText);
+    if (!item) return false;
+    item.click();
+    if (options && options.hideSourceMenu) hideSourceSubscribeMenu(item);
+    return true;
+  }
+
+  function triggerSubscribeMenuItem(itemText, missingMessage, options) {
+    var shortcut = findSubscribeShortcut();
+    if (!shortcut) {
+      notify('error', '订阅入口不可用');
+      return false;
+    }
+
+    if (options && options.directQr) document.body.classList.add('er-subscribe-direct-qr-active');
+    shortcut.click();
+    var tries = 0;
+    var timer = window.setInterval(function () {
+      tries += 1;
+      if (clickMenuItemByText(itemText, options) || tries >= 20) {
+        window.clearInterval(timer);
+        if (tries >= 20) {
+          cleanupDirectQrState();
+          notify('error', missingMessage);
+        } else if (options && options.directQr) {
+          scheduleDirectQrCleanup();
+        }
+      }
+    }, 100);
+    return true;
+  }
+
+  function openSubscribeQrCode() {
+    triggerSubscribeMenuItem('扫描二维码订阅', '二维码入口不可用', {
+      directQr: true,
+      hideSourceMenu: true
+    });
+  }
+
+  function findSubscribeCard() {
+    var title = findTextElement('我的订阅');
+    if (!title) return null;
+    return closestCard(title);
+  }
+
+  function shouldEnhanceSubscribeCard(content) {
+    var text = getNodeText(content);
+    return Boolean(text && text.indexOf('购买订阅') === -1 && text.indexOf('已用') !== -1 && text.indexOf('总计') !== -1);
+  }
+
+  function createSubscribeActionButton(type, label, iconSvg) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'er-subscribe-action-button er-subscribe-action-button-' + type;
+    button.setAttribute('aria-label', label);
+    button.innerHTML = iconSvg + '<span>' + label + '</span>';
+    return button;
+  }
+
+  function createSubscribeActionPanel() {
+    var panel = document.createElement('div');
+    panel.id = 'er-subscribe-action-panel';
+    panel.className = 'er-subscribe-action-panel';
+
+    var qrIcon = [
+      '<svg viewBox="0 0 24 24" aria-hidden="true">',
+      '<path d="M4 4h6v6H4z"></path>',
+      '<path d="M14 4h6v6h-6z"></path>',
+      '<path d="M4 14h6v6H4z"></path>',
+      '<path d="M14 14h2v2h-2z"></path>',
+      '<path d="M18 14h2v6h-4v-2h2z"></path>',
+      '<path d="M14 18h2v2h-2z"></path>',
+      '</svg>'
+    ].join('');
+    var copyIcon = [
+      '<svg viewBox="0 0 24 24" aria-hidden="true">',
+      '<path d="M8 8h11v11H8z"></path>',
+      '<path d="M5 16H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path>',
+      '</svg>'
+    ].join('');
+
+    var qrButton = createSubscribeActionButton('qr', '扫描二维码', qrIcon);
+    var copyButton = createSubscribeActionButton('copy', '复制订阅链接', copyIcon);
+
+    qrButton.addEventListener('click', openSubscribeQrCode);
+    copyButton.addEventListener('click', function () {
+      copySubscribeUrl();
+    });
+
+    panel.appendChild(qrButton);
+    panel.appendChild(copyButton);
+    return panel;
+  }
+
+  function applySubscribeActions() {
+    if (!isDashboardRoute()) {
+      removeSubscribeActions();
+      return true;
+    }
+
+    var card = findSubscribeCard();
+    if (!card) return false;
+
+    var content = card.querySelector('.n-card__content');
+    if (!content || !shouldEnhanceSubscribeCard(content)) {
+      removeSubscribeActions();
+      return true;
+    }
+
+    var layout = content.querySelector(':scope > .er-subscribe-layout');
+    if (!layout) {
+      layout = document.createElement('div');
+      layout.className = 'er-subscribe-layout';
+
+      var main = document.createElement('div');
+      main.className = 'er-subscribe-main';
+
+      while (content.firstChild) {
+        main.appendChild(content.firstChild);
+      }
+
+      layout.appendChild(main);
+      content.appendChild(layout);
+    }
+
+    if (!layout.querySelector('#er-subscribe-action-panel')) {
+      layout.appendChild(createSubscribeActionPanel());
+    }
+
+    return true;
   }
 
   function findSiblingShortcutPair(sourceTextElement, targetText) {
@@ -246,7 +540,8 @@
     window.clearTimeout(retryTimer);
     retryTimer = window.setTimeout(function retry() {
       var applied = applyDownloadEntry();
-      if (!applied && isDashboardRoute() && attempts < maxAttempts) {
+      var subscribeApplied = applySubscribeActions();
+      if ((!applied || !subscribeApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);
       }

@@ -1,0 +1,53 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const repoRoot = path.resolve(__dirname, '..');
+
+function readRepoFile(relativePath) {
+  return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
+}
+
+test('ElephantRoute dashboard injects subscription action shortcuts', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /er-subscribe-action-panel/);
+  assert.match(script, /applySubscribeActions/);
+  assert.match(script, /openSubscribeQrCode/);
+  assert.match(script, /copySubscribeUrl/);
+  assert.match(script, /er-subscribe-direct-qr-active/);
+  assert.match(script, /er-subscribe-source-menu-hidden/);
+  assert.match(script, /er-subscribe-source-modal-hidden/);
+  assert.match(script, /MouseEvent\('click'/);
+  assert.match(script, /classList\.remove\('er-subscribe-source-modal-hidden'\)/);
+  assert.doesNotMatch(script, /node\.remove\(\)/);
+  assert.match(script, /\.n-list-item/);
+  assert.match(script, /\.cursor-pointer/);
+  assert.match(script, /\/api\/v1\/user\/getSubscribe/);
+  assert.match(script, /VUE_NAIVE_ACCESS_TOKEN/);
+  assert.match(script, /navigator\.clipboard\.writeText/);
+  assert.match(script, /copyTextWithExecCommand/);
+  assert.match(script, /\.catch\(function \(\) \{\s*return copyTextWithExecCommand\(text\);/);
+  assert.match(script, /document\.execCommand\('copy'\)/);
+});
+
+test('ElephantRoute subscription shortcuts have responsive layout styles', () => {
+  const stylesheet = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css');
+
+  assert.match(stylesheet, /\.er-subscribe-layout/);
+  assert.match(stylesheet, /\.er-subscribe-action-panel/);
+  assert.match(stylesheet, /\.er-subscribe-action-button/);
+  assert.match(stylesheet, /background: #fff1f1/);
+  assert.match(stylesheet, /color: #e53e3e/);
+  assert.match(stylesheet, /\.er-subscribe-source-menu-hidden/);
+  assert.match(stylesheet, /\.er-subscribe-source-modal-hidden/);
+  assert.match(stylesheet, /@media \(max-width: 767px\)/);
+});
+
+test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
+  const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
+
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260527subscribeactions3/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260527subscribeactions3/);
+});

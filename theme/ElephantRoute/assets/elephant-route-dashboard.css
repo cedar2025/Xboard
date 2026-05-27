@@ -28,6 +28,112 @@
   height: 32px;
 }
 
+.er-subscribe-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.er-subscribe-main {
+  min-width: 0;
+}
+
+.er-subscribe-action-panel {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  align-self: stretch;
+  min-height: 134px;
+}
+
+.er-subscribe-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 14px;
+  border: 1px solid rgba(229, 62, 62, 0.18);
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #e53e3e;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.er-subscribe-action-button:hover,
+.er-subscribe-action-button:focus {
+  border-color: rgba(229, 62, 62, 0.28);
+  background: #fee7e7;
+  color: #dc2626;
+}
+
+.er-subscribe-action-button:focus-visible {
+  outline: 3px solid rgba(229, 62, 62, 0.18);
+  outline-offset: 3px;
+}
+
+.er-subscribe-action-button svg {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.er-subscribe-action-button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.er-subscribe-direct-qr-active .er-subscribe-source-menu-hidden,
+body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .er-subscribe-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .er-subscribe-action-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    min-height: 0;
+  }
+
+  .er-subscribe-action-button {
+    min-height: 54px;
+    padding: 10px 8px;
+    gap: 7px;
+    font-size: 14px;
+  }
+
+  .er-subscribe-action-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 390px) {
+  .er-subscribe-action-button {
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+  }
+}
+
 .er-sidebar-brand-row {
   display: flex !important;
   align-items: center !important;
