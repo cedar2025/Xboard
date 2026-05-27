@@ -28,7 +28,8 @@ class AppDownloadController extends Controller
             [
                 'artifact' => $artifact->id,
                 'user_id' => $request->user()->id,
-            ]
+            ],
+            false
         );
 
         return $this->success([

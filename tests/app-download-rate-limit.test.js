@@ -17,6 +17,15 @@ test('app download prepare route uses named rate limiter', () => {
   assert.doesNotMatch(route, /->middleware\('throttle:10,1'\)/);
 });
 
+test('app download links use relative signed URLs to avoid insecure redirects', () => {
+  const userController = readRepoFile('app/Http/Controllers/V1/User/AppDownloadController.php');
+  const guestRoute = readRepoFile('app/Http/Routes/V1/GuestRoute.php');
+
+  assert.match(userController, /temporarySignedRoute\([\s\S]*false\s*\)/);
+  assert.match(guestRoute, /'signed:relative'/);
+  assert.doesNotMatch(guestRoute, /->middleware\(\['signed', 'throttle:30,1'\]\)/);
+});
+
 test('app download prepare limiter is scoped by user and artifact', () => {
   const provider = readRepoFile('app/Providers/RouteServiceProvider.php');
 
