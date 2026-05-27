@@ -333,10 +333,16 @@
             },
             body: JSON.stringify({ turnstile_token: turnstileToken })
           });
-          var payload = await response.json();
+          var payload = await response.json().catch(function () {
+            return {};
+          });
           if (response.status === 401 || response.status === 403) {
             closeModal();
             redirectToLogin();
+            return;
+          }
+          if (response.status === 429) {
+            setVerificationStatus((payload && payload.message) || "下载请求过于频繁，请稍后重试。", "error");
             return;
           }
           if (!response.ok || !payload.data || !payload.data.download_url) {

@@ -38,7 +38,7 @@ class UserRoute
             $router->get('/getActiveSession', [UserController::class, 'getActiveSession']);
             $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession']);
             $router->post('/app-downloads/{artifact}/prepare', [AppDownloadController::class, 'prepare'])
-                ->middleware('throttle:10,1');
+                ->middleware('throttle:app-download-prepare');
             // Order
             $router->post('/order/save', [OrderController::class, 'save']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);
