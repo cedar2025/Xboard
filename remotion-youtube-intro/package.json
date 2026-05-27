@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "start": "remotion studio",
+    "render:intro": "remotion render YouTubeJumpIntro out/youtube-jump-intro.mp4",
+    "render:video": "remotion render VideoWithYouTubeJump out/video-with-youtube-jump.mp4",
+    "still": "remotion still YouTubeJumpIntro --frame=24 --scale=0.5 out/intro-frame.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.466",
+    "@remotion/media-utils": "4.0.466",
+    "remotion": "4.0.466",
+    "typescript": "^5.8.3",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2"
+  }
+}
