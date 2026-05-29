@@ -67,6 +67,23 @@ test('subscription import deeplinks request deterministic Surge format', () => {
   assert.match(v2boardBundle, /appendSubscribeFlag\(e,"surge"\)/);
 });
 
+test('ElephantRoute user bundle supports every configured theme color option', () => {
+  const config = JSON.parse(readRepoFile('theme/ElephantRoute/config.json'));
+  const themeColorConfig = config.configs.find((item) => item.field_name === 'theme_color');
+  const bundle = readRepoFile('theme/ElephantRoute/assets/umi.js');
+  const sectionStart = bundle.indexOf('function WQ()');
+  const sectionEnd = bundle.indexOf('const qQ=', sectionStart);
+
+  assert.ok(themeColorConfig, 'theme_color config is declared');
+  assert.notEqual(sectionStart, -1, 'theme selector function exists');
+  assert.notEqual(sectionEnd, -1, 'theme selector constants exist');
+
+  const selectorSection = bundle.slice(sectionStart, sectionEnd);
+  for (const option of Object.keys(themeColorConfig.select_options)) {
+    assert.match(selectorSection, new RegExp(`(?:^|[,{])${option}:`));
+  }
+});
+
 test('ElephantRoute subscription shortcuts have responsive layout styles', () => {
   const stylesheet = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css');
 
