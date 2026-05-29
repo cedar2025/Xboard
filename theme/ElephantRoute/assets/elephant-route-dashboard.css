@@ -111,6 +111,10 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
   white-space: normal;
 }
 
+.er-karing-subscribe-icon {
+  object-fit: cover;
+}
+
 @media (max-width: 767px) {
   .er-subscribe-layout {
     grid-template-columns: minmax(0, 1fr);

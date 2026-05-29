@@ -3,6 +3,7 @@
   var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
+  var KARING_ICON_PATH = 'images/karing.png';
   var SURGE_VLESS_WARNING = 'Surge 不支持 VLESS 节点，建议使用 SingBox、Hiddify 或 Clash Meta。';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
@@ -162,12 +163,9 @@
     return copyTextWithExecCommand(text);
   }
 
-  function copySubscribeUrl() {
+  function fetchSubscribeInfo() {
     var token = getStoredAccessToken();
-    if (!token) {
-      notify('error', '未登录');
-      return Promise.resolve(false);
-    }
+    if (!token) return Promise.resolve(null);
 
     return fetch(SUBSCRIBE_API_PATH + '?t=' + Date.now(), {
       method: 'GET',
@@ -181,13 +179,53 @@
     }).then(function (payload) {
       var subscribeUrl = payload && payload.data && payload.data.subscribe_url;
       if (!subscribeUrl) throw new Error('missing subscribe url');
-      return copyText(subscribeUrl);
-    }).then(function () {
+      return {
+        subscribeUrl: subscribeUrl,
+        title: window.settings && window.settings.title ? window.settings.title : document.title || '订阅'
+      };
+    });
+  }
+
+  function copySubscribeUrl() {
+    return fetchSubscribeInfo().then(function (info) {
+      if (!info) {
+        notify('error', '未登录');
+        return false;
+      }
+      return copyText(info.subscribeUrl).then(function () {
+        return true;
+      });
+    }).then(function (copied) {
+      if (!copied) return false;
       notify('success', '复制成功');
       return true;
     }).catch(function (error) {
       console.error('复制订阅链接失败:', error);
       notify('error', '复制失败');
+      return false;
+    });
+  }
+
+  function getThemeAssetUrl(path) {
+    var base = window.settings && window.settings.assets_path ? window.settings.assets_path : '/theme/ElephantRoute/assets';
+    return base.replace(/\/$/, '') + '/' + path;
+  }
+
+  function buildKaringImportUrl(subscribeUrl, title) {
+    return 'karing://install-config?url=' + encodeURIComponent(subscribeUrl) + '&name=' + encodeURIComponent(title || '订阅');
+  }
+
+  function openKaringImport() {
+    return fetchSubscribeInfo().then(function (info) {
+      if (!info) {
+        notify('error', '未登录');
+        return false;
+      }
+      window.location.href = buildKaringImportUrl(info.subscribeUrl, info.title);
+      return true;
+    }).catch(function (error) {
+      console.error('打开 Karing 导入失败:', error);
+      notify('error', 'Karing 导入失败');
       return false;
     });
   }
@@ -248,6 +286,13 @@
     return targetText.closest('button, a, [role="button"], .cursor-pointer, .n-list-item') || closestShortcut(targetText);
   }
 
+  function findSubscribeListItem(text) {
+    var targetText = findTextElement(text);
+    if (!targetText) return null;
+
+    return targetText.closest('.n-list-item, li, [role="listitem"]') || findSubscribeMenuItem(text);
+  }
+
   function annotateSurgeCompatibility() {
     var surgeItem = findSubscribeMenuItem('Surge');
     if (!surgeItem || surgeItem.dataset.erSurgeVlessWarning === '1') return;
@@ -265,6 +310,57 @@
       warning.textContent = message;
       surgeItem.appendChild(warning);
     });
+  }
+
+  function replaceKaringIcon(root) {
+    var icon = root.querySelector('img');
+    if (!icon) {
+      icon = document.createElement('img');
+      var svg = root.querySelector('svg');
+      if (svg && svg.parentElement) {
+        svg.replaceWith(icon);
+      } else {
+        root.insertBefore(icon, root.firstChild);
+      }
+    }
+
+    icon.src = getThemeAssetUrl(KARING_ICON_PATH);
+    icon.alt = 'Karing';
+    icon.classList.add('er-karing-subscribe-icon');
+  }
+
+  function createKaringSubscribeItem(hiddifyItem) {
+    var karingItem = hiddifyItem.cloneNode(true);
+    karingItem.dataset.erKaringSubscribeItem = '1';
+    karingItem.setAttribute('aria-label', '导入到 Karing');
+    karingItem.removeAttribute('title');
+    replaceText(karingItem, 'Hiddify', 'Karing');
+    replaceKaringIcon(karingItem);
+
+    if (karingItem.tagName && karingItem.tagName.toLowerCase() === 'a') {
+      karingItem.href = '#';
+      karingItem.setAttribute('href', '#');
+    }
+
+    karingItem.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openKaringImport();
+    });
+
+    return karingItem;
+  }
+
+  function enhanceKaringSubscribeOption() {
+    var hiddifyItem = findSubscribeListItem('Hiddify');
+    if (!hiddifyItem) return false;
+
+    var container = hiddifyItem.parentElement || hiddifyItem;
+    if (container.querySelector('[data-er-karing-subscribe-item="1"]')) return true;
+
+    var karingItem = createKaringSubscribeItem(hiddifyItem);
+    hiddifyItem.insertAdjacentElement('afterend', karingItem);
+    return true;
   }
 
   function findSubscribeShortcut() {
@@ -620,6 +716,7 @@
       var applied = applyDownloadEntry();
       var subscribeApplied = applySubscribeActions();
       annotateSurgeCompatibility();
+      enhanceKaringSubscribeOption();
       if ((!applied || !subscribeApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);

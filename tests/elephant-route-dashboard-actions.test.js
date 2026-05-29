@@ -43,6 +43,19 @@ test('ElephantRoute dashboard annotates Surge when VLESS is the dominant node ty
   assert.match(script, /建议使用 SingBox、Hiddify 或 Clash Meta/);
 });
 
+test('ElephantRoute dashboard injects Karing after Hiddify in the one-click subscribe modal', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /enhanceKaringSubscribeOption/);
+  assert.match(script, /findSubscribeListItem/);
+  assert.match(script, /createKaringSubscribeItem/);
+  assert.match(script, /openKaringImport/);
+  assert.match(script, /karing:\/\/install-config\?url=/);
+  assert.match(script, /images\/karing\.png/);
+  assert.ok(script.indexOf('Hiddify') < script.indexOf('Karing'));
+  assert.match(script, /insertAdjacentElement\('afterend', karingItem\)/);
+});
+
 test('subscription import deeplinks request deterministic Surge format', () => {
   const elephantBundle = readRepoFile('theme/ElephantRoute/assets/umi.js');
   const xboardBundle = readRepoFile('theme/Xboard/assets/umi.js');
@@ -70,5 +83,5 @@ test('ElephantRoute dashboard asset cache busting is updated for subscription sh
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
   assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260529surgevless1/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260529surgevless1/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260530karing2/);
 });
