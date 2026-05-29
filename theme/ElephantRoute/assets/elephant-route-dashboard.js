@@ -2,12 +2,15 @@
   var DOWNLOAD_URL = '/download/index.html';
   var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
+  var SERVER_API_PATH = '/api/v1/user/server/fetch';
+  var SURGE_VLESS_WARNING = 'Surge 不支持 VLESS 节点，建议使用 SingBox、Hiddify 或 Clash Meta。';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
   var AUTH_ROUTES = ['/sign-in', '/sign-up', '/login', '/register', '/forgetpassword', '/forgot-password'];
   var maxAttempts = 80;
   var attempts = 0;
   var retryTimer = null;
+  var nodeCompatibilityPromise = null;
 
   function getRoute() {
     var hash = window.location.hash || '';
@@ -186,6 +189,81 @@
       console.error('复制订阅链接失败:', error);
       notify('error', '复制失败');
       return false;
+    });
+  }
+
+  function loadNodeCompatibility() {
+    if (nodeCompatibilityPromise) return nodeCompatibilityPromise;
+
+    var token = getStoredAccessToken();
+    if (!token) return Promise.resolve(null);
+
+    nodeCompatibilityPromise = fetch(SERVER_API_PATH + '?t=' + Date.now(), {
+      method: 'GET',
+      headers: {
+        Authorization: token,
+        'Content-Language': document.documentElement.lang || 'zh-CN'
+      },
+      credentials: 'same-origin'
+    }).then(function (response) {
+      return response.json();
+    }).then(function (payload) {
+      var nodes = payload && payload.data && Array.isArray(payload.data) ? payload.data : [];
+      var counts = nodes.reduce(function (memo, node) {
+        var type = String(node && node.type || '').toLowerCase();
+        if (!type) return memo;
+        memo.total += 1;
+        if (type === 'vless') memo.vless += 1;
+        if (['shadowsocks', 'vmess', 'trojan', 'hysteria'].indexOf(type) !== -1) {
+          memo.surgeCompatible += 1;
+        }
+        return memo;
+      }, {
+        total: 0,
+        vless: 0,
+        surgeCompatible: 0
+      });
+
+      if (counts.vless === 0) return null;
+      if (counts.surgeCompatible === 0) {
+        return '当前订阅只有 VLESS 节点，' + SURGE_VLESS_WARNING;
+      }
+      if (counts.vless > counts.surgeCompatible) {
+        return '当前订阅以 VLESS 节点为主，' + SURGE_VLESS_WARNING;
+      }
+      return null;
+    }).catch(function (error) {
+      console.warn('读取节点兼容性失败:', error);
+      nodeCompatibilityPromise = null;
+      return null;
+    });
+
+    return nodeCompatibilityPromise;
+  }
+
+  function findSubscribeMenuItem(text) {
+    var targetText = findTextElement(text);
+    if (!targetText) return null;
+
+    return targetText.closest('button, a, [role="button"], .cursor-pointer, .n-list-item') || closestShortcut(targetText);
+  }
+
+  function annotateSurgeCompatibility() {
+    var surgeItem = findSubscribeMenuItem('Surge');
+    if (!surgeItem || surgeItem.dataset.erSurgeVlessWarning === '1') return;
+
+    loadNodeCompatibility().then(function (message) {
+      if (!message || !document.body.contains(surgeItem) || surgeItem.dataset.erSurgeVlessWarning === '1') return;
+
+      surgeItem.dataset.erSurgeVlessWarning = '1';
+      surgeItem.setAttribute('title', message);
+      surgeItem.setAttribute('aria-label', 'Surge - ' + message);
+
+      var warning = document.createElement('div');
+      warning.className = 'er-surge-vless-warning';
+      warning.setAttribute('data-er-surge-vless-warning', '1');
+      warning.textContent = message;
+      surgeItem.appendChild(warning);
     });
   }
 
@@ -541,6 +619,7 @@
     retryTimer = window.setTimeout(function retry() {
       var applied = applyDownloadEntry();
       var subscribeApplied = applySubscribeActions();
+      annotateSurgeCompatibility();
       if ((!applied || !subscribeApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);

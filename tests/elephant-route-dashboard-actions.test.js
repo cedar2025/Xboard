@@ -25,11 +25,32 @@ test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   assert.match(script, /\.n-list-item/);
   assert.match(script, /\.cursor-pointer/);
   assert.match(script, /\/api\/v1\/user\/getSubscribe/);
+  assert.match(script, /\/api\/v1\/user\/server\/fetch/);
   assert.match(script, /VUE_NAIVE_ACCESS_TOKEN/);
   assert.match(script, /navigator\.clipboard\.writeText/);
   assert.match(script, /copyTextWithExecCommand/);
   assert.match(script, /\.catch\(function \(\) \{\s*return copyTextWithExecCommand\(text\);/);
   assert.match(script, /document\.execCommand\('copy'\)/);
+});
+
+test('ElephantRoute dashboard annotates Surge when VLESS is the dominant node type', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /SURGE_VLESS_WARNING/);
+  assert.match(script, /loadNodeCompatibility/);
+  assert.match(script, /annotateSurgeCompatibility/);
+  assert.match(script, /data-er-surge-vless-warning/);
+  assert.match(script, /建议使用 SingBox、Hiddify 或 Clash Meta/);
+});
+
+test('subscription import deeplinks request deterministic Surge format', () => {
+  const elephantBundle = readRepoFile('theme/ElephantRoute/assets/umi.js');
+  const xboardBundle = readRepoFile('theme/Xboard/assets/umi.js');
+  const v2boardBundle = readRepoFile('theme/v2board/assets/umi.js');
+
+  assert.match(elephantBundle, /appendSubscribeFlag\(G,"surge"\)/);
+  assert.match(xboardBundle, /appendSubscribeFlag\(G,"surge"\)/);
+  assert.match(v2boardBundle, /appendSubscribeFlag\(e,"surge"\)/);
 });
 
 test('ElephantRoute subscription shortcuts have responsive layout styles', () => {
@@ -48,6 +69,6 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260527subscribeactions3/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260527subscribeactions3/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260529surgevless1/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260529surgevless1/);
 });
