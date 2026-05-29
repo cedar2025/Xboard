@@ -141,7 +141,7 @@ proxy-groups:
 rules:
   # 自定义规则
   ## 您可以在此处插入您补充的自定义规则（请注意保持缩进）
-
+  - DOMAIN-SUFFIX,copilot.microsoft.com,$app_name
   # Google 中国服务
   - DOMAIN-SUFFIX,services.googleapis.cn,SELECT
   - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,SELECT
