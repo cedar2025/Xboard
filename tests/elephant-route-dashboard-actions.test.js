@@ -84,6 +84,16 @@ test('ElephantRoute user bundle supports every configured theme color option', (
   }
 });
 
+test('ElephantRoute user bundle hides user-facing rate columns', () => {
+  const bundle = readRepoFile('theme/ElephantRoute/assets/umi.js');
+
+  assert.doesNotMatch(bundle, /X\("div",\$Fe,\[nt\(pe\(r\.\$t\("倍率"\)\)/);
+  assert.doesNotMatch(bundle, /default:ve\(\(\)=>\[nt\(pe\(m\.rate\)\+" x ",1\)\]\),_:2\},1024\)/);
+  assert.doesNotMatch(bundle, /\{title:t\("扣费倍率"\),key:"server_rate"/);
+  assert.doesNotMatch(bundle, /default:\(\)=>t\("公式：\(实际上行 \+ 实际下行\) x 扣费倍率 = 扣除流量"\)/);
+  assert.match(bundle, /"\/src\/views\/traffic\/route\.ts":TR/);
+});
+
 test('ElephantRoute subscription shortcuts have responsive layout styles', () => {
   const stylesheet = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css');
 
