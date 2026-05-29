@@ -85,59 +85,56 @@ ntp:
 proxies:
 
 proxy-groups:
-  # 总开关
-  - { name: "$app_name", type: select, proxies: ["自动优选-推荐", "自动优选-备用", "晚高峰-推荐", "晚高峰-备用", "特殊优化-推荐", "特殊优化-备用"] }
-
-  # ================= 自动优选系列 (官方 + 反代) =================
-  - name: "自动优选-推荐"
+  # 总开关：用“单域锁IP”直接在字面上破除用户的封号焦虑
+  - { name: "$app_name", type: select, proxies: ["🚀 智能分流·单域锁IP·AI防封 (首选)", "🛡️ 稳定备用·故障转移", "🌆 晚高峰·智能扩容", "🌆 晚高峰·备用", "⚡ 特殊优化·推荐", "⚡ 特殊优化·备用"] }
+ 
+  # ================= 🚀 核心首选组 (官方 + 反代) =================
+  - name: "🚀 智能分流·单域锁IP·AI防封 (首选)"
     type: load-balance
     strategy: consistent-hashing
     proxies: ["FILTER::推荐"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
-  - name: "自动优选-备用"
+ 
+  - name: "🛡️ 稳定备用·故障转移"
     type: fallback
     proxies: ["FILTER::推荐"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
-  # ================= 晚高峰系列 (精准筛选) =================
-  # 推荐：负载均衡，利用多个晚高峰节点的并发能力
-  - name: "晚高峰-推荐"
+ 
+  # ================= 🌆 晚高峰系列 (精准筛选) =================
+  - name: "🌆 晚高峰·智能扩容"
     type: load-balance
     strategy: consistent-hashing
-    proxies: ["FILTER::晚高峰"] # 🌟 自动筛选名字带“晚高峰”的节点
+    proxies: ["FILTER::晚高峰"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
-  # 备用：故障转移，只要有一个能用就行
-  - name: "晚高峰-备用"
+ 
+  - name: "🌆 晚高峰·备用"
     type: fallback
     proxies: ["FILTER::晚高峰"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
-  # ================= 特殊优化系列 (纯反代) =================
-  - name: "特殊优化-推荐"
+ 
+  # ================= ⚡ 特殊优化系列 (纯反代) =================
+  - name: "⚡ 特殊优化·推荐"
     type: load-balance
     strategy: consistent-hashing
     proxies: ["FILTER::特殊"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
-  - name: "特殊优化-备用"
+ 
+  - name: "⚡ 特殊优化·备用"
     type: fallback
     proxies: ["FILTER::特殊"]
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     lazy: true
-
 
 
 
