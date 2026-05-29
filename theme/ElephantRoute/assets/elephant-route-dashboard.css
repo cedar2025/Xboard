@@ -101,16 +101,6 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
   display: none !important;
 }
 
-.er-surge-vless-warning {
-  flex-basis: 100%;
-  width: 100%;
-  margin: 6px 0 0 0;
-  color: #e53e3e;
-  font-size: 12px;
-  line-height: 16px;
-  white-space: normal;
-}
-
 .er-karing-subscribe-icon {
   object-fit: cover;
 }

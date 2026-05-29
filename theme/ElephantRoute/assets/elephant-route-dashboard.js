@@ -4,7 +4,6 @@
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var KARING_ICON_PATH = 'images/karing.png';
-  var SURGE_VLESS_WARNING = 'Surge 不支持 VLESS 节点，建议使用 SingBox、Hiddify 或 Clash Meta。';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
   var AUTH_ROUTES = ['/sign-in', '/sign-up', '/login', '/register', '/forgetpassword', '/forgot-password'];
@@ -262,14 +261,7 @@
         surgeCompatible: 0
       });
 
-      if (counts.vless === 0) return null;
-      if (counts.surgeCompatible === 0) {
-        return '当前订阅只有 VLESS 节点，' + SURGE_VLESS_WARNING;
-      }
-      if (counts.vless > counts.surgeCompatible) {
-        return '当前订阅以 VLESS 节点为主，' + SURGE_VLESS_WARNING;
-      }
-      return null;
+      return counts.total > 0 && counts.vless > 0 && counts.surgeCompatible === 0;
     }).catch(function (error) {
       console.warn('读取节点兼容性失败:', error);
       nodeCompatibilityPromise = null;
@@ -293,22 +285,17 @@
     return targetText.closest('.n-list-item, li, [role="listitem"]') || findSubscribeMenuItem(text);
   }
 
-  function annotateSurgeCompatibility() {
+  function hideUnsupportedSurgeOption() {
     var surgeItem = findSubscribeMenuItem('Surge');
-    if (!surgeItem || surgeItem.dataset.erSurgeVlessWarning === '1') return;
+    if (!surgeItem || surgeItem.dataset.erSurgeHidden === '1') return;
 
-    loadNodeCompatibility().then(function (message) {
-      if (!message || !document.body.contains(surgeItem) || surgeItem.dataset.erSurgeVlessWarning === '1') return;
+    loadNodeCompatibility().then(function (shouldHide) {
+      if (!shouldHide || !document.body.contains(surgeItem) || surgeItem.dataset.erSurgeHidden === '1') return;
 
-      surgeItem.dataset.erSurgeVlessWarning = '1';
-      surgeItem.setAttribute('title', message);
-      surgeItem.setAttribute('aria-label', 'Surge - ' + message);
-
-      var warning = document.createElement('div');
-      warning.className = 'er-surge-vless-warning';
-      warning.setAttribute('data-er-surge-vless-warning', '1');
-      warning.textContent = message;
-      surgeItem.appendChild(warning);
+      surgeItem.dataset.erSurgeHidden = '1';
+      surgeItem.setAttribute('data-er-surge-hidden', '1');
+      surgeItem.setAttribute('hidden', '');
+      surgeItem.style.display = 'none';
     });
   }
 
@@ -715,7 +702,7 @@
     retryTimer = window.setTimeout(function retry() {
       var applied = applyDownloadEntry();
       var subscribeApplied = applySubscribeActions();
-      annotateSurgeCompatibility();
+      hideUnsupportedSurgeOption();
       enhanceKaringSubscribeOption();
       if ((!applied || !subscribeApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
