@@ -132,6 +132,12 @@ class Helper
         $subscribeUrlList = $urlString ? explode(',', $urlString) : [];
         
         if (empty($subscribeUrlList)) {
+            $appUrl = (string)admin_setting('app_url', '');
+            if ($appUrl) {
+                $finalUrl = rtrim($appUrl, '/') . $path;
+                return HookManager::filter('subscribe.url', $finalUrl);
+            }
+
             return HookManager::filter('subscribe.url', url($path));
         }
         
