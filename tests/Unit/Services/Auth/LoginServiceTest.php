@@ -69,6 +69,49 @@ class LoginServiceTest extends TestCase
         $this->assertArrayHasKey('email_code', $validator->errors()->toArray());
     }
 
+    public function test_login_succeeds_for_legacy_padded_sha256_user(): void
+    {
+        $hash = hash('sha256', 'legacy-pw');
+        $user = User::query()->create([
+            'email' => 'legacy-sha256@test.local',
+            'password' => $hash,
+            'password_algo' => 'sha256    ',
+            'password_salt' => null,
+            'uuid' => Helper::guid(true),
+            'token' => Helper::guid(),
+            'created_at' => time(),
+            'updated_at' => time(),
+        ]);
+
+        [$success, $result] = $this->service->login('legacy-sha256@test.local', 'legacy-pw');
+
+        $this->assertTrue($success);
+        $this->assertInstanceOf(User::class, $result);
+        $this->assertSame($user->id, $result->id);
+    }
+
+    public function test_login_succeeds_for_legacy_padded_sha256salt_user(): void
+    {
+        $salt = 'rndslt';
+        $hash = hash('sha256', 'legacy-pw' . $salt);
+        $user = User::query()->create([
+            'email' => 'legacy-sha256salt@test.local',
+            'password' => $hash,
+            'password_algo' => 'sha256salt',
+            'password_salt' => 'rndslt    ',
+            'uuid' => Helper::guid(true),
+            'token' => Helper::guid(),
+            'created_at' => time(),
+            'updated_at' => time(),
+        ]);
+
+        [$success, $result] = $this->service->login('legacy-sha256salt@test.local', 'legacy-pw');
+
+        $this->assertTrue($success);
+        $this->assertInstanceOf(User::class, $result);
+        $this->assertSame($user->id, $result->id);
+    }
+
     private function createUser(string $email, string $password): User
     {
         return User::query()->create([
