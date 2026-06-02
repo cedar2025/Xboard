@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $total_amount
  * @property int|null $handling_amount
  * @property int|null $balance_amount
- * @property int|null $refund_amount
+ * @property int|null $surplus_credit
  * @property int|null $surplus_amount
  * @property int $type
  * @property int $status

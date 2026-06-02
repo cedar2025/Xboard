@@ -103,8 +103,8 @@ class OrderService
         DB::transaction(function () use ($order, $plan) {
             $this->user = User::lockForUpdate()->find($order->user_id);
 
-            if ($order->refund_amount) {
-                $this->user->balance += $order->refund_amount;
+            if ($order->surplus_credit) {
+                $this->user->balance += $order->surplus_credit;
             }
 
             if ($order->surplus_order_ids) {
@@ -158,7 +158,7 @@ class OrderService
             if ((int) admin_setting('surplus_enable', 1))
                 $this->getSurplusValue($user, $order);
             if ($order->surplus_amount >= $order->total_amount) {
-                $order->refund_amount = (int) ($order->surplus_amount - $order->total_amount);
+                $order->surplus_credit = (int) ($order->surplus_amount - $order->total_amount);
                 $order->total_amount = 0;
             } else {
                 $order->total_amount = (int) ($order->total_amount - $order->surplus_amount);
@@ -256,7 +256,7 @@ class OrderService
                 return;
             }
 
-            $orderAmountSum = $orders->sum(fn($item) => $item->total_amount + $item->balance_amount + $item->surplus_amount - $item->refund_amount);
+            $orderAmountSum = $orders->sum(fn($item) => $item->total_amount + $item->balance_amount + $item->surplus_amount - $item->surplus_credit);
             $orderMonthSum = $orders->sum(fn($item) => self::STR_TO_TIME[PlanService::getPeriodKey($item->period)] ?? 0);
             $firstOrderAt = $orders->min('created_at');
             $expiredAt = Carbon::createFromTimestamp($firstOrderAt)->addMonths($orderMonthSum);
