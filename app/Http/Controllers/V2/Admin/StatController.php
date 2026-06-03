@@ -53,8 +53,8 @@ class StatController extends Controller
 
         return [
             'data' => [
-                'month_income' => Order::where('created_at', '>=', strtotime(date('Y-m-1')))
-                    ->where('created_at', '<', time())
+                'month_income' => Order::where('paid_at', '>=', strtotime(date('Y-m-1')))
+                    ->where('paid_at', '<', time())
                     ->whereNotIn('status', [0, 2])
                     ->sum('total_amount'),
                 'month_register_total' => User::where('created_at', '>=', strtotime(date('Y-m-1')))
@@ -67,12 +67,12 @@ class StatController extends Controller
                     ->whereNotIn('status', [0, 2])
                     ->where('commission_balance', '>', 0)
                     ->count(),
-                'day_income' => Order::where('created_at', '>=', strtotime(date('Y-m-d')))
-                    ->where('created_at', '<', time())
+                'day_income' => Order::where('paid_at', '>=', strtotime(date('Y-m-d')))
+                    ->where('paid_at', '<', time())
                     ->whereNotIn('status', [0, 2])
                     ->sum('total_amount'),
-                'last_month_income' => Order::where('created_at', '>=', strtotime('-1 month', strtotime(date('Y-m-1'))))
-                    ->where('created_at', '<', strtotime(date('Y-m-1')))
+                'last_month_income' => Order::where('paid_at', '>=', strtotime('-1 month', strtotime(date('Y-m-1'))))
+                    ->where('paid_at', '<', strtotime(date('Y-m-1')))
                     ->whereNotIn('status', [0, 2])
                     ->sum('total_amount'),
                 'commission_month_payout' => CommissionLog::where('created_at', '>=', strtotime(date('Y-m-1')))
@@ -292,27 +292,27 @@ class StatController extends Controller
         $totalTraffic = StatServer::selectRaw('SUM(u) as upload, SUM(d) as download, SUM(u + d) as total')
             ->first();
 
-        // Today's income
-        $todayIncome = Order::where('created_at', '>=', $todayStart)
-            ->where('created_at', '<', time())
+        // Today's paid income
+        $todayIncome = Order::where('paid_at', '>=', $todayStart)
+            ->where('paid_at', '<', time())
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
 
-        // Yesterday's income for day growth calculation
-        $yesterdayIncome = Order::where('created_at', '>=', $yesterdayStart)
-            ->where('created_at', '<', $todayStart)
+        // Yesterday's paid income for day growth calculation
+        $yesterdayIncome = Order::where('paid_at', '>=', $yesterdayStart)
+            ->where('paid_at', '<', $todayStart)
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
 
-        // Current month income
-        $currentMonthIncome = Order::where('created_at', '>=', $currentMonthStart)
-            ->where('created_at', '<', time())
+        // Current month paid income
+        $currentMonthIncome = Order::where('paid_at', '>=', $currentMonthStart)
+            ->where('paid_at', '<', time())
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
 
-        // Last month income
-        $lastMonthIncome = Order::where('created_at', '>=', $lastMonthStart)
-            ->where('created_at', '<', $currentMonthStart)
+        // Last month paid income
+        $lastMonthIncome = Order::where('paid_at', '>=', $lastMonthStart)
+            ->where('paid_at', '<', $currentMonthStart)
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
 
@@ -340,9 +340,9 @@ class StatController extends Controller
                 ->orWhere('expired_at', NULL);
         })->count();
 
-        // Previous month income for growth calculation
-        $twoMonthsAgoIncome = Order::where('created_at', '>=', $twoMonthsAgoStart)
-            ->where('created_at', '<', $lastMonthStart)
+        // Previous paid income for growth calculation
+        $twoMonthsAgoIncome = Order::where('paid_at', '>=', $twoMonthsAgoStart)
+            ->where('paid_at', '<', $lastMonthStart)
             ->whereNotIn('status', [0, 2])
             ->sum('total_amount');
 
