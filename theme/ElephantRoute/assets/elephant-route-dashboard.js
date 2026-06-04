@@ -21,7 +21,9 @@
     ['请描述您遇到的问题', '请描述您的申诉问题'],
     ['请描述你遇到的问题', '请描述您的申诉问题'],
     ['工单详情', '申诉详情'],
-    ['工单状态', '申诉状态'],
+    ['工单状态', '申诉状态']
+  ];
+  var TICKET_APPEAL_EXACT_TEXT_REPLACEMENTS = [
     ['主题', '申诉主题'],
     ['消息', '申诉内容']
   ];
@@ -139,7 +141,23 @@
     TICKET_APPEAL_TEXT_REPLACEMENTS.forEach(function (pair) {
       next = next.split(pair[0]).join(pair[1]);
     });
-    return next;
+    return replaceExactAppealText(next);
+  }
+
+  function replaceExactAppealText(value) {
+    var normalized = value.trim();
+    if (!normalized) return value;
+
+    for (var i = 0; i < TICKET_APPEAL_EXACT_TEXT_REPLACEMENTS.length; i += 1) {
+      var pair = TICKET_APPEAL_EXACT_TEXT_REPLACEMENTS[i];
+      if (normalized === pair[0]) {
+        var leading = value.match(/^\s*/)[0];
+        var trailing = value.match(/\s*$/)[0];
+        return leading + pair[1] + trailing;
+      }
+    }
+
+    return value;
   }
 
   function replaceAppealTextInNode(root) {

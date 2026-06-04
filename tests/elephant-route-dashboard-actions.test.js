@@ -105,19 +105,22 @@ test('ElephantRoute rewrites ticket page copy to appeal wording', () => {
   const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
 
   assert.match(script, /TICKET_APPEAL_TEXT_REPLACEMENTS/);
+  assert.match(script, /TICKET_APPEAL_EXACT_TEXT_REPLACEMENTS/);
   assert.match(script, /\['我的工单', '问题申诉'\]/);
   assert.match(script, /\['工单历史', '申诉记录'\]/);
   assert.match(script, /\['新的工单', '提交申诉'\]/);
-  assert.match(script, /\['主题', '申诉主题'\]/);
   assert.match(script, /\['请输入工单主题', '请输入申诉主题'\]/);
   assert.match(script, /\['工单级别', '申诉级别'\]/);
   assert.match(script, /\['工单等级', '申诉级别'\]/);
   assert.match(script, /\['请选择工单优先级', '请选择申诉优先级'\]/);
   assert.match(script, /\['请选择工单等级', '请选择申诉优先级'\]/);
-  assert.match(script, /\['消息', '申诉内容'\]/);
   assert.match(script, /\['请描述您遇到的问题', '请描述您的申诉问题'\]/);
   assert.match(script, /\['工单详情', '申诉详情'\]/);
   assert.match(script, /\['工单状态', '申诉状态'\]/);
+  assert.match(script, /TICKET_APPEAL_EXACT_TEXT_REPLACEMENTS = \[\s*\['主题', '申诉主题'\],\s*\['消息', '申诉内容'\]\s*\]/);
+  assert.match(script, /replaceExactAppealText/);
+  assert.match(script, /var normalized = value\.trim\(\)/);
+  assert.match(script, /if \(normalized === pair\[0\]\)/);
   assert.match(script, /normalizeTicketAppealWording/);
   assert.match(script, /replaceAppealTextInNode/);
   assert.match(script, /replaceAppealTextAttributes/);
@@ -182,6 +185,6 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260605appealTicket2/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260605appealTicket2/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260605appealTicket3/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260605appealTicket3/);
 });
