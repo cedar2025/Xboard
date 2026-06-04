@@ -83,22 +83,23 @@ proxies:
 
 proxy-groups:
   # 总开关：用“单域锁IP”直接在字面上破除用户的封号焦虑
-  - { name: "$app_name", type: select, proxies: ["🚀 智能分流·单域锁IP·AI防封 (首选)", "🛡️ 稳定备用·故障转移", "🌆 晚高峰·智能扩容", "🌆 晚高峰·备用", "⚡ 特殊优化·推荐", "⚡ 特殊优化·备用"] }
+  # Modified
+  - { name: "$app_name", type: select, proxies: ["🚀 智能分流·美国·AI防封 (首选)", "🛡️ 稳定备用·故障转移", "🌆 晚高峰·智能扩容", "🌆 晚高峰·备用", "⚡ 特殊优化·推荐", "⚡ 特殊优化·备用", "🇺🇸 美国 01", "🇺🇸 美国 02", "🇺🇸 美国 03", "🇯🇵 日本 01", "🇯🇵 日本 02", "🇯🇵 日本 03", "🇸🇬 新加坡 01", "🇸🇬 新加坡 02", "🇸🇬 新加坡 03", "🇰🇷 韩国 01", "🇰🇷 韩国 02", "🇰🇷 韩国 03", "🇹🇼 台湾 01", "🇹🇼 台湾 02", "🇹🇼 台湾 03", "🇭🇰 香港 01", "🇭🇰 香港 02", "🇭🇰 香港 03", "🇨🇦 加拿大 01", "🇨🇦 加拿大 02", "🇨🇦 加拿大 03", "🇳🇱 荷兰 01", "🇳🇱 荷兰 02", "🇳🇱 荷兰 03", "🇮🇳 印度 01", "🇮🇳 印度 02", "🇮🇳 印度 03", "🇩🇪 德国 01", "🇩🇪 德国 02", "🇩🇪 德国 03", "🇮🇩 印度尼西亚 01", "🇮🇩 印度尼西亚 02", "🇮🇩 印度尼西亚 03", "🇹🇭 泰国 01", "🇹🇭 泰国 02", "🇹🇭 泰国 03", "🇲🇽 墨西哥 01", "🇲🇽 墨西哥 02", "🇲🇽 墨西哥 03", "🇹🇷 土耳其 01", "🇹🇷 土耳其 02", "🇹🇷 土耳其 03", "🇬🇧 英国 01", "🇬🇧 英国 02", "🇬🇧 英国 03", "🇫🇷 法国 01", "🇫🇷 法国 02", "🇫🇷 法国 03", "🇪🇸 西班牙 01", "🇪🇸 西班牙 02", "🇪🇸 西班牙 03", "🇧🇷 巴西 01", "🇧🇷 巴西 02", "🇧🇷 巴西 03", "🇦🇺 澳大利亚 01", "🇦🇺 澳大利亚 02", "🇦🇺 澳大利亚 03", "🇨🇳 中国大陆 01", "🇨🇳 中国大陆 02", "🇨🇳 中国大陆 03", "🇷🇺 俄罗斯 01", "🇷🇺 俄罗斯 02", "🇷🇺 俄罗斯 03"] }
  
   # ================= 🚀 核心首选组 (官方 + 反代) =================
-  - name: "🚀 智能分流·单域锁IP·AI防封 (首选)"
+  - name: "🚀 智能分流·美国·AI防封 (首选)"
     type: load-balance
     strategy: consistent-hashing
     proxies: ["FILTER::推荐"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3100
     lazy: true
  
   - name: "🛡️ 稳定备用·故障转移"
     type: fallback
     proxies: ["FILTER::推荐"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3200
     lazy: true
  
   # ================= 🌆 晚高峰系列 (精准筛选) =================
@@ -107,14 +108,14 @@ proxy-groups:
     strategy: consistent-hashing
     proxies: ["FILTER::晚高峰"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3300
     lazy: true
  
   - name: "🌆 晚高峰·备用"
     type: fallback
     proxies: ["FILTER::晚高峰"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3400
     lazy: true
  
   # ================= ⚡ 特殊优化系列 (纯反代) =================
@@ -123,14 +124,479 @@ proxy-groups:
     strategy: consistent-hashing
     proxies: ["FILTER::特殊"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3500
     lazy: true
  
   - name: "⚡ 特殊优化·备用"
     type: fallback
     proxies: ["FILTER::特殊"]
     url: "http://www.gstatic.com/generate_204"
-    interval: 300
+    interval: 3600
+    lazy: true
+
+  # ================= 国家分组配置 =================
+  # Added
+
+  # ================= 🇺🇸 美国系列 =================
+  - name: "🇺🇸 美国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇺🇸 美国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇺🇸 美国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇯🇵 日本系列 =================
+  - name: "🇯🇵 日本 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇯🇵 日本 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇯🇵 日本 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇸🇬 新加坡系列 =================
+  - name: "🇸🇬 新加坡 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇸🇬 新加坡 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇸🇬 新加坡 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇰🇷 韩国系列 =================
+  - name: "🇰🇷 韩国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇰🇷 韩国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇰🇷 韩国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇹🇼 台湾系列 =================
+  - name: "🇹🇼 台湾 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇼 台湾 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇼 台湾 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇭🇰 香港系列 =================
+  - name: "🇭🇰 香港 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇭🇰 香港 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇭🇰 香港 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇨🇦 加拿大系列 =================
+  - name: "🇨🇦 加拿大 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇨🇦 加拿大 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇨🇦 加拿大 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇳🇱 荷兰系列 =================
+  - name: "🇳🇱 荷兰 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇳🇱 荷兰 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇳🇱 荷兰 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇮🇳 印度系列 =================
+  - name: "🇮🇳 印度 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇮🇳 印度 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇮🇳 印度 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇩🇪 德国系列 =================
+  - name: "🇩🇪 德国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇩🇪 德国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇩🇪 德国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇮🇩 印度尼西亚系列 =================
+  - name: "🇮🇩 印度尼西亚 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇮🇩 印度尼西亚 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇮🇩 印度尼西亚 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇹🇭 泰国系列 =================
+  - name: "🇹🇭 泰国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇭 泰国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇭 泰国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇲🇽 墨西哥系列 =================
+  - name: "🇲🇽 墨西哥 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇲🇽 墨西哥 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇲🇽 墨西哥 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇹🇷 土耳其系列 =================
+  - name: "🇹🇷 土耳其 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇷 土耳其 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇹🇷 土耳其 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇬🇧 英国系列 =================
+  - name: "🇬🇧 英国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇬🇧 英国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇬🇧 英国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇫🇷 法国系列 =================
+  - name: "🇫🇷 法国 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇫🇷 法国 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇫🇷 法国 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇪🇸 西班牙系列 =================
+  - name: "🇪🇸 西班牙 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇪🇸 西班牙 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇪🇸 西班牙 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇧🇷 巴西系列 =================
+  - name: "🇧🇷 巴西 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇧🇷 巴西 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇧🇷 巴西 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇦🇺 澳大利亚系列 =================
+  - name: "🇦🇺 澳大利亚 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇦🇺 澳大利亚 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇦🇺 澳大利亚 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇨🇳 中国大陆系列 =================
+  - name: "🇨🇳 中国大陆 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇨🇳 中国大陆 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇨🇳 中国大陆 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+
+  # ================= 🇷🇺 俄罗斯系列 =================
+  - name: "🇷🇺 俄罗斯 01"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇷🇺 俄罗斯 02"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
+    lazy: true
+  - name: "🇷🇺 俄罗斯 03"
+    type: fallback
+    proxies: ["FILTER::推荐"]
+    url: "http://www.gstatic.com/generate_204"
+    interval: 3000
     lazy: true
 
 
