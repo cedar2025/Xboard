@@ -28,6 +28,12 @@
   height: 32px;
 }
 
+.er-dashboard-support-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
 .er-subscribe-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;

@@ -184,6 +184,7 @@ class ConfigController extends Controller
             'safe' => [
                 'email_verify' => (bool) admin_setting('email_verify', 0),
                 'safe_mode_enable' => (bool) admin_setting('safe_mode_enable', 0),
+                'customer_service_api_key' => admin_setting('customer_service_api_key', env('CUSTOMER_SERVICE_API_KEY')),
                 'secure_path' => admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))),
                 'email_whitelist_enable' => (bool) admin_setting('email_whitelist_enable', 0),
                 'email_whitelist_suffix' => admin_setting('email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT),

@@ -9,6 +9,17 @@ function readRepoFile(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
 }
 
+test('ElephantRoute dashboard override assets are synced to the public theme directory', () => {
+  assert.equal(
+    readRepoFile('public/theme/ElephantRoute/assets/elephant-route-dashboard.js'),
+    readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js')
+  );
+  assert.equal(
+    readRepoFile('public/theme/ElephantRoute/assets/elephant-route-dashboard.css'),
+    readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css')
+  );
+});
+
 test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
 
@@ -57,6 +68,66 @@ test('ElephantRoute dashboard injects Karing after Hiddify in the one-click subs
   assert.match(script, /insertAdjacentElement\('afterend', karingItem\)/);
 });
 
+test('ElephantRoute dashboard normalizes shortcut menu labels and order', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /PROBLEM_APPEAL_LABEL = '提交问题申诉'/);
+  assert.match(script, /PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复'/);
+  assert.match(script, /PROBLEM_APPEAL_TITLE_COLOR = '#e53e3e'/);
+  assert.match(script, /removeRenewShortcut/);
+  assert.match(script, /normalizeProblemAppealShortcut/);
+  assert.match(script, /applyProblemAppealTitleColor/);
+  assert.match(script, /replaceProblemAppealIcon/);
+  assert.match(script, /moveProblemAppealAfterSubscribe/);
+  assert.match(script, /findDashboardShortcut\('续费订阅'\)[\s\S]*renewItem\.remove\(\)/);
+  assert.match(script, /findDashboardShortcut\('一键订阅'\)[\s\S]*insertBefore\(problemItem, subscribeItem\.nextSibling\)/);
+  assert.match(script, /existingClassName[\s\S]*createProblemAppealIcon\(existingClassName\)/);
+  assert.match(script, /<path d="M4 12a8 8 0 0 1 16 0">/);
+  assert.match(script, /<path d="M18 19c0 1\.1-1\.8 2-4 2h-2">/);
+});
+
+test('ElephantRoute sidebar permanently hides traffic detail menu item', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /HIDDEN_SIDEBAR_MENU_LABELS = \['流量明细'\]/);
+  assert.match(script, /findTextElements/);
+  assert.match(script, /removeHiddenSidebarMenuItems/);
+  assert.match(script, /closestSidebarMenuItem/);
+  assert.match(script, /\.n-layout-sider/);
+  assert.match(script, /closest\('\[role="menuitem"\], \.n-menu-item, a, button, \.cursor-pointer'\)/);
+  assert.match(script, /findTextElements\(label\)\.forEach/);
+  assert.match(script, /item\.remove\(\)/);
+  assert.match(script, /removeHiddenSidebarMenuItems\(\);[\s\S]*var applied = applyDownloadEntry/);
+  assert.match(script, /removeHiddenSidebarMenuItems\(\);[\s\S]*if \(isDashboardRoute\(\)\) scheduleDownloadEntry\(\)/);
+});
+
+test('ElephantRoute rewrites ticket page copy to appeal wording', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /TICKET_APPEAL_TEXT_REPLACEMENTS/);
+  assert.match(script, /\['我的工单', '问题申诉'\]/);
+  assert.match(script, /\['工单历史', '申诉记录'\]/);
+  assert.match(script, /\['新的工单', '提交申诉'\]/);
+  assert.match(script, /\['主题', '申诉主题'\]/);
+  assert.match(script, /\['请输入工单主题', '请输入申诉主题'\]/);
+  assert.match(script, /\['工单级别', '申诉级别'\]/);
+  assert.match(script, /\['工单等级', '申诉级别'\]/);
+  assert.match(script, /\['请选择工单优先级', '请选择申诉优先级'\]/);
+  assert.match(script, /\['请选择工单等级', '请选择申诉优先级'\]/);
+  assert.match(script, /\['消息', '申诉内容'\]/);
+  assert.match(script, /\['请描述您遇到的问题', '请描述您的申诉问题'\]/);
+  assert.match(script, /\['工单详情', '申诉详情'\]/);
+  assert.match(script, /\['工单状态', '申诉状态'\]/);
+  assert.match(script, /normalizeTicketAppealWording/);
+  assert.match(script, /replaceAppealTextInNode/);
+  assert.match(script, /replaceAppealTextAttributes/);
+  assert.match(script, /placeholder/);
+  assert.match(script, /var nextTitle = replaceAppealText\(document\.title\)/);
+  assert.match(script, /if \(nextTitle !== document\.title\) document\.title = nextTitle/);
+  assert.match(script, /normalizeTicketAppealWording\(\);[\s\S]*removeHiddenSidebarMenuItems\(\);[\s\S]*var applied = applyDownloadEntry/);
+  assert.match(script, /normalizeTicketAppealWording\(\);[\s\S]*removeHiddenSidebarMenuItems\(\);[\s\S]*if \(isDashboardRoute\(\)\) scheduleDownloadEntry\(\)/);
+});
+
 test('subscription import deeplinks request deterministic Surge format', () => {
   const elephantBundle = readRepoFile('theme/ElephantRoute/assets/umi.js');
   const xboardBundle = readRepoFile('theme/Xboard/assets/umi.js');
@@ -100,6 +171,7 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
   assert.match(stylesheet, /\.er-subscribe-layout/);
   assert.match(stylesheet, /\.er-subscribe-action-panel/);
   assert.match(stylesheet, /\.er-subscribe-action-button/);
+  assert.match(stylesheet, /\.er-dashboard-support-icon/);
   assert.match(stylesheet, /background: #fff1f1/);
   assert.match(stylesheet, /\.er-subscribe-source-menu-hidden/);
   assert.match(stylesheet, /\.er-subscribe-source-modal-hidden/);
@@ -110,6 +182,6 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260530surgehide1/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260530surgehide1/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260605appealTicket2/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260605appealTicket2/);
 });

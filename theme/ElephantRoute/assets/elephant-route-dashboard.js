@@ -5,6 +5,26 @@
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var KARING_ICON_PATH = 'images/karing.png';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
+  var PROBLEM_APPEAL_LABEL = '提交问题申诉';
+  var PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复';
+  var PROBLEM_APPEAL_TITLE_COLOR = '#e53e3e';
+  var HIDDEN_SIDEBAR_MENU_LABELS = ['流量明细'];
+  var TICKET_APPEAL_TEXT_REPLACEMENTS = [
+    ['我的工单', '问题申诉'],
+    ['工单历史', '申诉记录'],
+    ['新的工单', '提交申诉'],
+    ['请输入工单主题', '请输入申诉主题'],
+    ['工单级别', '申诉级别'],
+    ['工单等级', '申诉级别'],
+    ['请选择工单优先级', '请选择申诉优先级'],
+    ['请选择工单等级', '请选择申诉优先级'],
+    ['请描述您遇到的问题', '请描述您的申诉问题'],
+    ['请描述你遇到的问题', '请描述您的申诉问题'],
+    ['工单详情', '申诉详情'],
+    ['工单状态', '申诉状态'],
+    ['主题', '申诉主题'],
+    ['消息', '申诉内容']
+  ];
   var DASHBOARD_ROUTES = ['/', '/dashboard', '/home', '/index'];
   var AUTH_ROUTES = ['/sign-in', '/sign-up', '/login', '/register', '/forgetpassword', '/forgot-password'];
   var maxAttempts = 80;
@@ -70,6 +90,24 @@
     return node ? node.parentElement : null;
   }
 
+  function findTextElements(text) {
+    var matches = [];
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || node.nodeValue.indexOf(text) === -1) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement && node.parentElement.closest('#er-dashboard-download')) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement && node.parentElement.closest('#er-subscribe-action-panel')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.parentElement) matches.push(node.parentElement);
+    }
+    return matches;
+  }
+
   function closestShortcut(element) {
     var node = element;
     while (node && node !== document.body) {
@@ -93,6 +131,70 @@
 
   function getNodeText(node) {
     return (node && node.textContent ? node.textContent : '').replace(/\s+/g, ' ').trim();
+  }
+
+  function replaceAppealText(value) {
+    if (!value) return value;
+    var next = value;
+    TICKET_APPEAL_TEXT_REPLACEMENTS.forEach(function (pair) {
+      next = next.split(pair[0]).join(pair[1]);
+    });
+    return next;
+  }
+
+  function replaceAppealTextInNode(root) {
+    if (!root) return;
+
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var parent = node.parentElement;
+        if (!node.nodeValue || !parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('script, style, textarea, input, select')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    var node;
+    while ((node = walker.nextNode())) {
+      var next = replaceAppealText(node.nodeValue);
+      if (next !== node.nodeValue) node.nodeValue = next;
+    }
+  }
+
+  function replaceAppealTextAttributes(root) {
+    if (!root || !root.querySelectorAll) return;
+
+    root.querySelectorAll('[placeholder], [aria-label], [title]').forEach(function (node) {
+      ['placeholder', 'aria-label', 'title'].forEach(function (attribute) {
+        if (!node.hasAttribute(attribute)) return;
+        var value = node.getAttribute(attribute);
+        var next = replaceAppealText(value);
+        if (next !== value) node.setAttribute(attribute, next);
+      });
+    });
+  }
+
+  function normalizeTicketAppealWording() {
+    if (!document.body) return;
+
+    replaceAppealTextInNode(document.body);
+    replaceAppealTextAttributes(document.body);
+    var nextTitle = replaceAppealText(document.title);
+    if (nextTitle !== document.title) document.title = nextTitle;
+  }
+
+  function closestSidebarMenuItem(element) {
+    if (!element || !element.closest || !element.closest('.n-layout-sider')) return null;
+    return element.closest('[role="menuitem"], .n-menu-item, a, button, .cursor-pointer');
+  }
+
+  function removeHiddenSidebarMenuItems() {
+    HIDDEN_SIDEBAR_MENU_LABELS.forEach(function (label) {
+      findTextElements(label).forEach(function (labelElement) {
+        var item = closestSidebarMenuItem(labelElement);
+        if (item) item.remove();
+      });
+    });
   }
 
   function childContainingText(parent, text, exclude) {
@@ -636,6 +738,17 @@
     }
   }
 
+  function findTextElementInRoot(root, text) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue && node.nodeValue.indexOf(text) !== -1) {
+        return node.parentElement;
+      }
+    }
+    return null;
+  }
+
   function replaceDownloadIcon(root) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'er-dashboard-download-icon');
@@ -662,6 +775,91 @@
     iconWrap.className = 'er-dashboard-download-icon-wrap';
     iconWrap.appendChild(svg);
     root.appendChild(iconWrap);
+  }
+
+  function createProblemAppealIcon(existingClassName) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', [existingClassName, 'er-dashboard-support-icon'].filter(Boolean).join(' '));
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.25');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.innerHTML = [
+      '<path d="M4 12a8 8 0 0 1 16 0"></path>',
+      '<path d="M4 12v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2"></path>',
+      '<path d="M20 12v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2"></path>',
+      '<path d="M18 19c0 1.1-1.8 2-4 2h-2"></path>'
+    ].join('');
+    return svg;
+  }
+
+  function replaceProblemAppealIcon(problemItem) {
+    var icons = problemItem.querySelectorAll('svg');
+    var existingClassName = icons.length > 0 ? icons[icons.length - 1].getAttribute('class') : '';
+    var svg = createProblemAppealIcon(existingClassName);
+    if (icons.length > 0) {
+      icons[icons.length - 1].replaceWith(svg);
+      return;
+    }
+
+    problemItem.appendChild(svg);
+  }
+
+  function applyProblemAppealTitleColor(problemItem) {
+    var title = findTextElementInRoot(problemItem, PROBLEM_APPEAL_LABEL);
+    if (title) title.style.color = PROBLEM_APPEAL_TITLE_COLOR;
+  }
+
+  function findDashboardShortcut(text) {
+    var targetText = findTextElement(text);
+    return targetText ? closestShortcut(targetText) : null;
+  }
+
+  function removeRenewShortcut() {
+    var renewItem = findDashboardShortcut('续费订阅');
+    if (!renewItem) return false;
+
+    renewItem.remove();
+    return true;
+  }
+
+  function findProblemAppealShortcut() {
+    return findDashboardShortcut(PROBLEM_APPEAL_LABEL) || findDashboardShortcut('遇到问题');
+  }
+
+  function normalizeProblemAppealShortcut() {
+    var problemItem = findProblemAppealShortcut();
+    if (!problemItem) return false;
+
+    replaceText(problemItem, '遇到问题可以通过工单与我们沟通', PROBLEM_APPEAL_DESCRIPTION);
+    replaceText(problemItem, '遇到问题', PROBLEM_APPEAL_LABEL);
+    problemItem.setAttribute('aria-label', PROBLEM_APPEAL_LABEL);
+    applyProblemAppealTitleColor(problemItem);
+    replaceProblemAppealIcon(problemItem);
+    return true;
+  }
+
+  function moveProblemAppealAfterSubscribe() {
+    var subscribeItem = findDashboardShortcut('一键订阅');
+    var problemItem = findProblemAppealShortcut();
+    if (!subscribeItem || !problemItem || subscribeItem === problemItem || !subscribeItem.parentElement) {
+      return false;
+    }
+
+    if (problemItem !== subscribeItem.nextSibling) {
+      subscribeItem.parentElement.insertBefore(problemItem, subscribeItem.nextSibling);
+    }
+    return true;
+  }
+
+  function applyDashboardShortcutMenu() {
+    if (!isDashboardRoute()) return true;
+
+    removeRenewShortcut();
+    return normalizeProblemAppealShortcut() && moveProblemAppealAfterSubscribe();
   }
 
   function applyDownloadEntry() {
@@ -700,11 +898,14 @@
   function scheduleDownloadEntry() {
     window.clearTimeout(retryTimer);
     retryTimer = window.setTimeout(function retry() {
+      normalizeTicketAppealWording();
+      removeHiddenSidebarMenuItems();
       var applied = applyDownloadEntry();
       var subscribeApplied = applySubscribeActions();
+      var shortcutMenuApplied = applyDashboardShortcutMenu();
       hideUnsupportedSurgeOption();
       enhanceKaringSubscribeOption();
-      if ((!applied || !subscribeApplied) && isDashboardRoute() && attempts < maxAttempts) {
+      if ((!applied || !subscribeApplied || !shortcutMenuApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);
       }
@@ -713,6 +914,8 @@
 
   function resetAttempts() {
     attempts = 0;
+    normalizeTicketAppealWording();
+    removeHiddenSidebarMenuItems();
     scheduleDownloadEntry();
   }
 
@@ -721,6 +924,8 @@
   window.addEventListener('popstate', resetAttempts);
 
   new MutationObserver(function () {
+    normalizeTicketAppealWording();
+    removeHiddenSidebarMenuItems();
     if (isDashboardRoute()) scheduleDownloadEntry();
   }).observe(document.documentElement, {
     childList: true,
