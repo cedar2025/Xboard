@@ -88,7 +88,7 @@ class AppDownloadController extends Controller
         return response()->download(
             $storage->absolutePath($artifact),
             $artifact->original_name,
-            ['Content-Type' => $artifact->mime_type ?: 'application/octet-stream']
+            ['Content-Type' => $storage->downloadMimeType($artifact)]
         );
     }
 }

@@ -13,6 +13,9 @@ class AppArtifactStorage
 {
     private const DISK = 'app_downloads';
     private const ALLOWED_EXTENSIONS = ['apk', 'dmg', 'pkg', 'exe', 'msi', 'msix', 'zip'];
+    private const MIME_TYPES_BY_EXTENSION = [
+        'apk' => 'application/vnd.android.package-archive',
+    ];
     private const MAX_BYTES = 1024 * 1024 * 1024 * 2;
 
     public function store(AppVersion $version, UploadedFile $file, ?int $userId): AppArtifact
@@ -44,7 +47,7 @@ class AppArtifactStorage
                 'path' => $relativePath,
                 'original_name' => $file->getClientOriginalName(),
                 'extension' => $extension,
-                'mime_type' => $file->getMimeType(),
+                'mime_type' => self::MIME_TYPES_BY_EXTENSION[$extension] ?? $file->getMimeType(),
                 'file_size' => filesize($absolutePath),
                 'sha256' => hash_file('sha256', $absolutePath),
                 'uploaded_by' => $userId,
@@ -61,6 +64,15 @@ class AppArtifactStorage
     public function absolutePath(AppArtifact $artifact): string
     {
         return Storage::disk($artifact->disk)->path($artifact->path);
+    }
+
+    public function downloadMimeType(AppArtifact $artifact): string
+    {
+        $extension = strtolower($artifact->extension ?: pathinfo($artifact->original_name, PATHINFO_EXTENSION));
+
+        return self::MIME_TYPES_BY_EXTENSION[$extension]
+            ?? $artifact->mime_type
+            ?? 'application/octet-stream';
     }
 
     public function deleteFile(AppArtifact $artifact): void

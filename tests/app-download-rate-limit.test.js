@@ -52,3 +52,14 @@ test('download page handles prepare 429 without resetting turnstile', () => {
   assert.match(rateLimitBranch, /return/);
   assert.doesNotMatch(rateLimitBranch, /turnstile\.reset/);
 });
+
+test('android apk downloads use package archive mime even when stored mime is zip', () => {
+  const storage = readRepoFile('app/Services/AppArtifactStorage.php');
+  const guestController = readRepoFile('app/Http/Controllers/V1/Guest/AppDownloadController.php');
+
+  assert.match(storage, /application\/vnd\.android\.package-archive/);
+  assert.match(storage, /downloadMimeType\(AppArtifact \$artifact\)/);
+  assert.match(storage, /strtolower\(\$artifact->extension/);
+  assert.match(guestController, /\$storage->downloadMimeType\(\$artifact\)/);
+  assert.doesNotMatch(guestController, /\['Content-Type' => \$artifact->mime_type \?: 'application\/octet-stream'\]/);
+});
