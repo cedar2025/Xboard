@@ -32,6 +32,7 @@ class TelegramController extends Controller
         $data = $request->json()->all();
 
         $this->formatMessage($data);
+        $this->formatCallbackQuery($data);
         $this->formatChatJoinRequest($data);
         $this->handle();
     }
@@ -88,6 +89,7 @@ class TelegramController extends Controller
             'message_id' => $message['message_id'],
             'message_type' => 'message',
             'text' => $message['text'],
+            'from_id' => $message['from']['id'] ?? $message['chat']['id'],
             'is_private' => $message['chat']['type'] === 'private',
         ];
 
@@ -95,6 +97,30 @@ class TelegramController extends Controller
             $this->msg->message_type = 'reply_message';
             $this->msg->reply_text = $message['reply_to_message']['text'];
         }
+    }
+
+    private function formatCallbackQuery(array $data): void
+    {
+        if (!isset($data['callback_query'])) {
+            return;
+        }
+
+        $callbackQuery = $data['callback_query'];
+        $message = $callbackQuery['message'] ?? [];
+        $chat = $message['chat'] ?? [];
+
+        $this->msg = (object) [
+            'command' => '',
+            'args' => [],
+            'chat_id' => $chat['id'] ?? ($callbackQuery['from']['id'] ?? 0),
+            'message_id' => $message['message_id'] ?? 0,
+            'message_type' => 'callback_query',
+            'text' => $message['text'] ?? '',
+            'is_private' => ($chat['type'] ?? 'private') === 'private',
+            'callback_query_id' => $callbackQuery['id'],
+            'callback_data' => $callbackQuery['data'] ?? '',
+            'from_id' => $callbackQuery['from']['id'] ?? null,
+        ];
     }
 
     private function formatChatJoinRequest(array $data): void

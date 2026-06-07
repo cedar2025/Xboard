@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 class Plugin extends AbstractPlugin
 {
+  private const TICKET_HISTORY_PAGE_SIZE = 5;
+
   protected array $commands = [];
   protected TelegramService $telegramService;
 
@@ -150,7 +152,7 @@ class Plugin extends AbstractPlugin
     $TGmessage .= "━━━━━━━━━━━━━━━━━━━━\n";
     $TGmessage .= "📝 *主题*: `{$ticket->subject}`\n";
     $TGmessage .= "💬 *内容*: `{$message->message}`";
-    $this->telegramService->sendMessageWithAdmin($TGmessage, true);
+    $this->sendAdminNotification($TGmessage, $this->buildTicketActionKeyboard($ticket->id));
   }
 
   protected function registerDefaultCommands(): void
@@ -238,6 +240,7 @@ class Plugin extends AbstractPlugin
       return match ($msg->message_type) {
         'message' => $this->handleCommandMessage($msg),
         'reply_message' => $this->handleReplyMessage($msg),
+        'callback_query' => $this->handleTicketCallback($msg),
         default => false
       };
     } catch (\Exception $e) {
@@ -431,8 +434,8 @@ class Plugin extends AbstractPlugin
 
   public function handleTicketReply(object $msg, array $matches): void
   {
-    $user = $this->getBoundUser($msg);
-    if (!$user) {
+    $operator = $this->getTicketOperator($msg);
+    if (!$operator) {
       return;
     }
 
@@ -452,11 +455,243 @@ class Plugin extends AbstractPlugin
     $ticketService = new TicketService();
     $ticketService->replyByAdmin(
       $ticketId,
-      $msg->text,
-      $user->id
+      $this->extractTicketReplyText($msg->text),
+      $operator->id
     );
 
     $this->sendMessage($msg, "工单 #{$ticketId} 回复成功");
+  }
+
+  protected function handleTicketCallback(object $msg): bool
+  {
+    if (!str_starts_with($msg->callback_data, 'ticket:')) {
+      return false;
+    }
+
+    $parts = explode(':', $msg->callback_data);
+    $action = $parts[1] ?? '';
+    $ticketId = isset($parts[2]) ? (int) $parts[2] : 0;
+
+    if ($ticketId <= 0) {
+      $this->answerCallback($msg, '工单参数无效', true);
+      return true;
+    }
+
+    match ($action) {
+      'view' => $this->showTicketHistory($msg, $ticketId, max(1, (int) ($parts[3] ?? 1))),
+      'reply' => $this->requestTicketReply($msg, $ticketId),
+      'close' => $this->confirmTicketClose($msg, $ticketId),
+      'close_confirm' => $this->closeTicketFromTelegram($msg, $ticketId),
+      'close_cancel' => $this->cancelTicketClose($msg),
+      default => $this->answerCallback($msg, '未知工单操作', true),
+    };
+
+    return true;
+  }
+
+  private function getTicketOperator(object $msg): ?User
+  {
+    if (!isset($msg->from_id)) {
+      $this->sendMessage($msg, '无法识别 Telegram 操作人');
+      return null;
+    }
+
+    $operator = User::where('telegram_id', $msg->from_id)
+      ->where(fn($query) => $query->where('is_admin', 1)->orWhere('is_staff', 1))
+      ->first();
+
+    if (!$operator) {
+      $this->sendMessage($msg, '你没有处理工单的权限');
+      return null;
+    }
+
+    return $operator;
+  }
+
+  private function findTicketForTelegram(object $msg, int $ticketId): ?Ticket
+  {
+    $ticket = Ticket::with(['user', 'messages.user'])->find($ticketId);
+    if (!$ticket) {
+      $this->answerCallback($msg, '工单不存在', true);
+      $this->sendMessage($msg, "工单 #{$ticketId} 不存在");
+      return null;
+    }
+
+    return $ticket;
+  }
+
+  private function showTicketHistory(object $msg, int $ticketId, int $page = 1): void
+  {
+    if (!$this->getTicketOperator($msg)) {
+      $this->answerCallback($msg, '没有权限', true);
+      return;
+    }
+
+    $ticket = $this->findTicketForTelegram($msg, $ticketId);
+    if (!$ticket) {
+      return;
+    }
+
+    $messages = $ticket->messages
+      ->sortBy('created_at')
+      ->values();
+    $total = $messages->count();
+    $totalPages = max(1, (int) ceil($total / self::TICKET_HISTORY_PAGE_SIZE));
+    $page = min(max(1, $page), $totalPages);
+    $pageMessages = $messages->forPage($page, self::TICKET_HISTORY_PAGE_SIZE);
+
+    $history = "📮 *工单 #{$ticket->id} 记录* ({$page}/{$totalPages})\n";
+    $history .= "主题: {$this->cleanTelegramText($ticket->subject)}\n";
+    $history .= "状态: " . (Ticket::$statusMap[$ticket->status] ?? $ticket->status) . "\n";
+    $history .= "用户: {$this->cleanTelegramText($ticket->user?->email ?? '未知用户')}\n";
+    $history .= "━━━━━━━━━━━━━━━━━━━━\n";
+
+    foreach ($pageMessages as $ticketMessage) {
+      $author = $ticketMessage->user_id === $ticket->user_id
+        ? '用户'
+        : ($ticketMessage->user?->is_admin ? '管理员' : '客服');
+      $time = date('Y-m-d H:i:s', (int) $ticketMessage->created_at);
+      $content = $this->cleanTelegramText($ticketMessage->message);
+      $history .= "[{$time}] {$author}\n{$content}\n\n";
+    }
+
+    $options = $this->buildTicketHistoryKeyboard($ticketId, $page, $totalPages);
+    $this->answerCallback($msg, '已打开工单记录');
+
+    if ($msg->message_id) {
+      $this->telegramService->editMessageText($msg->chat_id, $msg->message_id, trim($history), 'markdown', $options);
+      return;
+    }
+
+    $this->telegramService->sendMessage($msg->chat_id, trim($history), 'markdown', $options);
+  }
+
+  private function requestTicketReply(object $msg, int $ticketId): void
+  {
+    if (!$this->getTicketOperator($msg)) {
+      $this->answerCallback($msg, '没有权限', true);
+      return;
+    }
+
+    if (!$this->findTicketForTelegram($msg, $ticketId)) {
+      return;
+    }
+
+    $this->answerCallback($msg, '请回复提示消息');
+    $this->telegramService->sendMessage($msg->chat_id, "请回复这条消息发送工单回复\n工单ID: {$ticketId}", '', [
+      'reply_markup' => [
+        'force_reply' => true,
+        'input_field_placeholder' => '输入回复内容',
+      ],
+    ]);
+  }
+
+  private function confirmTicketClose(object $msg, int $ticketId): void
+  {
+    if (!$this->getTicketOperator($msg)) {
+      $this->answerCallback($msg, '没有权限', true);
+      return;
+    }
+
+    if (!$this->findTicketForTelegram($msg, $ticketId)) {
+      return;
+    }
+
+    $this->answerCallback($msg, '请确认关闭');
+    $this->telegramService->sendMessage($msg->chat_id, "确认关闭工单 #{$ticketId}？", 'markdown', [
+      'reply_markup' => [
+        'inline_keyboard' => [
+          [
+            ['text' => '确认关闭', 'callback_data' => "ticket:close_confirm:{$ticketId}"],
+            ['text' => '取消', 'callback_data' => "ticket:close_cancel:{$ticketId}"],
+          ],
+        ],
+      ],
+    ]);
+  }
+
+  private function closeTicketFromTelegram(object $msg, int $ticketId): void
+  {
+    if (!$this->getTicketOperator($msg)) {
+      $this->answerCallback($msg, '没有权限', true);
+      return;
+    }
+
+    $ticket = $this->findTicketForTelegram($msg, $ticketId);
+    if (!$ticket) {
+      return;
+    }
+
+    $ticket->status = Ticket::STATUS_CLOSED;
+    $ticket->save();
+
+    $this->answerCallback($msg, '工单已关闭');
+    $this->sendMessage($msg, "工单 #{$ticketId} 已关闭");
+  }
+
+  private function cancelTicketClose(object $msg): void
+  {
+    $this->answerCallback($msg, '已取消');
+    $this->sendMessage($msg, '已取消关闭工单');
+  }
+
+  private function buildTicketActionKeyboard(int $ticketId): array
+  {
+    return [
+      'reply_markup' => [
+        'inline_keyboard' => [
+          [
+            ['text' => '查看记录', 'callback_data' => "ticket:view:{$ticketId}:1"],
+            ['text' => '回复', 'callback_data' => "ticket:reply:{$ticketId}"],
+            ['text' => '关闭', 'callback_data' => "ticket:close:{$ticketId}"],
+          ],
+        ],
+      ],
+    ];
+  }
+
+  private function buildTicketHistoryKeyboard(int $ticketId, int $page, int $totalPages): array
+  {
+    $buttons = [];
+    if ($page > 1) {
+      $previousPage = $page - 1;
+      $buttons[] = ['text' => '上一页', 'callback_data' => "ticket:view:{$ticketId}:{$previousPage}"];
+    }
+    if ($page < $totalPages) {
+      $nextPage = $page + 1;
+      $buttons[] = ['text' => '下一页', 'callback_data' => "ticket:view:{$ticketId}:{$nextPage}"];
+    }
+
+    $buttons[] = ['text' => '回复', 'callback_data' => "ticket:reply:{$ticketId}"];
+    $buttons[] = ['text' => '关闭', 'callback_data' => "ticket:close:{$ticketId}"];
+
+    return [
+      'reply_markup' => [
+        'inline_keyboard' => [$buttons],
+      ],
+    ];
+  }
+
+  private function extractTicketReplyText(string $text): string
+  {
+    return trim($text);
+  }
+
+  private function cleanTelegramText(?string $text): string
+  {
+    $text = trim((string) $text);
+    $text = str_replace(['`', '*'], ["'", ''], $text);
+
+    return mb_strlen($text) > 800 ? mb_substr($text, 0, 797) . '...' : $text;
+  }
+
+  private function answerCallback(object $msg, string $text = '', bool $showAlert = false): void
+  {
+    if (!isset($msg->callback_query_id)) {
+      return;
+    }
+
+    $this->telegramService->answerCallbackQuery($msg->callback_query_id, $text, $showAlert);
   }
 
   /**
@@ -479,9 +714,9 @@ class Plugin extends AbstractPlugin
     return number_format(Helper::transferToGB($transfer_enable), $decimals, '.', '');
   }
 
-  private function sendAdminNotification(string $message): void
+  private function sendAdminNotification(string $message, array $options = []): void
   {
-    $this->telegramService->sendMessageWithAdmin($message, true);
+    $this->telegramService->sendMessageWithAdmin($message, true, $options);
   }
 
 }

@@ -27,15 +27,42 @@ class TelegramService
             ]);
     }
 
-    public function sendMessage(int $chatId, string $text, string $parseMode = ''): void
+    public function sendMessage(int $chatId, string $text, string $parseMode = '', array $options = []): void
     {
         $text = $parseMode === 'markdown' ? str_replace('_', '\_', $text) : $text;
 
-        $this->request('sendMessage', [
+        $this->request('sendMessage', $this->normalizeParams(array_filter(
+            array_merge([
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => $parseMode ?: null,
-        ]);
+            ], $options),
+            fn($value) => $value !== null
+        )));
+    }
+
+    public function answerCallbackQuery(string $callbackQueryId, string $text = '', bool $showAlert = false): void
+    {
+        $this->request('answerCallbackQuery', array_filter([
+            'callback_query_id' => $callbackQueryId,
+            'text' => $text ?: null,
+            'show_alert' => $showAlert,
+        ], fn($value) => $value !== null));
+    }
+
+    public function editMessageText(int $chatId, int $messageId, string $text, string $parseMode = '', array $options = []): void
+    {
+        $text = $parseMode === 'markdown' ? str_replace('_', '\_', $text) : $text;
+
+        $this->request('editMessageText', $this->normalizeParams(array_filter(
+            array_merge([
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'parse_mode' => $parseMode ?: null,
+            ], $options),
+            fn($value) => $value !== null
+        )));
     }
 
     public function approveChatJoinRequest(int $chatId, int $userId): void
@@ -112,7 +139,7 @@ class TelegramService
         return $this->request('deleteMyCommands');
     }
 
-    public function sendMessageWithAdmin(string $message, bool $isStaff = false): void
+    public function sendMessageWithAdmin(string $message, bool $isStaff = false, array $options = []): void
     {
         $query = User::where('telegram_id', '!=', null);
         $query->where(
@@ -121,8 +148,19 @@ class TelegramService
         );
         $users = $query->get();
         foreach ($users as $user) {
-            SendTelegramJob::dispatch($user->telegram_id, $message);
+            SendTelegramJob::dispatch($user->telegram_id, $message, $options);
         }
+    }
+
+    protected function normalizeParams(array $params): array
+    {
+        foreach (['reply_markup'] as $jsonKey) {
+            if (isset($params[$jsonKey]) && is_array($params[$jsonKey])) {
+                $params[$jsonKey] = json_encode($params[$jsonKey], JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        return $params;
     }
 
     protected function request(string $method, array $params = []): object
