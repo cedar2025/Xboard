@@ -25,6 +25,7 @@ class Plugin extends AbstractPlugin
     '/traffic' => ['description' => '查看流量', 'handler' => 'handleTrafficCommand'],
     '/getlatesturl' => ['description' => '获取订阅链接', 'handler' => 'handleGetLatestUrlCommand'],
     '/unbind' => ['description' => '解绑账号', 'handler' => 'handleUnbindCommand'],
+    '/ticket' => ['description' => '查看工单记录', 'handler' => 'handleTicketCommand'],
   ];
 
   public function boot(): void
@@ -151,7 +152,8 @@ class Plugin extends AbstractPlugin
     $TGmessage .= "💸 佣金: `{$affmoney}元`\n";
     $TGmessage .= "━━━━━━━━━━━━━━━━━━━━\n";
     $TGmessage .= "📝 *主题*: `{$ticket->subject}`\n";
-    $TGmessage .= "💬 *内容*: `{$message->message}`";
+    $TGmessage .= "💬 *内容*: `{$message->message}`\n";
+    $TGmessage .= "↩️ 回复本消息即可回复工单";
     $this->sendAdminNotification($TGmessage, $this->buildTicketActionKeyboard($ticket->id));
   }
 
@@ -452,6 +454,11 @@ class Plugin extends AbstractPlugin
       return;
     }
 
+    if ($this->isTicketHistoryRequest($msg->text)) {
+      $this->showTicketHistory($msg, $ticketId);
+      return;
+    }
+
     $ticketService = new TicketService();
     $ticketService->replyByAdmin(
       $ticketId,
@@ -460,6 +467,23 @@ class Plugin extends AbstractPlugin
     );
 
     $this->sendMessage($msg, "工单 #{$ticketId} 回复成功");
+  }
+
+  public function handleTicketCommand(object $msg): void
+  {
+    if (!$this->getTicketOperator($msg)) {
+      return;
+    }
+
+    $ticketId = isset($msg->args[0]) ? (int) $msg->args[0] : 0;
+    $page = isset($msg->args[1]) ? max(1, (int) $msg->args[1]) : 1;
+
+    if ($ticketId <= 0) {
+      $this->sendMessage($msg, '用法：/ticket 工单ID，例如 /ticket 230');
+      return;
+    }
+
+    $this->showTicketHistory($msg, $ticketId, $page);
   }
 
   protected function handleTicketCallback(object $msg): bool
@@ -558,7 +582,7 @@ class Plugin extends AbstractPlugin
     $options = $this->buildTicketHistoryKeyboard($ticketId, $page, $totalPages);
     $this->answerCallback($msg, '已打开工单记录');
 
-    if ($msg->message_id) {
+    if ($msg->message_type === 'callback_query' && $msg->message_id) {
       $this->telegramService->editMessageText($msg->chat_id, $msg->message_id, trim($history), 'markdown', $options);
       return;
     }
@@ -675,6 +699,11 @@ class Plugin extends AbstractPlugin
   private function extractTicketReplyText(string $text): string
   {
     return trim($text);
+  }
+
+  private function isTicketHistoryRequest(string $text): bool
+  {
+    return in_array(trim($text), ['记录', '历史', '查看记录', '查看历史'], true);
   }
 
   private function cleanTelegramText(?string $text): string

@@ -63,10 +63,22 @@ test('Telegram ticket history is paginated with compact callback data', () => {
   assert.match(plugin, /ticket:view:\{\$ticketId\}:\{\$nextPage\}/);
 });
 
+test('Telegram ticket history can be requested without inline buttons', () => {
+  const plugin = readRepoFile('plugins/Telegram/Plugin.php');
+
+  assert.match(plugin, /'\/ticket'\s*=>\s*\['description'\s*=>\s*'查看工单记录',\s*'handler'\s*=>\s*'handleTicketCommand'\]/);
+  assert.match(plugin, /public function handleTicketCommand\(object \$msg\): void/);
+  assert.match(plugin, /showTicketHistory\(\$msg, \$ticketId, \$page\)/);
+  assert.match(plugin, /private function isTicketHistoryRequest\(string \$text\): bool/);
+  assert.match(plugin, /if \(\$this->isTicketHistoryRequest\(\$msg->text\)\) \{[\s\S]*showTicketHistory\(\$msg, \$ticketId\);[\s\S]*return;/);
+  assert.match(plugin, /\$msg->message_type === 'callback_query' && \$msg->message_id/);
+});
+
 test('Telegram ticket reply uses ForceReply and writes through TicketService', () => {
   const plugin = readRepoFile('plugins/Telegram/Plugin.php');
 
   assert.match(plugin, /requestTicketReply\(object \$msg, int \$ticketId\)/);
+  assert.match(plugin, /回复本消息即可回复工单/);
   assert.match(plugin, /force_reply/);
   assert.match(plugin, /工单ID: \{\$ticketId\}/);
   assert.match(plugin, /replyByAdmin\(\s*\$ticketId,\s*\$this->extractTicketReplyText\(\$msg->text\),\s*\$operator->id\s*\)/);
