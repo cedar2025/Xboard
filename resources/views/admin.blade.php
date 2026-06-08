@@ -45,6 +45,9 @@
     .xboard-app-downloads-entry.is-visible {
       display: inline-flex;
     }
+    .xboard-admin-ticket-row-click {
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -78,6 +81,55 @@
       window.addEventListener("hashchange", syncEntryVisibility);
       window.addEventListener("pageshow", syncEntryVisibility);
       setInterval(syncEntryVisibility, 500);
+    })();
+  </script>
+  <script>
+    (function () {
+      var VIEW_DETAIL_TITLES = ["查看详情", "View Details", "상세 보기"];
+
+      function isTicketRoute() {
+        return /^#\/?user\/ticket(?:[/?#]|$)/.test(window.location.hash || "");
+      }
+
+      function isInteractiveTarget(target) {
+        if (!(target instanceof Element)) return true;
+        return !!target.closest('button, a, input, textarea, select, label, [role="button"], [role="menuitem"], [contenteditable="true"]');
+      }
+
+      function findTicketViewButton(row) {
+        var buttons = row.querySelectorAll("button[title]");
+        for (var index = 0; index < buttons.length; index += 1) {
+          if (VIEW_DETAIL_TITLES.indexOf(buttons[index].getAttribute("title")) !== -1) {
+            return buttons[index];
+          }
+        }
+        return null;
+      }
+
+      function closestTicketRow(target) {
+        if (!isTicketRoute() || !(target instanceof Element)) return null;
+        var row = target.closest("tbody tr");
+        if (!row || !findTicketViewButton(row)) return null;
+        return row;
+      }
+
+      document.addEventListener("pointerover", function (event) {
+        var row = closestTicketRow(event.target);
+        if (row) row.classList.add("xboard-admin-ticket-row-click");
+      }, true);
+
+      document.addEventListener("click", function (event) {
+        if (isInteractiveTarget(event.target)) return;
+
+        var row = closestTicketRow(event.target);
+        if (!row) return;
+
+        var viewButton = findTicketViewButton(row);
+        if (!viewButton) return;
+
+        event.preventDefault();
+        viewButton.click();
+      });
     })();
   </script>
 </body>
