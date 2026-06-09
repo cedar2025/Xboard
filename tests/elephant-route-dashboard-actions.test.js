@@ -20,6 +20,13 @@ test('ElephantRoute dashboard override assets are synced to the public theme dir
   );
 });
 
+test('ElephantRoute Clash Verge icon asset is synced to the public theme directory', () => {
+  const themeIcon = fs.readFileSync(path.join(repoRoot, 'theme/ElephantRoute/assets/images/clash-verge.png'));
+  const publicIcon = fs.readFileSync(path.join(repoRoot, 'public/theme/ElephantRoute/assets/images/clash-verge.png'));
+
+  assert.deepEqual(publicIcon, themeIcon);
+});
+
 test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
 
@@ -66,6 +73,24 @@ test('ElephantRoute dashboard injects Karing after Hiddify in the one-click subs
   assert.match(script, /images\/karing\.png/);
   assert.match(script, /findSubscribeListItem\('Hiddify'\)[\s\S]*insertAdjacentElement\('afterend', karingItem\)/);
   assert.match(script, /insertAdjacentElement\('afterend', karingItem\)/);
+});
+
+test('ElephantRoute dashboard normalizes desktop Clash entries to Clash Verge', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+  const stylesheet = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css');
+
+  assert.match(script, /CLASH_VERGE_ICON_PATH = 'images\/clash-verge\.png'/);
+  assert.match(script, /function isDesktopPlatform\(\)/);
+  assert.match(script, /Android/i);
+  assert.match(script, /return isMacLike \|\| isWindowsLike/);
+  assert.match(script, /function enhanceDesktopClashVergeSubscribeOption\(\)/);
+  assert.match(script, /findSubscribeListItem\('Clash Meta'\) \|\| findSubscribeListItem\('Clash'\)/);
+  assert.match(script, /replaceText\(clashItem, 'Clash Meta', 'Clash Verge'\)/);
+  assert.match(script, /replaceText\(clashItem, 'Clash', 'Clash Verge'\)/);
+  assert.match(script, /aria-label', '导入到 Clash Verge'/);
+  assert.match(script, /getThemeAssetUrl\(CLASH_VERGE_ICON_PATH\)/);
+  assert.match(script, /enhanceKaringSubscribeOption\(\);[\s\S]*enhanceDesktopClashVergeSubscribeOption\(\);/);
+  assert.match(stylesheet, /\.er-clash-verge-subscribe-icon/);
 });
 
 test('ElephantRoute dashboard normalizes shortcut menu labels and order', () => {
@@ -185,6 +210,6 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260605appealTicket3/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260605appealTicket3/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260609clashVerge1/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260609clashVerge1/);
 });

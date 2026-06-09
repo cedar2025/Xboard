@@ -4,6 +4,7 @@
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var KARING_ICON_PATH = 'images/karing.png';
+  var CLASH_VERGE_ICON_PATH = 'images/clash-verge.png';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var PROBLEM_APPEAL_LABEL = '提交问题申诉';
   var PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复';
@@ -133,6 +134,19 @@
 
   function getNodeText(node) {
     return (node && node.textContent ? node.textContent : '').replace(/\s+/g, ' ').trim();
+  }
+
+  function isDesktopPlatform() {
+    var userAgent = navigator.userAgent || '';
+    var platform = navigator.platform || '';
+    if (/Android/i.test(userAgent)) return false;
+
+    var isTouchAppleDevice = /iPhone|iPad|iPod/i.test(userAgent) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isTouchAppleDevice) return false;
+
+    var isMacLike = /Macintosh|Mac OS X/i.test(userAgent) || /Mac/i.test(platform);
+    var isWindowsLike = /Windows/i.test(userAgent) || /Win/i.test(platform);
+    return isMacLike || isWindowsLike;
   }
 
   function replaceAppealText(value) {
@@ -436,6 +450,23 @@
     icon.classList.add('er-karing-subscribe-icon');
   }
 
+  function replaceClashVergeIcon(root) {
+    var icon = root.querySelector('img');
+    if (!icon) {
+      icon = document.createElement('img');
+      var svg = root.querySelector('svg');
+      if (svg && svg.parentElement) {
+        svg.replaceWith(icon);
+      } else {
+        root.insertBefore(icon, root.firstChild);
+      }
+    }
+
+    icon.src = getThemeAssetUrl(CLASH_VERGE_ICON_PATH);
+    icon.alt = 'Clash Verge';
+    icon.classList.add('er-clash-verge-subscribe-icon');
+  }
+
   function createKaringSubscribeItem(hiddifyItem) {
     var karingItem = hiddifyItem.cloneNode(true);
     karingItem.dataset.erKaringSubscribeItem = '1';
@@ -467,6 +498,28 @@
 
     var karingItem = createKaringSubscribeItem(hiddifyItem);
     hiddifyItem.insertAdjacentElement('afterend', karingItem);
+    return true;
+  }
+
+  function enhanceDesktopClashVergeSubscribeOption() {
+    if (!isDesktopPlatform()) return false;
+
+    var clashItem = findSubscribeListItem('Clash Meta') || findSubscribeListItem('Clash');
+    if (!clashItem) return false;
+
+    clashItem.setAttribute('aria-label', '导入到 Clash Verge');
+    clashItem.removeAttribute('title');
+
+    var text = getNodeText(clashItem);
+    if (text.indexOf('Clash Verge') === -1) {
+      if (text.indexOf('Clash Meta') !== -1) {
+        replaceText(clashItem, 'Clash Meta', 'Clash Verge');
+      } else {
+        replaceText(clashItem, 'Clash', 'Clash Verge');
+      }
+    }
+
+    replaceClashVergeIcon(clashItem);
     return true;
   }
 
@@ -923,6 +976,7 @@
       var shortcutMenuApplied = applyDashboardShortcutMenu();
       hideUnsupportedSurgeOption();
       enhanceKaringSubscribeOption();
+      enhanceDesktopClashVergeSubscribeOption();
       if ((!applied || !subscribeApplied || !shortcutMenuApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);
