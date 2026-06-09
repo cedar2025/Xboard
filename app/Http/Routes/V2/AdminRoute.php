@@ -221,6 +221,7 @@ class AdminRoute
             ], function ($router) {
                 $router->get('/fetch', [KnowledgeController::class, 'fetch']);
                 $router->get('/getCategory', [KnowledgeController::class, 'getCategory']);
+                $router->post('/upload-image', [KnowledgeController::class, 'uploadImage']);
                 $router->post('/save', [KnowledgeController::class, 'save']);
                 $router->post('/show', [KnowledgeController::class, 'show']);
                 $router->post('/drop', [KnowledgeController::class, 'drop']);

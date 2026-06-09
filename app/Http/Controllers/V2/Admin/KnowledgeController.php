@@ -9,6 +9,8 @@ use App\Http\Requests\Admin\KnowledgeSort;
 use App\Models\Knowledge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class KnowledgeController extends Controller
 {
@@ -29,6 +31,41 @@ class KnowledgeController extends Controller
     public function getCategory(Request $request)
     {
         return $this->success(array_keys(Knowledge::get()->groupBy('category')->toArray()));
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,gif,webp',
+                'max:5120',
+            ],
+        ], [
+            'file.required' => '请选择图片文件',
+            'file.file' => '无效的文件类型',
+            'file.image' => '上传文件必须是图片',
+            'file.mimes' => '图片仅支持 jpg、jpeg、png、gif、webp 格式',
+            'file.max' => '图片大小不能超过5MB',
+        ]);
+
+        $file = $request->file('file');
+        $extension = strtolower($file->extension() ?: $file->getClientOriginalExtension());
+        $directory = 'knowledge-images/' . now()->format('Y/m');
+        $filename = Str::uuid() . '.' . $extension;
+
+        $disk = Storage::disk('public');
+        $disk->makeDirectory($directory);
+        $path = $disk->putFileAs($directory, $file, $filename);
+        if (!$path) {
+            throw new ApiException('图片上传失败');
+        }
+
+        return $this->success([
+            'url' => '/storage/' . ltrim($path, '/'),
+        ]);
     }
 
     public function save(KnowledgeSave $request)
