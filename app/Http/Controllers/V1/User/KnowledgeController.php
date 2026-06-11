@@ -91,8 +91,14 @@ class KnowledgeController extends Controller
         }
         $subscribeUrl = Helper::getSubscribeUrl($user['token']);
         $knowledge['body'] = $this->replacePlaceholders($knowledge['body'], $subscribeUrl);
+        $knowledge['body'] = $this->normalizeKnowledgeImageUrls($knowledge['body']);
 
         return $knowledge;
+    }
+
+    private function normalizeKnowledgeImageUrls(string $body): string
+    {
+        return str_replace('/storage/knowledge-images/', '/knowledge-images/', $body);
     }
 
     private function formatAccessData(&$body): void

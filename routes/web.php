@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,28 @@ use Illuminate\Support\Facades\File;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+$serveKnowledgeImage = function (string $path) {
+    $path = ltrim($path, '/');
+    if ($path === '' || str_contains($path, '..') || !preg_match('/\.(jpe?g|png|gif|webp)$/i', $path)) {
+        abort(404);
+    }
+
+    $storagePath = 'knowledge-images/' . $path;
+    $disk = Storage::disk('public');
+    if (!$disk->exists($storagePath)) {
+        abort(404);
+    }
+
+    return response($disk->get($storagePath), 200, [
+        'Content-Type' => $disk->mimeType($storagePath) ?: 'application/octet-stream',
+        'Cache-Control' => 'public, max-age=31536000, immutable',
+        'Content-Disposition' => 'inline; filename="' . basename($storagePath) . '"',
+    ]);
+};
+
+Route::get('/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*');
+Route::get('/storage/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*');
 
 
 // Root path - Serve Landing Page

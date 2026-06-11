@@ -24,7 +24,36 @@ test('knowledge image upload validates image type and stores random public files
   assert.match(controller, /Storage::disk\('public'\)/);
   assert.match(controller, /knowledge-images\/'\s*\.\s*now\(\)->format\('Y\/m'\)/);
   assert.match(controller, /Str::uuid\(\)/);
-  assert.match(controller, /return \$this->success\(\[\s*'url'\s*=>\s*'\/storage\/'\s*\./);
+  assert.match(controller, /'url'\s*=>\s*'\/knowledge-images\/'\s*\.\s*\$publicPath/);
+});
+
+test('knowledge content normalizes legacy storage image URLs on admin and user reads', () => {
+  const adminController = readRepoFile('app/Http/Controllers/V2/Admin/KnowledgeController.php');
+  const userController = readRepoFile('app/Http/Controllers/V1/User/KnowledgeController.php');
+
+  assert.match(adminController, /private function normalizeKnowledgeImageUrls\(string \$body\): string/);
+  assert.match(adminController, /str_replace\('\/storage\/knowledge-images\/',\s*'\/knowledge-images\/',\s*\$body\)/);
+  assert.match(adminController, /\$knowledge\['body'\]\s*=\s*\$this->normalizeKnowledgeImageUrls\(\$knowledge\['body'\]\)/);
+  assert.match(adminController, /\$params\['body'\]\s*=\s*\$this->normalizeKnowledgeImageUrls\(\$params\['body'\]\)/);
+
+  assert.match(userController, /private function normalizeKnowledgeImageUrls\(string \$body\): string/);
+  assert.match(userController, /str_replace\('\/storage\/knowledge-images\/',\s*'\/knowledge-images\/',\s*\$body\)/);
+  assert.match(userController, /\$knowledge\['body'\]\s*=\s*\$this->normalizeKnowledgeImageUrls\(\$knowledge\['body'\]\)/);
+});
+
+test('knowledge images have public web routes that do not depend on the storage symlink', () => {
+  const webRoutes = readRepoFile('routes/web.php');
+
+  assert.match(webRoutes, /use Illuminate\\Support\\Facades\\Storage;/);
+  assert.match(webRoutes, /\$serveKnowledgeImage\s*=\s*function\s*\(string \$path\)/);
+  assert.match(webRoutes, /Route::get\('\/knowledge-images\/\{path\}',\s*\$serveKnowledgeImage\)/);
+  assert.match(webRoutes, /Route::get\('\/storage\/knowledge-images\/\{path\}',\s*\$serveKnowledgeImage\)/);
+  assert.match(webRoutes, /where\('path',\s*'\.\*'\)/);
+  assert.match(webRoutes, /Storage::disk\('public'\)/);
+  assert.match(webRoutes, /\$storagePath\s*=\s*'knowledge-images\/'\s*\.\s*\$path/);
+  assert.match(webRoutes, /preg_match\('[^']*jpe\?g[^']*png[^']*gif[^']*webp[^']*',\s*\$path\)/);
+  assert.match(webRoutes, /Cache-Control.*max-age=31536000/);
+  assert.match(webRoutes, /Content-Disposition.*inline/);
 });
 
 test('admin knowledge page enhances paste events for clipboard images', () => {

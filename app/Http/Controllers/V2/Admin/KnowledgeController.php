@@ -20,6 +20,9 @@ class KnowledgeController extends Controller
             $knowledge = Knowledge::find($request->input('id'))->toArray();
             if (!$knowledge)
                 return $this->fail([400202, '知识不存在']);
+            if (isset($knowledge['body'])) {
+                $knowledge['body'] = $this->normalizeKnowledgeImageUrls($knowledge['body']);
+            }
             return $this->success($knowledge);
         }
         $data = Knowledge::select(['title', 'id', 'updated_at', 'category', 'show'])
@@ -63,14 +66,17 @@ class KnowledgeController extends Controller
             throw new ApiException('图片上传失败');
         }
 
+        $publicPath = ltrim(substr(ltrim($path, '/'), strlen('knowledge-images/')), '/');
+
         return $this->success([
-            'url' => '/storage/' . ltrim($path, '/'),
+            'url' => '/knowledge-images/' . $publicPath,
         ]);
     }
 
     public function save(KnowledgeSave $request)
     {
         $params = $request->validated();
+        $params['body'] = $this->normalizeKnowledgeImageUrls($params['body']);
 
         if (!$request->input('id')) {
             if (!Knowledge::create($params)) {
@@ -146,5 +152,10 @@ class KnowledgeController extends Controller
         }
 
         return $this->success(true);
+    }
+
+    private function normalizeKnowledgeImageUrls(string $body): string
+    {
+        return str_replace('/storage/knowledge-images/', '/knowledge-images/', $body);
     }
 }
