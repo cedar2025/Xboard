@@ -99,16 +99,44 @@ test('ElephantRoute dashboard normalizes shortcut menu labels and order', () => 
   assert.match(script, /PROBLEM_APPEAL_LABEL = '提交问题申诉'/);
   assert.match(script, /PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复'/);
   assert.match(script, /PROBLEM_APPEAL_TITLE_COLOR = '#e53e3e'/);
+  assert.match(script, /DIFY_CONTEXT_API_PATH = '\/api\/v1\/user\/support\/dify-context'/);
+  assert.match(script, /DIFY_OPEN_QUERY_KEY = 'open_ai_support'/);
   assert.match(script, /removeRenewShortcut/);
   assert.match(script, /normalizeProblemAppealShortcut/);
   assert.match(script, /applyProblemAppealTitleColor/);
   assert.match(script, /replaceProblemAppealIcon/);
+  assert.match(script, /bindProblemAppealAiSupport/);
+  assert.match(script, /openDifySupportChat/);
+  assert.match(script, /preloadDifySupportBubble/);
+  assert.match(script, /waitForDifyBubbleButton/);
+  assert.match(script, /dynamicScript: true/);
+  assert.match(script, /#dify-chatbot-bubble-button\{[^}]*left:1rem!important;right:auto!important/);
+  assert.match(script, /#dify-chatbot-bubble-window\{[^}]*left:1rem!important;right:auto!important/);
+  assert.doesNotMatch(script, /xboard_context_token/);
+  assert.doesNotMatch(script, /context\.context_token/);
   assert.match(script, /moveProblemAppealAfterSubscribe/);
   assert.match(script, /findDashboardShortcut\('续费订阅'\)[\s\S]*renewItem\.remove\(\)/);
   assert.match(script, /findDashboardShortcut\('一键订阅'\)[\s\S]*insertBefore\(problemItem, subscribeItem\.nextSibling\)/);
+  assert.match(script, /openDifySupportChat\(\)/);
+  assert.match(script, /preloadDifySupportBubble\(\);[\s\S]*maybeAutoOpenDifySupport\(\);/);
+  assert.doesNotMatch(script, /window\.location\.href = AI_SUPPORT_URL/);
+  assert.match(script, /document\.getElementById\('dify-chatbot-bubble-button'\)/);
   assert.match(script, /existingClassName[\s\S]*createProblemAppealIcon\(existingClassName\)/);
   assert.match(script, /<path d="M4 12a8 8 0 0 1 16 0">/);
   assert.match(script, /<path d="M18 19c0 1\.1-1\.8 2-4 2h-2">/);
+});
+
+test('AI support compatibility page redirects into the app and no longer renders a middle handoff UI', () => {
+  const route = readRepoFile('routes/web.php');
+  const view = readRepoFile('resources/views/support_ai.blade.php');
+
+  assert.match(route, /Route::get\('\/support\/ai'/);
+  assert.match(view, /open_ai_support=1/);
+  assert.match(view, /window\.location\.replace/);
+  assert.doesNotMatch(view, /打开 AI 客服/);
+  assert.doesNotMatch(view, /转人工/);
+  assert.doesNotMatch(view, /window\.difyChatbotConfig/);
+  assert.doesNotMatch(view, /dify-chatbot-bubble-button/);
 });
 
 test('ElephantRoute sidebar permanently hides traffic detail menu item', () => {
@@ -211,5 +239,5 @@ test('ElephantRoute dashboard asset cache busting is updated for subscription sh
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
   assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260609clashVerge1/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260609clashVerge1/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260611difyNoContext1/);
 });

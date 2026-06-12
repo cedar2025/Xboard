@@ -11,6 +11,7 @@ use App\Http\Controllers\V1\User\OrderController;
 use App\Http\Controllers\V1\User\PlanController;
 use App\Http\Controllers\V1\User\ServerController;
 use App\Http\Controllers\V1\User\StatController;
+use App\Http\Controllers\V1\User\SupportController;
 use App\Http\Controllers\V1\User\TelegramController;
 use App\Http\Controllers\V1\User\TicketController;
 use App\Http\Controllers\V1\User\UserController;
@@ -39,6 +40,8 @@ class UserRoute
             $router->post('/removeActiveSession', [UserController::class, 'removeActiveSession']);
             $router->post('/app-downloads/{artifact}/prepare', [AppDownloadController::class, 'prepare'])
                 ->middleware('throttle:app-download-prepare');
+            // Support
+            $router->get('/support/dify-context', [SupportController::class, 'difyContext']);
             // Order
             $router->post('/order/save', [OrderController::class, 'save']);
             $router->post('/order/checkout', [OrderController::class, 'checkout']);

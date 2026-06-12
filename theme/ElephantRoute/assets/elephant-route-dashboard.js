@@ -3,6 +3,8 @@
   var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
+  var DIFY_CONTEXT_API_PATH = '/api/v1/user/support/dify-context';
+  var DIFY_OPEN_QUERY_KEY = 'open_ai_support';
   var KARING_ICON_PATH = 'images/karing.png';
   var CLASH_VERGE_ICON_PATH = 'images/clash-verge.png';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
@@ -34,6 +36,8 @@
   var attempts = 0;
   var retryTimer = null;
   var nodeCompatibilityPromise = null;
+  var difySupportPromise = null;
+  var difyAutoOpenHandled = false;
 
   function getRoute() {
     var hash = window.location.hash || '';
@@ -259,6 +263,195 @@
       return;
     }
     if (type === 'error') console.error(message);
+  }
+
+  function getSupportAccessToken() {
+    var keys = [ACCESS_TOKEN_STORAGE_KEY, 'XBOARD_ACCESS_TOKEN', 'authorization', 'access_token'];
+    for (var i = 0; i < keys.length; i += 1) {
+      var raw = window.localStorage ? window.localStorage.getItem(keys[i]) : null;
+      if (!raw) continue;
+
+      try {
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.value && (!parsed.expire || parsed.expire > Date.now())) {
+          return parsed.value;
+        }
+      } catch (error) {
+        return raw;
+      }
+    }
+
+    return '';
+  }
+
+  function injectDifySupportStyle() {
+    if (document.getElementById('er-dify-support-style')) return;
+
+    var style = document.createElement('style');
+    style.id = 'er-dify-support-style';
+    style.textContent = [
+      '#dify-chatbot-bubble-button{background-color:#1C64F2!important;left:1rem!important;right:auto!important;}',
+      '#dify-chatbot-bubble-window{width:24rem!important;height:40rem!important;left:1rem!important;right:auto!important;}',
+      '@media (max-width:640px){#dify-chatbot-bubble-window{width:calc(100vw - 2rem)!important;height:calc(100vh - 8rem)!important;left:1rem!important;right:auto!important;}}'
+    ].join('');
+    document.head.appendChild(style);
+  }
+
+  function loadDifySupportScript(src, id) {
+    return new Promise(function (resolve, reject) {
+      if (document.getElementById(id)) {
+        resolve();
+        return;
+      }
+
+      var script = document.createElement('script');
+      script.src = src;
+      script.id = id;
+      script.defer = true;
+      script.onload = resolve;
+      script.onerror = function () {
+        reject(new Error('AI 客服脚本加载失败'));
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  function waitForDifyBubbleButton(timeoutMs) {
+    var deadline = Date.now() + (timeoutMs || 8000);
+
+    return new Promise(function (resolve, reject) {
+      function check() {
+        var button = document.getElementById('dify-chatbot-bubble-button');
+        if (button) {
+          resolve(button);
+          return;
+        }
+
+        if (Date.now() > deadline) {
+          reject(new Error('AI 客服按钮加载超时'));
+          return;
+        }
+
+        window.setTimeout(check, 100);
+      }
+
+      check();
+    });
+  }
+
+  function fetchDifySupportContext() {
+    var token = getSupportAccessToken();
+    if (!token) return Promise.reject(new Error('请先登录后再使用 AI 客服'));
+
+    return fetch(DIFY_CONTEXT_API_PATH + '?t=' + Date.now(), {
+      method: 'GET',
+      headers: {
+        Authorization: token,
+        'Content-Language': document.documentElement.lang || 'zh-CN'
+      },
+      credentials: 'same-origin'
+    }).then(function (response) {
+      return response.json();
+    }).then(function (payload) {
+      if (!payload || payload.status !== 'success' || !payload.data) {
+        throw new Error(payload && payload.message ? payload.message : 'AI 客服配置读取失败');
+      }
+
+      return payload.data;
+    });
+  }
+
+  function bootDifySupportWidget(context) {
+    injectDifySupportStyle();
+    window.difyChatbotConfig = {
+      token: context.token,
+      baseUrl: context.base_url,
+      dynamicScript: true,
+      systemVariables: {
+        user_id: String(context.user_id)
+      },
+      userVariables: {
+        name: context.user_display_name
+      }
+    };
+
+    return loadDifySupportScript(context.embed_script_url, context.token);
+  }
+
+  function ensureDifySupportWidget() {
+    if (difySupportPromise) return difySupportPromise;
+
+    difySupportPromise = fetchDifySupportContext()
+      .then(bootDifySupportWidget)
+      .then(function () {
+        return waitForDifyBubbleButton(8000);
+      })
+      .catch(function (error) {
+        difySupportPromise = null;
+        throw error;
+      });
+
+    return difySupportPromise;
+  }
+
+  function isDifyChatWindowOpen() {
+    var chatWindow = document.getElementById('dify-chatbot-bubble-window');
+    if (!chatWindow) return false;
+
+    var style = window.getComputedStyle(chatWindow);
+    return style.display !== 'none' && style.visibility !== 'hidden' && chatWindow.offsetWidth > 0 && chatWindow.offsetHeight > 0;
+  }
+
+  function openDifySupportChat() {
+    return ensureDifySupportWidget().then(function (button) {
+      if (!isDifyChatWindowOpen()) button.click();
+      return true;
+    }).catch(function (error) {
+      console.error('打开 AI 客服失败:', error);
+      notify('error', error.message || 'AI 客服加载失败');
+      return false;
+    });
+  }
+
+  function shouldPreloadDifySupportBubble() {
+    var route = getRoute();
+    return !isAuthRoute(route) && !hasAuthForm() && Boolean(getSupportAccessToken());
+  }
+
+  function preloadDifySupportBubble() {
+    if (!shouldPreloadDifySupportBubble()) return;
+
+    ensureDifySupportWidget().catch(function (error) {
+      console.warn('AI 客服气泡加载失败:', error);
+    });
+  }
+
+  function shouldAutoOpenDifySupport() {
+    try {
+      return new URLSearchParams(window.location.search).get(DIFY_OPEN_QUERY_KEY) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function consumeDifySupportOpenFlag() {
+    if (!window.history || typeof window.history.replaceState !== 'function') return;
+
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.delete(DIFY_OPEN_QUERY_KEY);
+      window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+    } catch (error) {
+      // Keep the compatibility URL intact if the browser cannot rewrite it.
+    }
+  }
+
+  function maybeAutoOpenDifySupport() {
+    if (difyAutoOpenHandled || !shouldAutoOpenDifySupport()) return;
+
+    difyAutoOpenHandled = true;
+    consumeDifySupportOpenFlag();
+    openDifySupportChat();
   }
 
   function copyTextWithExecCommand(text) {
@@ -910,7 +1103,24 @@
     problemItem.setAttribute('aria-label', PROBLEM_APPEAL_LABEL);
     applyProblemAppealTitleColor(problemItem);
     replaceProblemAppealIcon(problemItem);
+    bindProblemAppealAiSupport(problemItem);
     return true;
+  }
+
+  function bindProblemAppealAiSupport(problemItem) {
+    if (!problemItem || problemItem.dataset.erAiSupportBound === '1') return;
+
+    problemItem.dataset.erAiSupportBound = '1';
+    problemItem.addEventListener('click', function (event) {
+      event.preventDefault();
+      openDifySupportChat();
+    });
+    problemItem.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDifySupportChat();
+      }
+    });
   }
 
   function moveProblemAppealAfterSubscribe() {
@@ -969,6 +1179,8 @@
   function scheduleDownloadEntry() {
     window.clearTimeout(retryTimer);
     retryTimer = window.setTimeout(function retry() {
+      preloadDifySupportBubble();
+      maybeAutoOpenDifySupport();
       normalizeTicketAppealWording();
       removeHiddenSidebarMenuItems();
       var applied = applyDownloadEntry();
@@ -986,6 +1198,8 @@
 
   function resetAttempts() {
     attempts = 0;
+    preloadDifySupportBubble();
+    maybeAutoOpenDifySupport();
     normalizeTicketAppealWording();
     removeHiddenSidebarMenuItems();
     scheduleDownloadEntry();
@@ -996,6 +1210,8 @@
   window.addEventListener('popstate', resetAttempts);
 
   new MutationObserver(function () {
+    preloadDifySupportBubble();
+    maybeAutoOpenDifySupport();
     normalizeTicketAppealWording();
     removeHiddenSidebarMenuItems();
     if (isDashboardRoute()) scheduleDownloadEntry();

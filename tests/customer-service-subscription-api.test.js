@@ -72,3 +72,40 @@ test('customer service API key can be saved in safe config with a strong minimum
   assert.match(configController, /'customer_service_api_key'\s*=>\s*admin_setting\('customer_service_api_key',\s*env\('CUSTOMER_SERVICE_API_KEY'\)\)/);
   assert.match(envExample, /CUSTOMER_SERVICE_API_KEY=/);
 });
+
+test('Dify support only exposes the user embed context endpoint', () => {
+  const userRoute = readRepoFile('app/Http/Routes/V1/UserRoute.php');
+  const guestRoute = readRepoFile('app/Http/Routes/V1/GuestRoute.php');
+
+  assert.match(userRoute, /support\/dify-context/);
+  assert.match(userRoute, /SupportController::class,\s*'difyContext'/);
+  assert.doesNotMatch(guestRoute, /dify\/support-context/);
+  assert.doesNotMatch(guestRoute, /DifySupportController/);
+
+  assert.doesNotMatch(guestRoute, /prefix'\s*=>\s*'user'[\s\S]*dify\/support-context/);
+  assert.doesNotMatch(userRoute, /customer_service/);
+});
+
+test('Dify user context endpoint returns embed configuration without signed lookup token', () => {
+  const controller = readRepoFile('app/Http/Controllers/V1/User/SupportController.php');
+
+  assert.match(controller, /LnMUVn4RJRDzxGFm/);
+  assert.match(controller, /https:\/\/ai\.443ds443\.com/);
+  assert.match(controller, /embed\.min\.js/);
+  assert.match(controller, /'user_id'\s*=>\s*\(string\)\s*\$request->user\(\)->id/);
+  assert.match(controller, /'user_display_name'/);
+
+  assert.doesNotMatch(controller, /DifyContextTokenService/);
+  assert.doesNotMatch(controller, /context_token/);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'app/Services/Support/DifyContextTokenService.php')), false);
+});
+
+test('Dify support tool endpoint and signed context token service are removed', () => {
+  const guestRoute = readRepoFile('app/Http/Routes/V1/GuestRoute.php');
+
+  assert.doesNotMatch(guestRoute, /dify\/support-context/);
+  assert.doesNotMatch(guestRoute, /DifySupportController/);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'app/Http/Controllers/V1/Guest/DifySupportController.php')), false);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'app/Services/Support/DifyContextTokenService.php')), false);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'app/Services/Support/CustomerSubscriptionSnapshotService.php')), false);
+});

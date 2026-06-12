@@ -62,7 +62,7 @@
   <div id="app"></div>
   {!! $theme_config['custom_html'] !!}
   <script src="/theme/{{$theme}}/assets/elephant-route-auth.js?v={{$version}}-er20260524fix1"></script>
-  <script src="/theme/{{$theme}}/assets/elephant-route-dashboard.js?v={{$version}}-er20260609clashVerge1"></script>
+  <script src="/theme/{{$theme}}/assets/elephant-route-dashboard.js?v={{$version}}-er20260611difyNoContext1"></script>
   <script>
     (function() {
       function handleDownloadRedirect() {

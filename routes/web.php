@@ -72,6 +72,12 @@ Route::get('/welcome', function (Request $request) {
     abort(404, 'Landing page not found');
 });
 
+Route::get('/support/ai', function () {
+    return view('support_ai', [
+        'title' => admin_setting('app_name', 'XBoard') . ' AI 客服',
+    ]);
+});
+
 
 
 // Dashboard/App Route - for SPA functionality (login, register, dashboard)
