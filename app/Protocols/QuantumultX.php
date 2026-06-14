@@ -7,10 +7,11 @@ use App\Models\Server;
 
 class QuantumultX extends AbstractProtocol
 {
-    public $flags = ['quantumult%20x', 'quantumult-x'];
+    public $flags = ['quantumult%20x', 'quantumult-x', 'quantumultx', 'quantumult x'];
     public $allowedProtocols = [
         Server::TYPE_SHADOWSOCKS,
         Server::TYPE_VMESS,
+        Server::TYPE_VLESS,
         Server::TYPE_TROJAN,
     ];
 
@@ -25,6 +26,9 @@ class QuantumultX extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_VMESS) {
                 $uri .= self::buildVmess($item['password'], $item);
+            }
+            if ($item['type'] === Server::TYPE_VLESS) {
+                $uri .= self::buildVless($item['password'], $item);
             }
             if ($item['type'] === Server::TYPE_TROJAN) {
                 $uri .= self::buildTrojan($item['password'], $item);
@@ -121,6 +125,83 @@ class QuantumultX extends AbstractProtocol
         return $uri;
     }
 
+    public static function buildVless($uuid, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $config = [
+            "vless={$server['host']}:{$server['port']}",
+            'method=none',
+            "password={$uuid}",
+            'fast-open=false',
+            'udp-relay=true',
+            "tag={$server['name']}"
+        ];
+
+        $tls = (int) data_get($protocol_settings, 'tls', 0);
+        $network = data_get($protocol_settings, 'network');
+        $obfsHost = null;
+
+        switch ($tls) {
+            case 1:
+                if ($network === 'tcp') {
+                    $config[] = 'obfs=over-tls';
+                }
+                if ($serverName = data_get($protocol_settings, 'tls_settings.server_name')) {
+                    $obfsHost = $serverName;
+                }
+                $allowInsecure = (bool) data_get($protocol_settings, 'tls_settings.allow_insecure', false);
+                $config[] = 'tls-verification=' . ($allowInsecure ? 'false' : 'true');
+                break;
+            case 2:
+                if ($network === 'tcp') {
+                    $config[] = 'obfs=over-tls';
+                }
+                if ($serverName = data_get($protocol_settings, 'reality_settings.server_name')) {
+                    $obfsHost = $serverName;
+                }
+                if ($publicKey = data_get($protocol_settings, 'reality_settings.public_key')) {
+                    $config[] = "reality-base64-pubkey={$publicKey}";
+                }
+                if ($shortId = data_get($protocol_settings, 'reality_settings.short_id')) {
+                    $config[] = "reality-hex-shortid={$shortId}";
+                }
+                if ($flow = data_get($protocol_settings, 'flow')) {
+                    $config[] = "vless-flow={$flow}";
+                }
+                break;
+        }
+
+        switch ($network) {
+            case 'tcp':
+                $headerType = data_get($protocol_settings, 'network_settings.header.type', 'none');
+                if ($tls === 0 && $headerType === 'http') {
+                    $config[] = 'obfs=http';
+                    $obfsHost = self::firstValue(data_get($protocol_settings, 'network_settings.header.request.headers.Host'));
+                    if ($path = self::firstValue(data_get($protocol_settings, 'network_settings.header.request.path'))) {
+                        $config[] = "obfs-uri={$path}";
+                    }
+                }
+                break;
+            case 'ws':
+                $config[] = $tls === 0 ? 'obfs=ws' : 'obfs=wss';
+                if (!$obfsHost) {
+                    $obfsHost = data_get($protocol_settings, 'network_settings.headers.Host');
+                }
+                if ($path = data_get($protocol_settings, 'network_settings.path')) {
+                    $config[] = "obfs-uri={$path}";
+                }
+                break;
+        }
+
+        if ($obfsHost) {
+            $config[] = "obfs-host={$obfsHost}";
+        }
+
+        $uri = implode(',', self::filterConfig($config));
+        $uri .= "\r\n";
+        return $uri;
+    }
+
     public static function buildTrojan($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
@@ -139,5 +220,19 @@ class QuantumultX extends AbstractProtocol
         $uri = implode(',', $config);
         $uri .= "\r\n";
         return $uri;
+    }
+
+    private static function firstValue($value)
+    {
+        if (is_array($value)) {
+            return reset($value) ?: null;
+        }
+
+        return $value ?: null;
+    }
+
+    private static function filterConfig(array $config): array
+    {
+        return array_values(array_filter($config, fn($item) => $item !== null && $item !== ''));
     }
 }
