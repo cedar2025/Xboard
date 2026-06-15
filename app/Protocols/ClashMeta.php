@@ -918,6 +918,11 @@ class ClashMeta extends AbstractProtocol
                 'config' => Helper::toMihomoEchConfig(data_get($normalized, 'config')),
                 'query-server-name' => data_get($normalized, 'query_server_name'),
             ], fn($value) => $value !== null);
+        } else {
+            $array['ech-opts'] = [
+                'enable' => true,
+                'query-server-name' => 'cloudflare-ech.com',
+            ];
         }
     }
 
