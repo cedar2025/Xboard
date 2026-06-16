@@ -5,6 +5,7 @@ use App\Http\Controllers\V1\Guest\CommController;
 use App\Http\Controllers\V1\Guest\AppUpdateController;
 use App\Http\Controllers\V1\Guest\AppDownloadController;
 use App\Http\Controllers\V1\Guest\CustomerServiceController;
+use App\Http\Controllers\V1\Guest\DomainCheckController;
 use App\Http\Controllers\V1\Guest\PaymentController;
 use App\Http\Controllers\V1\Guest\PlanController;
 use App\Http\Controllers\V1\Guest\TelegramController;
@@ -25,6 +26,8 @@ class GuestRoute
             $router->match(['get', 'post'], '/payment/notify/{method}/{uuid}', [PaymentController::class, 'notify']);
             // Comm
             $router->get('/comm/config', [CommController::class, 'config']);
+            // Domain availability check
+            $router->match(['get', 'head', 'options'], '/domain/check', [DomainCheckController::class, 'check']);
             // Customer Service
             $router->post('/customer-service/subscription', [CustomerServiceController::class, 'subscription'])
                 ->middleware(['customer_service', 'throttle:120,1']);
