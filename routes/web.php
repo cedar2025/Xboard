@@ -42,35 +42,22 @@ Route::get('/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*'
 Route::get('/storage/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*');
 
 
-// Root path - Serve Landing Page
-Route::get('/', function (Request $request) {
-    // 检查管理员安全模式设置
+$redirectToLogin = function (Request $request) {
+    // 检查管理员安全模式设置，保持与 /app 相同的 Host 保护。
     if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
         if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
             abort(403);
         }
     }
-    
-    // 返回 Landing Page
-    $landingPagePath = public_path('landing/index.html');
-    if (file_exists($landingPagePath)) {
-        return response(file_get_contents($landingPagePath), 200)
-            ->header('Content-Type', 'text/html; charset=utf-8');
-    }
-    
-    // 如果 Landing Page 不存在，返回 SPA 应用
-    return view('app');
-});
 
-// Landing Page - 访问 /welcome 查看产品介绍页
-Route::get('/welcome', function (Request $request) {
-    $landingPagePath = public_path('landing/index.html');
-    if (file_exists($landingPagePath)) {
-        return response(file_get_contents($landingPagePath), 200)
-            ->header('Content-Type', 'text/html; charset=utf-8');
-    }
-    abort(404, 'Landing page not found');
-});
+    return redirect('/app#/login', 302);
+};
+
+// Root path - redirect to the SPA login page.
+Route::get('/', $redirectToLogin);
+
+// Legacy landing page path - no longer serves the landing page.
+Route::get('/welcome', $redirectToLogin);
 
 Route::get('/support/ai', function () {
     return view('support_ai', [
