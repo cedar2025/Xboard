@@ -29,6 +29,25 @@ class Shadowrocket extends AbstractProtocol
         ],
     ];
 
+    /**
+     * 检查服务器是否与当前 Shadowrocket 客户端版本兼容
+     * 限制只有版本大于等于 3308 的客户端才显示 xhttp 节点
+     *
+     * @param array $server
+     * @return bool
+     */
+    protected function isCompatible($server)
+    {
+        if (data_get($server, 'protocol_settings.network') === 'xhttp') {
+            if (strtolower($this->clientName) === 'shadowrocket') {
+                $clientVersion = ltrim(strtolower($this->clientVersion), 'v');
+                return version_compare($clientVersion, '3308', '>=');
+            }
+            return false;
+        }
+        return parent::isCompatible($server);
+    }
+
     public function handle()
     {
         $servers = $this->servers;
@@ -264,8 +283,6 @@ class Shadowrocket extends AbstractProtocol
                 }
                 break;
             case 'xhttp':
-                // 暂时禁用 xhttp 节点订阅
-                return '';
                 $config['obfs'] = "xhttp";
                 if ($path = data_get($protocol_settings, 'network_settings.path')) {
                     $config['path'] = $path;

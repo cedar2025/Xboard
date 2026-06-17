@@ -32,3 +32,4 @@ compose.yaml
 compose.host.yaml
 compose.split.yaml
 .scribe
+test
