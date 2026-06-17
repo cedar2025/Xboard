@@ -228,7 +228,8 @@ test('ElephantRoute dashboard injects Clash Mi after copy subscription on Apple 
   assert.match(script, /iPhone\|iPad\|iPod/);
   assert.match(script, /platform === 'MacIntel' && navigator\.maxTouchPoints > 1/);
   assert.match(script, /function buildClashMiImportUrl\(subscribeUrl\)/);
-  assert.match(script, /clash:\/\/install-config\?url=/);
+  assert.match(script, /clashmi:\/\/install-config\?url=/);
+  assert.doesNotMatch(script, /clash:\/\/install-config\?url=/);
   assert.match(script, /function openClashMiImport\(\)/);
   assert.match(script, /function enhanceClashMiSubscribeOption\(\)/);
   assert.match(script, /findSubscribeListItem\('复制订阅地址'\) \|\| findSubscribeListItem\('复制订阅链接'\)/);
@@ -239,6 +240,7 @@ test('ElephantRoute dashboard injects Clash Mi after copy subscription on Apple 
   assert.match(script, /enhanceKaringSubscribeOption\(\);[\s\S]*enhanceClashMiSubscribeOption\(\);[\s\S]*enhanceDesktopClashVergeSubscribeOption\(\);/);
   assert.match(stylesheet, /\.er-clash-mi-subscribe-icon/);
   assert.match(stylesheet, /\.er-clash-mi-subscribe-icon\s*\{[\s\S]*width: 42px;[\s\S]*height: 42px;[\s\S]*flex: 0 0 42px;/);
+  assert.match(stylesheet, /\.er-clash-mi-subscribe-icon\s*\{[\s\S]*object-fit: contain;/);
 });
 
 test('ElephantRoute dashboard normalizes desktop Clash entries to Clash Verge', () => {
@@ -404,6 +406,6 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260617clashMi1/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260617clashMi1/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260618clashMi2/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260618clashMi2/);
 });

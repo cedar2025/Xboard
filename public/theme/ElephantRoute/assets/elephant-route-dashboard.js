@@ -550,7 +550,7 @@
   }
 
   function buildClashMiImportUrl(subscribeUrl) {
-    return 'clash://install-config?url=' + encodeURIComponent(subscribeUrl);
+    return 'clashmi://install-config?url=' + encodeURIComponent(subscribeUrl);
   }
 
   function openKaringImport() {

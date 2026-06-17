@@ -118,6 +118,7 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
   width: 42px;
   height: 42px;
   flex: 0 0 42px;
+  object-fit: contain;
   border-radius: 10px;
 }
 
