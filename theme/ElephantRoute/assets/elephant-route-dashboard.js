@@ -6,6 +6,7 @@
   var DIFY_CONTEXT_API_PATH = '/api/v1/user/support/dify-context';
   var DIFY_OPEN_QUERY_KEY = 'open_ai_support';
   var KARING_ICON_PATH = 'images/karing.png';
+  var CLASH_MI_ICON_PATH = 'images/clash-mi.png';
   var CLASH_VERGE_ICON_PATH = 'images/clash-verge.png';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
   var PROBLEM_APPEAL_LABEL = '提交问题申诉';
@@ -151,6 +152,13 @@
     var isMacLike = /Macintosh|Mac OS X/i.test(userAgent) || /Mac/i.test(platform);
     var isWindowsLike = /Windows/i.test(userAgent) || /Win/i.test(platform);
     return isMacLike || isWindowsLike;
+  }
+
+  function isAppleMobilePlatform() {
+    var userAgent = navigator.userAgent || '';
+    var platform = navigator.platform || '';
+    if (/Android/i.test(userAgent)) return false;
+    return /iPhone|iPad|iPod/i.test(userAgent) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
   function replaceAppealText(value) {
@@ -541,6 +549,10 @@
     return 'karing://install-config?url=' + encodeURIComponent(subscribeUrl) + '&name=' + encodeURIComponent(title || '订阅');
   }
 
+  function buildClashMiImportUrl(subscribeUrl) {
+    return 'clash://install-config?url=' + encodeURIComponent(subscribeUrl);
+  }
+
   function openKaringImport() {
     return fetchSubscribeInfo().then(function (info) {
       if (!info) {
@@ -552,6 +564,21 @@
     }).catch(function (error) {
       console.error('打开 Karing 导入失败:', error);
       notify('error', 'Karing 导入失败');
+      return false;
+    });
+  }
+
+  function openClashMiImport() {
+    return fetchSubscribeInfo().then(function (info) {
+      if (!info) {
+        notify('error', '未登录');
+        return false;
+      }
+      window.location.href = buildClashMiImportUrl(info.subscribeUrl);
+      return true;
+    }).catch(function (error) {
+      console.error('打开 Clash Mi 导入失败:', error);
+      notify('error', 'Clash Mi 导入失败');
       return false;
     });
   }
@@ -643,6 +670,23 @@
     icon.classList.add('er-karing-subscribe-icon');
   }
 
+  function replaceClashMiIcon(root) {
+    var icon = root.querySelector('img');
+    if (!icon) {
+      icon = document.createElement('img');
+      var svg = root.querySelector('svg');
+      if (svg && svg.parentElement) {
+        svg.replaceWith(icon);
+      } else {
+        root.insertBefore(icon, root.firstChild);
+      }
+    }
+
+    icon.src = getThemeAssetUrl(CLASH_MI_ICON_PATH);
+    icon.alt = 'Clash Mi';
+    icon.classList.add('er-clash-mi-subscribe-icon');
+  }
+
   function replaceClashVergeIcon(root) {
     var icon = root.querySelector('img');
     if (!icon) {
@@ -691,6 +735,46 @@
 
     var karingItem = createKaringSubscribeItem(hiddifyItem);
     hiddifyItem.insertAdjacentElement('afterend', karingItem);
+    return true;
+  }
+
+  function createClashMiSubscribeItem(copyItem) {
+    var clashMiItem = copyItem.cloneNode(true);
+    clashMiItem.dataset.erClashMiSubscribeItem = '1';
+    clashMiItem.setAttribute('aria-label', '导入到 Clash Mi');
+    clashMiItem.removeAttribute('title');
+    replaceText(clashMiItem, getNodeText(clashMiItem), '导入到 Clash Mi');
+    if (getNodeText(clashMiItem).indexOf('导入到 Clash Mi') === -1) {
+      replaceText(clashMiItem, '复制订阅地址', '导入到 Clash Mi');
+      replaceText(clashMiItem, '复制订阅链接', '导入到 Clash Mi');
+    }
+    replaceClashMiIcon(clashMiItem);
+
+    if (clashMiItem.tagName && clashMiItem.tagName.toLowerCase() === 'a') {
+      clashMiItem.href = '#';
+      clashMiItem.setAttribute('href', '#');
+    }
+
+    clashMiItem.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openClashMiImport();
+    });
+
+    return clashMiItem;
+  }
+
+  function enhanceClashMiSubscribeOption() {
+    if (!isAppleMobilePlatform()) return false;
+
+    var copyItem = findSubscribeListItem('复制订阅地址') || findSubscribeListItem('复制订阅链接');
+    if (!copyItem) return false;
+
+    var container = copyItem.parentElement || copyItem;
+    if (container.querySelector('[data-er-clash-mi-subscribe-item="1"]')) return true;
+
+    var clashMiItem = createClashMiSubscribeItem(copyItem);
+    copyItem.insertAdjacentElement('afterend', clashMiItem);
     return true;
   }
 
@@ -1188,6 +1272,7 @@
       var shortcutMenuApplied = applyDashboardShortcutMenu();
       hideUnsupportedSurgeOption();
       enhanceKaringSubscribeOption();
+      enhanceClashMiSubscribeOption();
       enhanceDesktopClashVergeSubscribeOption();
       if ((!applied || !subscribeApplied || !shortcutMenuApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
