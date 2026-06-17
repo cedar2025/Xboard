@@ -113,6 +113,14 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
   object-fit: cover;
 }
 
+.er-clash-mi-subscribe-icon {
+  display: block;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 10px;
+}
+
 @media (max-width: 767px) {
   .er-subscribe-layout {
     grid-template-columns: minmax(0, 1fr);

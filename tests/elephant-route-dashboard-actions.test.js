@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const childProcess = require('node:child_process');
+const zlib = require('node:zlib');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -8,6 +9,91 @@ const repoRoot = path.resolve(__dirname, '..');
 
 function readRepoFile(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
+}
+
+function readPngSize(relativePath) {
+  const buffer = fs.readFileSync(path.join(repoRoot, relativePath));
+  assert.equal(buffer.toString('ascii', 1, 4), 'PNG');
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+    bytes: buffer.length
+  };
+}
+
+function readPngPixels(relativePath) {
+  const buffer = fs.readFileSync(path.join(repoRoot, relativePath));
+  assert.equal(buffer.toString('ascii', 1, 4), 'PNG');
+
+  var offset = 8;
+  var width = 0;
+  var height = 0;
+  var colorType = 0;
+  var idat = [];
+
+  while (offset < buffer.length) {
+    var length = buffer.readUInt32BE(offset);
+    var type = buffer.toString('ascii', offset + 4, offset + 8);
+    var data = buffer.subarray(offset + 8, offset + 8 + length);
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      assert.equal(data[8], 8, `${relativePath} must use 8-bit PNG color`);
+      colorType = data[9];
+    } else if (type === 'IDAT') {
+      idat.push(data);
+    } else if (type === 'IEND') {
+      break;
+    }
+    offset += 12 + length;
+  }
+
+  var channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
+  assert.ok(channels, `${relativePath} must be RGB or RGBA PNG`);
+
+  var raw = zlib.inflateSync(Buffer.concat(idat));
+  var stride = width * channels;
+  var rows = [];
+  var rawOffset = 0;
+  var previous = Buffer.alloc(stride);
+
+  for (var y = 0; y < height; y += 1) {
+    var filter = raw[rawOffset];
+    rawOffset += 1;
+    var scanline = Buffer.from(raw.subarray(rawOffset, rawOffset + stride));
+    rawOffset += stride;
+    var row = Buffer.alloc(stride);
+
+    for (var x = 0; x < stride; x += 1) {
+      var left = x >= channels ? row[x - channels] : 0;
+      var up = previous[x] || 0;
+      var upLeft = x >= channels ? previous[x - channels] || 0 : 0;
+      var predictor = 0;
+      if (filter === 1) predictor = left;
+      if (filter === 2) predictor = up;
+      if (filter === 3) predictor = Math.floor((left + up) / 2);
+      if (filter === 4) {
+        var p = left + up - upLeft;
+        var pa = Math.abs(p - left);
+        var pb = Math.abs(p - up);
+        var pc = Math.abs(p - upLeft);
+        predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
+      }
+      row[x] = (scanline[x] + predictor) & 255;
+    }
+
+    rows.push(row);
+    previous = row;
+  }
+
+  return {
+    width: width,
+    height: height,
+    pixel: function (x, y) {
+      var index = x * channels;
+      return Array.from(rows[y].subarray(index, index + channels));
+    }
+  };
 }
 
 test('ElephantRoute dashboard override assets are synced to the public theme directory', () => {
@@ -52,6 +138,38 @@ test('ElephantRoute Clash Mi icon asset is synced to the public theme directory'
 
   assert.deepEqual(publicIcon, themeIcon);
 });
+
+test('ElephantRoute Clash Mi icon is cropped and compressed for the subscribe modal', () => {
+  for (const iconPath of [
+    'theme/ElephantRoute/assets/images/clash-mi.png',
+    'public/theme/ElephantRoute/assets/images/clash-mi.png'
+  ]) {
+    const icon = readPngSize(iconPath);
+    assert.ok(icon.width <= 96, `${iconPath} width should be 96px or smaller`);
+    assert.ok(icon.height <= 96, `${iconPath} height should be 96px or smaller`);
+    assert.ok(icon.bytes <= 15000, `${iconPath} should be 15KB or smaller`);
+  }
+});
+
+test('ElephantRoute Clash Mi icon removes non-white screenshot background', () => {
+  for (const iconPath of [
+    'theme/ElephantRoute/assets/images/clash-mi.png',
+    'public/theme/ElephantRoute/assets/images/clash-mi.png'
+  ]) {
+    const image = readPngPixels(iconPath);
+    const corners = [
+      image.pixel(0, 0),
+      image.pixel(image.width - 1, 0),
+      image.pixel(0, image.height - 1),
+      image.pixel(image.width - 1, image.height - 1)
+    ];
+
+    for (const pixel of corners) {
+      assert.ok(pixel[0] >= 245 && pixel[1] >= 245 && pixel[2] >= 245, `${iconPath} corners should be white`);
+    }
+  }
+});
+
 
 test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
@@ -120,6 +238,7 @@ test('ElephantRoute dashboard injects Clash Mi after copy subscription on Apple 
   assert.match(script, /getThemeAssetUrl\(CLASH_MI_ICON_PATH\)/);
   assert.match(script, /enhanceKaringSubscribeOption\(\);[\s\S]*enhanceClashMiSubscribeOption\(\);[\s\S]*enhanceDesktopClashVergeSubscribeOption\(\);/);
   assert.match(stylesheet, /\.er-clash-mi-subscribe-icon/);
+  assert.match(stylesheet, /\.er-clash-mi-subscribe-icon\s*\{[\s\S]*width: 42px;[\s\S]*height: 42px;[\s\S]*flex: 0 0 42px;/);
 });
 
 test('ElephantRoute dashboard normalizes desktop Clash entries to Clash Verge', () => {
