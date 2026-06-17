@@ -1,2 +1,11 @@
 *
 !.gitignore
+!ElephantRoute/
+ElephantRoute/*
+!ElephantRoute/assets/
+ElephantRoute/assets/*
+!ElephantRoute/assets/elephant-route-dashboard.css
+!ElephantRoute/assets/elephant-route-dashboard.js
+!ElephantRoute/assets/images/
+ElephantRoute/assets/images/*
+!ElephantRoute/assets/images/clash-mi.png

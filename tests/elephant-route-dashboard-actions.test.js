@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const childProcess = require('node:child_process');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -18,6 +19,24 @@ test('ElephantRoute dashboard override assets are synced to the public theme dir
     readRepoFile('public/theme/ElephantRoute/assets/elephant-route-dashboard.css'),
     readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css')
   );
+});
+
+test('ElephantRoute production dashboard override assets are not gitignored', () => {
+  const publicAssets = [
+    'public/theme/ElephantRoute/assets/elephant-route-dashboard.js',
+    'public/theme/ElephantRoute/assets/elephant-route-dashboard.css',
+    'public/theme/ElephantRoute/assets/images/clash-mi.png'
+  ];
+
+  for (const asset of publicAssets) {
+    assert.throws(
+      () => childProcess.execFileSync('git', ['check-ignore', '--quiet', asset], {
+        cwd: repoRoot,
+        stdio: 'ignore'
+      }),
+      `${asset} should be deployable from git, not ignored`
+    );
+  }
 });
 
 test('ElephantRoute Clash Verge icon asset is synced to the public theme directory', () => {
