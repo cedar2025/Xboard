@@ -67,6 +67,8 @@ class Shadowrocket extends AbstractProtocol
                 $uri .= self::buildSocks($item['password'], $item);
             }
         }
+        $uri = $this->filterConfigBeforeEncode($uri);
+
         return response(base64_encode($uri))
             ->header('content-type', 'text/plain');
     }

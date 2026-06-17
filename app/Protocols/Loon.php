@@ -52,6 +52,8 @@ class Loon extends AbstractProtocol
                 $uri .= self::buildAnyTLS($item['password'], $item);
             }
         }
+        $uri = $this->filterConfigBeforeEncode($uri);
+
         return response($uri)
             ->header('content-type', 'text/plain')
             ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");

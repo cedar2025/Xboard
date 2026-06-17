@@ -40,6 +40,7 @@ class Shadowsocks extends AbstractProtocol
         $subs['bytes_used'] = $bytesUsed;
         $subs['bytes_remaining'] = $bytesRemaining;
         $subs['servers'] = array_merge($subs['servers'], $configs);
+        $subs = $this->filterConfigBeforeEncode($subs);
 
         return response()->json($subs)
             ->header('content-type', 'application/json');

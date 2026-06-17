@@ -169,6 +169,8 @@ class Stash extends AbstractProtocol
             array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         }
 
+        $config = $this->filterConfigBeforeEncode($config);
+
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
         $yaml = str_replace('$app_name', admin_setting('app_name', 'XBoard'), $yaml);
         return response($yaml)

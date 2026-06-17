@@ -117,6 +117,7 @@ class SingBox extends AbstractProtocol
         $this->buildRule();
         $this->adaptConfigForVersion();
         $user = $this->user;
+        $this->config = $this->filterConfigBeforeEncode($this->config);
 
         return response()
             ->json($this->config)

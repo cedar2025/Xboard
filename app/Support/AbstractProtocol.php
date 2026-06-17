@@ -84,6 +84,48 @@ abstract class AbstractProtocol
     abstract public function handle();
 
     /**
+     * Filter hook name for this protocol's built config (before serialization).
+     */
+    protected function configBeforeEncodeHook(): string
+    {
+        return 'protocol.' . strtolower(class_basename(static::class)) . '.config.before_encode';
+    }
+
+    /**
+     * Context passed to protocol config filter hooks.
+     *
+     * @return array{
+     *     user: array,
+     *     servers: array,
+     *     client_name: string|null,
+     *     client_version: string|null,
+     *     user_agent: string|null
+     * }
+     */
+    protected function protocolHookContext(): array
+    {
+        return [
+            'user' => $this->user,
+            'servers' => $this->servers,
+            'client_name' => $this->clientName,
+            'client_version' => $this->clientVersion,
+            'user_agent' => $this->userAgent,
+        ];
+    }
+
+    /**
+     * Run the protocol config filter hook after build and before encode.
+     */
+    protected function filterConfigBeforeEncode(mixed $output): mixed
+    {
+        return HookManager::filter(
+            $this->configBeforeEncodeHook(),
+            $output,
+            $this->protocolHookContext()
+        );
+    }
+
+    /**
      * 根据客户端版本过滤不兼容的服务器
      *
      * @return array

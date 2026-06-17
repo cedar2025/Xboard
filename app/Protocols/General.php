@@ -48,6 +48,8 @@ class General extends AbstractProtocol
                 default => '',
             };
         }
+        $uri = $this->filterConfigBeforeEncode($uri);
+
         return response(base64_encode($uri))
             ->header('content-type', 'text/plain')
             ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");

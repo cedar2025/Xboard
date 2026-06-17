@@ -30,6 +30,8 @@ class HookList extends Command
       }
     }
     $hooks = $hooks->unique()->sort()->values();
+    $protocolHooks = collect(\App\Support\ProtocolConfigHooks::all());
+    $hooks = $hooks->merge($protocolHooks)->unique()->sort()->values();
     if ($hooks->isEmpty()) {
       $this->info('未扫描到任何 hook');
     } else {

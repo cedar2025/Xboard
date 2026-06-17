@@ -84,6 +84,7 @@ class Surfboard extends AbstractProtocol
         $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
         $subscribeInfo = "title={$appName}订阅信息, content=上传流量：{$upload}GB\\n下载流量：{$download}GB\\n剩余流量：{$unusedTraffic}GB\\n套餐流量：{$totalTraffic}GB\\n到期时间：{$expireDate}";
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
+        $config = $this->filterConfigBeforeEncode($config);
 
         return response($config, 200)
             ->header('content-disposition', "attachment;filename*=UTF-8''" . rawurlencode($appName) . ".conf");

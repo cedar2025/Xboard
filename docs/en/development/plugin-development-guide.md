@@ -153,6 +153,22 @@ XBoard has built-in hooks for many business-critical nodes. Plugin developers ca
 | ticket.create.after       | action | Ticket                  | After ticket creation |
 | ticket.reply.user.after   | action | Ticket                  | After user replies to ticket |
 | ticket.close.after        | action | Ticket                  | After ticket closure |
+| client.subscribe.before   | action | —                       | Before client subscription request |
+| client.subscribe.servers  | filter | servers, user, request  | Before protocol build; mutate available server list |
+| client.subscribe.unavailable | action | —                    | When subscription is unavailable (403) |
+| protocol.servers.filtered | filter | servers                 | Before protocol builds client config (after version filtering) |
+| protocol.clashmeta.config.before_encode | filter | config, context | Clash Meta config after build, before YAML encode |
+| protocol.clash.config.before_encode | filter | config, context | Clash config after build, before YAML encode |
+| protocol.stash.config.before_encode | filter | config, context | Stash config after build, before YAML encode |
+| protocol.singbox.config.before_encode | filter | config, context | sing-box config after build, before JSON encode |
+| protocol.general.config.before_encode | filter | config, context | General URI list after build, before base64 encode |
+| protocol.shadowrocket.config.before_encode | filter | config, context | Shadowrocket URI list after build, before base64 encode |
+| protocol.quantumultx.config.before_encode | filter | config, context | Quantumult X URI list after build, before base64 encode |
+| protocol.surge.config.before_encode | filter | config, context | Surge INI after build, before response |
+| protocol.surfboard.config.before_encode | filter | config, context | Surfboard INI after build, before response |
+| protocol.loon.config.before_encode | filter | config, context | Loon config after build, before response |
+| protocol.shadowsocks.config.before_encode | filter | config, context | SIP008 JSON after build, before JSON encode |
+| subscribe.url             | filter | url                     | Subscribe URL generation |
 
 > ⚡️ The hook system will continue to expand. Developers can always follow this documentation and the `php artisan hook:list` command to get the latest supported hooks.
 
