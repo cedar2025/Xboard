@@ -49,10 +49,18 @@ test('customer service subscription response exposes only minimal plan and traff
     "'speed_limit'",
     "'next_reset_at'",
     "'reset_day'",
+    "'plan_transfer_enable'",
+    "'plan_used_traffic'",
+    "'plan_remaining_traffic'",
+    "'traffic_package_total'",
+    "'traffic_package_remaining'",
+    "'effective_transfer_enable'",
+    "'effective_remaining_traffic'",
   ].forEach((field) => assert.match(controller, new RegExp(field)));
 
   assert.match(controller, /\$usedTraffic\s*=\s*\$uploadTraffic\s*\+\s*\$downloadTraffic/);
-  assert.match(controller, /\$remainingTraffic\s*=\s*max\(0,\s*\$transferEnable\s*-\s*\$usedTraffic\)/);
+  assert.match(controller, /\$trafficSummary\s*=\s*\$userService->getTrafficSummary\(\$user\)/);
+  assert.match(controller, /\$remainingTraffic\s*=\s*\$trafficSummary\['effective_remaining_traffic'\]/);
   assert.match(controller, /where\('email',\s*\$request->input\('email'\)\)/);
   assert.match(controller, /'email'\s*=>\s*'required\|email'/);
 

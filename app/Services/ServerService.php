@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\Server;
 use App\Models\ServerRoute;
 use App\Models\User;
+use App\Models\UserTrafficPackage;
 use App\Services\Plugin\HookManager;
 use App\Utils\Helper;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class ServerService
@@ -79,20 +81,33 @@ class ServerService
      */
     public static function getAvailableUsers(Server $node)
     {
-        $users = User::toBase()
-            ->whereIn('group_id', $node->group_ids)
-            ->whereRaw('u + d < transfer_enable')
-            ->where(function ($query) {
-                $query->where('expired_at', '>=', time())
-                    ->orWhere('expired_at', NULL);
+        $users = User::query()
+            ->leftJoin('v2_user_traffic_packages as traffic_packages', function ($join) {
+                $join->on('v2_user.id', '=', 'traffic_packages.user_id')
+                    ->where('traffic_packages.status', UserTrafficPackage::STATUS_ACTIVE)
+                    ->where('traffic_packages.remaining_bytes', '>', 0);
             })
-            ->where('banned', 0)
+            ->whereIn('v2_user.group_id', $node->group_ids)
+            ->where('v2_user.banned', 0)
             ->select([
-                'id',
-                'uuid',
-                'speed_limit',
-                'device_limit'
+                'v2_user.id',
+                'v2_user.uuid',
+                'v2_user.speed_limit',
+                'v2_user.device_limit',
+                DB::raw('COALESCE(SUM(traffic_packages.remaining_bytes), 0) as package_remaining'),
             ])
+            ->groupBy([
+                'v2_user.id',
+                'v2_user.uuid',
+                'v2_user.speed_limit',
+                'v2_user.device_limit',
+                'v2_user.expired_at',
+                'v2_user.u',
+                'v2_user.d',
+                'v2_user.transfer_enable',
+            ])
+            ->havingRaw('(v2_user.expired_at >= ? OR v2_user.expired_at IS NULL) AND (v2_user.u + v2_user.d < v2_user.transfer_enable)', [time()])
+            ->orHavingRaw('COALESCE(SUM(traffic_packages.remaining_bytes), 0) > 0')
             ->get();
         return HookManager::filter('server.users.get', $users, $node);
     }

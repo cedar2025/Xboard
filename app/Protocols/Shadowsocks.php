@@ -17,6 +17,7 @@ class Shadowsocks extends AbstractProtocol
     {
         $servers = $this->servers;
         $user = $this->user;
+        $effectiveTransferEnable = $user['effective_transfer_enable'] ?? $user['transfer_enable'];
 
         $configs = [];
         $subs = [];
@@ -25,7 +26,7 @@ class Shadowsocks extends AbstractProtocol
         $subs['bytes_remaining'] = '';
 
         $bytesUsed = $user['u'] + $user['d'];
-        $bytesRemaining = $user['transfer_enable'] - $bytesUsed;
+        $bytesRemaining = $effectiveTransferEnable - $bytesUsed;
 
         foreach ($servers as $item) {
             if (

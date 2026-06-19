@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Server;
 use App\Models\User;
+use App\Models\UserTrafficPackage;
 use App\Services\Plugin\HookManager;
 use App\Services\TrafficResetService;
 use App\Models\TrafficResetLog;
@@ -47,7 +48,14 @@ class UserService
 
     public function isAvailable(User $user)
     {
-        if (!$user->banned && $user->transfer_enable && ($user->expired_at > time() || $user->expired_at === NULL)) {
+        if (
+            !$user->banned
+            && $user->plan_id
+            && $user->transfer_enable
+            && ($user->expired_at > time()
+                || $user->expired_at === NULL
+                || app(TrafficPackageService::class)->hasActivePackageBalance($user->id))
+        ) {
             return true;
         }
         return false;
@@ -55,12 +63,24 @@ class UserService
 
     public function getAvailableUsers()
     {
-        return User::whereRaw('u + d < transfer_enable')
+        return User::where('banned', 0)
+            ->whereNotNull('plan_id')
+            ->where('transfer_enable', '>', 0)
             ->where(function ($query) {
-                $query->where('expired_at', '>=', time())
-                    ->orWhere('expired_at', NULL);
+                $query->where(function ($query) {
+                    $query->whereRaw('u + d < transfer_enable')
+                        ->where(function ($query) {
+                            $query->where('expired_at', '>=', time())
+                                ->orWhere('expired_at', NULL);
+                        });
+                })->orWhereExists(function ($query) {
+                    $query->selectRaw('1')
+                        ->from('v2_user_traffic_packages')
+                        ->whereColumn('v2_user_traffic_packages.user_id', 'v2_user.id')
+                        ->where('v2_user_traffic_packages.status', UserTrafficPackage::STATUS_ACTIVE)
+                        ->where('v2_user_traffic_packages.remaining_bytes', '>', 0);
+                });
             })
-            ->where('banned', 0)
             ->get();
     }
 
@@ -141,18 +161,27 @@ class UserService
 
         // 重新获取用户数据（可能已被重置）
         $user->refresh();
+        $trafficSummary = $this->getTrafficSummary($user);
 
         return [
             'upload' => $user->u ?? 0,
             'download' => $user->d ?? 0,
             'total_used' => $user->getTotalUsedTraffic(),
-            'total_available' => $user->transfer_enable ?? 0,
-            'remaining' => $user->getRemainingTraffic(),
-            'usage_percentage' => $user->getTrafficUsagePercentage(),
+            'total_available' => $trafficSummary['effective_transfer_enable'],
+            'remaining' => $trafficSummary['effective_remaining_traffic'],
+            'usage_percentage' => $trafficSummary['effective_transfer_enable'] > 0
+                ? min(100, ($user->getTotalUsedTraffic() / $trafficSummary['effective_transfer_enable']) * 100)
+                : 0,
             'next_reset_at' => $user->next_reset_at,
             'last_reset_at' => $user->last_reset_at,
             'reset_count' => $user->reset_count,
+            ...$trafficSummary,
         ];
+    }
+
+    public function getTrafficSummary(User $user): array
+    {
+        return app(TrafficPackageService::class)->getTrafficSummary($user);
     }
 
     /**

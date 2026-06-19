@@ -24,13 +24,58 @@ class PlanService
      */
     public function getAvailablePlans(): Collection
     {
+        return $this->getSellablePlans()
+            ->filter(function (Plan $plan) {
+                return !$this->isTrafficPackagePlan($plan);
+            })
+            ->values();
+    }
+
+    public function getAvailablePlansForUser(User $user): Collection
+    {
+        return $this->getSellablePlans()
+            ->filter(function (Plan $plan) use ($user) {
+                return !$this->isTrafficPackagePlan($plan) || $this->hasActiveTimeSubscription($user);
+            })
+            ->values();
+    }
+
+    protected function getSellablePlans(): Collection
+    {
         return Plan::where('show', true)
             ->where('sell', true)
             ->orderBy('sort')
             ->get()
-            ->filter(function ($plan) {
+            ->filter(function (Plan $plan) {
                 return $this->hasCapacity($plan);
             });
+    }
+
+    public function isTrafficPackagePlan(Plan $plan): bool
+    {
+        $prices = $plan->prices ?? [];
+        $hasOnetimePrice = isset($prices[Plan::PERIOD_ONETIME]) && (float) $prices[Plan::PERIOD_ONETIME] > 0;
+        $hasStandardPrice = collect([
+            Plan::PERIOD_MONTHLY,
+            Plan::PERIOD_QUARTERLY,
+            Plan::PERIOD_HALF_YEARLY,
+            Plan::PERIOD_YEARLY,
+            Plan::PERIOD_TWO_YEARLY,
+            Plan::PERIOD_THREE_YEARLY,
+        ])->contains(function (string $period) use ($prices) {
+            return isset($prices[$period]) && (float) $prices[$period] > 0;
+        });
+
+        return $hasOnetimePrice && !$hasStandardPrice;
+    }
+
+    public function hasActiveTimeSubscription(User $user): bool
+    {
+        return !$user->banned
+            && (bool) $user->plan_id
+            && (int) $user->transfer_enable > 0
+            && $user->expired_at !== NULL
+            && $user->expired_at > time();
     }
 
     /**
@@ -57,6 +102,10 @@ class PlanService
      */
     public function isPlanAvailableForUser(Plan $plan, User $user): bool
     {
+        if ($this->isTrafficPackagePlan($plan)) {
+            return $plan->show && $plan->sell && $this->hasCapacity($plan) && $this->hasActiveTimeSubscription($user);
+        }
+
         // 如果是续费
         if ($user->plan_id === $plan->id) {
             return $plan->renew;
@@ -82,6 +131,11 @@ class PlanService
 
         if ($periodKey === Plan::PERIOD_RESET_TRAFFIC) {
             $this->validateResetTrafficPurchase($user);
+            return;
+        }
+
+        if ($periodKey === Plan::PERIOD_ONETIME) {
+            $this->validateOnetimeTrafficPackagePurchase($user);
             return;
         }
 
@@ -143,6 +197,23 @@ class PlanService
     protected function validateResetTrafficPurchase(User $user): void
     {
         if (!app(UserService::class)->isAvailable($user) || $this->plan->id !== $user->plan_id) {
+            throw new ApiException(__('Subscription has expired or no active subscription, unable to purchase Data Reset Package'));
+        }
+    }
+
+    protected function validateOnetimeTrafficPackagePurchase(User $user): void
+    {
+        if (!$this->plan->show || !$this->plan->sell) {
+            throw new ApiException(__('This subscription has been sold out, please choose another subscription'));
+        }
+
+        if (
+            $user->banned
+            || !$user->plan_id
+            || !$user->transfer_enable
+            || $user->expired_at === NULL
+            || $user->expired_at <= time()
+        ) {
             throw new ApiException(__('Subscription has expired or no active subscription, unable to purchase Data Reset Package'));
         }
     }

@@ -24,6 +24,7 @@ class Loon extends AbstractProtocol
     {
         $servers = $this->servers;
         $user = $this->user;
+        $effectiveTransferEnable = $user['effective_transfer_enable'] ?? $user['transfer_enable'];
 
         $uri = '';
 
@@ -45,7 +46,7 @@ class Loon extends AbstractProtocol
         }
         return response($uri)
             ->header('content-type', 'text/plain')
-            ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
+            ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$effectiveTransferEnable}; expire={$user['expired_at']}");
     }
 
 

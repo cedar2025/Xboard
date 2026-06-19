@@ -36,11 +36,13 @@ class CustomerServiceController extends Controller
             return $this->fail([404, 'User does not exist']);
         }
 
+        $userService = app(UserService::class);
+        $trafficSummary = $userService->getTrafficSummary($user);
         $uploadTraffic = (int) ($user->u ?? 0);
         $downloadTraffic = (int) ($user->d ?? 0);
         $usedTraffic = $uploadTraffic + $downloadTraffic;
-        $transferEnable = (int) ($user->transfer_enable ?? 0);
-        $remainingTraffic = max(0, $transferEnable - $usedTraffic);
+        $transferEnable = $trafficSummary['effective_transfer_enable'];
+        $remainingTraffic = $trafficSummary['effective_remaining_traffic'];
 
         return $this->success([
             'email' => $user->email,
@@ -56,7 +58,14 @@ class CustomerServiceController extends Controller
             'device_limit' => $user->device_limit,
             'speed_limit' => $user->speed_limit,
             'next_reset_at' => $user->next_reset_at,
-            'reset_day' => $user->plan ? app(UserService::class)->getResetDay($user) : null,
+            'reset_day' => $user->plan ? $userService->getResetDay($user) : null,
+            'plan_transfer_enable' => $trafficSummary['plan_transfer_enable'],
+            'plan_used_traffic' => $trafficSummary['plan_used_traffic'],
+            'plan_remaining_traffic' => $trafficSummary['plan_remaining_traffic'],
+            'traffic_package_total' => $trafficSummary['traffic_package_total'],
+            'traffic_package_remaining' => $trafficSummary['traffic_package_remaining'],
+            'effective_transfer_enable' => $trafficSummary['effective_transfer_enable'],
+            'effective_remaining_traffic' => $trafficSummary['effective_remaining_traffic'],
         ]);
     }
 
@@ -71,6 +80,9 @@ class CustomerServiceController extends Controller
         }
 
         if ($user->expired_at !== null && $user->expired_at <= time()) {
+            if (app(UserService::class)->isAvailable($user)) {
+                return 'package_active';
+            }
             return 'expired';
         }
 

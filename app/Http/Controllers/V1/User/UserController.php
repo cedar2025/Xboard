@@ -89,7 +89,10 @@ class UserController extends Controller
     {
         $user = User::where('id', $request->user()->id)
             ->select([
+                'id',
                 'email',
+                'u',
+                'd',
                 'transfer_enable',
                 'last_login_at',
                 'created_at',
@@ -110,6 +113,11 @@ class UserController extends Controller
             return $this->fail([400, __('The user does not exist')]);
         }
         $user['avatar_url'] = 'https://cdn.v2ex.com/gravatar/' . md5($user->email) . '?s=64&d=identicon';
+        $trafficSummary = app(UserService::class)->getTrafficSummary($user);
+        foreach ($trafficSummary as $key => $value) {
+            $user[$key] = $value;
+        }
+        $user['transfer_enable'] = $trafficSummary['effective_transfer_enable'];
         return $this->success($user);
     }
 
@@ -132,6 +140,7 @@ class UserController extends Controller
     {
         $user = User::where('id', $request->user()->id)
             ->select([
+                'id',
                 'plan_id',
                 'token',
                 'expired_at',
@@ -157,6 +166,11 @@ class UserController extends Controller
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
+        $trafficSummary = $userService->getTrafficSummary($user);
+        foreach ($trafficSummary as $key => $value) {
+            $user[$key] = $value;
+        }
+        $user['transfer_enable'] = $trafficSummary['effective_transfer_enable'];
         $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);
     }

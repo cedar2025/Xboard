@@ -53,6 +53,12 @@ class ClientController extends Controller
 
     public function doSubscribe(Request $request, $user, $servers = null)
     {
+        $trafficSummary = app(UserService::class)->getTrafficSummary($user);
+        foreach ($trafficSummary as $key => $value) {
+            $user[$key] = $value;
+        }
+        $user['transfer_enable'] = $trafficSummary['effective_transfer_enable'];
+
         if ($servers === null) {
             $servers = ServerService::getAvailableServers($user);
             $servers = HookManager::filter('client.subscribe.servers', $servers, $user, $request);

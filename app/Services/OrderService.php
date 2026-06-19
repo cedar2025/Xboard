@@ -112,13 +112,15 @@ class OrderService
             }
 
             match ((string) $order->period) {
-                Plan::PERIOD_ONETIME => $this->buyByOneTime($plan),
+                Plan::PERIOD_ONETIME => $this->buyTrafficPackage($order, $plan),
                 Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
                 default => $this->buyByPeriod($order, $plan),
             };
 
-            $this->setSpeedLimit($plan->speed_limit);
-            $this->setDeviceLimit($plan->device_limit);
+            if ((string) $order->period !== Plan::PERIOD_ONETIME) {
+                $this->setSpeedLimit($plan->speed_limit);
+                $this->setDeviceLimit($plan->device_limit);
+            }
 
             if (!$this->user->save()) {
                 throw new \RuntimeException('用户信息保存失败');
@@ -131,13 +133,13 @@ class OrderService
         });
 
         $eventId = match ((int) $order->type) {
-            Order::STATUS_PROCESSING => admin_setting('new_order_event_id', 0),
+            Order::TYPE_NEW_PURCHASE => admin_setting('new_order_event_id', 0),
             Order::TYPE_RENEWAL => admin_setting('renew_order_event_id', 0),
             Order::TYPE_UPGRADE => admin_setting('change_order_event_id', 0),
             default => 0,
         };
 
-        if ($eventId) {
+        if ($eventId && (string) $order->period !== Plan::PERIOD_ONETIME) {
             $this->openEvent($eventId);
         }
 
@@ -148,7 +150,9 @@ class OrderService
     public function setOrderType(User $user)
     {
         $order = $this->order;
-        if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
+        if ($order->period === Plan::PERIOD_ONETIME) {
+            $order->type = Order::TYPE_NEW_PURCHASE;
+        } else if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
             if (!(int) admin_setting('plan_change_enable', 1))
@@ -352,13 +356,9 @@ class OrderService
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
     }
 
-    private function buyByOneTime(Plan $plan)
+    private function buyTrafficPackage(Order $order, Plan $plan): void
     {
-        app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
-        $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
-        $this->user->plan_id = $plan->id;
-        $this->user->group_id = $plan->group_id;
-        $this->user->expired_at = NULL;
+        app(TrafficPackageService::class)->createFromOrder($order, $this->user, $plan);
     }
 
     /**

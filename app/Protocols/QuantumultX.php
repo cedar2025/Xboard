@@ -19,6 +19,7 @@ class QuantumultX extends AbstractProtocol
     {
         $servers = $this->servers;
         $user = $this->user;
+        $effectiveTransferEnable = $user['effective_transfer_enable'] ?? $user['transfer_enable'];
         $uri = '';
         foreach ($servers as $item) {
             if ($item['type'] === Server::TYPE_SHADOWSOCKS) {
@@ -36,7 +37,7 @@ class QuantumultX extends AbstractProtocol
         }
         return response(base64_encode($uri))
             ->header('content-type', 'text/plain')
-            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
+            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$effectiveTransferEnable}; expire={$user['expired_at']}");
     }
 
     public static function buildShadowsocks($password, $server)

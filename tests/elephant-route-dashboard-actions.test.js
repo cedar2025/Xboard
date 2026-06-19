@@ -403,9 +403,43 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
   assert.match(stylesheet, /@media \(max-width: 767px\)/);
 });
 
+test('ElephantRoute dashboard shows stacked traffic package balance inside subscription card', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+  const stylesheet = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.css');
+
+  assert.match(script, /traffic_package_remaining/);
+  assert.match(script, /plan_remaining_traffic/);
+  assert.match(script, /effective_remaining_traffic/);
+  assert.match(script, /function applyTrafficPackageSummary/);
+  assert.match(script, /function requestAuthenticatedJson/);
+  assert.match(script, /new XMLHttpRequest\(\)/);
+  assert.match(script, /function fetchSubscribeInfo\(\)[\s\S]*var token = getSupportAccessToken\(\)/);
+  assert.match(script, /订阅信息加载跳过: 未找到认证信息/);
+  assert.match(script, /subscribeUrl: subscribeUrl \|\| ''/);
+  assert.doesNotMatch(script, /throw new Error\('missing subscribe url'\)/);
+  assert.match(script, /订阅链接不存在/);
+  assert.match(script, /trafficPackageRemaining <= 0/);
+  assert.match(script, /er-traffic-package-summary/);
+  assert.match(script, /流量构成/);
+  assert.match(script, /基础套餐剩余/);
+  assert.match(script, /流量包剩余/);
+  assert.match(script, /有效可用/);
+  assert.match(script, /优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。/);
+  assert.match(script, /流量包可用中/);
+  assert.match(script, /当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。/);
+  assert.match(script, /applySubscribeActions\(\)[\s\S]*applyTrafficPackageSummary/);
+
+  assert.match(stylesheet, /\.er-traffic-package-summary/);
+  assert.match(stylesheet, /\.er-traffic-package-meter/);
+  assert.match(stylesheet, /\.er-traffic-package-meter-plan/);
+  assert.match(stylesheet, /\.er-traffic-package-meter-package/);
+  assert.match(stylesheet, /\.er-traffic-package-item-package/);
+  assert.match(stylesheet, /@media \(max-width: 767px\)/);
+});
+
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260618clashMi2/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260618clashMi2/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260619trafficPackage3/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260619trafficPackage3/);
 });

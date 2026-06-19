@@ -39,6 +39,8 @@
   var nodeCompatibilityPromise = null;
   var difySupportPromise = null;
   var difyAutoOpenHandled = false;
+  var subscribeInfoPromise = null;
+  var subscribeInfoCachedAt = 0;
 
   function getRoute() {
     var hash = window.location.hash || '';
@@ -497,33 +499,73 @@
     return copyTextWithExecCommand(text);
   }
 
-  function fetchSubscribeInfo() {
-    var token = getStoredAccessToken();
-    if (!token) return Promise.resolve(null);
+  function requestAuthenticatedJson(path, token) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', path + '?t=' + Date.now(), true);
+      xhr.setRequestHeader('Authorization', token);
+      xhr.setRequestHeader('Content-Language', document.documentElement.lang || 'zh-CN');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
 
-    return fetch(SUBSCRIBE_API_PATH + '?t=' + Date.now(), {
-      method: 'GET',
-      headers: {
-        Authorization: token,
-        'Content-Language': document.documentElement.lang || 'zh-CN'
-      },
-      credentials: 'same-origin'
-    }).then(function (response) {
-      return response.json();
-    }).then(function (payload) {
-      var subscribeUrl = payload && payload.data && payload.data.subscribe_url;
-      if (!subscribeUrl) throw new Error('missing subscribe url');
-      return {
-        subscribeUrl: subscribeUrl,
-        title: window.settings && window.settings.title ? window.settings.title : document.title || '订阅'
+        var payload = null;
+        try {
+          payload = JSON.parse(xhr.responseText || '{}');
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(payload);
+          return;
+        }
+
+        reject(new Error('request failed: ' + xhr.status));
       };
+      xhr.onerror = function () {
+        reject(new Error('network error'));
+      };
+      xhr.send();
     });
+  }
+
+  function fetchSubscribeInfo() {
+    if (subscribeInfoPromise && Date.now() - subscribeInfoCachedAt < 3000) {
+      return subscribeInfoPromise;
+    }
+
+    var token = getSupportAccessToken();
+    if (!token) {
+      console.warn('订阅信息加载跳过: 未找到认证信息');
+      return Promise.resolve(null);
+    }
+
+    subscribeInfoCachedAt = Date.now();
+    subscribeInfoPromise = requestAuthenticatedJson(SUBSCRIBE_API_PATH, token).then(function (payload) {
+      var data = payload && payload.data ? payload.data : null;
+      if (!data) return null;
+      var subscribeUrl = data && data.subscribe_url;
+      return Object.assign({}, data, {
+        subscribeUrl: subscribeUrl || '',
+        title: window.settings && window.settings.title ? window.settings.title : document.title || '订阅'
+      });
+    }).catch(function (error) {
+      subscribeInfoPromise = null;
+      throw error;
+    });
+
+    return subscribeInfoPromise;
   }
 
   function copySubscribeUrl() {
     return fetchSubscribeInfo().then(function (info) {
       if (!info) {
         notify('error', '未登录');
+        return false;
+      }
+      if (!info.subscribeUrl) {
+        notify('error', '订阅链接不存在');
         return false;
       }
       return copyText(info.subscribeUrl).then(function () {
@@ -559,6 +601,10 @@
         notify('error', '未登录');
         return false;
       }
+      if (!info.subscribeUrl) {
+        notify('error', '订阅链接不存在');
+        return false;
+      }
       window.location.href = buildKaringImportUrl(info.subscribeUrl, info.title);
       return true;
     }).catch(function (error) {
@@ -572,6 +618,10 @@
     return fetchSubscribeInfo().then(function (info) {
       if (!info) {
         notify('error', '未登录');
+        return false;
+      }
+      if (!info.subscribeUrl) {
+        notify('error', '订阅链接不存在');
         return false;
       }
       window.location.href = buildClashMiImportUrl(info.subscribeUrl);
@@ -942,6 +992,124 @@
     return panel;
   }
 
+  function formatTraffic(bytes) {
+    var value = Number(bytes) || 0;
+    var gb = 1073741824;
+    var mb = 1048576;
+    if (value >= gb) return (value / gb).toFixed(2).replace(/\.00$/, '') + ' GB';
+    if (value >= mb) return (value / mb).toFixed(2).replace(/\.00$/, '') + ' MB';
+    return Math.max(0, value).toFixed(0) + ' B';
+  }
+
+  function isSubscriptionExpired(info) {
+    return info && info.expired_at !== null && Number(info.expired_at) <= Math.floor(Date.now() / 1000);
+  }
+
+  function createTrafficMetric(label, value, className) {
+    var item = document.createElement('div');
+    item.className = 'er-traffic-package-item ' + className;
+
+    var labelNode = document.createElement('span');
+    labelNode.className = 'er-traffic-package-label';
+    labelNode.textContent = label;
+
+    var valueNode = document.createElement('strong');
+    valueNode.className = 'er-traffic-package-value';
+    valueNode.textContent = value;
+
+    item.appendChild(labelNode);
+    item.appendChild(valueNode);
+    return item;
+  }
+
+  function renderTrafficPackageSummary(main, info) {
+    var existing = main.querySelector(':scope > .er-traffic-package-summary');
+    var trafficPackageRemaining = Number(info && info.traffic_package_remaining) || 0;
+    if (trafficPackageRemaining <= 0) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    var planRemaining = Math.max(0, Number(info.plan_remaining_traffic) || 0);
+    var effectiveRemaining = Math.max(
+      trafficPackageRemaining,
+      Number(info.effective_remaining_traffic) || planRemaining + trafficPackageRemaining
+    );
+    var expired = isSubscriptionExpired(info);
+    var currentUsable = expired ? trafficPackageRemaining : effectiveRemaining;
+    var meterTotal = Math.max(1, planRemaining + trafficPackageRemaining);
+    var planWidth = expired ? 0 : Math.max(0, Math.min(100, (planRemaining / meterTotal) * 100));
+    var packageWidth = Math.max(0, Math.min(100, (trafficPackageRemaining / meterTotal) * 100));
+
+    var summary = existing || document.createElement('section');
+    summary.className = 'er-traffic-package-summary';
+    summary.innerHTML = '';
+    summary.setAttribute('aria-label', '流量构成');
+
+    var header = document.createElement('div');
+    header.className = 'er-traffic-package-header';
+
+    var title = document.createElement('div');
+    title.className = 'er-traffic-package-title';
+    title.textContent = '流量构成';
+
+    var badge = document.createElement('span');
+    badge.className = 'er-traffic-package-badge';
+    badge.textContent = expired ? '流量包可用中' : '优先扣流量包';
+
+    header.appendChild(title);
+    header.appendChild(badge);
+
+    var metrics = document.createElement('div');
+    metrics.className = 'er-traffic-package-metrics';
+    metrics.appendChild(createTrafficMetric('基础套餐剩余', expired ? '已到期' : formatTraffic(planRemaining), 'er-traffic-package-item-plan'));
+    metrics.appendChild(createTrafficMetric('流量包剩余', formatTraffic(trafficPackageRemaining), 'er-traffic-package-item-package'));
+    metrics.appendChild(createTrafficMetric('有效可用', formatTraffic(currentUsable), 'er-traffic-package-item-effective'));
+
+    var meter = document.createElement('div');
+    meter.className = 'er-traffic-package-meter';
+    meter.setAttribute('aria-hidden', 'true');
+
+    var planSegment = document.createElement('span');
+    planSegment.className = 'er-traffic-package-meter-plan';
+    planSegment.style.width = planWidth + '%';
+
+    var packageSegment = document.createElement('span');
+    packageSegment.className = 'er-traffic-package-meter-package';
+    packageSegment.style.width = packageWidth + '%';
+
+    meter.appendChild(planSegment);
+    meter.appendChild(packageSegment);
+
+    var note = document.createElement('p');
+    note.className = 'er-traffic-package-note';
+    note.textContent = expired
+      ? '当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。'
+      : '优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。';
+
+    summary.appendChild(header);
+    summary.appendChild(metrics);
+    summary.appendChild(meter);
+    summary.appendChild(note);
+
+    if (!existing) {
+      main.appendChild(summary);
+    }
+  }
+
+  function applyTrafficPackageSummary(main) {
+    if (!main) return false;
+
+    fetchSubscribeInfo().then(function (info) {
+      if (!isDashboardRoute() || !document.body.contains(main)) return;
+      renderTrafficPackageSummary(main, info);
+    }).catch(function (error) {
+      console.warn('流量包余额展示加载失败:', error);
+    });
+
+    return true;
+  }
+
   function applySubscribeActions() {
     if (!isDashboardRoute()) {
       removeSubscribeActions();
@@ -958,11 +1126,12 @@
     }
 
     var layout = content.querySelector(':scope > .er-subscribe-layout');
+    var main = layout ? layout.querySelector(':scope > .er-subscribe-main') : null;
     if (!layout) {
       layout = document.createElement('div');
       layout.className = 'er-subscribe-layout';
 
-      var main = document.createElement('div');
+      main = document.createElement('div');
       main.className = 'er-subscribe-main';
 
       while (content.firstChild) {
@@ -973,10 +1142,13 @@
       content.appendChild(layout);
     }
 
+    if (!main) return false;
+
     if (!layout.querySelector('#er-subscribe-action-panel')) {
       layout.appendChild(createSubscribeActionPanel());
     }
 
+    applyTrafficPackageSummary(main);
     return true;
   }
 
