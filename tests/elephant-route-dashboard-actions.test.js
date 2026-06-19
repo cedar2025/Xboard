@@ -177,7 +177,9 @@ test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   assert.match(script, /er-subscribe-action-panel/);
   assert.match(script, /applySubscribeActions/);
   assert.match(script, /openSubscribeQrCode/);
+  assert.match(script, /openDownloadClient/);
   assert.match(script, /copySubscribeUrl/);
+  assert.match(script, /DOWNLOAD_URL = '\/download\/index\.html'/);
   assert.match(script, /er-subscribe-direct-qr-active/);
   assert.match(script, /er-subscribe-source-menu-hidden/);
   assert.match(script, /er-subscribe-source-modal-hidden/);
@@ -193,6 +195,31 @@ test('ElephantRoute dashboard injects subscription action shortcuts', () => {
   assert.match(script, /copyTextWithExecCommand/);
   assert.match(script, /\.catch\(function \(\) \{\s*return copyTextWithExecCommand\(text\);/);
   assert.match(script, /document\.execCommand\('copy'\)/);
+});
+
+test('ElephantRoute subscription action panel contains themed QR, copy, and download buttons in order', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /THEME_PALETTES/);
+  assert.match(script, /applyDashboardThemeTokens/);
+  assert.match(script, /createSubscribeActionButton\('qr', '扫描二维码'/);
+  assert.match(script, /createSubscribeActionButton\('copy', '复制订阅链接'/);
+  assert.match(script, /createSubscribeActionButton\('download', '下载客户端'/);
+  assert.match(script, /qrButton[\s\S]*copyButton[\s\S]*downloadButton/);
+  assert.match(script, /panel\.appendChild\(qrButton\);[\s\S]*panel\.appendChild\(copyButton\);[\s\S]*panel\.appendChild\(downloadButton\);/);
+  assert.match(script, /downloadButton\.addEventListener\('click', openDownloadClient\)/);
+  assert.match(script, /window\.open\(DOWNLOAD_URL, '_blank', 'noopener,noreferrer'\)/);
+});
+
+test('ElephantRoute dashboard no longer clones a separate download shortcut card', () => {
+  const script = readRepoFile('theme/ElephantRoute/assets/elephant-route-dashboard.js');
+
+  assert.match(script, /removeDownloadEntry/);
+  assert.match(script, /document\.getElementById\('er-dashboard-download'\)/);
+  assert.doesNotMatch(script, /function normalizeClone/);
+  assert.doesNotMatch(script, /function applyDownloadEntry/);
+  assert.doesNotMatch(script, /er-dashboard-download-shortcut/);
+  assert.doesNotMatch(script, /insertBefore\(clone, subscribeItem\)/);
 });
 
 test('ElephantRoute dashboard hides Surge when the subscription has only VLESS nodes', () => {
@@ -266,7 +293,7 @@ test('ElephantRoute dashboard normalizes shortcut menu labels and order', () => 
 
   assert.match(script, /PROBLEM_APPEAL_LABEL = '提交问题申诉'/);
   assert.match(script, /PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复'/);
-  assert.match(script, /PROBLEM_APPEAL_TITLE_COLOR = '#e53e3e'/);
+  assert.match(script, /PROBLEM_APPEAL_TITLE_COLOR = THEME_PALETTES\.chinared\.primary/);
   assert.match(script, /DIFY_CONTEXT_API_PATH = '\/api\/v1\/user\/support\/dify-context'/);
   assert.match(script, /DIFY_OPEN_QUERY_KEY = 'open_ai_support'/);
   assert.match(script, /removeRenewShortcut/);
@@ -318,7 +345,7 @@ test('ElephantRoute sidebar permanently hides traffic detail menu item', () => {
   assert.match(script, /closest\('\[role="menuitem"\], \.n-menu-item, a, button, \.cursor-pointer'\)/);
   assert.match(script, /findTextElements\(label\)\.forEach/);
   assert.match(script, /item\.remove\(\)/);
-  assert.match(script, /removeHiddenSidebarMenuItems\(\);[\s\S]*var applied = applyDownloadEntry/);
+  assert.match(script, /removeHiddenSidebarMenuItems\(\);[\s\S]*var subscribeApplied = applySubscribeActions/);
   assert.match(script, /removeHiddenSidebarMenuItems\(\);[\s\S]*if \(isDashboardRoute\(\)\) scheduleDownloadEntry\(\)/);
 });
 
@@ -348,7 +375,7 @@ test('ElephantRoute rewrites ticket page copy to appeal wording', () => {
   assert.match(script, /placeholder/);
   assert.match(script, /var nextTitle = replaceAppealText\(document\.title\)/);
   assert.match(script, /if \(nextTitle !== document\.title\) document\.title = nextTitle/);
-  assert.match(script, /normalizeTicketAppealWording\(\);[\s\S]*removeHiddenSidebarMenuItems\(\);[\s\S]*var applied = applyDownloadEntry/);
+  assert.match(script, /normalizeTicketAppealWording\(\);[\s\S]*removeHiddenSidebarMenuItems\(\);[\s\S]*var subscribeApplied = applySubscribeActions/);
   assert.match(script, /normalizeTicketAppealWording\(\);[\s\S]*removeHiddenSidebarMenuItems\(\);[\s\S]*if \(isDashboardRoute\(\)\) scheduleDownloadEntry\(\)/);
 });
 
@@ -394,13 +421,18 @@ test('ElephantRoute subscription shortcuts have responsive layout styles', () =>
 
   assert.match(stylesheet, /\.er-subscribe-layout/);
   assert.match(stylesheet, /\.er-subscribe-action-panel/);
+  assert.match(stylesheet, /grid-template-rows: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(stylesheet, /\.er-subscribe-action-button/);
   assert.match(stylesheet, /\.er-dashboard-support-icon/);
-  assert.match(stylesheet, /background: #fff1f1/);
+  assert.match(stylesheet, /--er-subscribe-action-primary/);
+  assert.match(stylesheet, /background: var\(--er-subscribe-action-bg\)/);
+  assert.match(stylesheet, /color: var\(--er-subscribe-action-primary\)/);
+  assert.doesNotMatch(stylesheet, /background: #fff1f1/);
   assert.match(stylesheet, /\.er-subscribe-source-menu-hidden/);
   assert.match(stylesheet, /\.er-subscribe-source-modal-hidden/);
   assert.doesNotMatch(stylesheet, /\.er-surge-vless-warning/);
   assert.match(stylesheet, /@media \(max-width: 767px\)/);
+  assert.match(stylesheet, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
 });
 
 test('ElephantRoute dashboard shows stacked traffic package balance inside subscription card', () => {
@@ -440,6 +472,6 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260619trafficPackage3/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260619trafficPackage3/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260619subscribeActions3/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260619subscribeActions3/);
 });

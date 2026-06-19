@@ -1,6 +1,5 @@
 (function () {
   var DOWNLOAD_URL = '/download/index.html';
-  var DOWNLOAD_DESCRIPTION = '选择适合你设备的客户端';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var DIFY_CONTEXT_API_PATH = '/api/v1/user/support/dify-context';
@@ -9,9 +8,20 @@
   var CLASH_MI_ICON_PATH = 'images/clash-mi.png';
   var CLASH_VERGE_ICON_PATH = 'images/clash-verge.png';
   var ACCESS_TOKEN_STORAGE_KEY = 'VUE_NAIVE_ACCESS_TOKEN';
+  var THEME_PALETTES = {
+    default: { primary: '#316C72', hover: '#316C72', pressed: '#2B4C59' },
+    blue: { primary: '#0665d0', hover: '#2a84de', pressed: '#004085' },
+    black: { primary: '#343a40', hover: '#23272b', pressed: '#1d2124' },
+    darkblue: { primary: '#004175', hover: '#002c4c', pressed: '#001f35' },
+    titianred: { primary: '#D34947', hover: '#DC6A68', pressed: '#A92E2D' },
+    kleinblue: { primary: '#002FA7', hover: '#1F55C8', pressed: '#001F73' },
+    chinared: { primary: '#C8161D', hover: '#D93940', pressed: '#930F15' },
+    hermesorange: { primary: '#EB5C20', hover: '#F07A49', pressed: '#B94112' },
+    marsgreen: { primary: '#018B8D', hover: '#1BA6A8', pressed: '#006668' }
+  };
   var PROBLEM_APPEAL_LABEL = '提交问题申诉';
   var PROBLEM_APPEAL_DESCRIPTION = '提交问题后将在3小时内回复';
-  var PROBLEM_APPEAL_TITLE_COLOR = '#e53e3e';
+  var PROBLEM_APPEAL_TITLE_COLOR = THEME_PALETTES.chinared.primary;
   var HIDDEN_SIDEBAR_MENU_LABELS = ['流量明细'];
   var TICKET_APPEAL_TEXT_REPLACEMENTS = [
     ['我的工单', '问题申诉'],
@@ -64,6 +74,41 @@
     var route = getRoute();
     if (isAuthRoute(route) || hasAuthForm()) return false;
     return DASHBOARD_ROUTES.indexOf(route) !== -1 || route.indexOf('/dashboard/') === 0;
+  }
+
+  function getDashboardThemePalette() {
+    var color = window.settings && window.settings.theme ? window.settings.theme.color : 'default';
+    return Object.prototype.hasOwnProperty.call(THEME_PALETTES, color) ? THEME_PALETTES[color] : THEME_PALETTES.default;
+  }
+
+  function hexToRgb(color) {
+    var normalized = String(color || '').replace('#', '').slice(0, 6);
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return { r: 49, g: 108, b: 114 };
+    return {
+      r: parseInt(normalized.slice(0, 2), 16),
+      g: parseInt(normalized.slice(2, 4), 16),
+      b: parseInt(normalized.slice(4, 6), 16)
+    };
+  }
+
+  function rgbaFromHex(color, alpha) {
+    var rgb = hexToRgb(color);
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+  }
+
+  function applyDashboardThemeTokens() {
+    var palette = getDashboardThemePalette();
+    var root = document.documentElement;
+    if (!root || !root.style) return;
+
+    root.style.setProperty('--er-subscribe-action-primary', palette.primary);
+    root.style.setProperty('--er-subscribe-action-primary-hover', palette.hover);
+    root.style.setProperty('--er-subscribe-action-primary-pressed', palette.pressed);
+    root.style.setProperty('--er-subscribe-action-bg', rgbaFromHex(palette.primary, 0.08));
+    root.style.setProperty('--er-subscribe-action-bg-hover', rgbaFromHex(palette.primary, 0.13));
+    root.style.setProperty('--er-subscribe-action-border', rgbaFromHex(palette.primary, 0.18));
+    root.style.setProperty('--er-subscribe-action-border-hover', rgbaFromHex(palette.primary, 0.3));
+    root.style.setProperty('--er-subscribe-action-focus', rgbaFromHex(palette.primary, 0.22));
   }
 
   function removeDownloadEntry() {
@@ -241,16 +286,6 @@
         if (item) item.remove();
       });
     });
-  }
-
-  function childContainingText(parent, text, exclude) {
-    var children = Array.prototype.slice.call(parent.children || []);
-    for (var i = 0; i < children.length; i += 1) {
-      if (children[i] !== exclude && getNodeText(children[i]).indexOf(text) !== -1) {
-        return children[i];
-      }
-    }
-    return null;
   }
 
   function getStoredAccessToken() {
@@ -937,6 +972,10 @@
     });
   }
 
+  function openDownloadClient() {
+    window.open(DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
+  }
+
   function findSubscribeCard() {
     var title = findTextElement('我的订阅');
     if (!title) return null;
@@ -958,6 +997,8 @@
   }
 
   function createSubscribeActionPanel() {
+    applyDashboardThemeTokens();
+
     var panel = document.createElement('div');
     panel.id = 'er-subscribe-action-panel';
     panel.className = 'er-subscribe-action-panel';
@@ -978,17 +1019,27 @@
       '<path d="M5 16H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path>',
       '</svg>'
     ].join('');
+    var downloadIcon = [
+      '<svg viewBox="0 0 24 24" aria-hidden="true">',
+      '<path d="M12 3v11"></path>',
+      '<path d="m7 10 5 5 5-5"></path>',
+      '<path d="M5 17v3h14v-3"></path>',
+      '</svg>'
+    ].join('');
 
     var qrButton = createSubscribeActionButton('qr', '扫描二维码', qrIcon);
     var copyButton = createSubscribeActionButton('copy', '复制订阅链接', copyIcon);
+    var downloadButton = createSubscribeActionButton('download', '下载客户端', downloadIcon);
 
     qrButton.addEventListener('click', openSubscribeQrCode);
     copyButton.addEventListener('click', function () {
       copySubscribeUrl();
     });
+    downloadButton.addEventListener('click', openDownloadClient);
 
     panel.appendChild(qrButton);
     panel.appendChild(copyButton);
+    panel.appendChild(downloadButton);
     return panel;
   }
 
@@ -1152,102 +1203,6 @@
     return true;
   }
 
-  function findSiblingShortcutPair(sourceTextElement, targetText) {
-    var candidate = sourceTextElement;
-    while (candidate && candidate !== document.body) {
-      var parent = candidate.parentElement;
-      if (parent) {
-        var target = childContainingText(parent, targetText, candidate);
-        if (target) {
-          return {
-            source: candidate,
-            target: target
-          };
-        }
-      }
-      candidate = candidate.parentElement;
-    }
-    return null;
-  }
-
-  function commonAncestor(a, b) {
-    var seen = [];
-    var node = a;
-    while (node && node !== document.body) {
-      seen.push(node);
-      node = node.parentElement;
-    }
-
-    node = b;
-    while (node && node !== document.body) {
-      if (seen.indexOf(node) !== -1) return node;
-      node = node.parentElement;
-    }
-    return null;
-  }
-
-  function normalizeClone(clone) {
-    clone.id = 'er-dashboard-download';
-    clone.classList.add('er-dashboard-download-shortcut');
-    clone.setAttribute('data-er-download-entry', '1');
-    clone.setAttribute('aria-label', '下载客户端');
-
-    if (clone.tagName.toLowerCase() === 'a') {
-      clone.href = DOWNLOAD_URL;
-      clone.setAttribute('href', DOWNLOAD_URL);
-      clone.target = '_blank';
-      clone.setAttribute('target', '_blank');
-      clone.rel = 'noopener noreferrer';
-      clone.setAttribute('rel', 'noopener noreferrer');
-    } else {
-      clone.setAttribute('role', 'button');
-      clone.setAttribute('tabindex', '0');
-    }
-
-    clone.querySelectorAll('[id]').forEach(function (node) {
-      node.removeAttribute('id');
-    });
-
-    clone.querySelectorAll('a').forEach(function (node) {
-      node.href = DOWNLOAD_URL;
-      node.setAttribute('href', DOWNLOAD_URL);
-      node.target = '_blank';
-      node.setAttribute('target', '_blank');
-      node.rel = 'noopener noreferrer';
-      node.setAttribute('rel', 'noopener noreferrer');
-    });
-
-    clone.querySelectorAll('button').forEach(function (node) {
-      node.type = 'button';
-    });
-
-    replaceText(clone, '查看教程', '下载客户端');
-    replaceText(clone, '一键订阅', '下载客户端');
-    replaceText(clone, '学习如何使用 Eelphant Route', DOWNLOAD_DESCRIPTION);
-    replaceText(clone, '学习如何使用 Elephant Route', DOWNLOAD_DESCRIPTION);
-    replaceText(clone, '不会使用，查看使用教程', DOWNLOAD_DESCRIPTION);
-    replaceText(clone, '学习如何使用', DOWNLOAD_DESCRIPTION);
-    replaceText(clone, '使用支持扫码的客户端进行订阅', DOWNLOAD_DESCRIPTION);
-    replaceText(clone, '快速将节点导入对应客户端进行使用', DOWNLOAD_DESCRIPTION);
-    replaceDownloadIcon(clone);
-
-    if (clone.dataset.erDownloadBound !== '1') {
-      clone.dataset.erDownloadBound = '1';
-      clone.addEventListener('click', function (event) {
-        if (event.target.closest('a[href="' + DOWNLOAD_URL + '"]')) return;
-        event.preventDefault();
-        window.open(DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
-      });
-
-      clone.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          window.open(DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
-        }
-      });
-    }
-  }
-
   function replaceText(root, from, to) {
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     var node;
@@ -1267,34 +1222,6 @@
       }
     }
     return null;
-  }
-
-  function replaceDownloadIcon(root) {
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'er-dashboard-download-icon');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '2.25');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.innerHTML = [
-      '<path d="M12 3v11"></path>',
-      '<path d="m7 10 5 5 5-5"></path>',
-      '<path d="M5 17v3h14v-3"></path>'
-    ].join('');
-
-    var icons = root.querySelectorAll('svg');
-    if (icons.length > 0) {
-      icons[icons.length - 1].replaceWith(svg);
-      return;
-    }
-
-    var iconWrap = document.createElement('span');
-    iconWrap.className = 'er-dashboard-download-icon-wrap';
-    iconWrap.appendChild(svg);
-    root.appendChild(iconWrap);
   }
 
   function createProblemAppealIcon(existingClassName) {
@@ -1399,54 +1326,22 @@
     return normalizeProblemAppealShortcut() && moveProblemAppealAfterSubscribe();
   }
 
-  function applyDownloadEntry() {
-    if (!isDashboardRoute()) {
-      removeDownloadEntry();
-      return true;
-    }
-
-    var existing = document.getElementById('er-dashboard-download');
-    if (existing) {
-      if (existing.classList.contains('er-dashboard-download-shortcut')) {
-        normalizeClone(existing);
-        return true;
-      }
-      existing.remove();
-    }
-
-    var tutorialText = findTextElement('查看教程');
-    var subscribeText = findTextElement('一键订阅');
-    if (!tutorialText || !subscribeText) return false;
-
-    var pair = findSiblingShortcutPair(tutorialText, '一键订阅');
-    var tutorialItem = pair ? pair.source : closestShortcut(tutorialText);
-    var subscribeItem = pair ? pair.target : closestShortcut(subscribeText);
-    if (!tutorialItem || !subscribeItem || tutorialItem === subscribeItem) return false;
-
-    var container = commonAncestor(tutorialItem, subscribeItem);
-    if (!container || !subscribeItem.parentElement) return false;
-
-    var clone = tutorialItem.cloneNode(true);
-    normalizeClone(clone);
-    subscribeItem.parentElement.insertBefore(clone, subscribeItem);
-    return true;
-  }
-
   function scheduleDownloadEntry() {
     window.clearTimeout(retryTimer);
     retryTimer = window.setTimeout(function retry() {
+      applyDashboardThemeTokens();
       preloadDifySupportBubble();
       maybeAutoOpenDifySupport();
       normalizeTicketAppealWording();
       removeHiddenSidebarMenuItems();
-      var applied = applyDownloadEntry();
+      removeDownloadEntry();
       var subscribeApplied = applySubscribeActions();
       var shortcutMenuApplied = applyDashboardShortcutMenu();
       hideUnsupportedSurgeOption();
       enhanceKaringSubscribeOption();
       enhanceClashMiSubscribeOption();
       enhanceDesktopClashVergeSubscribeOption();
-      if ((!applied || !subscribeApplied || !shortcutMenuApplied) && isDashboardRoute() && attempts < maxAttempts) {
+      if ((!subscribeApplied || !shortcutMenuApplied) && isDashboardRoute() && attempts < maxAttempts) {
         attempts += 1;
         retryTimer = window.setTimeout(retry, 180);
       }

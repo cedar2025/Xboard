@@ -1,31 +1,12 @@
-.er-dashboard-download-shortcut {
-  cursor: pointer;
-}
-
-.er-dashboard-download-shortcut,
-.er-dashboard-download-shortcut:hover,
-.er-dashboard-download-shortcut:focus {
-  text-decoration: none;
-}
-
-.er-dashboard-download-shortcut:focus-visible {
-  outline: 3px solid rgba(49, 108, 114, 0.2);
-  outline-offset: 3px;
-}
-
-.er-dashboard-download-icon {
-  width: 32px;
-  height: 32px;
-  display: block;
-  color: #2f3437;
-}
-
-.er-dashboard-download-icon-wrap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+:root {
+  --er-subscribe-action-primary: #316c72;
+  --er-subscribe-action-primary-hover: #316c72;
+  --er-subscribe-action-primary-pressed: #2b4c59;
+  --er-subscribe-action-bg: rgba(49, 108, 114, 0.08);
+  --er-subscribe-action-bg-hover: rgba(49, 108, 114, 0.13);
+  --er-subscribe-action-border: rgba(49, 108, 114, 0.18);
+  --er-subscribe-action-border-hover: rgba(49, 108, 114, 0.3);
+  --er-subscribe-action-focus: rgba(49, 108, 114, 0.22);
 }
 
 .er-dashboard-support-icon {
@@ -47,10 +28,10 @@
 
 .er-subscribe-action-panel {
   display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 14px;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   align-self: stretch;
-  min-height: 134px;
+  min-height: 220px;
 }
 
 .er-subscribe-action-button {
@@ -61,10 +42,10 @@
   width: 100%;
   min-height: 58px;
   padding: 12px 14px;
-  border: 1px solid rgba(229, 62, 62, 0.18);
+  border: 1px solid var(--er-subscribe-action-border);
   border-radius: 8px;
-  background: #fff1f1;
-  color: #e53e3e;
+  background: var(--er-subscribe-action-bg);
+  color: var(--er-subscribe-action-primary);
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -76,13 +57,13 @@
 
 .er-subscribe-action-button:hover,
 .er-subscribe-action-button:focus {
-  border-color: rgba(229, 62, 62, 0.28);
-  background: #fee7e7;
-  color: #dc2626;
+  border-color: var(--er-subscribe-action-border-hover);
+  background: var(--er-subscribe-action-bg-hover);
+  color: var(--er-subscribe-action-primary-hover);
 }
 
 .er-subscribe-action-button:focus-visible {
-  outline: 3px solid rgba(229, 62, 62, 0.18);
+  outline: 3px solid var(--er-subscribe-action-focus);
   outline-offset: 3px;
 }
 
@@ -235,16 +216,17 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
   }
 
   .er-subscribe-action-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: none;
     min-height: 0;
   }
 
   .er-subscribe-action-button {
-    min-height: 54px;
-    padding: 10px 8px;
-    gap: 7px;
-    font-size: 14px;
+    flex-direction: column;
+    min-height: 72px;
+    padding: 9px 6px;
+    gap: 5px;
+    font-size: 12px;
   }
 
   .er-subscribe-action-button svg {
@@ -264,9 +246,10 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
 
 @media (max-width: 390px) {
   .er-subscribe-action-button {
-    flex-direction: column;
-    gap: 5px;
-    font-size: 13px;
+    min-height: 68px;
+    padding: 8px 4px;
+    gap: 4px;
+    font-size: 12px;
   }
 
   .er-traffic-package-header {
