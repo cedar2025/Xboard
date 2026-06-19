@@ -76,13 +76,26 @@ test('traffic package plans are only visible to users with active time subscript
   assert.match(orderController, /validatePurchase\(\$user, \$request->input\('period'\)\)/);
 });
 
-test('traffic fetch consumes package balance before charging subscription traffic', () => {
+test('traffic fetch consumes active subscription traffic before package balance', () => {
   const job = read('app/Jobs/TrafficFetchJob.php');
+  const trafficPackageService = read('app/Services/TrafficPackageService.php');
+
   assert.match(job, /TrafficPackageService/);
   assert.match(job, /consume\(\(int\) \$uid, \$uploadBytes, \$downloadBytes\)/);
   assert.match(job, /'u'\s*=>\s*\$consumption\['plan_upload'\]/);
   assert.match(job, /'d'\s*=>\s*\$consumption\['plan_download'\]/);
   assert.doesNotMatch(job, /'u'\s*=>\s*\$v\[0\] \* \$this->server\['rate'\]/);
+
+  assert.match(trafficPackageService, /User::where\('id', \$userId\)[\s\S]*lockForUpdate\(\)[\s\S]*first\(\)/);
+  assert.match(trafficPackageService, /\$planAvailable\s*=\s*\$this->getActivePlanRemainingBytes\(\$user\)/);
+  assert.match(trafficPackageService, /\$planUpload\s*=\s*min\(\$planAvailable, \$remainingUpload\)/);
+  assert.match(trafficPackageService, /\$planDownload\s*=\s*min\(\$planAvailable, \$remainingDownload\)/);
+  assert.match(trafficPackageService, /function getActivePlanRemainingBytes\(User \$user\): int/);
+  assert.match(trafficPackageService, /\(int\) \$user->expired_at <= time\(\)/);
+  assert.match(trafficPackageService, /\$planUsedTraffic\s*=\s*\(int\) \(\$user->u \+ \$user->d\)/);
+  assert.match(trafficPackageService, /\$packages = UserTrafficPackage::where\('user_id', \$userId\)/);
+  assert.match(trafficPackageService, /'package_upload'\s*=>\s*\$packageUpload/);
+  assert.match(trafficPackageService, /'plan_upload'\s*=>\s*\$planUpload/);
 });
 
 test('availability and subscription display account for traffic packages separately', () => {

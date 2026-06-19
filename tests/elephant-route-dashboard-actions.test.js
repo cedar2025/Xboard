@@ -442,7 +442,13 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.match(script, /traffic_package_remaining/);
   assert.match(script, /plan_remaining_traffic/);
   assert.match(script, /effective_remaining_traffic/);
+  assert.match(script, /PLAN_API_PATH = '\/api\/v1\/user\/plan\/fetch'/);
   assert.match(script, /function applyTrafficPackageSummary/);
+  assert.match(script, /function fetchAvailablePlans/);
+  assert.match(script, /function isTrafficPackagePlan/);
+  assert.match(script, /onetime_price/);
+  assert.match(script, /month_price/);
+  assert.match(script, /function applyTrafficPackageCta/);
   assert.match(script, /function requestAuthenticatedJson/);
   assert.match(script, /new XMLHttpRequest\(\)/);
   assert.match(script, /function fetchSubscribeInfo\(\)[\s\S]*var token = getSupportAccessToken\(\)/);
@@ -456,11 +462,24 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.match(script, /基础套餐剩余/);
   assert.match(script, /流量包剩余/);
   assert.match(script, /有效可用/);
-  assert.match(script, /优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。/);
+  assert.match(script, /优先扣套餐/);
+  assert.match(script, /er-traffic-package-cta/);
+  assert.match(script, /流量不够用？/);
+  assert.match(script, /立即购买流量包/);
+  assert.match(script, /window\.location\.hash = '#\/plan'/);
+  assert.match(script, /event\.preventDefault\(\)/);
+  assert.match(script, /event\.stopPropagation\(\)/);
+  assert.doesNotMatch(script, /cta\.innerHTML = ''/);
+  assert.match(script, /plans\.some\(isTrafficPackagePlan\)/);
+  assert.match(script, /优先使用套餐流量，用完后继续使用流量包余额。套餐重置时间不受影响。/);
+  assert.doesNotMatch(script, /优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。/);
   assert.match(script, /流量包可用中/);
   assert.match(script, /当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。/);
   assert.match(script, /applySubscribeActions\(\)[\s\S]*applyTrafficPackageSummary/);
+  assert.match(script, /applySubscribeActions\(\)[\s\S]*applyTrafficPackageCta/);
 
+  assert.match(stylesheet, /\.er-traffic-package-cta/);
+  assert.match(stylesheet, /\.er-traffic-package-cta-action/);
   assert.match(stylesheet, /\.er-traffic-package-summary/);
   assert.match(stylesheet, /\.er-traffic-package-meter/);
   assert.match(stylesheet, /\.er-traffic-package-meter-plan/);
@@ -472,6 +491,6 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260619subscribeActions3/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260619subscribeActions3/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260620trafficPackageCta3/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260620trafficPackageCta3/);
 });

@@ -53,8 +53,26 @@ class TrafficPackageService
     {
         $remainingUpload = max(0, $uploadBytes);
         $remainingDownload = max(0, $downloadBytes);
+        $planUpload = 0;
+        $planDownload = 0;
         $packageUpload = 0;
         $packageDownload = 0;
+
+        $user = User::where('id', $userId)
+            ->lockForUpdate()
+            ->first();
+
+        if ($user) {
+            $planAvailable = $this->getActivePlanRemainingBytes($user);
+
+            $planUpload = min($planAvailable, $remainingUpload);
+            $planAvailable -= $planUpload;
+            $remainingUpload -= $planUpload;
+
+            $planDownload = min($planAvailable, $remainingDownload);
+            $planAvailable -= $planDownload;
+            $remainingDownload -= $planDownload;
+        }
 
         $packages = UserTrafficPackage::where('user_id', $userId)
             ->where('status', UserTrafficPackage::STATUS_ACTIVE)
@@ -90,9 +108,24 @@ class TrafficPackageService
         return [
             'package_upload' => $packageUpload,
             'package_download' => $packageDownload,
-            'plan_upload' => $remainingUpload,
-            'plan_download' => $remainingDownload,
+            'plan_upload' => $planUpload + ($user ? 0 : $remainingUpload),
+            'plan_download' => $planDownload + ($user ? 0 : $remainingDownload),
         ];
+    }
+
+    private function getActivePlanRemainingBytes(User $user): int
+    {
+        $planTransferEnable = (int) ($user->transfer_enable ?? 0);
+        if ($planTransferEnable <= 0) {
+            return 0;
+        }
+
+        if ($user->expired_at === null || (int) $user->expired_at <= time()) {
+            return 0;
+        }
+
+        $planUsedTraffic = (int) ($user->u + $user->d);
+        return max(0, $planTransferEnable - $planUsedTraffic);
     }
 
     public function getTrafficSummary(User $user): array

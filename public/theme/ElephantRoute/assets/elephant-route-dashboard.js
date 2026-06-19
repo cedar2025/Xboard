@@ -1,6 +1,7 @@
 (function () {
   var DOWNLOAD_URL = '/download/index.html';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
+  var PLAN_API_PATH = '/api/v1/user/plan/fetch';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var DIFY_CONTEXT_API_PATH = '/api/v1/user/support/dify-context';
   var DIFY_OPEN_QUERY_KEY = 'open_ai_support';
@@ -51,6 +52,8 @@
   var difyAutoOpenHandled = false;
   var subscribeInfoPromise = null;
   var subscribeInfoCachedAt = 0;
+  var availablePlansPromise = null;
+  var availablePlansCachedAt = 0;
 
   function getRoute() {
     var hash = window.location.hash || '';
@@ -593,6 +596,29 @@
     return subscribeInfoPromise;
   }
 
+  function fetchAvailablePlans() {
+    if (availablePlansPromise && Date.now() - availablePlansCachedAt < 3000) {
+      return availablePlansPromise;
+    }
+
+    var token = getSupportAccessToken();
+    if (!token) {
+      console.warn('套餐信息加载跳过: 未找到认证信息');
+      return Promise.resolve([]);
+    }
+
+    availablePlansCachedAt = Date.now();
+    availablePlansPromise = requestAuthenticatedJson(PLAN_API_PATH, token).then(function (payload) {
+      var data = payload && payload.data ? payload.data : [];
+      return Array.isArray(data) ? data : [];
+    }).catch(function (error) {
+      availablePlansPromise = null;
+      throw error;
+    });
+
+    return availablePlansPromise;
+  }
+
   function copySubscribeUrl() {
     return fetchSubscribeInfo().then(function (info) {
       if (!info) {
@@ -1073,6 +1099,74 @@
     return item;
   }
 
+  function isPositivePrice(value) {
+    return Number(value) > 0;
+  }
+
+  function isTrafficPackagePlan(plan) {
+    if (!plan || !isPositivePrice(plan.onetime_price)) return false;
+
+    return [
+      'month_price',
+      'quarter_price',
+      'half_year_price',
+      'year_price',
+      'two_year_price',
+      'three_year_price'
+    ].every(function (priceKey) {
+      return !isPositivePrice(plan[priceKey]);
+    });
+  }
+
+  function goToTrafficPackagePurchase(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.location.hash = '#/plan';
+  }
+
+  function renderTrafficPackageCta(main, hasTrafficPackagePlan) {
+    var existing = main.querySelector(':scope > .er-traffic-package-cta');
+    if (!hasTrafficPackagePlan) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    if (existing) return;
+
+    var cta = document.createElement('div');
+    cta.className = 'er-traffic-package-cta';
+    var label = document.createElement('span');
+    label.className = 'er-traffic-package-cta-label';
+    label.textContent = '流量不够用？';
+
+    var action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'er-traffic-package-cta-action';
+    action.textContent = '立即购买流量包';
+    action.addEventListener('click', goToTrafficPackagePurchase);
+
+    cta.appendChild(label);
+    cta.appendChild(action);
+
+    main.insertBefore(cta, main.querySelector(':scope > .er-traffic-package-summary'));
+  }
+
+  function applyTrafficPackageCta(main) {
+    if (!main) return false;
+
+    fetchAvailablePlans().then(function (plans) {
+      if (!isDashboardRoute() || !document.body.contains(main)) return;
+      renderTrafficPackageCta(main, plans.some(isTrafficPackagePlan));
+    }).catch(function (error) {
+      renderTrafficPackageCta(main, false);
+      console.warn('流量包购买提示加载失败:', error);
+    });
+
+    return true;
+  }
+
   function renderTrafficPackageSummary(main, info) {
     var existing = main.querySelector(':scope > .er-traffic-package-summary');
     var trafficPackageRemaining = Number(info && info.traffic_package_remaining) || 0;
@@ -1106,7 +1200,7 @@
 
     var badge = document.createElement('span');
     badge.className = 'er-traffic-package-badge';
-    badge.textContent = expired ? '流量包可用中' : '优先扣流量包';
+    badge.textContent = expired ? '流量包可用中' : '优先扣套餐';
 
     header.appendChild(title);
     header.appendChild(badge);
@@ -1136,7 +1230,7 @@
     note.className = 'er-traffic-package-note';
     note.textContent = expired
       ? '当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。'
-      : '优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。';
+      : '优先使用套餐流量，用完后继续使用流量包余额。套餐重置时间不受影响。';
 
     summary.appendChild(header);
     summary.appendChild(metrics);
@@ -1199,6 +1293,7 @@
       layout.appendChild(createSubscribeActionPanel());
     }
 
+    applyTrafficPackageCta(main);
     applyTrafficPackageSummary(main);
     return true;
   }
