@@ -223,7 +223,7 @@ class OrderController extends Controller
             $period = $request->input('period');
             $order->period = PlanService::getPeriodKey((string) $period);
             $order->trade_no = Helper::guid();
-            $order->total_amount = $request->input('total_amount');
+            $order->total_amount = Helper::toIntegerAmount($request->input('total_amount'));
 
             if (PlanService::getPeriodKey((string) $order->period) === Plan::PERIOD_RESET_TRAFFIC) {
                 $order->type = Order::TYPE_RESET_TRAFFIC;

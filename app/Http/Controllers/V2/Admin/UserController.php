@@ -265,10 +265,10 @@ class UserController extends Controller
             $authService->removeAllSessions();
         }
         if (isset($params['balance'])) {
-            $params['balance'] = $params['balance'] * 100;
+            $params['balance'] = (int) round($params['balance'] * 100);
         }
         if (isset($params['commission_balance'])) {
-            $params['commission_balance'] = $params['commission_balance'] * 100;
+            $params['commission_balance'] = (int) round($params['commission_balance'] * 100);
         }
 
         $params = HookManager::filter('admin.user.update.params', $params, $request, $user);

@@ -120,6 +120,11 @@ class Helper
         }
     }
 
+    public static function toIntegerAmount(float|int|string|null $amount): int
+    {
+        return (int) (float) ($amount ?? 0);
+    }
+
     public static function getSubscribeUrl(string $token, $subscribeUrl = null)
     {
         $path = route('client.subscribe', ['token' => $token], false);

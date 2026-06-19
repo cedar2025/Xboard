@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\ApiException;
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Utils\Helper;
 use Illuminate\Support\Facades\DB;
 
 class CouponService
@@ -29,10 +30,10 @@ class CouponService
         $this->check();
         switch ($this->coupon->type) {
             case 1:
-                $order->discount_amount = $this->coupon->value;
+                $order->discount_amount = Helper::toIntegerAmount($this->coupon->value);
                 break;
             case 2:
-                $order->discount_amount = $order->total_amount * ($this->coupon->value / 100);
+                $order->discount_amount = Helper::toIntegerAmount($order->total_amount * ($this->coupon->value / 100));
                 break;
         }
         if ($order->discount_amount > $order->total_amount) {

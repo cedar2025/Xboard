@@ -63,7 +63,7 @@ class OrderService
                 'plan_id' => $plan->id,
                 'period' => $newPeriod,
                 'trade_no' => Helper::generateOrderNo(),
-                'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+                'total_amount' => Helper::toIntegerAmount(optional($plan->prices)[$newPeriod] * 100),
             ]);
 
             $orderService = new self($order);
@@ -174,7 +174,8 @@ class OrderService
     {
         $order = $this->order;
         if ($user->discount) {
-            $order->discount_amount = $order->discount_amount + ($order->total_amount * ($user->discount / 100));
+            $order->discount_amount = ($order->discount_amount ?? 0)
+                + Helper::toIntegerAmount($order->total_amount * ($user->discount / 100));
         }
         $order->total_amount = $order->total_amount - $order->discount_amount;
     }
@@ -205,9 +206,9 @@ class OrderService
         if (!$isCommission)
             return;
         if ($inviter->commission_rate) {
-            $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
+            $order->commission_balance = Helper::toIntegerAmount($order->total_amount * ($inviter->commission_rate / 100));
         } else {
-            $order->commission_balance = $order->total_amount * (admin_setting('invite_commission', 10) / 100);
+            $order->commission_balance = Helper::toIntegerAmount($order->total_amount * (admin_setting('invite_commission', 10) / 100));
         }
     }
 
