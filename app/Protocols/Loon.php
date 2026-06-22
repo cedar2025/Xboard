@@ -26,6 +26,12 @@ class Loon extends AbstractProtocol
     public function handle()
     {
         $servers = $this->servers;
+        // 过滤节点名称中的英文逗号和等号，避免破坏配置文件语法
+        foreach ($servers as &$server) {
+            $server['name'] = str_replace([',', '='], ['，', '＝'], $server['name']);
+        }
+        unset($server);
+
         $user = $this->user;
 
         $uri = '';
