@@ -353,6 +353,10 @@ body.er-auth-page .n-input {
   --n-color: rgba(255, 255, 255, 0.92) !important;
   --n-color-focus: #ffffff !important;
   --n-color-disabled: rgba(255, 255, 255, 0.72) !important;
+  --n-text-color: #141512 !important;
+  --n-placeholder-color: rgba(20, 21, 18, 0.46) !important;
+  --n-caret-color: #141512 !important;
+  --n-icon-color: rgba(20, 21, 18, 0.42) !important;
   --n-border: 1px solid rgba(20, 21, 18, 0.14) !important;
   --n-border-hover: 1px solid rgba(49, 108, 114, 0.46) !important;
   --n-border-focus: 1px solid rgba(49, 108, 114, 0.72) !important;
@@ -366,12 +370,22 @@ body.er-auth-page .n-input__input-el {
   background: transparent !important;
 }
 
+body.er-auth-page .n-input__input-el {
+  color: #141512 !important;
+  caret-color: #141512 !important;
+}
+
+body.er-auth-page .n-input__input-el::placeholder {
+  color: rgba(20, 21, 18, 0.46) !important;
+  opacity: 1 !important;
+}
+
 body.er-auth-page input:-webkit-autofill,
 body.er-auth-page input:-webkit-autofill:hover,
 body.er-auth-page input:-webkit-autofill:focus,
 body.er-auth-page input:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--er-ink) !important;
-  caret-color: var(--er-ink) !important;
+  -webkit-text-fill-color: #141512 !important;
+  caret-color: #141512 !important;
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   transition: background-color 9999s ease-out 0s;
 }
