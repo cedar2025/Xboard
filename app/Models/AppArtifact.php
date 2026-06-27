@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AppArtifact extends Model
 {
@@ -33,5 +34,10 @@ class AppArtifact extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function downloadLogs(): HasMany
+    {
+        return $this->hasMany(AppDownloadLog::class, 'app_artifact_id');
     }
 }

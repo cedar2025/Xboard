@@ -126,7 +126,10 @@ class AppPackageController extends Controller
     public function versions(Request $request)
     {
         $versions = AppVersion::query()
-            ->with(['app', 'artifact'])
+            ->with([
+                'app',
+                'artifact' => fn ($query) => $query->withCount('downloadLogs'),
+            ])
             ->whereNotNull('app_id')
             ->when($request->input('app_id'), fn ($query, $appId) => $query->where('app_id', $appId))
             ->when($request->input('platform'), fn ($query, $platform) => $query->where('platform', strtolower($platform)))

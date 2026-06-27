@@ -271,6 +271,7 @@
               <th>应用</th>
               <th>平台</th>
               <th>安装包</th>
+              <th>下载次数</th>
               <th>状态</th>
               <th>操作</th>
             </tr>
@@ -574,6 +575,7 @@
             "<td></td>",
             "<td></td>",
             "<td></td>",
+            "<td></td>",
             '<td><div class="row"></div></td>'
           ].join("");
           row.children[0].textContent = displayAppName(version);
@@ -581,7 +583,9 @@
           row.children[2].innerHTML = artifact
             ? artifact.original_name + "<br><span class=\"muted\">" + Math.round(artifact.file_size / 1024 / 1024 * 10) / 10 + " MB</span>"
             : '<span class="badge off">未上传</span>';
-          row.children[3].innerHTML = version.is_enabled
+          var downloadCount = artifact ? Number(artifact.download_logs_count || 0) : 0;
+          row.children[3].textContent = downloadCount.toLocaleString("zh-CN");
+          row.children[4].innerHTML = version.is_enabled
             ? '<span class="badge ok">published</span>'
             : '<span class="badge off">disabled</span>';
 
