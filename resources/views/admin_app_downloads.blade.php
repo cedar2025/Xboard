@@ -471,7 +471,7 @@
 
       function inferAppName(filename) {
         var base = stripKnownExtension(filename)
-          .replace(/[_\-.]+/g, " ")
+          .replace(/[_-]+/g, " ")
           .replace(/\s+/g, " ")
           .trim();
         var parts = base.split(" ").filter(Boolean);
@@ -488,12 +488,26 @@
           if (ignored.indexOf(lower) !== -1) {
             continue;
           }
-          if (/^v?\d+(\.\d+){1,4}([+-].*)?$/i.test(part) || /^\d{6,}$/.test(part)) {
+          var previousLower = String(parts[i - 1] || "").toLowerCase();
+          if ((/^v?\d+(\.\d+){1,4}([+-].*)?$/i.test(part) && previousLower !== "prd") || /^\d{6,}$/.test(part)) {
             continue;
           }
           kept.push(part);
         }
         return titleCase(kept.length ? kept : parts).trim();
+      }
+
+      function hasLegacyDecimalSpacing(existingName, inferredName) {
+        var existing = String(existingName || "").trim();
+        var inferred = String(inferredName || "").trim();
+        return !!existing && !!inferred && existing !== inferred && inferred.replace(/\./g, " ") === existing;
+      }
+
+      function displayAppName(version) {
+        var appName = version && version.app ? version.app.name : "";
+        var artifactName = version && version.artifact ? version.artifact.original_name : "";
+        var inferredName = artifactName ? inferAppName(artifactName) : "";
+        return hasLegacyDecimalSpacing(appName, inferredName) ? inferredName : appName;
       }
 
       function findExistingAppByGuess(name) {
@@ -518,7 +532,9 @@
         var guessedPlatform = detectPlatform(file.name);
         var existingApp = findExistingAppByGuess(guessedName);
         packageForm.querySelector('[name="app_id"]').value = existingApp ? existingApp.id : "";
-        packageForm.querySelector('[name="app_name"]').value = existingApp ? existingApp.name : guessedName;
+        packageForm.querySelector('[name="app_name"]').value = existingApp && !hasLegacyDecimalSpacing(existingApp.name, guessedName)
+          ? existingApp.name
+          : guessedName;
         packageForm.querySelector('[name="app_key"]').value = existingApp ? existingApp.app_key : "";
         if (guessedPlatform) {
           packageForm.querySelector('[name="platform"]').value = guessedPlatform;
@@ -560,7 +576,7 @@
             "<td></td>",
             '<td><div class="row"></div></td>'
           ].join("");
-          row.children[0].textContent = version.app ? version.app.name : "";
+          row.children[0].textContent = displayAppName(version);
           row.children[1].textContent = version.platform;
           row.children[2].innerHTML = artifact
             ? artifact.original_name + "<br><span class=\"muted\">" + Math.round(artifact.file_size / 1024 / 1024 * 10) / 10 + " MB</span>"
