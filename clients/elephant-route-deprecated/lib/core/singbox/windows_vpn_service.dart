@@ -168,6 +168,12 @@ class WindowsVpnService implements VpnManager {
   }
 
   @override
+  Future<void> prepareSpeedTest(String config) async {}
+
+  @override
+  Future<void> stopSpeedTest() async {}
+
+  @override
   Future<void> stop() async {
     try {
       debugPrint('Windows VpnService stop...');

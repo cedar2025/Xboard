@@ -80,6 +80,22 @@ class MainActivity : FlutterActivity() {
                     }
                     result.success(null)
                 }
+                "prepareSpeedTest" -> {
+                    val config = call.argument<String>("config")
+                    val intent = Intent(this, SingboxVpnService::class.java).apply {
+                        action = "PREPARE_SPEED_TEST"
+                        putExtra("config", config)
+                    }
+                    startService(intent)
+                    result.success(null)
+                }
+                "stopSpeedTest" -> {
+                    val intent = Intent(this, SingboxVpnService::class.java).apply {
+                        action = "STOP_SPEED_TEST"
+                    }
+                    startService(intent)
+                    result.success(null)
+                }
                 "urlTest" -> {
                     val groupTag = call.argument<String>("groupTag")
                     // Send URL_TEST action to service

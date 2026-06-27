@@ -10,6 +10,13 @@ abstract class VpnManager {
   /// [config] sing-box JSON 配置
   Future<void> start(String config);
 
+  /// 准备临时测速核心
+  /// Android 上启动无 TUN 的本地 Clash API；其他平台可按需 no-op。
+  Future<void> prepareSpeedTest(String config);
+
+  /// 停止临时测速核心，不影响已连接的正式 VPN。
+  Future<void> stopSpeedTest();
+
   /// 停止 VPN
   Future<void> stop();
 

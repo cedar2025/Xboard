@@ -15,6 +15,7 @@ TARGET_APK="$BUILD_DIR/$OUTPUT_NAME"
 echo "🧪 Starting Test Build..."
 echo "🏷️  App Label: $APP_LABEL"
 echo "📦 Output Filename: $OUTPUT_NAME"
+echo "🧩 Android ABI: arm64-v8a"
 
 # Clean build
 echo "🧹 Cleaning previous build..."
@@ -26,7 +27,8 @@ export APP_LABEL="$APP_LABEL"
 
 echo "🔨 Building APK..."
 # If you have a specific test URL, add --dart-define=BASE_URL="$TEST_URL" here
-flutter build apk --release
+ELEPHANT_ANDROID_ABIS="arm64-v8a" flutter build apk --release \
+    --target-platform android-arm64
 
 # Rename
 if [ -f "$SOURCE_APK" ]; then

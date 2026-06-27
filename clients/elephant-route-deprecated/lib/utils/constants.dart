@@ -12,12 +12,12 @@ class ApiConstants {
     const envBaseUrl = String.fromEnvironment('BASE_URL');
     if (envBaseUrl.isNotEmpty) return envBaseUrl;
 
-    if (kIsWeb) return 'https://www.elphantroute.com';
+    if (kIsWeb) return 'https://www.elephant223.com';
     // 真机访问
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      return 'https://www.elphantroute.com';
+      return 'https://www.elephant223.com';
     }
-    return 'https://www.elphantroute.com';
+    return 'https://www.elephant223.com';
   }
 
   static String get appDistributionBaseUrl {

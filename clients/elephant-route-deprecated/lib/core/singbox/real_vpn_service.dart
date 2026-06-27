@@ -72,6 +72,24 @@ class RealVpnService implements VpnManager {
   }
 
   @override
+  Future<void> prepareSpeedTest(String config) async {
+    try {
+      await _channel.invokeMethod('prepareSpeedTest', {'config': config});
+    } on PlatformException catch (e) {
+      debugPrint("准备测速核心失败: ${e.message}");
+    }
+  }
+
+  @override
+  Future<void> stopSpeedTest() async {
+    try {
+      await _channel.invokeMethod('stopSpeedTest');
+    } on PlatformException catch (e) {
+      debugPrint("停止测速核心失败: ${e.message}");
+    }
+  }
+
+  @override
   Future<void> stop() async {
     try {
       await _channel.invokeMethod('stop');

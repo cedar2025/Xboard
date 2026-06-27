@@ -7,6 +7,7 @@ import '../utils/api_error_handler.dart';
 
 class AuthProvider with ChangeNotifier {
   static const String sessionHintKey = 'auth_session_hint';
+  static const String lastLoginEmailKey = 'last_login_email';
 
   final AuthService _authService;
   final CommService _commService;
@@ -28,6 +29,10 @@ class AuthProvider with ChangeNotifier {
 
   /// 获取当前 Token
   Future<String?> getToken() => _authService.getToken();
+
+  Future<String?> getLastLoginEmail() {
+    return _localStorage.read(key: lastLoginEmailKey);
+  }
 
   Future<void> loadStartupLoginHint() async {
     final hint = await _localStorage.read(key: sessionHintKey);
@@ -70,12 +75,14 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await _authService.login(email, password);
+      final normalizedEmail = email.trim();
+      final data = await _authService.login(normalizedEmail, password);
       final token = data['auth_data'];
 
       await _authService.saveToken(token);
       _isLoggedIn = true;
       _hasValidatedSession = true;
+      await _localStorage.write(key: lastLoginEmailKey, value: normalizedEmail);
       await _localStorage.write(key: sessionHintKey, value: 'true');
       _isLoading = false;
       notifyListeners();

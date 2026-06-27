@@ -55,13 +55,21 @@ class PlatformInterfaceBridge(
         // Libbox on Android explicitly blocks all 'direct' outbounds with 
         // "no available network interface" if it never receives a default interface update,
         // as a built-in protection against TUN routing loops.
-        // We must provide a dummy or real active interface to unlock it.
+        // We must provide a real active interface to unlock it. Avoid dummy0:
+        // libbox may bind direct outbounds to it and make no-TUN speed tests fail.
         Thread {
             try {
-                // Give it a short delay to ensure libbox is fully initialized listening
-                Thread.sleep(500)
+                val activeNetwork = connectivity.activeNetwork
+                val activeInterfaceName = activeNetwork
+                    ?.let { connectivity.getLinkProperties(it) }
+                    ?.interfaceName
+                    ?.takeIf { isUsableInterfaceName(it) }
+
                 val networkInterfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
-                val activeInfo = networkInterfaces.find { !it.name.startsWith("lo") && it.name != "tun0" && it.isUp }
+                val activeInfo = activeInterfaceName
+                    ?.let { name -> networkInterfaces.find { it.name == name && it.isUp } }
+                    ?: networkInterfaces.find { isUsableInterfaceName(it.name) && it.isUp }
+
                 if (activeInfo != null) {
                     Log.i("PlatformBridge", "Notifying Libbox of active default interface: ${activeInfo.name} idx ${activeInfo.index}")
                     listener.updateDefaultInterface(activeInfo.name, activeInfo.index, false, false)
@@ -86,7 +94,7 @@ class PlatformInterfaceBridge(
         for (networkInterface in networkInterfaces) {
             try {
                 // Ignore empty or invalid interfaces like loopback for outbounds
-                if (networkInterface.name.startsWith("lo")) continue
+                if (!isUsableInterfaceName(networkInterface.name)) continue
 
                 val boxInterface = LibboxNetworkInterface()
                 boxInterface.name = networkInterface.name
@@ -152,6 +160,15 @@ class PlatformInterfaceBridge(
         override fun len(): Int = list.size
         override fun hasNext(): Boolean = index < list.size
         override fun next(): String = list[index++]
+    }
+
+    private fun isUsableInterfaceName(name: String): Boolean {
+        return !name.startsWith("lo") &&
+            !name.startsWith("tun") &&
+            !name.startsWith("dummy") &&
+            !name.startsWith("ifb") &&
+            !name.startsWith("sit") &&
+            !name.startsWith("ip6tnl")
     }
 
     private fun InterfaceAddress.toPrefix(): String {

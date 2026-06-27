@@ -30,10 +30,25 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
+    _loadLastLoginEmail();
+  }
+
+  Future<void> _loadLastLoginEmail() async {
+    final savedEmail = await context.read<AuthProvider>().getLastLoginEmail();
+    if (!mounted) return;
+
+    if (savedEmail != null && savedEmail.isNotEmpty) {
+      _emailController.text = savedEmail;
+    }
+
     // 延迟请求焦点，确保界面完全渲染后
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _emailFocusNode.requestFocus();
+        if (_emailController.text.trim().isNotEmpty) {
+          _passwordFocusNode.requestFocus();
+        } else {
+          _emailFocusNode.requestFocus();
+        }
       }
     });
   }
@@ -409,8 +424,8 @@ class _LoginScreenState extends State<LoginScreen>
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.error.withOpacity(0.1)
-                  : AppColors.error.withOpacity(0.05),
+                  ? AppColors.error.withValues(alpha: 0.1)
+                  : AppColors.error.withValues(alpha: 0.05),
               borderRadius: AppDimensions.borderRadiusMedium,
               border: Border.all(
                 color: isDark ? AppColors.errorLight : AppColors.error,

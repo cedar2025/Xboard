@@ -39,6 +39,12 @@ class MockVpnService implements VpnManager {
   }
 
   @override
+  Future<void> prepareSpeedTest(String config) async {}
+
+  @override
+  Future<void> stopSpeedTest() async {}
+
+  @override
   Future<void> stop() async {
     // 停止流量模拟
     _speedTimer?.cancel();

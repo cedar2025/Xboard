@@ -9,8 +9,7 @@ class TrayService with TrayListener {
   TrayService._internal();
 
   Future<void> init() async {
-    if (kIsWeb ||
-        (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
+    if (!_isSupportedPlatform) {
       return;
     }
 
@@ -33,7 +32,14 @@ class TrayService with TrayListener {
   // 记录外部传入的 Toggle 回调
   VoidCallback? onToggleVpn;
 
+  bool get _isSupportedPlatform =>
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+
   Future<void> updateMenu(bool isConnected) async {
+    if (!_isSupportedPlatform) {
+      return;
+    }
+
     final Menu menu = Menu(
       items: [
         MenuItem(

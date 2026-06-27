@@ -45,12 +45,26 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
     private var activeProxyTag = "proxy"
     private var lastSanitizedConfig: String? = null
     private var isRestarting = false
+    private var isSpeedTestRunning = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
         Log.d(TAG, "onStartCommand: action=$action, hasExtras=${intent?.extras != null}")
         if (action == "STOP") {
             stopVpn()
+            return START_NOT_STICKY
+        }
+        if (action == "STOP_SPEED_TEST") {
+            stopSpeedTest()
+            return START_NOT_STICKY
+        }
+        if (action == "PREPARE_SPEED_TEST") {
+            val config = intent?.getStringExtra("config") ?: ""
+            if (config.isEmpty()) {
+                Log.e(TAG, "Speed test config is empty")
+                return START_NOT_STICKY
+            }
+            prepareSpeedTest(config)
             return START_NOT_STICKY
         }
         if (action == "SELECT_OUTBOUND") {
@@ -64,7 +78,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
             try {
                  // Fast-path for UI responsiveness if we have the last config
                  val currentConfig = lastSanitizedConfig
-                 if (currentConfig != null) {
+                 if (currentStatus == "connected" && currentConfig != null) {
                      // 1. Modify the config to set the new outbound as the selector's default
                      val configObj = org.json.JSONObject(currentConfig)
                      if (configObj.has("outbounds")) {
@@ -182,6 +196,11 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
             Log.i(TAG, "VPN START REQUESTED")
             Log.i(TAG, "Config length: ${config.length} bytes")
             Log.i(TAG, "========================================")
+
+            if (isSpeedTestRunning) {
+                Log.i(TAG, "Stopping temporary speed-test core before starting VPN")
+                stopSpeedTestCore()
+            }
             
             updateStatus("connecting")
             Log.d(TAG, "Creating notification channel...")
@@ -224,6 +243,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                     val cacheFile = File(workingDir, "cache.db")
                     
                     val jsonConfig = org.json.JSONObject(config)
+                    jsonConfig.remove("use_tun_mode")
 
                     // Experimental section
                     if (!jsonConfig.has("experimental")) {
@@ -282,7 +302,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                             
                             val apiRule = org.json.JSONObject()
                             val apiDomains = org.json.JSONArray()
-                            apiDomains.put("www.elphantroute.com")
+                            apiDomains.put("www.elephant223.com")
                             apiRule.put("domain", apiDomains)
                             apiRule.put("server", localDnsTag)
                             
@@ -386,7 +406,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
                             val domainDirectRule = org.json.JSONObject()
                             domainDirectRule.put("outbound", "direct")
                             val domains = org.json.JSONArray()
-                            domains.put("www.elphantroute.com")
+                            domains.put("www.elephant223.com")
                             domainDirectRule.put("domain", domains)
                             
                             // 2. IP-based direct rule
@@ -471,6 +491,185 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
             Log.e(TAG, "Failed to start VPN (Outer)", e)
         }
     }
+
+    private fun prepareSpeedTest(config: String) {
+        if (currentStatus != "disconnected") {
+            Log.i(TAG, "VPN status is $currentStatus; skip temporary speed-test core")
+            return
+        }
+
+        Thread {
+            try {
+                Log.i(TAG, "========================================")
+                Log.i(TAG, "SPEED TEST CORE START REQUESTED")
+                Log.i(TAG, "Config length: ${config.length} bytes")
+                Log.i(TAG, "========================================")
+
+                checkAndPrepareAssets()
+                stopSpeedTestCore()
+
+                val finalConfig = buildSpeedTestConfig(config)
+                Log.i(TAG, "Starting temporary speed-test core (${finalConfig.length} bytes)")
+                SingBoxEngine.start(this@SingboxVpnService, finalConfig, platform)
+                isSpeedTestRunning = true
+                Log.i(TAG, "Temporary speed-test core is ready")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to prepare speed-test core", e)
+                stopSpeedTestCore()
+            }
+        }.start()
+    }
+
+    private fun stopSpeedTest() {
+        Thread {
+            stopSpeedTestCore()
+        }.start()
+    }
+
+    private fun stopSpeedTestCore() {
+        if (!isSpeedTestRunning) return
+        if (currentStatus == "connected") return
+
+        try {
+            commandClient?.disconnect()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error disconnecting speed-test command client: ${e.message}")
+        }
+        commandClient = null
+
+        try {
+            SingBoxEngine.stop()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error stopping speed-test core: ${e.message}")
+        }
+
+        isSpeedTestRunning = false
+    }
+
+    private fun buildSpeedTestConfig(config: String): String {
+        val baseDir = filesDir.absolutePath
+        val workingDir = File(baseDir, "sing-box").apply { if (!exists()) mkdirs() }
+        val cacheFile = File(workingDir, "cache-speed-test.db")
+        val filesToDelete = listOf(
+            "cache-speed-test.db",
+            "cache-speed-test.db-wal",
+            "cache-speed-test.db-shm"
+        )
+        for (fileName in filesToDelete) {
+            val target = File(workingDir, fileName)
+            if (target.exists()) target.delete()
+        }
+
+        val jsonConfig = org.json.JSONObject(config)
+        jsonConfig.remove("use_tun_mode")
+
+        val logObj = org.json.JSONObject()
+        logObj.put("level", "warn")
+        logObj.put("timestamp", true)
+        jsonConfig.put("log", logObj)
+
+        if (!jsonConfig.has("experimental")) {
+            jsonConfig.put("experimental", org.json.JSONObject())
+        }
+        val experimental = jsonConfig.getJSONObject("experimental")
+        if (!experimental.has("clash_api")) {
+            experimental.put("clash_api", org.json.JSONObject())
+        }
+        val clashApi = experimental.getJSONObject("clash_api")
+        clashApi.put("external_controller", "127.0.0.1:9090")
+        if (!clashApi.has("external_ui")) {
+            clashApi.put("external_ui", "ui")
+        }
+
+        val cacheFileObj = org.json.JSONObject()
+        cacheFileObj.put("enabled", true)
+        cacheFileObj.put("path", cacheFile.absolutePath)
+        experimental.put("cache_file", cacheFileObj)
+
+        activeProxyTag = "proxy"
+        if (jsonConfig.has("outbounds")) {
+            val outbounds = jsonConfig.getJSONArray("outbounds")
+            for (i in 0 until outbounds.length()) {
+                val out = outbounds.getJSONObject(i)
+                out.remove("auto_detect_interface")
+                if (out.optString("type") == "selector") {
+                    activeProxyTag = out.optString("tag")
+                }
+            }
+        }
+
+        if (jsonConfig.has("inbounds")) {
+            val inbounds = jsonConfig.getJSONArray("inbounds")
+            val filteredInbounds = org.json.JSONArray()
+            for (i in 0 until inbounds.length()) {
+                val inbound = inbounds.getJSONObject(i)
+                if (inbound.optString("type") != "tun") {
+                    filteredInbounds.put(inbound)
+                }
+            }
+            jsonConfig.put("inbounds", filteredInbounds)
+        }
+
+        if (jsonConfig.has("dns")) {
+            try {
+                val dns = jsonConfig.getJSONObject("dns")
+                if (dns.has("servers")) {
+                    val servers = dns.getJSONArray("servers")
+                    for (i in 0 until servers.length()) {
+                        servers.getJSONObject(i).remove("auto_detect_interface")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sanitizing speed-test DNS config", e)
+            }
+        }
+
+        if (jsonConfig.has("rule_set")) {
+            try {
+                sanitizeRuleSets(jsonConfig.getJSONArray("rule_set"), workingDir)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error switching speed-test top-level rule_set", e)
+            }
+        }
+
+        if (jsonConfig.has("route")) {
+            try {
+                val route = jsonConfig.getJSONObject("route")
+                if (route.has("rule_set")) {
+                    sanitizeRuleSets(route.getJSONArray("rule_set"), workingDir)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error switching speed-test route rule_set", e)
+            }
+        }
+
+        if (experimental.has("rule_set")) {
+            try {
+                sanitizeRuleSets(experimental.getJSONArray("rule_set"), workingDir)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error switching speed-test experimental rule_set", e)
+            }
+        }
+
+        return jsonConfig.toString()
+    }
+
+    private fun sanitizeRuleSets(ruleSets: org.json.JSONArray, workingDir: File) {
+        for (i in 0 until ruleSets.length()) {
+            val rs = ruleSets.getJSONObject(i)
+            val tag = rs.optString("tag")
+
+            if (tag == "geosite-cn" || tag == "geoip-cn") {
+                rs.remove("url")
+                rs.remove("download_detour")
+                rs.remove("update_interval")
+                rs.put("type", "local")
+                rs.put("format", "binary")
+                val localPath = File(workingDir, "$tag.srs").absolutePath
+                rs.put("path", localPath)
+            }
+        }
+    }
     
     private fun startForegroundServiceNotification() {
          val notificationIntent = Intent(this, MainActivity::class.java)
@@ -541,6 +740,7 @@ class SingboxVpnService : VpnService(), CommandClientHandler {
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping VPN", e)
             } finally {
+                isSpeedTestRunning = false
                 updateStatus("disconnected")
             }
         }.start()

@@ -31,6 +31,8 @@ class NodeProvider with ChangeNotifier {
   List<ProxyNode> _nodes = [];
   ProxyNode? _selectedNode;
   bool _isLoading = false;
+  bool _isTestingLatency = false;
+  DateTime? _ignoreNativeLatencyUpdatesUntil;
   String? _errorMessage;
 
   // 自动选择模式相关
@@ -77,7 +79,7 @@ class NodeProvider with ChangeNotifier {
 
   List<ProxyNode> get nodes => _nodes;
   ProxyNode? get selectedNode => _selectedNode;
-  bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading || _isTestingLatency;
   String? get errorMessage => _errorMessage;
   bool get isAutoMode => _isAutoMode;
   ProxyNode? get autoSelectedRealNode => _autoSelectedRealNode;
@@ -98,6 +100,13 @@ class NodeProvider with ChangeNotifier {
 
   /// 处理来自 VPN 内核的延迟数据更新
   void _handleLatencyUpdate(Map<String, int> latencyMap) {
+    final ignoreUntil = _ignoreNativeLatencyUpdatesUntil;
+    if (ignoreUntil != null && DateTime.now().isBefore(ignoreUntil)) {
+      debugPrint(
+          '[SPEED_TEST_DART] Ignore native latency update while HTTP delay test is authoritative');
+      return;
+    }
+
     bool changed = false;
     _nodes = _nodes.map((node) {
       if (node.type == 'auto') return node; // 跳过虚拟节点
@@ -137,62 +146,156 @@ class NodeProvider with ChangeNotifier {
 
   /// 测试所有节点延迟
   Future<void> testAllLatencies([BuildContext? context]) async {
-    if (_nodes.isEmpty) {
-      print('DEBUG: testAllLatencies 触发时 nodes 为空，尝试自动 fetchNodes...');
-      await fetchNodes();
-      if (_nodes.isEmpty) {
-        print('DEBUG: 自动 fetchNodes 后仍然为空，放弃测速。');
-        return;
-      }
-    }
+    if (_isTestingLatency) return;
 
-    // 检查 VPN 是否已连接
-    if (_vpnManager.currentState.status != VpnStatus.connected) {
-      if (context != null) {
-        ToastUtils.show(context, '请先连接 VPN 再进行测速');
-      }
-      return;
-    }
-
-    if (context != null) {
-      ToastUtils.show(context, '正在开始测速...');
-    }
-
-    // 将所有真实节点的延迟清空，标记为正在测速
-    _nodes = _nodes.map((node) {
-      if (node.type == 'auto') return node;
-      return node.copyWithLatency(null);
-    }).toList();
+    bool temporarySpeedTestCoreStarted = false;
+    _isTestingLatency = true;
+    _ignoreNativeLatencyUpdatesUntil =
+        DateTime.now().add(const Duration(seconds: 30));
     notifyListeners();
 
-    // 使用 ConfigProvider 中的测试 URL
-    final testUrl = 'http://www.gstatic.com/generate_204';
-    const timeout = 5000;
-    const batchSize = 1;
+    try {
+      if (_nodes.isEmpty) {
+        print('DEBUG: testAllLatencies 触发时 nodes 为空，尝试自动 fetchNodes...');
+        await fetchNodes();
+        if (_nodes.isEmpty) {
+          print('DEBUG: 自动 fetchNodes 后仍然为空，放弃测速。');
+          return;
+        }
+      }
 
-    final realNodesList = realNodes;
-    for (int i = 0; i < realNodesList.length; i += batchSize) {
-      final end = (i + batchSize < realNodesList.length)
-          ? i + batchSize
-          : realNodesList.length;
-      final batch = realNodesList.sublist(i, end);
+      final needsTemporaryCore =
+          _vpnManager.currentState.status == VpnStatus.disconnected &&
+              _vpnManager is! MockVpnService &&
+              !kIsWeb &&
+              Platform.isAndroid &&
+              !await _isLocalClashApiReady();
 
-      await Future.wait(batch.map((node) async {
+      if (needsTemporaryCore) {
+        if (context != null && context.mounted) {
+          ToastUtils.show(context, '正在准备测速...');
+        }
+        temporarySpeedTestCoreStarted = await _prepareTemporarySpeedTestCore();
+      }
+
+      if (context != null && context.mounted) {
+        ToastUtils.show(context, '正在开始测速...');
+      }
+
+      // 将所有真实节点的延迟清空，标记为正在测速
+      _nodes = _nodes.map((node) {
+        if (node.type == 'auto') return node;
+        return node.copyWithLatency(null);
+      }).toList();
+      notifyListeners();
+
+      final configuredTestUrl = _configProvider.testUrl.trim();
+      final testUrl = configuredTestUrl.isNotEmpty
+          ? configuredTestUrl
+          : ConfigProvider.defaultTestUrl;
+      const timeout = 5000;
+      const concurrency = 8;
+
+      await _testNodesConcurrently(realNodes, testUrl, timeout, concurrency);
+
+      // 测速完成后评估自动选择
+      _evaluateAutoSelect();
+    } catch (e) {
+      debugPrint('[SPEED_TEST_DART] 测速失败: $e');
+      if (context != null && context.mounted) {
+        ToastUtils.show(context, '测速失败，请稍后重试');
+      }
+    } finally {
+      if (temporarySpeedTestCoreStarted &&
+          _vpnManager.currentState.status != VpnStatus.connected) {
+        await _vpnManager.stopSpeedTest();
+      }
+
+      _isTestingLatency = false;
+      _ignoreNativeLatencyUpdatesUntil =
+          DateTime.now().add(const Duration(seconds: 5));
+      notifyListeners();
+    }
+  }
+
+  Future<void> _testNodesConcurrently(
+    List<ProxyNode> nodes,
+    String testUrl,
+    int timeout,
+    int concurrency,
+  ) async {
+    if (nodes.isEmpty) return;
+
+    var nextIndex = 0;
+    final workerCount = min(concurrency, nodes.length);
+
+    Future<void> worker() async {
+      while (true) {
+        final currentIndex = nextIndex;
+        if (currentIndex >= nodes.length) return;
+        nextIndex++;
+
+        final node = nodes[currentIndex];
         final latency = await _testSingleNode(node, testUrl, timeout);
-
         final index = _nodes.indexWhere((n) => n.name == node.name);
         if (index != -1) {
           _nodes[index] = _nodes[index].copyWithLatency(latency);
           notifyListeners();
         }
-      }));
-
-      await Future.delayed(const Duration(milliseconds: 200));
+      }
     }
 
-    // 测速完成后评估自动选择
-    _evaluateAutoSelect();
-    notifyListeners();
+    await Future.wait(List.generate(workerCount, (_) => worker()));
+  }
+
+  Future<bool> _prepareTemporarySpeedTestCore() async {
+    final config = await _fetchSubscriptionConfigForSpeedTest();
+    final configMap = Map<String, dynamic>.from(config);
+    configMap['use_tun_mode'] = false;
+
+    await _vpnManager.prepareSpeedTest(jsonEncode(configMap));
+    final ready = await _waitForLocalClashApi();
+    if (!ready) {
+      await _vpnManager.stopSpeedTest();
+      throw Exception('本地测速 API 未就绪');
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+    return true;
+  }
+
+  Future<Map<String, dynamic>> _fetchSubscriptionConfigForSpeedTest() async {
+    final subscribeInfo = await _userService.getSubscribe();
+    final subscribeUrl = subscribeInfo['subscribe_url'] as String?;
+    if (subscribeUrl == null || subscribeUrl.isEmpty) {
+      throw Exception('未找到订阅链接');
+    }
+
+    final uri = Uri.parse(subscribeUrl);
+    final token = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+    if (token == null || token.isEmpty) {
+      throw Exception('订阅链接格式错误');
+    }
+
+    return _userService.getSubscriptionConfig(token);
+  }
+
+  Future<bool> _waitForLocalClashApi() async {
+    final deadline = DateTime.now().add(const Duration(seconds: 8));
+    while (DateTime.now().isBefore(deadline)) {
+      if (await _isLocalClashApiReady()) return true;
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    return false;
+  }
+
+  Future<bool> _isLocalClashApiReady() async {
+    try {
+      final response = await _dio.get('http://127.0.0.1:9090/proxies');
+      return response.statusCode == 200;
+    } catch (_) {
+      // Clash API is not listening yet.
+      return false;
+    }
   }
 
   Future<int> _testSingleNode(

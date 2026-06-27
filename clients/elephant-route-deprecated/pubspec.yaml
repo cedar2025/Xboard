@@ -67,11 +67,11 @@ dependencies:
   google_fonts: any
 
   # Markdown 渲染
-  flutter_markdown: ^0.7.4+1
   cached_network_image: ^3.4.1
   flutter_svg: ^2.0.7
   launch_at_startup: ^0.3.1
   package_info_plus: ^9.0.0
+  flutter_markdown_plus: ^1.0.7
 
 dev_dependencies:
   flutter_test:
