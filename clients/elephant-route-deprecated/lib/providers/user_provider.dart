@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../core/api/dio_client.dart';
@@ -13,6 +15,8 @@ class UserProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String? _inviteCode; // [NEW] Invite code storage
+  bool _isInviteCodeLoading = false;
+  bool _inviteCodeLoadFailed = false;
 
   UserProvider(DioClient dioClient) : _userService = UserService(dioClient);
 
@@ -22,6 +26,8 @@ class UserProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get inviteCode => _inviteCode; // Expose invite code
+  bool get isInviteCodeLoading => _isInviteCodeLoading;
+  bool get inviteCodeLoadFailed => _inviteCodeLoadFailed;
 
   /// 获取用户信息
   Future<void> fetchUserInfo() async {
@@ -33,12 +39,7 @@ class UserProvider with ChangeNotifier {
       _user = await _userService.getUserInfo();
 
       // Async fetch invite code in background without failing main user info fetch
-      _userService.getInviteCode().then((code) {
-        if (code != null) {
-          _inviteCode = code;
-          notifyListeners();
-        }
-      });
+      unawaited(fetchInviteCode());
 
       _isLoading = false;
       notifyListeners();
@@ -47,6 +48,37 @@ class UserProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> fetchInviteCode() async {
+    _isInviteCodeLoading = true;
+    _inviteCodeLoadFailed = false;
+    notifyListeners();
+
+    final code = await _userService.getInviteCode();
+    if (code != null && code.isNotEmpty) {
+      _inviteCode = code;
+      _inviteCodeLoadFailed = false;
+    } else {
+      _inviteCodeLoadFailed = true;
+    }
+
+    _isInviteCodeLoading = false;
+    notifyListeners();
+  }
+
+  void ensureInviteCodeLoaded() {
+    if (_inviteCode != null && _inviteCode!.isNotEmpty) return;
+    if (_isInviteCodeLoading || _inviteCodeLoadFailed) return;
+
+    unawaited(fetchInviteCode());
+  }
+
+  @visibleForTesting
+  void clearInviteCodeForTest() {
+    _inviteCode = null;
+    _isInviteCodeLoading = false;
+    _inviteCodeLoadFailed = false;
   }
 
   /// 获取订阅信息

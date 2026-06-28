@@ -119,6 +119,14 @@ class ProfileScreen extends StatelessWidget {
                     );
                   }
 
+                  if (provider.inviteCode == null &&
+                      !provider.isInviteCodeLoading &&
+                      !provider.inviteCodeLoadFailed) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      provider.ensureInviteCodeLoaded();
+                    });
+                  }
+
                   return SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     physics: const BouncingScrollPhysics(
@@ -315,20 +323,30 @@ class ProfileScreen extends StatelessWidget {
           Consumer<UserProvider>(
             builder: (context, provider, _) {
               final inviteCode = provider.inviteCode;
+              final hasInviteCode = inviteCode != null && inviteCode.isNotEmpty;
+              final inviteText = hasInviteCode
+                  ? inviteCode
+                  : provider.inviteCodeLoadFailed
+                      ? '点击重试'
+                      : '获取中...';
+
               return InkWell(
                 onTap: () {
-                  if (inviteCode != null && inviteCode.isNotEmpty) {
+                  if (hasInviteCode) {
                     Clipboard.setData(ClipboardData(text: inviteCode));
                     ToastUtils.show(context, '已复制邀请码');
+                  } else if (provider.inviteCodeLoadFailed &&
+                      !provider.isInviteCodeLoading) {
+                    provider.fetchInviteCode();
                   }
                 },
                 child: _buildInfoItem(
                   context,
                   Icons.group_add_outlined,
                   '我的邀请码',
-                  inviteCode ?? '获取中...',
+                  inviteText,
                   isDark,
-                  showChevron: true,
+                  showChevron: hasInviteCode,
                 ),
               );
             },

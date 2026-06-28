@@ -39,6 +39,7 @@ class ApiConstants {
   static const String subscribe = '/api/v1/client/subscribe';
   static const String getSubscribe = '/api/v1/user/getSubscribe';
   static const String inviteFetch = '/api/v1/user/invite/fetch';
+  static const String inviteSave = '/api/v1/user/invite/save';
   static const String planList = '/api/v1/user/plan/fetch';
   static const String createOrder = '/api/v1/user/order/save';
   static const String checkout = '/api/v1/user/order/checkout';
