@@ -1,10 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import '../core/api/dio_client.dart';
 import '../core/api/services/user_service.dart';
 import '../models/user.dart';
-import '../utils/avatar_helper.dart'; // [NEW] Link to helper
 
 class UserProvider with ChangeNotifier {
   final UserService _userService;
@@ -33,7 +31,6 @@ class UserProvider with ChangeNotifier {
 
     try {
       _user = await _userService.getUserInfo();
-      await loadAvatarSeed(); // Load local avatar preference
 
       // Async fetch invite code in background without failing main user info fetch
       _userService.getInviteCode().then((code) {
@@ -171,47 +168,6 @@ class UserProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  // Avatar Management
-  String? _avatarSeed;
-
-  /// Get current avatar URL
-  /// If seed is set, use it. Otherwise, generate from email.
-  String get avatarUrl {
-    if (_avatarSeed != null && _avatarSeed!.isNotEmpty) {
-      return AvatarHelper.getAvatarUrl(_avatarSeed!);
-    }
-    // Fallback to email as seed if user is logged in
-    if (_user != null && _user!.email.isNotEmpty) {
-      return AvatarHelper.getAvatarUrl(_user!.email);
-    }
-    // Final fallback
-    return AvatarHelper.getAvatarUrl('default_guest');
-  }
-
-  /// 加载本地头像设置
-  Future<void> loadAvatarSeed() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _avatarSeed = prefs.getString('user_avatar_seed');
-      notifyListeners();
-    } catch (e) {
-      debugPrint('加载头像设置失败: $e');
-    }
-  }
-
-  /// 设置并保存头像 Seed
-  Future<void> setAvatarSeed(String seed) async {
-    try {
-      _avatarSeed = seed;
-      notifyListeners();
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_avatar_seed', seed);
-    } catch (e) {
-      debugPrint('保存头像设置失败: $e');
     }
   }
 }

@@ -11,11 +11,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../utils/constants.dart';
-import '../../utils/avatar_helper.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/toast_utils.dart';
 import '../../widgets/custom_webview.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'change_password_screen.dart';
 import 'about_screen.dart';
 
@@ -204,89 +202,34 @@ class ProfileScreen extends StatelessWidget {
     final tr = context.read<LanguageProvider>();
     return Column(
       children: [
-        // 头像
-        GestureDetector(
-          onTap: () => _showAvatarSelectionSheet(context, isDark),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      isDark ? AppColors.primaryDark : AppColors.primary,
-                      isDark ? AppColors.primary : AppColors.primaryLight,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Consumer<UserProvider>(
-                  builder: (context, provider, _) {
-                    final avatarUrl = provider.avatarUrl;
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: CachedNetworkImage(
-                        imageUrl: avatarUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Center(
-                          child: Text(
-                            user.email[0].toUpperCase(),
-                            style: AppTextStyles.price.copyWith(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Center(
-                          child: Text(
-                            user.email[0].toUpperCase(),
-                            style: AppTextStyles.price.copyWith(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // Edit Icon (Moved to bottom-right)
-              Positioned(
-                right: -4,
-                bottom: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: AppShadows.getCard(isDark),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkCardBorder
-                          : Colors.transparent,
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.edit,
-                    size: 14,
-                    color: isDark ? AppColors.primaryLight : AppColors.primary,
-                  ),
-                ),
+        // 邮箱首字母标识
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                isDark ? AppColors.primaryDark : AppColors.primary,
+                isDark ? AppColors.primary : AppColors.primaryLight,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            user.emailInitial,
+            style: AppTextStyles.price.copyWith(
+              color: Colors.white,
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -840,224 +783,6 @@ class ProfileScreen extends StatelessWidget {
       onTap: () {
         provider.setThemeMode(mode);
         Navigator.pop(context);
-      },
-    );
-  }
-
-  /// 显示头像选择底部弹窗
-  void _showAvatarSelectionSheet(BuildContext context, bool isDark) {
-    if (PlatformUtils.isDesktop) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '选择头像',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                        ),
-                        itemCount: AvatarHelper.presetSeeds.length,
-                        itemBuilder: (context, index) {
-                          final seed = AvatarHelper.presetSeeds[index];
-                          final avatarUrl = AvatarHelper.getAvatarUrl(seed);
-                          return Consumer<UserProvider>(
-                            builder: (context, provider, _) {
-                              final isSelected =
-                                  provider.avatarUrl == avatarUrl;
-                              return GestureDetector(
-                                onTap: () {
-                                  provider.setAvatarSeed(seed);
-                                  Navigator.pop(context);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: isSelected
-                                        ? Border.all(
-                                            color: isDark
-                                                ? AppColors.primaryLight
-                                                : AppColors.primary,
-                                            width: 3,
-                                          )
-                                        : null,
-                                  ),
-                                  child: ClipOval(
-                                    child: CachedNetworkImage(
-                                      imageUrl: avatarUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: isDark
-                                            ? AppColors.darkInputBackground
-                                            : AppColors.slate100,
-                                        child: const Center(
-                                            child: SizedBox(
-                                                width: 10,
-                                                height: 10,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        strokeWidth: 2))),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        color: isDark
-                                            ? AppColors.darkInputBackground
-                                            : AppColors.slate100,
-                                        child: Icon(Icons.error_outline,
-                                            size: 20,
-                                            color: AppColors.slate400),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppDimensions.radiusLarge),
-        ),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.8,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color:
-                        isDark ? AppColors.darkCardBorder : AppColors.slate200,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Text(
-                  '选择头像',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: GridView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.all(24),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                    ),
-                    itemCount: AvatarHelper.presetSeeds.length,
-                    itemBuilder: (context, index) {
-                      final seed = AvatarHelper.presetSeeds[index];
-                      final avatarUrl = AvatarHelper.getAvatarUrl(seed);
-                      return Consumer<UserProvider>(
-                        builder: (context, provider, _) {
-                          final isSelected = provider.avatarUrl == avatarUrl;
-                          return GestureDetector(
-                            onTap: () {
-                              provider.setAvatarSeed(seed);
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: isSelected
-                                    ? Border.all(
-                                        color: isDark
-                                            ? AppColors.primaryLight
-                                            : AppColors.primary,
-                                        width: 3,
-                                      )
-                                    : null,
-                              ),
-                              child: ClipOval(
-                                child: CachedNetworkImage(
-                                  imageUrl: avatarUrl,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: isDark
-                                        ? AppColors.darkInputBackground
-                                        : AppColors.slate100,
-                                    child: const Center(
-                                        child: SizedBox(
-                                            width: 10,
-                                            height: 10,
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2))),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    color: isDark
-                                        ? AppColors.darkInputBackground
-                                        : AppColors.slate100,
-                                    child: Icon(Icons.error_outline,
-                                        size: 20, color: AppColors.slate400),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-        );
       },
     );
   }

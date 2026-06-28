@@ -98,6 +98,30 @@ void main() {
       expect(remaining, 50);
     });
 
+    test('emailInitial 应该返回邮箱首字母大写', () {
+      final user = User(
+        email: ' alice@example.com ',
+        transferEnable: 100,
+        u: 0,
+        d: 0,
+        balance: 0,
+      );
+
+      expect(user.emailInitial, 'A');
+    });
+
+    test('emailInitial 当邮箱为空时应该返回默认字符', () {
+      final user = User(
+        email: '',
+        transferEnable: 100,
+        u: 0,
+        d: 0,
+        balance: 0,
+      );
+
+      expect(user.emailInitial, '?');
+    });
+
     test('isExpired 当未设置过期时间时应该返回 false', () {
       // Arrange
       final user = User(

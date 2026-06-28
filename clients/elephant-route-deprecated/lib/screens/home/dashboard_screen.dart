@@ -343,40 +343,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
               ],
             ),
-            child: Consumer<UserProvider>(
-              builder: (context, provider, _) {
-                final avatarUrl = provider.avatarUrl;
-                return ClipRRect(
-                  borderRadius: AppDimensions.borderRadiusMedium,
-                  child: Image.network(
-                    avatarUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: Text(
-                          user.email[0].toUpperCase(),
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Text(
-                          user.email[0].toUpperCase(),
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
+            alignment: Alignment.center,
+            child: Text(
+              user.emailInitial,
+              style: AppTextStyles.titleLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(width: 16),

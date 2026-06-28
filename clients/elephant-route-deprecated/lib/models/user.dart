@@ -40,6 +40,13 @@ class User {
     return transferEnable - u - d;
   }
 
+  // 邮箱首字母，用于本地用户标识替代远程头像
+  String get emailInitial {
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isEmpty) return '?';
+    return trimmedEmail.substring(0, 1).toUpperCase();
+  }
+
   // 是否已过期
   bool get isExpired {
     if (expiredAt == null) return false;
