@@ -32,13 +32,13 @@ class AppNavigationBar extends StatelessWidget {
             height: AppDimensions.navigationBarHeight,
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.darkCard.withOpacity(0.8)
-                  : AppColors.lightCard.withOpacity(0.8),
+                  ? AppColors.darkCard.withValues(alpha: 0.8)
+                  : AppColors.lightCard.withValues(alpha: 0.8),
               borderRadius: AppDimensions.borderRadiusLarge,
               border: Border.all(
                 color: isDark
                     ? AppColors.darkCardBorder
-                    : AppColors.lightCardBorder.withOpacity(0.5),
+                    : AppColors.lightCardBorder.withValues(alpha: 0.5),
               ),
               boxShadow: isDark
                   ? AppShadows.navigationDark

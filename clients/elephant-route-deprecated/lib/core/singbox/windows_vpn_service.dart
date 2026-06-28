@@ -28,7 +28,6 @@ class WindowsVpnService implements VpnManager {
   String? _lastSanitizedConfig;
   String? _singboxDirPath;
   String? _singboxBinPath;
-  int _proxyPort = 2334;
 
   WindowsVpnService() {
     _clashDio = Dio(BaseOptions(
@@ -38,7 +37,8 @@ class WindowsVpnService implements VpnManager {
     ));
     // Force Dio to bypass system proxy for local Clash API calls
     _clashDio.httpClientAdapter = IOHttpClientAdapter(
-      onHttpClientCreate: (client) {
+      createHttpClient: () {
+        final client = HttpClient();
         client.findProxy = (uri) => 'DIRECT';
         return client;
       },
@@ -93,7 +93,6 @@ class WindowsVpnService implements VpnManager {
           }
         }
       }
-      _proxyPort = proxyPort;
 
       // Clear cache files to prevent SQLite corruption errors on start
       final filesToDelete = [
@@ -334,15 +333,6 @@ class WindowsVpnService implements VpnManager {
   }
 
   // ================= 辅助方法 =================
-
-  Future<String> _getArchitecture() async {
-    final result = await Process.run('uname', ['-m']);
-    final out = result.stdout.toString().trim();
-    if (out == 'arm64' || out == 'aarch64') {
-      return 'arm64';
-    }
-    return 'amd64';
-  }
 
   Future<bool> _enableSystemProxy(int port) async {
     try {

@@ -1,13 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elephant_network/providers/auth_provider.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../test_bootstrap.dart';
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  configureTestEnvironment();
+
   group('AuthProvider 测试', () {
     late AuthProvider authProvider;
     late DioClient dioClient;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       dioClient = DioClient();
       authProvider = AuthProvider(dioClient);
     });
@@ -65,6 +70,43 @@ void main() {
 
         // Assert
         expect(authProvider.isLoggedIn, isA<bool>());
+      });
+
+      test('restoreLoginStatus 应在 hint 和 token 都存在时恢复已验证登录', () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AuthProvider.sessionHintKey, 'true');
+        await dioClient.storage.write(key: 'auth_token', value: 'test-token');
+
+        final restored = await authProvider.restoreLoginStatus();
+
+        expect(restored, true);
+        expect(authProvider.isLoggedIn, true);
+        expect(authProvider.hasValidatedSession, true);
+        expect(prefs.getString(AuthProvider.sessionHintKey), 'true');
+      });
+
+      test('restoreLoginStatus 应在 hint 存在但 token 缺失时清除登录提示', () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AuthProvider.sessionHintKey, 'true');
+
+        final restored = await authProvider.restoreLoginStatus();
+
+        expect(restored, false);
+        expect(authProvider.isLoggedIn, false);
+        expect(authProvider.hasValidatedSession, false);
+        expect(prefs.getString(AuthProvider.sessionHintKey), null);
+      });
+
+      test('restoreLoginStatus 应在 token 存在但 hint 缺失时恢复登录', () async {
+        final prefs = await SharedPreferences.getInstance();
+        await dioClient.storage.write(key: 'auth_token', value: 'test-token');
+
+        final restored = await authProvider.restoreLoginStatus();
+
+        expect(restored, true);
+        expect(authProvider.isLoggedIn, true);
+        expect(authProvider.hasValidatedSession, true);
+        expect(prefs.getString(AuthProvider.sessionHintKey), 'true');
       });
     });
   });

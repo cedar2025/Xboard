@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class User {
   final String email;
   final int transferEnable; // 总流量(bytes)

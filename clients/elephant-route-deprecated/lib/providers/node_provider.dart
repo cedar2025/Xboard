@@ -47,15 +47,15 @@ class NodeProvider with ChangeNotifier {
         _handleLatencyUpdate(state.latencyMap!);
       }
 
-      print(
+      debugPrint(
           'DEBUG NodeProvider state: new=${state.status}, old=$_lastVpnStatus, nodes=${_nodes.length}');
       // VPN 连接成功后自动触发一次完整的测速
       if (_lastVpnStatus != VpnStatus.connected &&
           state.status == VpnStatus.connected) {
-        print(
+        debugPrint(
             'DEBUG NodeProvider: VPN 连接成功，延迟 2 秒后触发测速，nodes count: ${_nodes.length}');
         Future.delayed(const Duration(seconds: 2), () {
-          print(
+          debugPrint(
               'DEBUG NodeProvider: 开始执行 testAllLatencies (当前状态=${_vpnManager.currentState.status})');
           testAllLatencies();
         });
@@ -138,7 +138,8 @@ class NodeProvider with ChangeNotifier {
     receiveTimeout: const Duration(seconds: 5),
   ))
     ..httpClientAdapter = IOHttpClientAdapter(
-      onHttpClientCreate: (client) {
+      createHttpClient: () {
+        final client = HttpClient();
         client.findProxy = (uri) => 'DIRECT';
         return client;
       },
@@ -156,10 +157,10 @@ class NodeProvider with ChangeNotifier {
 
     try {
       if (_nodes.isEmpty) {
-        print('DEBUG: testAllLatencies 触发时 nodes 为空，尝试自动 fetchNodes...');
+        debugPrint('DEBUG: testAllLatencies 触发时 nodes 为空，尝试自动 fetchNodes...');
         await fetchNodes();
         if (_nodes.isEmpty) {
-          print('DEBUG: 自动 fetchNodes 后仍然为空，放弃测速。');
+          debugPrint('DEBUG: 自动 fetchNodes 后仍然为空，放弃测速。');
           return;
         }
       }
@@ -368,14 +369,14 @@ class NodeProvider with ChangeNotifier {
       try {
         subscribeInfo = await _userService.getSubscribe();
       } catch (e) {
-        print('DEBUG: getSubscribe 失败: $e');
+        debugPrint('DEBUG: getSubscribe 失败: $e');
         _errorMessage = '未找到订阅链接，请先购买套餐 (Debug: $e)';
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      print('DEBUG: subscribeInfo = $subscribeInfo');
+      debugPrint('DEBUG: subscribeInfo = $subscribeInfo');
 
       if (subscribeInfo == null) {
         _errorMessage = '未找到订阅链接，请先购买套餐';
@@ -410,7 +411,7 @@ class NodeProvider with ChangeNotifier {
       try {
         config = await _userService.getSubscriptionConfig(token);
       } catch (e) {
-        print('DEBUG: getSubscriptionConfig 失败: $e');
+        debugPrint('DEBUG: getSubscriptionConfig 失败: $e');
         _errorMessage = '订阅配置获取失败，请检查您的订阅状态';
         _isLoading = false;
         notifyListeners();
@@ -444,7 +445,7 @@ class NodeProvider with ChangeNotifier {
       );
       _nodes = [autoNode, ...mergedNodes];
 
-      print('DEBUG: 解析到 ${mergedNodes.length} 个节点 + 1 个自动选择节点');
+      debugPrint('DEBUG: 解析到 ${mergedNodes.length} 个节点 + 1 个自动选择节点');
 
       // 7. 默认选择逻辑
       if (_selectedNode == null) {
@@ -461,7 +462,7 @@ class NodeProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('DEBUG: fetchNodes 错误: $e');
+      debugPrint('DEBUG: fetchNodes 错误: $e');
       _errorMessage = '获取节点列表失败: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
@@ -529,7 +530,7 @@ class NodeProvider with ChangeNotifier {
       if (_autoSelectedRealNode == null && available.isNotEmpty) {
         _autoSelectedRealNode = available.first;
         _vpnManager.selectOutbound("节点选择", available.first.name);
-        print('DEBUG 自动选择: 无测速数据，选择第一个节点: ${available.first.name}');
+        debugPrint('DEBUG 自动选择: 无测速数据，选择第一个节点: ${available.first.name}');
       }
       return;
     }
@@ -538,7 +539,7 @@ class NodeProvider with ChangeNotifier {
       // 强制切换（用户主动选择自动模式）
       _autoSelectedRealNode = bestNode;
       _vpnManager.selectOutbound("节点选择", bestNode.name);
-      print('DEBUG 自动选择: 强制切换到最优节点: ${bestNode.name} (${bestLatency}ms)');
+      debugPrint('DEBUG 自动选择: 强制切换到最优节点: ${bestNode.name} (${bestLatency}ms)');
       return;
     }
 
@@ -556,16 +557,16 @@ class NodeProvider with ChangeNotifier {
       if (currentLatency != null && currentLatency > 0) {
         // 当前节点仍在线，不切换
         _autoSelectedRealNode = currentNode; // 更新延迟数据
-        print(
+        debugPrint(
             'DEBUG 自动选择: 当前节点 ${currentNode.name} (${currentLatency}ms) 仍在线，不切换');
         return;
       }
 
       // 当前节点超时了，切换到最优节点
-      print(
+      debugPrint(
           'DEBUG 自动选择: 当前节点 ${_autoSelectedRealNode!.name} 已超时，切换到: ${bestNode.name} (${bestLatency}ms)');
     } else {
-      print('DEBUG 自动选择: 首次选择最优节点: ${bestNode.name} (${bestLatency}ms)');
+      debugPrint('DEBUG 自动选择: 首次选择最优节点: ${bestNode.name} (${bestLatency}ms)');
     }
 
     _autoSelectedRealNode = bestNode;

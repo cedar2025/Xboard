@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
 
@@ -65,7 +66,7 @@ class MockVpnService implements VpnManager {
   Future<void> selectOutbound(String groupTag, String outboundTag) async {
     // Mock: 模拟切换延迟
     await Future.delayed(const Duration(milliseconds: 100));
-    print('Mock: Selected $outboundTag in $groupTag');
+    debugPrint('Mock: Selected $outboundTag in $groupTag');
   }
 
   @override

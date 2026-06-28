@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../models/proxy_node.dart';
 
 class SingboxConfigParser {
@@ -15,11 +16,11 @@ class SingboxConfigParser {
           final type = outbound['type'] as String?;
           final tag = outbound['tag'] as String?;
 
-          print('DEBUG Parser: Processing outbound tag=$tag, type=$type');
+          debugPrint('DEBUG Parser: Processing outbound tag=$tag, type=$type');
 
           // 过滤掉非代理类型的 outbound (比如 direct, block, dns 等)
           if (tag == null || _isInternalOutbound(type)) {
-            print('DEBUG Parser: Skipping internal outbound');
+            debugPrint('DEBUG Parser: Skipping internal outbound');
             continue;
           }
 
@@ -27,8 +28,8 @@ class SingboxConfigParser {
           final server = outbound['server'] as String? ?? '';
           final port = outbound['server_port'] as int? ?? 0;
 
-          print('DEBUG Parser: tls type = ${outbound['tls'].runtimeType}');
-          print(
+          debugPrint('DEBUG Parser: tls type = ${outbound['tls'].runtimeType}');
+          debugPrint(
               'DEBUG Parser: transport type = ${outbound['transport'].runtimeType}');
 
           nodes.add(ProxyNode(
@@ -43,16 +44,16 @@ class SingboxConfigParser {
             wsOptions: outbound['transport'],
           ));
 
-          print('DEBUG Parser: Successfully added node $tag');
+          debugPrint('DEBUG Parser: Successfully added node $tag');
         } catch (e) {
-          print('DEBUG Parser: Error processing outbound: $e');
-          print('DEBUG Parser: Outbound data: $outbound');
+          debugPrint('DEBUG Parser: Error processing outbound: $e');
+          debugPrint('DEBUG Parser: Outbound data: $outbound');
         }
       }
 
       return nodes;
     } catch (e) {
-      print('解析 Sing-box 配置失败: $e');
+      debugPrint('解析 Sing-box 配置失败: $e');
       return [];
     }
   }

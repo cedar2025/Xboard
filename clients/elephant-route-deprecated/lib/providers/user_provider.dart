@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
@@ -111,9 +110,9 @@ class UserProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      print(
+      debugPrint(
           'DEBUG: Request Parameter - plan_id: $planId, type: ${planId.runtimeType}');
-      print('DEBUG: Request Parameter - period: $period');
+      debugPrint('DEBUG: Request Parameter - period: $period');
 
       final payUrl = await _userService.createOrder(planId, period);
       _isLoading = false;

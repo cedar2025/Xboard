@@ -43,7 +43,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     // 加载用户数据
     Future.microtask(() {
-      if (context.read<AuthProvider>().hasValidatedSession) {
+      if (!mounted) return;
+      if (context.read<AuthProvider>().isLoggedIn) {
         context.read<UserProvider>().refresh();
       }
     });
@@ -315,7 +316,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 end: Alignment.bottomRight,
                 colors: [
                   AppColors.darkCard,
-                  AppColors.darkCardBorder.withOpacity(0.1),
+                  AppColors.darkCardBorder.withValues(alpha: 0.1),
                 ],
               )
             : null,
@@ -336,7 +337,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               borderRadius: AppDimensions.borderRadiusMedium,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -420,7 +421,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                         border: Border.all(
                           color: isConnected
                               ? (isDark
-                                  ? AppColors.primaryDark.withOpacity(0.3)
+                                  ? AppColors.primaryDark.withValues(alpha: 0.3)
                                   : AppColors.primaryLight)
                               : Colors.transparent,
                         ),
@@ -549,8 +550,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: usedPercentage > 90
-                          ? AppColors.error.withOpacity(0.1)
-                          : AppColors.primary.withOpacity(0.1),
+                          ? AppColors.error.withValues(alpha: 0.1)
+                          : AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -605,7 +606,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                             borderRadius: BorderRadius.circular(6),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -730,7 +731,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 color: (isDark
                                         ? AppColors.primaryLight
                                         : AppColors.primary)
-                                    .withOpacity(0.4),
+                                    .withValues(alpha: 0.4),
                                 blurRadius: 6,
                               ),
                             ]
@@ -777,13 +778,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.primary.withOpacity(0.12)
-            : AppColors.primary.withOpacity(0.08),
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : AppColors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: isDark
-              ? AppColors.primaryLight.withOpacity(0.22)
-              : AppColors.primary.withOpacity(0.18),
+              ? AppColors.primaryLight.withValues(alpha: 0.22)
+              : AppColors.primary.withValues(alpha: 0.18),
         ),
       ),
       child: Text(
@@ -986,8 +987,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 border: Border.all(
                   color: isConnected
                       ? (isDark
-                          ? AppColors.primaryLight.withOpacity(0.1)
-                          : AppColors.primary.withOpacity(0.05))
+                          ? AppColors.primaryLight.withValues(alpha: 0.1)
+                          : AppColors.primary.withValues(alpha: 0.05))
                       : (isDark ? AppColors.darkCardBorder : AppColors.slate50),
                   width: 1,
                 ),
@@ -1140,7 +1141,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getConnectionCardBorderColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primary.withOpacity(0.4)
+          ? AppColors.primary.withValues(alpha: 0.4)
           : AppColors.primaryLight;
     }
     return isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder;
@@ -1159,14 +1160,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Color _getDecorationIconColor(bool isConnected, bool isDark) {
     if (isConnected && isDark) {
-      return AppColors.primaryLight.withOpacity(0.15);
+      return AppColors.primaryLight.withValues(alpha: 0.15);
     } else if (isConnected && !isDark) {
       // 修复：浅色模式下背景本身是白色，图标不能是白色，改为淡主题色
-      return AppColors.primary.withOpacity(0.15);
+      return AppColors.primary.withValues(alpha: 0.15);
     } else if (!isConnected && isDark) {
-      return AppColors.primaryLight.withOpacity(0.1);
+      return AppColors.primaryLight.withValues(alpha: 0.1);
     } else {
-      return AppColors.primaryDark.withOpacity(0.04);
+      return AppColors.primaryDark.withValues(alpha: 0.04);
     }
   }
 
@@ -1180,7 +1181,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getCardDescriptionColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primaryLight.withOpacity(0.6)
+          ? AppColors.primaryLight.withValues(alpha: 0.6)
           : AppColors.lightTextSecondary;
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary;
@@ -1214,7 +1215,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getNodeButtonBgColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.darkCardSecondary.withOpacity(0.5)
+          ? AppColors.darkCardSecondary.withValues(alpha: 0.5)
           : AppColors.slate50;
     }
     return isDark ? AppColors.darkCardSecondary : Colors.white;
@@ -1223,8 +1224,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getNodeButtonBorderColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primary.withOpacity(0.2)
-          : AppColors.primaryLight.withOpacity(0.2);
+          ? AppColors.primary.withValues(alpha: 0.2)
+          : AppColors.primaryLight.withValues(alpha: 0.2);
     }
     return isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder;
   }
@@ -1232,7 +1233,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getNodeIconBgColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primary.withOpacity(0.2)
+          ? AppColors.primary.withValues(alpha: 0.2)
           : AppColors.primaryUltraLight;
     }
     return isDark ? AppColors.darkCard : AppColors.primaryUltraLight;
@@ -1241,7 +1242,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getNodeLabelColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primaryLight.withOpacity(0.4)
+          ? AppColors.primaryLight.withValues(alpha: 0.4)
           : AppColors.lightTextSecondary;
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary;
@@ -1257,8 +1258,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   Color _getNodeChevronColor(bool isConnected, bool isDark) {
     if (isConnected) {
       return isDark
-          ? AppColors.primaryLight.withOpacity(0.4)
-          : AppColors.primary.withOpacity(0.4);
+          ? AppColors.primaryLight.withValues(alpha: 0.4)
+          : AppColors.primary.withValues(alpha: 0.4);
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.slate300;
   }

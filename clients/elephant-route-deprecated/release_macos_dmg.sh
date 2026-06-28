@@ -2,8 +2,17 @@
 set -euo pipefail
 
 APP_NAME="ElephantRoute"
-APP_PATH="${1:-build/macos-beta/${APP_NAME}.app}"
-DMG_NAME="${2:-${APP_NAME}-beta.dmg}"
+MACOS_ARCH="${MACOS_ARCH:-arm64}"
+case "${MACOS_ARCH}" in
+  arm64|x64) ;;
+  *)
+    echo "MACOS_ARCH must be arm64 or x64, got: ${MACOS_ARCH}" >&2
+    exit 1
+    ;;
+esac
+
+APP_PATH="${1:-build/macos-beta/${APP_NAME}-macos-${MACOS_ARCH}.app}"
+DMG_NAME="${2:-${APP_NAME}-macos-${MACOS_ARCH}.dmg}"
 APPLE_ID="${APPLE_ID:-}"
 APPLE_TEAM_ID="${APPLE_TEAM_ID:-}"
 APPLE_APP_PASSWORD="${APPLE_APP_PASSWORD:-}"

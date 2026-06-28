@@ -6,15 +6,26 @@ HELPER_LABEL="com.elphantroute.elephantNetwork.tunhelper"
 HELPER_DIR="${PROJECT_DIR}/ElephantTunHelper"
 APP_CONTENTS="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}"
 HELPER_OUTPUT="${APP_CONTENTS}/MacOS/${HELPER_NAME}"
-BUILD_ARCH="${NATIVE_ARCH_ACTUAL:-${CURRENT_ARCH:-$(uname -m)}}"
-if [ "${BUILD_ARCH}" = "undefined_arch" ]; then
-  BUILD_ARCH="$(uname -m)"
-fi
+MACOS_ARCH="${MACOS_ARCH:-${NATIVE_ARCH_ACTUAL:-${CURRENT_ARCH:-$(uname -m)}}}"
+case "${MACOS_ARCH}" in
+  arm64)
+    SWIFT_TARGET="arm64-apple-macos13.0"
+    ;;
+  x64|x86_64|amd64)
+    SWIFT_TARGET="x86_64-apple-macos13.0"
+    ;;
+  undefined_arch)
+    SWIFT_TARGET="$(uname -m)-apple-macos13.0"
+    ;;
+  *)
+    SWIFT_TARGET="${MACOS_ARCH}-apple-macos13.0"
+    ;;
+esac
 
 mkdir -p "${APP_CONTENTS}/MacOS"
 
 xcrun swiftc \
-  -target "${BUILD_ARCH}-apple-macos13.0" \
+  -target "${SWIFT_TARGET}" \
   -O \
   "${HELPER_DIR}/main.swift" \
   -o "${HELPER_OUTPUT}"

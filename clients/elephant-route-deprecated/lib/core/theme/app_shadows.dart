@@ -10,7 +10,7 @@ class AppShadows {
   /// 小阴影 - Light
   static List<BoxShadow> lightSmall = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withValues(alpha: 0.05),
       blurRadius: 10,
       offset: const Offset(0, 2),
     ),
@@ -19,7 +19,7 @@ class AppShadows {
   /// 中阴影 - Light
   static List<BoxShadow> lightMedium = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
       blurRadius: 15,
       offset: const Offset(0, 4),
     ),
@@ -28,7 +28,7 @@ class AppShadows {
   /// 大阴影 - Light
   static List<BoxShadow> lightLarge = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.10),
+      color: Colors.black.withValues(alpha: 0.10),
       blurRadius: 20,
       offset: const Offset(0, 8),
     ),
@@ -37,7 +37,7 @@ class AppShadows {
   /// 超大阴影 - Light
   static List<BoxShadow> lightXL = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
+      color: Colors.black.withValues(alpha: 0.12),
       blurRadius: 30,
       offset: const Offset(0, 15),
     ),
@@ -46,7 +46,7 @@ class AppShadows {
   /// 卡片阴影 - Light (Premium UI 标准)
   static List<BoxShadow> lightCard = [
     BoxShadow(
-      color: AppColors.slate200.withOpacity(0.4),
+      color: AppColors.slate200.withValues(alpha: 0.4),
       blurRadius: 10,
       offset: const Offset(0, 2),
       spreadRadius: 0,
@@ -56,7 +56,7 @@ class AppShadows {
   /// 按钮阴影 - Light
   static List<BoxShadow> lightButton = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.1),
+      color: AppColors.primary.withValues(alpha: 0.1),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -67,7 +67,7 @@ class AppShadows {
   /// 小阴影 - Dark
   static List<BoxShadow> darkSmall = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.2),
+      color: Colors.black.withValues(alpha: 0.2),
       blurRadius: 10,
       offset: const Offset(0, 2),
     ),
@@ -76,7 +76,7 @@ class AppShadows {
   /// 中阴影 - Dark
   static List<BoxShadow> darkMedium = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.3),
+      color: Colors.black.withValues(alpha: 0.3),
       blurRadius: 15,
       offset: const Offset(0, 4),
     ),
@@ -85,7 +85,7 @@ class AppShadows {
   /// 大阴影 - Dark
   static List<BoxShadow> darkLarge = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withValues(alpha: 0.4),
       blurRadius: 30,
       offset: const Offset(0, 15),
     ),
@@ -94,7 +94,7 @@ class AppShadows {
   /// 超大阴影 - Dark
   static List<BoxShadow> darkXL = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       blurRadius: 40,
       offset: const Offset(0, 20),
     ),
@@ -103,7 +103,7 @@ class AppShadows {
   /// 卡片阴影 - Dark
   static List<BoxShadow> darkCard = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withValues(alpha: 0.4),
       blurRadius: 20,
       offset: const Offset(0, 10),
     ),
@@ -112,7 +112,7 @@ class AppShadows {
   /// 按钮阴影 - Dark
   static List<BoxShadow> darkButton = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.2),
+      color: AppColors.primary.withValues(alpha: 0.2),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -123,7 +123,7 @@ class AppShadows {
   /// 绿色发光效果 - 小
   static List<BoxShadow> glowSmall = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.3),
+      color: AppColors.primary.withValues(alpha: 0.3),
       blurRadius: 20,
       spreadRadius: 0,
     ),
@@ -132,7 +132,7 @@ class AppShadows {
   /// 绿色发光效果 - 中
   static List<BoxShadow> glowMedium = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.3),
+      color: AppColors.primary.withValues(alpha: 0.3),
       blurRadius: 40,
       spreadRadius: 0,
     ),
@@ -141,7 +141,7 @@ class AppShadows {
   /// 绿色发光效果 - 大 (连接状态专用)
   static List<BoxShadow> glowLarge = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.4),
+      color: AppColors.primary.withValues(alpha: 0.4),
       blurRadius: 50,
       spreadRadius: 0,
     ),
@@ -151,13 +151,13 @@ class AppShadows {
   static List<BoxShadow> glowMulti = [
     // 外层大范围柔和发光
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.2),
+      color: AppColors.primary.withValues(alpha: 0.2),
       blurRadius: 50,
       spreadRadius: 0,
     ),
     // 内层强一点的发光
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.4),
+      color: AppColors.primary.withValues(alpha: 0.4),
       blurRadius: 20,
       spreadRadius: -5,
     ),
@@ -168,7 +168,7 @@ class AppShadows {
   /// 连接卡片阴影 - 未连接 Light
   static List<BoxShadow> connectionDisconnectedLight = [
     BoxShadow(
-      color: AppColors.slate200.withOpacity(0.4),
+      color: AppColors.slate200.withValues(alpha: 0.4),
       blurRadius: 30,
       offset: const Offset(0, 10),
     ),
@@ -177,7 +177,7 @@ class AppShadows {
   /// 连接卡片阴影 - 未连接 Dark
   static List<BoxShadow> connectionDisconnectedDark = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withValues(alpha: 0.4),
       blurRadius: 40,
       offset: const Offset(0, 20),
     ),
@@ -186,7 +186,7 @@ class AppShadows {
   /// 连接卡片阴影 - 已连接 Light
   static List<BoxShadow> connectionConnectedLight = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.1),
+      color: AppColors.primary.withValues(alpha: 0.1),
       blurRadius: 40,
       offset: const Offset(0, 15),
     ),
@@ -195,7 +195,7 @@ class AppShadows {
   /// 连接卡片阴影 - 已连接 Dark (带发光)
   static List<BoxShadow> connectionConnectedDark = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.12),
+      color: AppColors.primary.withValues(alpha: 0.12),
       blurRadius: 50,
       spreadRadius: 0,
     ),
@@ -206,7 +206,7 @@ class AppShadows {
   /// 电源按钮 - 未连接 Light
   static List<BoxShadow> powerButtonDisconnectedLight = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
+      color: Colors.black.withValues(alpha: 0.12),
       blurRadius: 30,
       offset: const Offset(0, 15),
     ),
@@ -215,7 +215,7 @@ class AppShadows {
   /// 电源按钮 - 未连接 Dark
   static List<BoxShadow> powerButtonDisconnectedDark = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withValues(alpha: 0.4),
       blurRadius: 40,
       offset: const Offset(0, 20),
     ),
@@ -224,7 +224,7 @@ class AppShadows {
   /// 电源按钮 - 已连接 Light
   static List<BoxShadow> powerButtonConnectedLight = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: Colors.black.withValues(alpha: 0.1),
       blurRadius: 40,
       offset: const Offset(0, 15),
     ),
@@ -233,7 +233,7 @@ class AppShadows {
   /// 电源按钮 - 已连接 Dark (强发光)
   static List<BoxShadow> powerButtonConnectedDark = [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.4),
+      color: AppColors.primary.withValues(alpha: 0.4),
       blurRadius: 40,
       spreadRadius: 0,
     ),
@@ -244,7 +244,7 @@ class AppShadows {
   /// 导航栏阴影 - Light
   static List<BoxShadow> navigationLight = [
     BoxShadow(
-      color: AppColors.slate200.withOpacity(0.5),
+      color: AppColors.slate200.withValues(alpha: 0.5),
       blurRadius: 30,
       offset: const Offset(0, -5),
     ),
@@ -253,7 +253,7 @@ class AppShadows {
   /// 导航栏阴影 - Dark
   static List<BoxShadow> navigationDark = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withValues(alpha: 0.4),
       blurRadius: 30,
       offset: const Offset(0, -5),
     ),
@@ -296,7 +296,7 @@ class AppShadows {
   }) {
     return [
       BoxShadow(
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
         blurRadius: blurRadius,
         offset: offset,
         spreadRadius: spreadRadius,

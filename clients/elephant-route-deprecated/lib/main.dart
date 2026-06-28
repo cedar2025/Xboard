@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/api/dio_client.dart';
 import 'core/theme/app_colors.dart';
@@ -217,7 +216,6 @@ class MyApp extends StatelessWidget {
                   ),
                   contentPadding: AppDimensions.inputPadding,
                 ),
-                fontFamily: 'Source Han Sans CN',
                 textTheme: TextTheme(
                   displayLarge: AppTextStyles.displayLarge.copyWith(
                     color: AppColors.lightTextPrimary,
@@ -291,7 +289,6 @@ class MyApp extends StatelessWidget {
                   ),
                   contentPadding: AppDimensions.inputPadding,
                 ),
-                fontFamily: 'Source Han Sans CN',
                 textTheme: TextTheme(
                   displayLarge: AppTextStyles.displayLarge.copyWith(
                     color: AppColors.darkTextPrimary,
@@ -342,8 +339,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // 启动阶段只读本地提示，避免触发 Keychain 访问弹窗。
-      await authProvider.loadStartupLoginHint();
+      final isLoggedIn = await authProvider.restoreLoginStatus();
 
       if (!mounted) return;
 
@@ -353,7 +349,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       // 检查登录状态并跳转
-      if (authProvider.isLoggedIn) {
+      if (isLoggedIn) {
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
         Navigator.of(context).pushReplacementNamed('/login');

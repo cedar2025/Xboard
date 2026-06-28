@@ -149,8 +149,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             () => _isConfirmObscure = !_isConfirmObscure),
                         validator: (v) {
                           if (v == null || v.isEmpty) return '请确认新密码';
-                          if (v != _newPasswordController.text)
+                          if (v != _newPasswordController.text) {
                             return '两次输入的密码不一致';
+                          }
                           return null;
                         },
                       ),

@@ -5,10 +5,10 @@ class CustomToastWidget extends StatefulWidget {
   final VoidCallback onDismiss;
 
   const CustomToastWidget({
-    Key? key,
+    super.key,
     required this.message,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomToastWidget> createState() => _CustomToastWidgetState();
@@ -55,11 +55,11 @@ class _CustomToastWidgetState extends State<CustomToastWidget>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.85),
+                color: Colors.black.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(50),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

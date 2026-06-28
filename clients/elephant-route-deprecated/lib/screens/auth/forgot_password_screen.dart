@@ -524,8 +524,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.error.withOpacity(0.1)
-                  : AppColors.error.withOpacity(0.05),
+                  ? AppColors.error.withValues(alpha: 0.1)
+                  : AppColors.error.withValues(alpha: 0.05),
               borderRadius: AppDimensions.borderRadiusMedium,
               border: Border.all(
                 color: isDark ? AppColors.errorLight : AppColors.error,

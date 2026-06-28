@@ -22,7 +22,8 @@ class VpnProvider with ChangeNotifier {
   final ConfigProvider _configProvider;
   final Dio _trafficDio = Dio()
     ..httpClientAdapter = IOHttpClientAdapter(
-      onHttpClientCreate: (client) {
+      createHttpClient: () {
+        final client = HttpClient();
         client.findProxy = (uri) => 'DIRECT';
         return client;
       },

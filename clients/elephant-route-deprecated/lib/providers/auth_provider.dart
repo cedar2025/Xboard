@@ -41,6 +41,25 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> restoreLoginStatus() async {
+    final hint = await _localStorage.read(key: sessionHintKey);
+    _isLoggedIn = hint == 'true';
+    _hasValidatedSession = false;
+
+    final token = await _authService.getToken();
+    final restored = token != null && token.isNotEmpty;
+
+    _isLoggedIn = restored;
+    _hasValidatedSession = restored;
+    if (restored) {
+      await _localStorage.write(key: sessionHintKey, value: 'true');
+    } else {
+      await _localStorage.delete(key: sessionHintKey);
+    }
+    notifyListeners();
+    return restored;
+  }
+
   /// 获取快速登录 URL
   Future<String?> getQuickLoginUrl(String? redirect) async {
     try {
@@ -59,13 +78,7 @@ class AuthProvider with ChangeNotifier {
 
   /// 检查登录状态
   Future<void> checkLoginStatus() async {
-    _isLoggedIn = await _authService.isLoggedIn();
-    _hasValidatedSession = _isLoggedIn;
-    await _localStorage.write(
-      key: sessionHintKey,
-      value: _isLoggedIn ? 'true' : null,
-    );
-    notifyListeners();
+    await restoreLoginStatus();
   }
 
   /// 登录

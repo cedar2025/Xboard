@@ -10,7 +10,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
-import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
 import '../../utils/avatar_helper.dart';
 import '../../utils/platform_utils.dart';
@@ -30,7 +29,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = context.read<UserProvider>();
     final authProvider = context.read<AuthProvider>();
-    if (authProvider.hasValidatedSession &&
+    if (authProvider.isLoggedIn &&
         userProvider.user == null &&
         !userProvider.isLoading &&
         userProvider.errorMessage == null) {
@@ -74,8 +73,8 @@ class ProfileScreen extends StatelessWidget {
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? AppColors.error.withOpacity(0.1)
-                            : AppColors.error.withOpacity(0.05),
+                            ? AppColors.error.withValues(alpha: 0.1)
+                            : AppColors.error.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -224,7 +223,7 @@ class ProfileScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -308,7 +307,7 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
             color: isDark
-                ? AppColors.primaryUltraDark.withOpacity(0.3)
+                ? AppColors.primaryUltraDark.withValues(alpha: 0.3)
                 : AppColors.primaryUltraLight,
             borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             border: Border.all(
@@ -348,27 +347,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 区块标题
-  Widget _buildSectionTitle(BuildContext context, String title, bool isDark) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 4),
-        child: Text(
-          title,
-          style: AppTextStyles.labelMedium.copyWith(
-            color:
-                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 账号信息卡片
   Widget _buildInfoCard(BuildContext context, dynamic user, bool isDark) {
-    final tr = context.read<LanguageProvider>();
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -564,9 +544,8 @@ class ProfileScreen extends StatelessWidget {
           FutureBuilder<PackageInfo>(
             future: _packageInfoFuture,
             builder: (context, snapshot) {
-              final version = snapshot.hasData
-                  ? 'v${snapshot.data!.version}'
-                  : '查看版本';
+              final version =
+                  snapshot.hasData ? 'v${snapshot.data!.version}' : '查看版本';
               return _buildActionItem(
                 context,
                 Icons.info_outline,
@@ -596,7 +575,6 @@ class ProfileScreen extends StatelessWidget {
     String value,
     bool isDark, {
     bool isFirst = false,
-    bool isLast = false,
     bool showChevron = false,
   }) {
     return Container(
@@ -746,116 +724,6 @@ class ProfileScreen extends StatelessWidget {
         Navigator.of(context).pushReplacementNamed('/login');
       }
     }
-  }
-
-  /// 语言选择器
-  void _showLanguagePicker(
-      BuildContext context, LanguageProvider provider, bool isDark) {
-    if (PlatformUtils.isDesktop) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      provider.translate('language'),
-                      style: AppTextStyles.titleSmall.copyWith(
-                        color: isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLanguageOption(context, provider, '中文', 'zh', isDark),
-                    _buildLanguageOption(
-                        context, provider, 'English', 'en', isDark),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppDimensions.radiusLarge),
-        ),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                provider.translate('language'),
-                style: AppTextStyles.titleSmall.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildLanguageOption(context, provider, '中文', 'zh', isDark),
-              _buildLanguageOption(context, provider, 'English', 'en', isDark),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  /// 语言选项
-  Widget _buildLanguageOption(
-    BuildContext context,
-    LanguageProvider provider,
-    String title,
-    String code,
-    bool isDark,
-  ) {
-    final isSelected = provider.locale.languageCode == code;
-
-    return ListTile(
-      title: Text(
-        title,
-        style: AppTextStyles.bodyLarge.copyWith(
-          color: isSelected
-              ? (isDark ? AppColors.primaryLight : AppColors.primary)
-              : (isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary),
-          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-        ),
-      ),
-      trailing: isSelected
-          ? Icon(
-              Icons.check,
-              color: isDark ? AppColors.primaryLight : AppColors.primary,
-            )
-          : null,
-      onTap: () {
-        provider.setLanguage(code);
-        Navigator.pop(context);
-      },
-    );
   }
 
   /// 主题选择器

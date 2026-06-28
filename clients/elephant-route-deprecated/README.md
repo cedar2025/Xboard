@@ -13,7 +13,7 @@ Flutter desktop/mobile client for Xboard-compatible subscriptions.
 
 ```bash
 flutter pub get
-flutter run -d macos --dart-define=BASE_URL=https://www.elphantroute.com
+flutter run -d macos --dart-define=BASE_URL=https://www.elephant223.com
 ```
 
 ## Release

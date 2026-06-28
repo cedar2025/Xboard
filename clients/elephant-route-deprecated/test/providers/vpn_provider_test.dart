@@ -1,17 +1,61 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dio/dio.dart';
 import 'package:elephant_network/providers/vpn_provider.dart';
 import 'package:elephant_network/providers/config_provider.dart';
 import 'package:elephant_network/core/singbox/vpn_state.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
 import 'package:elephant_network/core/singbox/mock_vpn_service.dart';
+import 'package:elephant_network/utils/constants.dart';
+import '../test_bootstrap.dart';
 
 void main() {
+  configureTestEnvironment();
+
   group('VpnProvider 测试', () {
     late VpnProvider vpnProvider;
 
     setUp(() {
+      final dioClient = DioClient();
+      dioClient.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (options.path == ApiConstants.getSubscribe) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  data: {
+                    'data': {
+                      'subscribe_url':
+                          'https://www.elephant223.com/api/v1/client/subscribe?token=test-token',
+                    },
+                  },
+                ),
+              );
+              return;
+            }
+
+            if (options.path == ApiConstants.subscribe) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  data: {
+                    'dns': {
+                      'servers': <Map<String, dynamic>>[],
+                    },
+                    'outbounds': <Map<String, dynamic>>[],
+                  },
+                ),
+              );
+              return;
+            }
+
+            handler.next(options);
+          },
+        ),
+      );
+
       // 使用真实的 MockVpnService 和 ConfigProvider
-      vpnProvider = VpnProvider(DioClient(), MockVpnService(), ConfigProvider());
+      vpnProvider = VpnProvider(dioClient, MockVpnService(), ConfigProvider());
     });
 
     tearDown(() {

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// 格式化字节数为可读格式
 String formatBytes(int bytes) {
   if (bytes < 1024) return '${bytes}B';

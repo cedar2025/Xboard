@@ -37,7 +37,7 @@ class RealVpnService implements VpnManager {
       final bool? result = await _channel.invokeMethod('requestPermission');
       return result ?? false;
     } on PlatformException catch (e) {
-      print("请求权限失败: ${e.message}");
+      debugPrint("请求权限失败: ${e.message}");
       return false;
     }
   }
@@ -50,7 +50,7 @@ class RealVpnService implements VpnManager {
       await _channel.invokeMethod('urlTest', {'groupTag': groupTag});
       return 0; // Return 0 to indicate request sent
     } on PlatformException catch (e) {
-      print("延迟测试失败: ${e.message}");
+      debugPrint("延迟测试失败: ${e.message}");
       return -1;
     }
   }
@@ -94,7 +94,7 @@ class RealVpnService implements VpnManager {
     try {
       await _channel.invokeMethod('stop');
     } on PlatformException catch (e) {
-      print("停止失败: ${e.message}");
+      debugPrint("停止失败: ${e.message}");
     }
   }
 
@@ -106,7 +106,7 @@ class RealVpnService implements VpnManager {
         'outboundTag': outboundTag,
       });
     } on PlatformException catch (e) {
-      print("切换节点失败: ${e.message}");
+      debugPrint("切换节点失败: ${e.message}");
     }
   }
 
@@ -149,7 +149,7 @@ class RealVpnService implements VpnManager {
           debugPrint(
               '[SPEED_TEST_DART] Parsed latency map size: ${latencyMap.length}');
         } catch (e) {
-          print("[SPEED_TEST_DART] Error parsing latency update: $e");
+          debugPrint("[SPEED_TEST_DART] Error parsing latency update: $e");
         }
       }
 
@@ -165,7 +165,7 @@ class RealVpnService implements VpnManager {
 
       _stateController.add(_currentState);
     } catch (e) {
-      print("解析原生状态数据失败: $e");
+      debugPrint("解析原生状态数据失败: $e");
     }
   }
 

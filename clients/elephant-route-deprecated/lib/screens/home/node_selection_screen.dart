@@ -20,7 +20,7 @@ class NodeSelectionScreen extends StatefulWidget {
 class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
   final TextEditingController _searchController = TextEditingController();
   // ignore: unused_field
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   @override
   void initState() {
@@ -75,7 +75,6 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
 
                   final nodes = provider.nodes;
                   final isDesktop = PlatformUtils.isDesktop;
-                  final columns = PlatformUtils.getGridColumns(context);
 
                   // 分离自动节点和普通节点
                   final autoNodes =
@@ -257,12 +256,12 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                   end: Alignment.bottomRight,
                   colors: isDark
                       ? [
-                          AppColors.primaryDark.withOpacity(0.3),
-                          AppColors.primaryUltraDark.withOpacity(0.2)
+                          AppColors.primaryDark.withValues(alpha: 0.3),
+                          AppColors.primaryUltraDark.withValues(alpha: 0.2)
                         ]
                       : [
                           AppColors.primaryUltraLight,
-                          AppColors.primaryLight.withOpacity(0.15)
+                          AppColors.primaryLight.withValues(alpha: 0.15)
                         ],
                 )
               : null,
@@ -346,8 +345,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                               : '智能选择最快节点',
                           style: AppTextStyles.labelTiny.copyWith(
                             color: isDark
-                                ? AppColors.primaryLight.withOpacity(0.7)
-                                : AppColors.primary.withOpacity(0.8),
+                                ? AppColors.primaryLight.withValues(alpha: 0.7)
+                                : AppColors.primary.withValues(alpha: 0.8),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -421,7 +420,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
           decoration: BoxDecoration(
             color: isSelected
                 ? (isDark
-                    ? AppColors.primaryUltraDark.withOpacity(0.3)
+                    ? AppColors.primaryUltraDark.withValues(alpha: 0.3)
                     : AppColors.primaryUltraLight)
                 : (isDark ? AppColors.darkCard : AppColors.lightCard),
             borderRadius: AppDimensions.borderRadiusMedium,
@@ -449,7 +448,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? (isDark
-                              ? AppColors.primaryDark.withOpacity(0.2)
+                              ? AppColors.primaryDark.withValues(alpha: 0.2)
                               : AppColors.primaryUltraLight)
                           : (isDark
                               ? AppColors.darkCardSecondary
@@ -532,7 +531,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
   /// 错误视图
   Widget _buildErrorView(bool isDark, NodeProvider provider) {
     final errorMsg = provider.errorMessage ?? '';
-    print('DEBUG: NodeSelectionScreen Error Message: "$errorMsg"');
+    debugPrint('DEBUG: NodeSelectionScreen Error Message: "$errorMsg"');
 
     final isSubscriptionError =
         errorMsg.contains('订阅') || errorMsg.contains('套餐');
@@ -585,7 +584,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark
-                    ? AppColors.primaryDark.withOpacity(0.1)
+                    ? AppColors.primaryDark.withValues(alpha: 0.1)
                     : AppColors.primaryUltraLight,
                 shape: BoxShape.circle,
               ),

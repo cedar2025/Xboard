@@ -494,7 +494,7 @@ class ConfigScreen extends StatelessWidget {
               ),
               tileColor: isSelected
                   ? (isDark
-                      ? AppColors.primaryDark.withOpacity(0.15)
+                      ? AppColors.primaryDark.withValues(alpha: 0.15)
                       : AppColors.primaryUltraLight)
                   : null,
               leading: Icon(

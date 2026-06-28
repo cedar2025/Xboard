@@ -22,7 +22,6 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
-  bool _isLoading = true;
   double _progress = 0;
 
   @override
@@ -39,15 +38,8 @@ class _WebViewPageState extends State<WebViewPage> {
               _progress = progress / 100;
             });
           },
-          onPageStarted: (String url) {
-            setState(() {
-              _isLoading = true;
-            });
-          },
+          onPageStarted: (String url) {},
           onPageFinished: (String url) {
-            setState(() {
-              _isLoading = false;
-            });
             if (widget.hideElements) {
               _injectCSS();
             }

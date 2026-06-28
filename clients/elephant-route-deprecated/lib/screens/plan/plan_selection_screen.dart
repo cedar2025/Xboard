@@ -8,7 +8,6 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../widgets/custom_webview.dart';
-import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
 import '../../utils/platform_utils.dart';
 
@@ -24,6 +23,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       context.read<UserProvider>().fetchPlans();
     });
   }
@@ -219,7 +219,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
       decoration: BoxDecoration(
         color: isHot
             ? (isDark
-                ? AppColors.primaryUltraDark.withOpacity(0.3)
+                ? AppColors.primaryUltraDark.withValues(alpha: 0.3)
                 : AppColors.primaryUltraLight)
             : (isDark ? AppColors.darkCard : AppColors.lightCard),
         borderRadius: AppDimensions.borderRadiusLarge,
@@ -309,8 +309,8 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                 thickness: 6,
                 radius: const Radius.circular(999),
                 thumbColor: isDark
-                    ? AppColors.darkTextTertiary.withOpacity(0.55)
-                    : AppColors.lightTextTertiary.withOpacity(0.55),
+                    ? AppColors.darkTextTertiary.withValues(alpha: 0.55)
+                    : AppColors.lightTextTertiary.withValues(alpha: 0.55),
                 trackColor: Colors.transparent,
                 child: ScrollConfiguration(
                   behavior: ScrollConfiguration.of(context).copyWith(

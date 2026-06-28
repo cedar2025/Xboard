@@ -26,7 +26,6 @@ class CustomWebView extends StatefulWidget {
 
 class _CustomWebViewState extends State<CustomWebView> {
   late final WebViewController _controller = WebViewController();
-  bool _isLoading = false;
   double _progress = 0;
 
   @override
@@ -60,11 +59,6 @@ class _CustomWebViewState extends State<CustomWebView> {
           },
           onPageFinished: (String url) {
             debugPrint('WebView Page Finished: $url');
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
             // Inject CSS to hide sidebar and header
             _injectHideLayoutCSS();
           },

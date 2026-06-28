@@ -50,7 +50,8 @@ the home-page TUN connection button until the user opens the new DMG download.
 
 ## Release Flow
 
-1. Build the release app and DMG with the existing macOS release script.
+1. Build the release app and DMG with `MACOS_ARCH=arm64 ./build_macos_beta.sh`
+   and `MACOS_ARCH=x64 ./build_macos_beta.sh`.
 2. Sign and notarize the app, helper, and DMG.
 3. Upload the DMG to the production download host.
 4. Record the SHA256 checksum and DMG size.

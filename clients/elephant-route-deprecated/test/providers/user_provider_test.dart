@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elephant_network/providers/user_provider.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
+import '../test_bootstrap.dart';
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  configureTestEnvironment();
+
   group('UserProvider 测试', () {
     late UserProvider userProvider;
     late DioClient dioClient;

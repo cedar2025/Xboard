@@ -5,9 +5,12 @@ void main() {
   group('VpnState', () {
     test('processing states are reported correctly', () {
       expect(const VpnState(status: VpnStatus.connecting).isProcessing, isTrue);
-      expect(const VpnState(status: VpnStatus.coreStarting).isProcessing, isTrue);
-      expect(const VpnState(status: VpnStatus.applyingProxy).isProcessing, isTrue);
-      expect(const VpnState(status: VpnStatus.disconnecting).isProcessing, isTrue);
+      expect(
+          const VpnState(status: VpnStatus.coreStarting).isProcessing, isTrue);
+      expect(
+          const VpnState(status: VpnStatus.applyingProxy).isProcessing, isTrue);
+      expect(
+          const VpnState(status: VpnStatus.disconnecting).isProcessing, isTrue);
       expect(const VpnState(status: VpnStatus.connected).isProcessing, isFalse);
     });
 
