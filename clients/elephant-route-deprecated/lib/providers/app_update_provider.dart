@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../core/api/services/app_update_service.dart';
 import '../core/services/app_logger.dart';
@@ -16,12 +15,18 @@ class AppUpdateProvider with ChangeNotifier {
   final AppUpdateService _service;
   AppUpdateInfo? _latest;
   String? _errorMessage;
+  String? _downloadErrorMessage;
   bool _isChecking = false;
+  bool _isDownloading = false;
   bool _promptDismissed = false;
+  double _downloadProgress = 0;
 
   AppUpdateInfo? get latest => _latest;
   String? get errorMessage => _errorMessage;
+  String? get downloadErrorMessage => _downloadErrorMessage;
   bool get isChecking => _isChecking;
+  bool get isDownloading => _isDownloading;
+  double get downloadProgress => _downloadProgress;
   bool get hasUpdate => _latest != null;
   bool get forceUpdateRequired => _latest?.force == true;
   bool get shouldPrompt =>
@@ -69,19 +74,38 @@ class AppUpdateProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> openDownloadPage() async {
+  Future<bool> downloadAndInstallUpdate() async {
     final update = _latest;
     if (update == null || update.downloadUrl.isEmpty) return false;
 
-    final uri = Uri.tryParse(update.downloadUrl);
-    if (uri == null) return false;
+    _isDownloading = true;
+    _downloadProgress = 0;
+    _downloadErrorMessage = null;
+    notifyListeners();
 
-    await _safeTelemetry('download_clicked');
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (opened) {
+    try {
+      await _safeTelemetry('download_clicked');
+      final apk = await _service.downloadUpdate(
+        update,
+        onProgress: (received, total) {
+          if (total <= 0) return;
+          _downloadProgress = (received / total).clamp(0, 1).toDouble();
+          notifyListeners();
+        },
+      );
       await _safeTelemetry('download_opened');
+      await _service.installDownloadedApk(apk);
+      _downloadProgress = 1;
+      return true;
+    } catch (e, stackTrace) {
+      _downloadErrorMessage = '下载更新失败，请稍后重试';
+      await AppLogger.instance.error('App update download failed',
+          error: e, stackTrace: stackTrace);
+      return false;
+    } finally {
+      _isDownloading = false;
+      notifyListeners();
     }
-    return opened;
   }
 
   Future<void> sendHeartbeat() async {

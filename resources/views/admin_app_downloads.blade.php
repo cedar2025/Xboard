@@ -221,16 +221,17 @@
       <p class="muted">先选择安装包，系统会自动识别应用名称和平台，提交后会自动创建或复用应用并发布版本。</p>
       <form id="package-form" enctype="multipart/form-data">
         <input type="hidden" name="app_id">
-        <input type="hidden" name="app_key">
         <input type="hidden" name="channel" value="stable">
         <input type="hidden" name="arch">
-        <input type="hidden" name="version">
         <input type="hidden" name="build_number">
         <input type="hidden" name="min_supported_build" value="0">
         <input type="hidden" name="is_force" value="0">
         <input type="hidden" name="is_enabled" value="1">
         <label>安装包<input type="file" name="artifact" required></label>
         <label>应用名称<input name="app_name" required placeholder="例如 Clash Verge"></label>
+        <label>应用标识<input name="app_key" pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="例如 elephant-route-android"></label>
+        <p class="muted">同一个软件的后续版本必须保持一致，用于客户端更新匹配。</p>
+        <label>版本号<input name="version" required placeholder="例如 1.1.0"></label>
         <label>平台
           <select name="platform" required>
             <option value="android">Android</option>
@@ -269,6 +270,7 @@
           <thead>
             <tr>
               <th>应用</th>
+              <th>版本号</th>
               <th>平台</th>
               <th>安装包</th>
               <th>下载次数</th>
@@ -420,6 +422,7 @@
       function setPackageDefaults(force) {
         if (force) {
           packageForm.querySelector('[name="app_id"]').value = "";
+          packageForm.querySelector('[name="app_key"]').value = "";
         }
         if (force || !packageForm.querySelector('[name="build_number"]').value) {
           packageForm.querySelector('[name="channel"]').value = "stable";
@@ -458,6 +461,29 @@
         return "";
       }
 
+      function inferVersion(filename) {
+        var base = stripKnownExtension(filename);
+        var match = base.match(/(?:^|[-_\s])v?(\d+(?:\.\d+){1,4}(?:[+-][a-z0-9._-]+)?)(?=$|[-_\s])/i);
+        return match ? match[1] : "";
+      }
+
+      function slugifyAppKey(value) {
+        return String(value || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .replace(/-{2,}/g, "-");
+      }
+
+      function inferAppKey(filename, appName, platform) {
+        var joined = [filename, appName].join(" ").toLowerCase();
+        if (platform === "android" && /elephant[\s._-]*route/.test(joined)) {
+          return "elephant-route-android";
+        }
+        return slugifyAppKey(appName);
+      }
+
       function titleCase(words) {
         return words.map(function (word) {
           if (!word) {
@@ -489,8 +515,7 @@
           if (ignored.indexOf(lower) !== -1) {
             continue;
           }
-          var previousLower = String(parts[i - 1] || "").toLowerCase();
-          if ((/^v?\d+(\.\d+){1,4}([+-].*)?$/i.test(part) && previousLower !== "prd") || /^\d{6,}$/.test(part)) {
+          if (/^v?\d+(\.\d+){1,4}([+-].*)?$/i.test(part) || /^\d{6,}$/.test(part)) {
             continue;
           }
           kept.push(part);
@@ -509,6 +534,33 @@
         var artifactName = version && version.artifact ? version.artifact.original_name : "";
         var inferredName = artifactName ? inferAppName(artifactName) : "";
         return hasLegacyDecimalSpacing(appName, inferredName) ? inferredName : appName;
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          }[char];
+        });
+      }
+
+      function formatAppIdentity(version) {
+        var app = version && version.app ? version.app : {};
+        var appKey = app.app_key || "";
+        var label = displayAppName(version) || appKey || "-";
+        return escapeHtml(label)
+          + (appKey ? "<br><span class=\"muted\">" + escapeHtml(appKey) + "</span>" : "");
+      }
+
+      function formatVersionLabel(version) {
+        var versionName = version && version.version ? version.version : "-";
+        var buildNumber = version && version.build_number ? version.build_number : "";
+        return escapeHtml(versionName)
+          + (buildNumber ? "<br><span class=\"muted\">Build " + escapeHtml(buildNumber) + "</span>" : "");
       }
 
       function findExistingAppByGuess(name) {
@@ -531,12 +583,18 @@
         }
         var guessedName = inferAppName(file.name);
         var guessedPlatform = detectPlatform(file.name);
+        var guessedVersion = inferVersion(file.name);
         var existingApp = findExistingAppByGuess(guessedName);
         packageForm.querySelector('[name="app_id"]').value = existingApp ? existingApp.id : "";
         packageForm.querySelector('[name="app_name"]').value = existingApp && !hasLegacyDecimalSpacing(existingApp.name, guessedName)
           ? existingApp.name
           : guessedName;
-        packageForm.querySelector('[name="app_key"]').value = existingApp ? existingApp.app_key : "";
+        packageForm.querySelector('[name="app_key"]').value = existingApp
+          ? existingApp.app_key
+          : inferAppKey(file.name, guessedName, guessedPlatform);
+        if (guessedVersion) {
+          packageForm.querySelector('[name="version"]').value = guessedVersion;
+        }
         if (guessedPlatform) {
           packageForm.querySelector('[name="platform"]').value = guessedPlatform;
         }
@@ -576,16 +634,18 @@
             "<td></td>",
             "<td></td>",
             "<td></td>",
+            "<td></td>",
             '<td><div class="row"></div></td>'
           ].join("");
-          row.children[0].textContent = displayAppName(version);
-          row.children[1].textContent = version.platform;
-          row.children[2].innerHTML = artifact
+          row.children[0].innerHTML = formatAppIdentity(version);
+          row.children[1].innerHTML = formatVersionLabel(version);
+          row.children[2].textContent = version.platform;
+          row.children[3].innerHTML = artifact
             ? artifact.original_name + "<br><span class=\"muted\">" + Math.round(artifact.file_size / 1024 / 1024 * 10) / 10 + " MB</span>"
             : '<span class="badge off">未上传</span>';
           var downloadCount = artifact ? Number(artifact.download_logs_count || 0) : 0;
-          row.children[3].textContent = downloadCount.toLocaleString("zh-CN");
-          row.children[4].innerHTML = version.is_enabled
+          row.children[4].textContent = downloadCount.toLocaleString("zh-CN");
+          row.children[5].innerHTML = version.is_enabled
             ? '<span class="badge ok">published</span>'
             : '<span class="badge off">disabled</span>';
 
@@ -648,6 +708,16 @@
         });
       }
 
+      function findExistingAppByKey(appKey) {
+        var normalized = String(appKey || "").trim().toLowerCase();
+        if (!normalized) {
+          return null;
+        }
+        return apps.find(function (app) {
+          return String(app.app_key || "").trim().toLowerCase() === normalized;
+        });
+      }
+
       function findExistingAppById(id) {
         return apps.find(function (app) {
           return String(app.id) === String(id);
@@ -666,16 +736,19 @@
         try {
           setPackageDefaults(false);
           var appName = packageForm.querySelector('[name="app_name"]').value.trim();
-          var existingApp = findExistingAppByName(appName);
+          var appKey = packageForm.querySelector('[name="app_key"]').value.trim();
+          var existingApp = findExistingAppByKey(appKey) || findExistingAppByName(appName);
           var currentAppId = packageForm.querySelector('[name="app_id"]').value;
           var currentApp = currentAppId ? findExistingAppById(currentAppId) : null;
-          if (currentApp && String(currentApp.name || "").trim().toLowerCase() !== appName.toLowerCase()) {
+          if (currentApp
+            && String(currentApp.name || "").trim().toLowerCase() !== appName.toLowerCase()
+            && String(currentApp.app_key || "").trim().toLowerCase() !== appKey.toLowerCase()) {
             currentAppId = "";
             packageForm.querySelector('[name="app_id"]').value = "";
           }
           var appPayload = {
             name: appName,
-            app_key: packageForm.querySelector('[name="app_key"]').value || "",
+            app_key: appKey,
             description: packageForm.querySelector('[name="release_notes"]').value || "",
             is_active: 1
           };

@@ -33,6 +33,7 @@ dependencies:
 
   # 网络请求
   dio: ^5.7.0
+  crypto: ^3.0.6
 
   # 状态管理
   provider: ^6.1.2

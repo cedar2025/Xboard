@@ -4,14 +4,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.net.VpnService
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.elephant.network/vpn"
+    private val UPDATE_CHANNEL = "com.elephant.network/update"
     private val EVENT_CHANNEL = "com.elephant.network/vpn_state"
     private val VPN_REQUEST_CODE = 100
     private var pendingResult: MethodChannel.Result? = null
@@ -124,6 +130,25 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPDATE_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "primaryAbi" -> {
+                    result.success(Build.SUPPORTED_ABIS.firstOrNull() ?: "")
+                }
+                "installApk" -> {
+                    val path = call.argument<String>("path")
+                    if (path.isNullOrBlank()) {
+                        result.error("INVALID_ARGUMENT", "APK path is required", null)
+                        return@setMethodCallHandler
+                    }
+                    installApk(path, result)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
+
         // EventChannel
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
             object : EventChannel.StreamHandler {
@@ -142,6 +167,43 @@ class MainActivity : FlutterActivity() {
                 }
             }
         )
+    }
+
+    private fun installApk(path: String, result: MethodChannel.Result) {
+        val apkFile = File(path)
+        if (!apkFile.exists()) {
+            result.error("FILE_NOT_FOUND", "APK file does not exist", null)
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            val settingsIntent = Intent(
+                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:$packageName")
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(settingsIntent)
+            result.error(
+                "INSTALL_PERMISSION_REQUIRED",
+                "Please allow this app to install unknown apps, then try again",
+                null
+            )
+            return
+        }
+
+        val apkUri = FileProvider.getUriForFile(
+            this,
+            "$packageName.fileprovider",
+            apkFile
+        )
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(apkUri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(installIntent)
+        result.success(null)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

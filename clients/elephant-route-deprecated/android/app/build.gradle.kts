@@ -79,6 +79,7 @@ dependencies {
     // libbox.aar dependency
     // 注意: sing-box-for-android 不通过 Maven 发布，需要本地构建
     implementation(fileTree("libs") { include("*.aar") })
+    implementation("androidx.core:core-ktx:1.13.1")
 }
 
 flutter {

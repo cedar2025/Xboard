@@ -77,29 +77,41 @@ class AppPackageController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        $data['app_key'] = $data['app_key'] ?: Str::slug($data['name']);
-        if (!$data['app_key']) {
-            $data['app_key'] = 'app-' . Str::lower(Str::random(8));
-        }
         $data['is_active'] = (bool) ($data['is_active'] ?? true);
+        $data['app_key'] = trim((string) ($data['app_key'] ?? ''));
 
-        $existingByKey = DistributionApp::query()
-            ->where('app_key', $data['app_key'])
-            ->first();
-        if ($existingByKey && (empty($data['id']) || (int) $existingByKey->id !== (int) $data['id'])) {
-            if (!empty($data['id'])) {
-                return $this->fail([400, '应用标识已存在，请更换应用名称或标识']);
+        if ($data['app_key'] !== '') {
+            $existingByKey = DistributionApp::query()
+                ->where('app_key', $data['app_key'])
+                ->first();
+            if ($existingByKey) {
+                $data['id'] = $existingByKey->id;
             }
-            $data['id'] = $existingByKey->id;
         }
 
-        if (empty($data['id'])) {
+        if (empty($data['id']) && empty($data['app_key'])) {
+            $data['app_key'] = Str::slug($data['name']);
+            if (!$data['app_key']) {
+                $data['app_key'] = 'app-' . Str::lower(Str::random(8));
+            }
+        }
+
+        if (empty($data['id']) && empty($request->input('app_key'))) {
             $existingByName = DistributionApp::query()
                 ->where('name', $data['name'])
                 ->first();
             if ($existingByName) {
                 $data['id'] = $existingByName->id;
                 $data['app_key'] = $existingByName->app_key;
+            }
+        }
+
+        if (empty($data['id'])) {
+            $existingByKey = DistributionApp::query()
+                ->where('app_key', $data['app_key'])
+                ->first();
+            if ($existingByKey) {
+                $data['id'] = $existingByKey->id;
             }
         }
 
