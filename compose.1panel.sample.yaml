@@ -29,7 +29,11 @@ services:
       - RESOURCE_PROFILE=balanced      # minimal | balanced | performance | auto
       - ENABLE_HORIZON=true
       - docker=true
-
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
 networks:
   1panel-network:
     external: true
