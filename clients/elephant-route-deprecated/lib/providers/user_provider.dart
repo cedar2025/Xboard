@@ -88,22 +88,7 @@ class UserProvider with ChangeNotifier {
 
       // 从订阅信息中提取流量数据并更新到 User 对象
       if (_subscribeInfo != null && _user != null) {
-        final u = _subscribeInfo!['u'] ?? _subscribeInfo!['upload'] ?? 0;
-        final d = _subscribeInfo!['d'] ?? _subscribeInfo!['download'] ?? 0;
-        final transferEnable =
-            _subscribeInfo!['transfer_enable'] ?? _user!.transferEnable;
-
-        // 创建新的 User 对象，包含流量数据
-        _user = User(
-          email: _user!.email,
-          transferEnable:
-              transferEnable is int ? transferEnable : _user!.transferEnable,
-          u: u is int ? u : 0,
-          d: d is int ? d : 0,
-          expiredAt: _user!.expiredAt,
-          balance: _user!.balance,
-          planId: _user!.planId,
-        );
+        _user = _user!.copyWithTrafficData(_subscribeInfo!);
       }
 
       notifyListeners();

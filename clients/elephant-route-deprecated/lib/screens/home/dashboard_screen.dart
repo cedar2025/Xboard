@@ -8,6 +8,7 @@ import '../../providers/vpn_provider.dart';
 import '../../providers/node_provider.dart';
 import '../../providers/app_update_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../models/user.dart';
 import '../../core/services/mac_runtime_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -146,10 +147,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                 );
               }
 
+              final pagePadding = PlatformUtils.isDesktop
+                  ? AppDimensions.pagePadding
+                  : const EdgeInsets.fromLTRB(18, 12, 18, 106);
+
               return SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(
-                    parent: ClampingScrollPhysics()),
-                padding: AppDimensions.pagePadding,
+                physics: const ClampingScrollPhysics(),
+                padding: pagePadding,
                 child: Consumer<VpnProvider>(
                   builder: (context, vpnProvider, _) {
                     final vpnState = vpnProvider.state;
@@ -182,21 +186,19 @@ class _DashboardScreenState extends State<DashboardScreen>
                       children: [
                         // Header
                         _buildHeader(isDark),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
 
                         // 用户状态卡片
                         _buildUserStatusCard(
                             user, isDark, vpnState.isConnected, vpnProvider),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppDimensions.spacingLarge),
 
                         // 流量统计卡片
                         _buildTrafficCard(user, isDark),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppDimensions.spacingLarge),
 
                         // 连接控制卡片
                         _buildConnectionCard(isDark),
-
-                        const SizedBox(height: 80), // 底部导航栏留白
                       ],
                     );
                   },
@@ -255,7 +257,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 color: isDark
                     ? AppColors.darkTextPrimary
                     : AppColors.lightTextPrimary,
-                fontSize: 24,
+                fontSize: 22,
               ),
             ),
             const SizedBox(height: 2),
@@ -271,7 +273,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         // Shield 图标
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: AppDimensions.borderRadiusMedium,
@@ -283,8 +285,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           child: SvgPicture.asset(
             'assets/images/logo.svg',
-            width: 24,
-            height: 24,
+            width: 22,
+            height: 22,
           ),
         ),
       ],
@@ -298,11 +300,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     final plan = userProvider.subscribeInfo?['plan'];
     final planName = plan?['name'];
     final hasPlan = plan != null; // 简单判断是否有套餐对象
-    final daysRemaining = getDaysRemaining(user.expiredAt);
-    final isExpired = daysRemaining <= 0;
+    final resetDate = _formatOptionalDate(user.nextResetAt, emptyText: '未设置');
+    final expireDate = _formatOptionalDate(user.expiredAt, emptyText: '无限');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: AppDimensions.borderRadiusLarge,
@@ -325,8 +327,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         children: [
           // 头像
           Container(
-            width: 52,
-            height: 52,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -352,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
 
           // 右侧信息区域
           Expanded(
@@ -371,16 +373,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
-                // 第二行：套餐类型 + 有效期 (靠左紧凑分布)
+                // 第二行：套餐类型
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    // 左侧：套餐类型 Badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                          horizontal: 9, vertical: 3),
                       decoration: BoxDecoration(
                         color: isConnected
                             ? (isDark
@@ -436,32 +437,51 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    // 右侧：有效期至
-                    if (!isExpired && hasPlan)
-                      Expanded(
-                        child: Text(
-                          '有效期至 ${user.expiredAt != null ? formatTimestamp(user.expiredAt!) : "无限"}',
-                          style: AppTextStyles.labelTiny.copyWith(
-                            color: isDark
-                                ? AppColors.darkTextTertiary
-                                : AppColors.lightTextSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                          textAlign: TextAlign.left,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
                   ],
+                ),
+                const SizedBox(height: 5),
+                _buildAccountDateLine(
+                  label: '流量重置',
+                  value: resetDate,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 2),
+                _buildAccountDateLine(
+                  label: '套餐有效期',
+                  value: expireDate,
+                  isDark: isDark,
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  String _formatOptionalDate(int? timestamp, {required String emptyText}) {
+    if (timestamp == null || timestamp <= 0) {
+      return emptyText;
+    }
+    return formatTimestamp(timestamp);
+  }
+
+  Widget _buildAccountDateLine({
+    required String label,
+    required String value,
+    required bool isDark,
+  }) {
+    return Text(
+      '$label $value',
+      style: AppTextStyles.labelTiny.copyWith(
+        color:
+            isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -479,23 +499,19 @@ class _DashboardScreenState extends State<DashboardScreen>
         // 未上报到后端的历史流量（从本地存储读取）
         final unreportedTraffic = snapshot.data ?? 0;
 
-        // 总已用流量 = 面板基线（user.u + user.d） + 未上报流量 + 本次会话流量
-        final totalUsedBytes =
-            user.u + user.d + unreportedTraffic + currentSession;
-        final totalBytes = user.transferEnable;
-
-        final usedPercentage =
-            (totalUsedBytes / totalBytes * 100).clamp(0.0, 100.0);
-        final totalGB = formatBytes(totalBytes);
-        final usedGB = formatBytes(totalUsedBytes);
-        final remainingGB =
-            formatBytes((totalBytes - totalUsedBytes).clamp(0, totalBytes));
+        final pendingTraffic = unreportedTraffic + currentSession;
+        final breakdown = user.trafficBreakdown(pendingTraffic: pendingTraffic);
+        final totalBytes = breakdown.effectiveTransferEnable;
+        final usedBytes = (totalBytes - breakdown.effectiveRemainingTraffic)
+            .clamp(0, totalBytes);
+        final usedPercentage = breakdown.usedPercentage;
+        final hasTrafficPackage = breakdown.trafficPackageRemaining > 0;
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            borderRadius: AppDimensions.borderRadiusLarge,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
             boxShadow: AppShadows.getCard(isDark),
             border: Border.all(
               color:
@@ -505,22 +521,40 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 标题与百分比
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '流量使用统计',
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.lightTextPrimary,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '流量资产',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '剩余 ${formatBytes(breakdown.effectiveRemainingTraffic)}',
+                          style: AppTextStyles.displaySmall.copyWith(
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: usedPercentage > 90
                           ? AppColors.error.withValues(alpha: 0.1)
@@ -542,65 +576,70 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // 进度条
-              Stack(
+              const SizedBox(height: 6),
+              Text(
+                '优先使用套餐流量，套餐用完后自动使用流量包',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildSegmentedTrafficBar(breakdown, isDark),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    height: 12,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkInputBackground
-                          : AppColors.slate100,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 1000),
-                    height: 12,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Container(
-                          width: constraints.maxWidth *
-                              (usedPercentage / 100).clamp(0.0, 1.0),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                isDark
-                                    ? AppColors.primaryDark
-                                    : AppColors.primary,
-                                isDark
-                                    ? AppColors.primary
-                                    : AppColors.primaryLight,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                  Expanded(child: _buildTrafficLegend(isDark)),
+                  const SizedBox(width: 10),
+                  _buildCompactTrafficTotals(
+                    usedBytes: usedBytes,
+                    totalBytes: totalBytes,
+                    isDark: isDark,
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // 数据统计
+              const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildTrafficStat('已用', usedGB, isDark),
-                  _buildTrafficStat('总量', totalGB, isDark),
-                  _buildTrafficStat('剩余', remainingGB, isDark,
-                      isHighlight: true),
+                  Expanded(
+                    child: _buildTrafficAssetTile(
+                      title: '套餐流量',
+                      value:
+                          '剩余 ${formatBytes(breakdown.planRemainingTraffic)}',
+                      caption:
+                          '已用 ${formatBytes(breakdown.planUsedTraffic)} / ${formatBytes(breakdown.planTransferEnable)}',
+                      color:
+                          isDark ? AppColors.primaryLight : AppColors.primary,
+                      icon: Icons.bolt_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildTrafficAssetTile(
+                      title: '流量包',
+                      value: hasTrafficPackage
+                          ? '剩余 ${formatBytes(breakdown.trafficPackageRemaining)}'
+                          : '购买流量包',
+                      caption: hasTrafficPackage
+                          ? '已购 ${formatBytes(breakdown.trafficPackageTotal)}'
+                          : '流量不够？',
+                      color: AppColors.info,
+                      icon: hasTrafficPackage
+                          ? Icons.inventory_2_rounded
+                          : Icons.add_shopping_cart_rounded,
+                      isDark: isDark,
+                      onTap: hasTrafficPackage
+                          ? null
+                          : () => context
+                              .read<NavigationProvider>()
+                              .setPage(NavigationPage.shop),
+                      isCallToAction: !hasTrafficPackage,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -610,35 +649,220 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildTrafficStat(String label, String value, bool isDark,
-      {bool isHighlight = false}) {
+  Widget _buildSegmentedTrafficBar(TrafficBreakdown breakdown, bool isDark) {
+    final total = breakdown.effectiveTransferEnable;
+    final hasTotal = total > 0;
+    final planUsedRatio =
+        hasTotal ? (breakdown.planUsedTraffic / total).clamp(0.0, 1.0) : 0.0;
+    final planRemainingRatio = hasTotal
+        ? (breakdown.planRemainingTraffic / total).clamp(0.0, 1.0)
+        : 0.0;
+    final packageRatio = hasTotal
+        ? (breakdown.trafficPackageRemaining / total).clamp(0.0, 1.0)
+        : 0.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            height: 14,
+            child: Stack(
+              children: [
+                Container(
+                  color: isDark
+                      ? AppColors.darkInputBackground
+                      : AppColors.slate100,
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 700),
+                  width: width * (planUsedRatio + planRemainingRatio),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        (isDark ? AppColors.primaryDark : AppColors.primary)
+                            .withValues(alpha: 0.92),
+                        (isDark ? AppColors.primaryLight : AppColors.primary)
+                            .withValues(alpha: 0.62),
+                      ],
+                    ),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 700),
+                  width: width * planUsedRatio,
+                  color: isDark ? AppColors.primaryDark : AppColors.primary,
+                ),
+                Positioned(
+                  left: width * (planUsedRatio + planRemainingRatio),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 700),
+                    width: width * packageRatio,
+                    height: 14,
+                    color:
+                        AppColors.info.withValues(alpha: isDark ? 0.85 : 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTrafficLegend(bool isDark) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        _buildLegendDot('套餐优先', AppColors.primary, isDark),
+        _buildLegendDot('流量包备用', AppColors.info, isDark),
+      ],
+    );
+  }
+
+  Widget _buildCompactTrafficTotals({
+    required int usedBytes,
+    required int totalBytes,
+    required bool isDark,
+  }) {
+    final labelColor =
+        isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary;
+    final valueColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return Column(
-      crossAxisAlignment:
-          isHighlight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: isDark
-                ? AppColors.darkTextTertiary
-                : AppColors.lightTextSecondary,
-            fontSize: 11,
+          '总已用 ${formatBytes(usedBytes)}',
+          style: AppTextStyles.labelTiny.copyWith(
+            color: labelColor,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
-          value,
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: isHighlight
-                ? (isDark ? AppColors.primaryLight : AppColors.primaryDark)
-                : (isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary),
+          '可用总量 ${formatBytes(totalBytes)}',
+          style: AppTextStyles.labelTiny.copyWith(
+            color: valueColor,
             fontWeight: FontWeight.w800,
-            fontSize: 14,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLegendDot(String label, Color color, bool isDark) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppTextStyles.labelTiny.copyWith(
+            color: isDark
+                ? AppColors.darkTextTertiary
+                : AppColors.lightTextSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrafficAssetTile({
+    required String title,
+    required String value,
+    required String caption,
+    required Color color,
+    required IconData icon,
+    required bool isDark,
+    VoidCallback? onTap,
+    bool isCallToAction = false,
+  }) {
+    final content = Container(
+      constraints: const BoxConstraints(minHeight: 82),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkCardSecondary.withValues(alpha: 0.38)
+            : AppColors.slate50,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkCardBorder.withValues(alpha: 0.65)
+              : AppColors.slate100,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isCallToAction
+                  ? color
+                  : (isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            caption,
+            style: AppTextStyles.labelTiny.copyWith(
+              color: isDark
+                  ? AppColors.darkTextTertiary
+                  : AppColors.lightTextTertiary,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: content,
     );
   }
 
@@ -651,14 +875,14 @@ class _DashboardScreenState extends State<DashboardScreen>
         final isProcessing = vpnState.isProcessing || _isPowerActionPending;
 
         return Container(
-          constraints: const BoxConstraints(minHeight: 260),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          constraints: const BoxConstraints(minHeight: 162),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: _getConnectionCardColor(isConnected, isDark),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusXXL),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
             border: Border.all(
               color: _getConnectionCardBorderColor(isConnected, isDark),
-              width: 2,
+              width: 1.4,
             ),
             boxShadow: _getConnectionCardShadow(isConnected, isDark),
             gradient: isConnected && isDark
@@ -676,67 +900,93 @@ class _DashboardScreenState extends State<DashboardScreen>
             alignment: Alignment.center,
             children: [
               Positioned(
-                top: 0,
-                right: 0,
+                top: -20,
+                right: -20,
                 child: Icon(
                   Icons.flash_on,
-                  size: 180,
+                  size: 96,
                   color: _getDecorationIconColor(isConnected, isDark),
                 ),
               ),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: isConnected
-                          ? (isDark
-                              ? AppColors.primaryLight
-                              : AppColors.primary)
-                          : AppColors.primaryLight,
-                      shape: BoxShape.circle,
-                      boxShadow: isConnected
-                          ? [
-                              BoxShadow(
-                                color: (isDark
-                                        ? AppColors.primaryLight
-                                        : AppColors.primary)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 6,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: isConnected
+                                        ? (isDark
+                                            ? AppColors.primaryLight
+                                            : AppColors.primary)
+                                        : AppColors.primaryLight,
+                                    shape: BoxShape.circle,
+                                    boxShadow: isConnected
+                                        ? [
+                                            BoxShadow(
+                                              color: (isDark
+                                                      ? AppColors.primaryLight
+                                                      : AppColors.primary)
+                                                  .withValues(alpha: 0.4),
+                                              blurRadius: 6,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _isPowerActionPending
+                                      ? '正在准备...'
+                                      : _statusTitle(vpnProvider.state),
+                                  style: AppTextStyles.displaySmall.copyWith(
+                                    color:
+                                        _getCardTitleColor(isConnected, isDark),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _isPowerActionPending
+                                  ? '正在检查后台 TUN 网络组件，请稍候...'
+                                  : _statusDescription(vpnProvider.state),
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: _getCardDescriptionColor(
+                                    isConnected, isDark),
                               ),
-                            ]
-                          : null,
-                    ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 7),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: _buildTunModeBadge(isDark),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildPowerButton(
+                          isConnected, isProcessing, isDark, vpnProvider),
+                    ],
                   ),
-                  Text(
-                    _isPowerActionPending
-                        ? '正在准备...'
-                        : _statusTitle(vpnProvider.state),
-                    style: AppTextStyles.displaySmall.copyWith(
-                      color: _getCardTitleColor(isConnected, isDark),
-                      fontSize: 24,
-                    ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.center,
+                    child: _buildNodeSelectionButton(isConnected, isDark),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _isPowerActionPending
-                        ? '正在检查后台 TUN 网络组件，请稍候...'
-                        : _statusDescription(vpnProvider.state),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: _getCardDescriptionColor(isConnected, isDark),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTunModeBadge(isDark),
-                  const SizedBox(height: 16),
-                  _buildPowerButton(
-                      isConnected, isProcessing, isDark, vpnProvider),
-                  const SizedBox(height: 20),
-                  _buildNodeSelectionButton(isConnected, isDark),
                 ],
               ),
             ],
@@ -748,7 +998,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildTunModeBadge(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.primary.withValues(alpha: 0.12)
@@ -932,77 +1182,85 @@ class _DashboardScreenState extends State<DashboardScreen>
   /// 电源按钮 ⭐⭐⭐ 最核心的元素
   Widget _buildPowerButton(bool isConnected, bool isProcessing, bool isDark,
       VpnProvider vpnProvider) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _isPowerButtonPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPowerButtonPressed = false);
-      },
-      onTap: () {
-        if (!isProcessing) {
-          _handlePowerButtonTap(vpnProvider);
-        }
-      },
-      onTapCancel: () => setState(() => _isPowerButtonPressed = false),
-      child: AnimatedScale(
-        scale: _isPowerButtonPressed ? 0.94 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 装饰外圈 (连接与未连接均显示，保持静态)
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
+    return SizedBox(
+      width: 86,
+      height: 48,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _isPowerButtonPressed = true),
+        onTapUp: (_) {
+          setState(() => _isPowerButtonPressed = false);
+        },
+        onTap: () {
+          if (!isProcessing) {
+            _handlePowerButtonTap(vpnProvider);
+          }
+        },
+        onTapCancel: () => setState(() => _isPowerButtonPressed = false),
+        child: AnimatedScale(
+          scale: _isPowerButtonPressed ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: isConnected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkCardSecondary : AppColors.slate200),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+              border: Border.all(
+                color: isConnected
+                    ? AppColors.primary.withValues(alpha: 0.2)
+                    : (isDark ? AppColors.darkCardBorder : AppColors.slate100),
+              ),
+              boxShadow: [
+                BoxShadow(
                   color: isConnected
-                      ? (isDark
-                          ? AppColors.primaryLight.withValues(alpha: 0.1)
-                          : AppColors.primary.withValues(alpha: 0.05))
-                      : (isDark ? AppColors.darkCardBorder : AppColors.slate50),
-                  width: 1,
+                      ? AppColors.primary.withValues(alpha: 0.22)
+                      : Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
+                  blurRadius: isConnected ? 14 : 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
+              ],
             ),
-
-            // 主按钮
-            Container(
-              width: 112,
-              height: 112,
-              decoration: BoxDecoration(
-                color: _getPowerButtonColor(isConnected, isDark),
-                shape: BoxShape.circle,
-                border: isConnected
-                    ? null
-                    : Border.all(
-                        color: isDark
-                            ? AppColors.darkCardBorder
-                            : AppColors.slate50,
-                        width: 3,
-                      ),
-                boxShadow: _getPowerButtonShadow(isConnected, isDark),
-              ),
-              child: isProcessing
-                  ? Center(
-                      child: SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: CircularProgressIndicator(
-                          color: _getPowerButtonIconColor(isConnected, isDark),
-                          strokeWidth: 3,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.power_settings_new,
-                      size: 48,
-                      color: _getPowerButtonIconColor(isConnected, isDark),
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment:
+                  isConnected ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.14),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
+                  ],
+                ),
+                child: isProcessing
+                    ? Center(
+                        child: SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            color: isConnected
+                                ? AppColors.primary
+                                : AppColors.slate400,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1026,21 +1284,21 @@ class _DashboardScreenState extends State<DashboardScreen>
             );
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: _getNodeButtonBgColor(isConnected, isDark),
               border: Border.all(
                 color: _getNodeButtonBorderColor(isConnected, isDark),
               ),
-              borderRadius: AppDimensions.borderRadiusLarge,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 国旗 / 自动模式图标
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 24,
+                  height: 24,
                   decoration: BoxDecoration(
                     color: _getNodeIconBgColor(isConnected, isDark),
                     borderRadius: AppDimensions.borderRadiusSmall,
@@ -1057,7 +1315,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1086,7 +1344,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Icon(
                   Icons.chevron_right,
                   size: 16,
@@ -1158,31 +1416,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           : AppColors.lightTextSecondary;
     }
     return isDark ? AppColors.darkTextTertiary : AppColors.lightTextSecondary;
-  }
-
-  Color _getPowerButtonColor(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return AppColors.primary; // 无论深浅模式，开启后都变绿色
-    }
-    return isDark ? AppColors.darkCardSecondary : Colors.white;
-  }
-
-  Color _getPowerButtonIconColor(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return Colors.white; // 开启后统一白图标
-    }
-    return isDark ? AppColors.primaryLight : AppColors.slate400;
-  }
-
-  List<BoxShadow> _getPowerButtonShadow(bool isConnected, bool isDark) {
-    if (isConnected) {
-      return isDark
-          ? AppShadows.powerButtonConnectedDark
-          : AppShadows.powerButtonConnectedLight;
-    }
-    return isDark
-        ? AppShadows.powerButtonDisconnectedDark
-        : AppShadows.powerButtonDisconnectedLight;
   }
 
   Color _getNodeButtonBgColor(bool isConnected, bool isDark) {
