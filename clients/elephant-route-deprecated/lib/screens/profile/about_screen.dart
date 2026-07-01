@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -79,7 +78,7 @@ class _AboutScreenState extends State<AboutScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'ElephantRoute macOS Beta',
+                            '大象网络 Android',
                             style: AppTextStyles.titleLarge.copyWith(
                               color: isDark
                                   ? AppColors.darkTextPrimary
@@ -159,46 +158,6 @@ class _AboutScreenState extends State<AboutScreen> {
                                 icon: Icons.system_update_alt_rounded,
                                 isDark: isDark,
                                 onPressed: _checkForUpdate,
-                              ),
-                              _buildActionButton(
-                                label: '导出诊断',
-                                icon: Icons.download_rounded,
-                                isDark: isDark,
-                                onPressed: () async {
-                                  final path = await MacRuntimeService.instance
-                                      .exportDiagnostics();
-                                  if (!mounted) return;
-                                  _showCopiedMessage(
-                                      path == null ? '导出失败' : '诊断已导出到: $path');
-                                },
-                              ),
-                              _buildActionButton(
-                                label: '恢复系统代理',
-                                icon: Icons.restore_rounded,
-                                isDark: isDark,
-                                onPressed: () async {
-                                  final result = await MacRuntimeService
-                                      .instance
-                                      .restoreSystemProxy();
-                                  if (!mounted) return;
-                                  _showCopiedMessage(
-                                    result['restored'] == true
-                                        ? '系统代理已恢复'
-                                        : '恢复失败，请查看日志',
-                                  );
-                                },
-                              ),
-                              _buildActionButton(
-                                label: '复制日志路径',
-                                icon: Icons.copy_all_rounded,
-                                isDark: isDark,
-                                onPressed: () async {
-                                  if (data.logPath == null) return;
-                                  await Clipboard.setData(
-                                      ClipboardData(text: data.logPath!));
-                                  if (!mounted) return;
-                                  _showCopiedMessage('日志路径已复制');
-                                },
                               ),
                             ],
                           ),
