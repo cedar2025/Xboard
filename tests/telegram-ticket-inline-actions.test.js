@@ -32,6 +32,20 @@ test('Telegram service and queue job support structured message options', () => 
   assert.match(job, /sendMessage\(\$this->telegramId, \$this->text, 'markdown', \$this->options\)/);
 });
 
+test('Telegram payment notification labels first and repeat valid payments', () => {
+  const plugin = readRepoFile('plugins/Telegram/Plugin.php');
+
+  assert.match(plugin, /private function getUserValidPaymentCount\(Order \$order\): int/);
+  assert.match(plugin, /Order::where\('user_id',\s*\$order->user_id\)/);
+  assert.match(plugin, /->whereNotNull\('paid_at'\)/);
+  assert.match(plugin, /->whereNotIn\('status',\s*\[Order::STATUS_PENDING,\s*Order::STATUS_CANCELLED\]\)/);
+  assert.match(plugin, /->count\(\)/);
+  assert.match(plugin, /\$paymentCount\s*=\s*\$this->getUserValidPaymentCount\(\$order\)/);
+  assert.match(plugin, /\$paymentCountLabel\s*=\s*\$paymentCount === 1\s*\?\s*'首次'\s*:\s*"第\{\$paymentCount\}次"/);
+  assert.match(plugin, /本次支付金额: `%s元（%s）`/);
+  assert.match(plugin, /\$order->total_amount \/ 100,\s*\n\s*\$paymentCountLabel,\s*\n\s*\$todayPaidTotal \/ 100/);
+});
+
 test('Telegram ticket reminder includes inline action buttons', () => {
   const plugin = readRepoFile('plugins/Telegram/Plugin.php');
 

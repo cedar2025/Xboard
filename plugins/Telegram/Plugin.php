@@ -93,24 +93,35 @@ class Plugin extends AbstractPlugin
       ->where('paid_at', '<', $tomorrowStartAt)
       ->whereNotIn('status', [Order::STATUS_PENDING, Order::STATUS_CANCELLED])
       ->sum('total_amount');
+    $paymentCount = $this->getUserValidPaymentCount($order);
+    $paymentCountLabel = $paymentCount === 1 ? '首次' : "第{$paymentCount}次";
 
     $message = sprintf(
       "💰 *支付成功*\n" .
       "━━━━━━━━━━━━━━━━━━━━\n" .
       "📧 邮箱: `%s`\n" .
-      "💵 本次支付金额: `%s元`\n" .
+      "💵 本次支付金额: `%s元（%s）`\n" .
       "📊 当日总收入: `%s元`\n" .
       "🧾 订单: `%s`\n" .
       "🏦 支付方式: `%s`\n" .
       "🔌 支付渠道: `%s`",
       $user->email,
       $order->total_amount / 100,
+      $paymentCountLabel,
       $todayPaidTotal / 100,
       $order->trade_no,
       $payment->name,
       $payment->payment
     );
     $this->sendAdminNotification($message);
+  }
+
+  private function getUserValidPaymentCount(Order $order): int
+  {
+    return Order::where('user_id', $order->user_id)
+      ->whereNotNull('paid_at')
+      ->whereNotIn('status', [Order::STATUS_PENDING, Order::STATUS_CANCELLED])
+      ->count();
   }
 
   public function sendTicketNotify(Ticket $ticket): void
