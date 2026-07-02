@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $user_id
  * @property int $plan_id
  * @property int|null $payment_id
+ * @property int|null $traffic_package_id
  * @property string $period
  * @property string $trade_no
  * @property int $total_amount
@@ -71,11 +72,15 @@ class Order extends Model
     const TYPE_RENEWAL = 2; // 续费
     const TYPE_UPGRADE = 3; // 升级
     const TYPE_RESET_TRAFFIC = 4; //流量重置包
+    const TYPE_TRAFFIC_PACKAGE = 5; //流量包
+    const PERIOD_TRAFFIC_PACKAGE = 'traffic_package';
+
     public static $typeMap = [
         self::TYPE_NEW_PURCHASE => '新购',
         self::TYPE_RENEWAL => '续费',
         self::TYPE_UPGRADE => '升级',
         self::TYPE_RESET_TRAFFIC => '流量重置',
+        self::TYPE_TRAFFIC_PACKAGE => '流量包',
     ];
 
     /**
@@ -108,6 +113,11 @@ class Order extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'plan_id', 'id');
+    }
+
+    public function trafficPackage(): BelongsTo
+    {
+        return $this->belongsTo(TrafficPackage::class, 'traffic_package_id', 'id');
     }
 
     /**

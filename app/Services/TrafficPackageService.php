@@ -4,14 +4,41 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Plan;
+use App\Models\TrafficPackage;
 use App\Models\User;
 use App\Models\UserTrafficPackage;
+use Illuminate\Database\Eloquent\Collection;
 
 class TrafficPackageService
 {
     private const BYTES_PER_GB = 1073741824;
 
-    public function createFromOrder(Order $order, User $user, Plan $plan): UserTrafficPackage
+    public function getAvailablePackages(): Collection
+    {
+        return TrafficPackage::where('show', true)
+            ->where('sell', true)
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function createFromOrder(Order $order, User $user, TrafficPackage $trafficPackage): UserTrafficPackage
+    {
+        $totalBytes = (int) ($trafficPackage->transfer_enable * self::BYTES_PER_GB);
+        $this->applyAccessForStandalonePackage($user, $trafficPackage);
+
+        return UserTrafficPackage::create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'plan_id' => null,
+            'traffic_package_id' => $trafficPackage->id,
+            'total_bytes' => $totalBytes,
+            'remaining_bytes' => $totalBytes,
+            'status' => UserTrafficPackage::STATUS_ACTIVE,
+        ]);
+    }
+
+    public function createFromLegacyPlanOrder(Order $order, User $user, Plan $plan): UserTrafficPackage
     {
         $totalBytes = (int) ($plan->transfer_enable * self::BYTES_PER_GB);
 
@@ -19,10 +46,20 @@ class TrafficPackageService
             'user_id' => $user->id,
             'order_id' => $order->id,
             'plan_id' => $plan->id,
+            'traffic_package_id' => null,
             'total_bytes' => $totalBytes,
             'remaining_bytes' => $totalBytes,
             'status' => UserTrafficPackage::STATUS_ACTIVE,
         ]);
+    }
+
+    public function applyAccessForStandalonePackage(User $user, TrafficPackage $trafficPackage): void
+    {
+        if ($user->plan_id === null) {
+            $user->group_id = $trafficPackage->group_id;
+            $user->speed_limit = $trafficPackage->speed_limit;
+            $user->device_limit = $trafficPackage->device_limit;
+        }
     }
 
     public function hasActivePackageBalance(int $userId): bool

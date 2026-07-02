@@ -11,6 +11,7 @@ use App\Http\Controllers\V2\Admin\UserController;
 use App\Http\Controllers\V2\Admin\StatController;
 use App\Http\Controllers\V2\Admin\NoticeController;
 use App\Http\Controllers\V2\Admin\TicketController;
+use App\Http\Controllers\V2\Admin\TrafficPackageController;
 use App\Http\Controllers\V2\Admin\CouponController;
 use App\Http\Controllers\V2\Admin\GiftCardController;
 use App\Http\Controllers\V2\Admin\KnowledgeController;
@@ -51,6 +52,17 @@ class AdminRoute
                 $router->post('/drop', [PlanController::class, 'drop']);
                 $router->post('/update', [PlanController::class, 'update']);
                 $router->post('/sort', [PlanController::class, 'sort']);
+            });
+
+            // Traffic Package
+            $router->group([
+                'prefix' => 'traffic-package'
+            ], function ($router) {
+                $router->get('/fetch', [TrafficPackageController::class, 'fetch']);
+                $router->post('/save', [TrafficPackageController::class, 'save']);
+                $router->post('/drop', [TrafficPackageController::class, 'drop']);
+                $router->post('/update', [TrafficPackageController::class, 'update']);
+                $router->post('/sort', [TrafficPackageController::class, 'sort']);
             });
 
             // Server

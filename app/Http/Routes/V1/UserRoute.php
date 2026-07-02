@@ -14,6 +14,7 @@ use App\Http\Controllers\V1\User\StatController;
 use App\Http\Controllers\V1\User\SupportController;
 use App\Http\Controllers\V1\User\TelegramController;
 use App\Http\Controllers\V1\User\TicketController;
+use App\Http\Controllers\V1\User\TrafficPackageController;
 use App\Http\Controllers\V1\User\UserController;
 use App\Http\Controllers\V1\User\AppDownloadController;
 use Illuminate\Contracts\Routing\Registrar;
@@ -52,6 +53,8 @@ class UserRoute
             $router->post('/order/cancel', [OrderController::class, 'cancel']);
             // Plan
             $router->get('/plan/fetch', [PlanController::class, 'fetch']);
+            // Traffic Package
+            $router->get('/traffic-package/fetch', [TrafficPackageController::class, 'fetch']);
             // Invite
             $router->get('/invite/save', [InviteController::class, 'save']);
             $router->get('/invite/fetch', [InviteController::class, 'fetch']);

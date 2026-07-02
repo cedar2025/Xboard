@@ -7,6 +7,7 @@ use App\Jobs\OrderHandleJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\TrafficResetLog;
+use App\Models\TrafficPackage;
 use App\Models\User;
 use App\Services\Plugin\HookManager;
 use App\Utils\Helper;
@@ -92,16 +93,61 @@ class OrderService
         });
     }
 
+    public static function createTrafficPackageFromRequest(
+        User $user,
+        TrafficPackage $trafficPackage,
+    ): Order {
+        if (!$trafficPackage->show || !$trafficPackage->sell || (float) $trafficPackage->price <= 0) {
+            throw new ApiException(__('This subscription has been sold out, please choose another subscription'));
+        }
+
+        HookManager::call('order.create.before', [$user, $trafficPackage, Order::PERIOD_TRAFFIC_PACKAGE, null]);
+
+        return DB::transaction(function () use ($user, $trafficPackage) {
+            $order = new Order([
+                'user_id' => $user->id,
+                'plan_id' => null,
+                'traffic_package_id' => $trafficPackage->id,
+                'period' => Order::PERIOD_TRAFFIC_PACKAGE,
+                'type' => Order::TYPE_TRAFFIC_PACKAGE,
+                'trade_no' => Helper::generateOrderNo(),
+                'total_amount' => (int) round($trafficPackage->price * 100),
+            ]);
+
+            $orderService = new self($order);
+            $orderService->setVipDiscount($user);
+            $orderService->setInvite(user: $user);
+
+            if ($user->balance && $order->total_amount > 0) {
+                $orderService->handleUserBalance($user, app(UserService::class));
+            }
+
+            if (!$order->save()) {
+                throw new ApiException(__('Failed to create order'));
+            }
+
+            HookManager::call('order.create.after', $order);
+            HookManager::call('order.after_create', $order);
+
+            return $order;
+        });
+    }
+
     public function open(): void
     {
         $order = $this->order;
         $this->user = User::find($order->user_id);
-        $plan = Plan::find($order->plan_id);
+        $plan = $order->plan_id ? Plan::find($order->plan_id) : null;
+        $trafficPackage = $order->traffic_package_id ? TrafficPackage::find($order->traffic_package_id) : null;
 
         HookManager::call('order.open.before', $order);
 
 
-        DB::transaction(function () use ($order, $plan) {
+        DB::transaction(function () use ($order, $plan, $trafficPackage) {
+            if (((int) $order->type === Order::TYPE_TRAFFIC_PACKAGE || (string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE) && !$trafficPackage) {
+                throw new ApiException(__('Subscription plan does not exist'));
+            }
+
             if ($order->refund_amount) {
                 $this->user->balance += $order->refund_amount;
             }
@@ -111,13 +157,14 @@ class OrderService
                     ->update(['status' => Order::STATUS_DISCOUNTED]);
             }
 
-            match ((string) $order->period) {
-                Plan::PERIOD_ONETIME => $this->buyTrafficPackage($order, $plan),
-                Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
+            match (true) {
+                (int) $order->type === Order::TYPE_TRAFFIC_PACKAGE || (string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE => $this->buyTrafficPackage($order, $trafficPackage),
+                (string) $order->period === Plan::PERIOD_ONETIME => $this->buyLegacyTrafficPackage($order, $plan),
+                (string) $order->period === Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
                 default => $this->buyByPeriod($order, $plan),
             };
 
-            if ((string) $order->period !== Plan::PERIOD_ONETIME) {
+            if ((string) $order->period !== Plan::PERIOD_ONETIME && (int) $order->type !== Order::TYPE_TRAFFIC_PACKAGE && $plan) {
                 $this->setSpeedLimit($plan->speed_limit);
                 $this->setDeviceLimit($plan->device_limit);
             }
@@ -139,7 +186,7 @@ class OrderService
             default => 0,
         };
 
-        if ($eventId && (string) $order->period !== Plan::PERIOD_ONETIME) {
+        if ($eventId && (string) $order->period !== Plan::PERIOD_ONETIME && (int) $order->type !== Order::TYPE_TRAFFIC_PACKAGE) {
             $this->openEvent($eventId);
         }
 
@@ -150,7 +197,9 @@ class OrderService
     public function setOrderType(User $user)
     {
         $order = $this->order;
-        if ($order->period === Plan::PERIOD_ONETIME) {
+        if ($order->period === Order::PERIOD_TRAFFIC_PACKAGE) {
+            $order->type = Order::TYPE_TRAFFIC_PACKAGE;
+        } else if ($order->period === Plan::PERIOD_ONETIME) {
             $order->type = Order::TYPE_NEW_PURCHASE;
         } else if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
@@ -250,6 +299,7 @@ class OrderService
             $orders = Order::query()
                 ->where('user_id', $user->id)
                 ->whereNotIn('period', [Plan::PERIOD_RESET_TRAFFIC, Plan::PERIOD_ONETIME])
+                ->where('type', '!=', Order::TYPE_TRAFFIC_PACKAGE)
                 ->where('status', Order::STATUS_COMPLETED)
                 ->get();
 
@@ -341,8 +391,12 @@ class OrderService
         $this->user->device_limit = $deviceLimit;
     }
 
-    private function buyByPeriod(Order $order, Plan $plan)
+    private function buyByPeriod(Order $order, ?Plan $plan)
     {
+        if (!$plan) {
+            throw new ApiException(__('Subscription plan does not exist'));
+        }
+
         // change plan process
         if ((int) $order->type === Order::TYPE_UPGRADE) {
             $this->user->expired_at = time();
@@ -356,9 +410,18 @@ class OrderService
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
     }
 
-    private function buyTrafficPackage(Order $order, Plan $plan): void
+    private function buyTrafficPackage(Order $order, TrafficPackage $trafficPackage): void
     {
-        app(TrafficPackageService::class)->createFromOrder($order, $this->user, $plan);
+        app(TrafficPackageService::class)->createFromOrder($order, $this->user, $trafficPackage);
+    }
+
+    private function buyLegacyTrafficPackage(Order $order, ?Plan $plan): void
+    {
+        if (!$plan) {
+            throw new ApiException(__('Subscription plan does not exist'));
+        }
+
+        app(TrafficPackageService::class)->createFromLegacyPlanOrder($order, $this->user, $plan);
     }
 
     /**

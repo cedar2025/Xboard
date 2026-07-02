@@ -9,6 +9,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
+use App\Models\TrafficPackage;
 use App\Models\User;
 use App\Services\CouponService;
 use App\Services\OrderService;
@@ -25,6 +26,7 @@ class OrderController extends Controller
             'status' => 'nullable|integer|in:0,1,2,3',
         ]);
         $orders = Order::with('plan')
+            ->with('trafficPackage')
             ->where('user_id', $request->user()->id)
             ->when($request->input('status') !== null, function ($query) use ($request) {
                 $query->where('status', $request->input('status'));
@@ -40,7 +42,7 @@ class OrderController extends Controller
         $request->validate([
             'trade_no' => 'required|string',
         ]);
-        $order = Order::with(['payment', 'plan'])
+        $order = Order::with(['payment', 'plan', 'trafficPackage'])
             ->where('user_id', $request->user()->id)
             ->where('trade_no', $request->input('trade_no'))
             ->first();
@@ -48,7 +50,7 @@ class OrderController extends Controller
             return $this->fail([400, __('Order does not exist or has been paid')]);
         }
         $order['try_out_plan_id'] = (int) admin_setting('try_out_plan_id');
-        if (!$order->plan) {
+        if (!$order->plan && !$order->trafficPackage) {
             return $this->fail([400, __('Subscription plan does not exist')]);
         }
         if ($order->surplus_order_ids) {
@@ -59,17 +61,23 @@ class OrderController extends Controller
 
     public function save(OrderSave $request)
     {
-        $request->validate([
-            'plan_id' => 'required|exists:App\Models\Plan,id',
-            'period' => 'required|string'
-        ]);
-
         $user = User::findOrFail($request->user()->id);
         $userService = app(UserService::class);
 
         if ($userService->isNotCompleteOrderByUserId($user->id)) {
             throw new ApiException(__('You have an unpaid or pending order, please try again later or cancel it'));
         }
+
+        if ($request->filled('traffic_package_id')) {
+            $trafficPackage = TrafficPackage::findOrFail($request->input('traffic_package_id'));
+            $order = OrderService::createTrafficPackageFromRequest($user, $trafficPackage);
+            return $this->success($order->trade_no);
+        }
+
+        $request->validate([
+            'plan_id' => 'required|exists:App\Models\Plan,id',
+            'period' => 'required|string'
+        ]);
 
         $plan = Plan::findOrFail($request->input('plan_id'));
         $planService = new PlanService($plan);

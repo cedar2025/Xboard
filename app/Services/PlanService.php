@@ -34,8 +34,8 @@ class PlanService
     public function getAvailablePlansForUser(User $user): Collection
     {
         return $this->getSellablePlans()
-            ->filter(function (Plan $plan) use ($user) {
-                return !$this->isTrafficPackagePlan($plan) || $this->hasActiveTimeSubscription($user);
+            ->filter(function (Plan $plan) {
+                return !$this->isTrafficPackagePlan($plan);
             })
             ->values();
     }
@@ -69,15 +69,6 @@ class PlanService
         return $hasOnetimePrice && !$hasStandardPrice;
     }
 
-    public function hasActiveTimeSubscription(User $user): bool
-    {
-        return !$user->banned
-            && (bool) $user->plan_id
-            && (int) $user->transfer_enable > 0
-            && $user->expired_at !== NULL
-            && $user->expired_at > time();
-    }
-
     /**
      * 获取指定订阅计划的可用状态
      * 条件：renew 和 sell 为 true
@@ -103,7 +94,7 @@ class PlanService
     public function isPlanAvailableForUser(Plan $plan, User $user): bool
     {
         if ($this->isTrafficPackagePlan($plan)) {
-            return $plan->show && $plan->sell && $this->hasCapacity($plan) && $this->hasActiveTimeSubscription($user);
+            return false;
         }
 
         // 如果是续费
@@ -135,8 +126,7 @@ class PlanService
         }
 
         if ($periodKey === Plan::PERIOD_ONETIME) {
-            $this->validateOnetimeTrafficPackagePurchase($user);
-            return;
+            throw new ApiException(__('This payment period cannot be purchased, please choose another period'));
         }
 
         if ($user->plan_id !== $this->plan->id && !$this->hasCapacity($this->plan)) {
@@ -197,23 +187,6 @@ class PlanService
     protected function validateResetTrafficPurchase(User $user): void
     {
         if (!app(UserService::class)->isAvailable($user) || $this->plan->id !== $user->plan_id) {
-            throw new ApiException(__('Subscription has expired or no active subscription, unable to purchase Data Reset Package'));
-        }
-    }
-
-    protected function validateOnetimeTrafficPackagePurchase(User $user): void
-    {
-        if (!$this->plan->show || !$this->plan->sell) {
-            throw new ApiException(__('This subscription has been sold out, please choose another subscription'));
-        }
-
-        if (
-            $user->banned
-            || !$user->plan_id
-            || !$user->transfer_enable
-            || $user->expired_at === NULL
-            || $user->expired_at <= time()
-        ) {
             throw new ApiException(__('Subscription has expired or no active subscription, unable to purchase Data Reset Package'));
         }
     }

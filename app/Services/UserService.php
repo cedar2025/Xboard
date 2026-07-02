@@ -48,13 +48,15 @@ class UserService
 
     public function isAvailable(User $user)
     {
+        if (!$user->banned && $user->id && app(TrafficPackageService::class)->hasActivePackageBalance($user->id)) {
+            return true;
+        }
+
         if (
             !$user->banned
             && $user->plan_id
             && $user->transfer_enable
-            && ($user->expired_at > time()
-                || $user->expired_at === NULL
-                || app(TrafficPackageService::class)->hasActivePackageBalance($user->id))
+            && ($user->expired_at > time() || $user->expired_at === NULL)
         ) {
             return true;
         }
@@ -64,11 +66,11 @@ class UserService
     public function getAvailableUsers()
     {
         return User::where('banned', 0)
-            ->whereNotNull('plan_id')
-            ->where('transfer_enable', '>', 0)
             ->where(function ($query) {
                 $query->where(function ($query) {
-                    $query->whereRaw('u + d < transfer_enable')
+                    $query->whereNotNull('plan_id')
+                        ->where('transfer_enable', '>', 0)
+                        ->whereRaw('u + d < transfer_enable')
                         ->where(function ($query) {
                             $query->where('expired_at', '>=', time())
                                 ->orWhere('expired_at', NULL);
@@ -87,12 +89,21 @@ class UserService
     public function getUnAvailbaleUsers()
     {
         return User::where(function ($query) {
-            $query->where('expired_at', '<', time())
-                ->orWhere('expired_at', 0);
+            $query->where(function ($query) {
+                $query->where('expired_at', '<', time())
+                    ->orWhere('expired_at', 0);
+            })
+                ->where(function ($query) {
+                    $query->where('plan_id', NULL)
+                        ->orWhere('transfer_enable', 0);
+                });
         })
-            ->where(function ($query) {
-                $query->where('plan_id', NULL)
-                    ->orWhere('transfer_enable', 0);
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('v2_user_traffic_packages')
+                    ->whereColumn('v2_user_traffic_packages.user_id', 'v2_user.id')
+                    ->where('v2_user_traffic_packages.status', UserTrafficPackage::STATUS_ACTIVE)
+                    ->where('v2_user_traffic_packages.remaining_bytes', '>', 0);
             })
             ->get();
     }

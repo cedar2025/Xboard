@@ -17,6 +17,7 @@ class UserTrafficPackage extends Model
     protected $casts = [
         'total_bytes' => 'integer',
         'remaining_bytes' => 'integer',
+        'traffic_package_id' => 'integer',
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'depleted_at' => 'timestamp',
@@ -35,5 +36,10 @@ class UserTrafficPackage extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'plan_id', 'id');
+    }
+
+    public function trafficPackage(): BelongsTo
+    {
+        return $this->belongsTo(TrafficPackage::class, 'traffic_package_id', 'id');
     }
 }

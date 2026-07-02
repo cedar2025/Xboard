@@ -23,6 +23,7 @@ class OrderResource extends JsonResource
             ...parent::toArray($request),
             'period' => PlanService::getLegacyPeriod((string)$this->period),
             'plan' => $this->whenLoaded('plan', fn() => PlanResource::make($this->plan)),
+            'traffic_package' => $this->whenLoaded('trafficPackage', fn() => TrafficPackageResource::make($this->trafficPackage)),
         ];
     }
 }

@@ -1,7 +1,8 @@
 (function () {
   var DOWNLOAD_URL = '/download/index.html';
   var SUBSCRIBE_API_PATH = '/api/v1/user/getSubscribe';
-  var PLAN_API_PATH = '/api/v1/user/plan/fetch';
+  var TRAFFIC_PACKAGE_API_PATH = '/api/v1/user/traffic-package/fetch';
+  var ORDER_SAVE_API_PATH = '/api/v1/user/order/save';
   var SERVER_API_PATH = '/api/v1/user/server/fetch';
   var DIFY_CONTEXT_API_PATH = '/api/v1/user/support/dify-context';
   var DIFY_OPEN_QUERY_KEY = 'open_ai_support';
@@ -52,8 +53,8 @@
   var difyAutoOpenHandled = false;
   var subscribeInfoPromise = null;
   var subscribeInfoCachedAt = 0;
-  var availablePlansPromise = null;
-  var availablePlansCachedAt = 0;
+  var trafficPackagesPromise = null;
+  var trafficPackagesCachedAt = 0;
 
   function getRoute() {
     var hash = window.location.hash || '';
@@ -537,12 +538,18 @@
     return copyTextWithExecCommand(text);
   }
 
-  function requestAuthenticatedJson(path, token) {
+  function requestAuthenticatedJson(path, token, options) {
+    options = options || {};
+    var method = options.method || 'GET';
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', path + '?t=' + Date.now(), true);
+      var url = method === 'GET' ? path + '?t=' + Date.now() : path;
+      xhr.open(method, url, true);
       xhr.setRequestHeader('Authorization', token);
       xhr.setRequestHeader('Content-Language', document.documentElement.lang || 'zh-CN');
+      if (options.body) {
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+      }
       xhr.onreadystatechange = function () {
         if (xhr.readyState !== 4) return;
 
@@ -564,7 +571,7 @@
       xhr.onerror = function () {
         reject(new Error('network error'));
       };
-      xhr.send();
+      xhr.send(options.body ? JSON.stringify(options.body) : null);
     });
   }
 
@@ -596,27 +603,44 @@
     return subscribeInfoPromise;
   }
 
-  function fetchAvailablePlans() {
-    if (availablePlansPromise && Date.now() - availablePlansCachedAt < 3000) {
-      return availablePlansPromise;
+  function fetchTrafficPackages() {
+    if (trafficPackagesPromise && Date.now() - trafficPackagesCachedAt < 3000) {
+      return trafficPackagesPromise;
     }
 
     var token = getSupportAccessToken();
     if (!token) {
-      console.warn('套餐信息加载跳过: 未找到认证信息');
+      console.warn('流量包信息加载跳过: 未找到认证信息');
       return Promise.resolve([]);
     }
 
-    availablePlansCachedAt = Date.now();
-    availablePlansPromise = requestAuthenticatedJson(PLAN_API_PATH, token).then(function (payload) {
+    trafficPackagesCachedAt = Date.now();
+    trafficPackagesPromise = requestAuthenticatedJson(TRAFFIC_PACKAGE_API_PATH, token).then(function (payload) {
       var data = payload && payload.data ? payload.data : [];
       return Array.isArray(data) ? data : [];
     }).catch(function (error) {
-      availablePlansPromise = null;
+      trafficPackagesPromise = null;
       throw error;
     });
 
-    return availablePlansPromise;
+    return trafficPackagesPromise;
+  }
+
+  function createTrafficPackageOrder(packageId) {
+    var token = getSupportAccessToken();
+    if (!token) {
+      return Promise.reject(new Error('missing token'));
+    }
+
+    return requestAuthenticatedJson(ORDER_SAVE_API_PATH, token, {
+      method: 'POST',
+      body: { traffic_package_id: packageId }
+    }).then(function (payload) {
+      if (!payload || !payload.data) {
+        throw new Error('missing trade no');
+      }
+      return payload.data;
+    });
   }
 
   function copySubscribeUrl() {
@@ -1099,36 +1123,115 @@
     return item;
   }
 
-  function isPositivePrice(value) {
-    return Number(value) > 0;
-  }
-
-  function isTrafficPackagePlan(plan) {
-    if (!plan || !isPositivePrice(plan.onetime_price)) return false;
-
-    return [
-      'month_price',
-      'quarter_price',
-      'half_year_price',
-      'year_price',
-      'two_year_price',
-      'three_year_price'
-    ].every(function (priceKey) {
-      return !isPositivePrice(plan[priceKey]);
-    });
-  }
-
   function goToTrafficPackagePurchase(event) {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
-    window.location.hash = '#/plan';
+
+    fetchTrafficPackages().then(function (packages) {
+      if (!packages.length) {
+        notify('warning', '暂无可购买流量包');
+        return;
+      }
+      showTrafficPackageDrawer(packages);
+    }).catch(function (error) {
+      console.warn('流量包购买入口加载失败:', error);
+      notify('error', '流量包加载失败');
+    });
   }
 
-  function renderTrafficPackageCta(main, hasTrafficPackagePlan) {
+  function formatTrafficPackagePrice(price) {
+    var cents = Number(price) || 0;
+    return '¥' + (cents / 100).toFixed(2).replace(/\.00$/, '');
+  }
+
+  function removeTrafficPackageDrawer() {
+    var existing = document.querySelector('.er-traffic-package-drawer');
+    if (existing) existing.remove();
+  }
+
+  function showTrafficPackageDrawer(packages) {
+    removeTrafficPackageDrawer();
+
+    var drawer = document.createElement('div');
+    drawer.className = 'er-traffic-package-drawer';
+
+    var panel = document.createElement('div');
+    panel.className = 'er-traffic-package-drawer-panel';
+
+    var header = document.createElement('div');
+    header.className = 'er-traffic-package-drawer-header';
+
+    var title = document.createElement('strong');
+    title.textContent = '选择流量包';
+
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'er-traffic-package-drawer-close';
+    close.setAttribute('aria-label', '关闭');
+    close.textContent = '×';
+    close.addEventListener('click', removeTrafficPackageDrawer);
+
+    header.appendChild(title);
+    header.appendChild(close);
+    panel.appendChild(header);
+
+    var list = document.createElement('div');
+    list.className = 'er-traffic-package-list';
+
+    packages.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'er-traffic-package-card';
+
+      var name = document.createElement('strong');
+      name.className = 'er-traffic-package-card-name';
+      name.textContent = item.name || '流量包';
+
+      var meta = document.createElement('span');
+      meta.className = 'er-traffic-package-card-meta';
+      meta.textContent = formatTraffic((Number(item.transfer_enable) || 0) * 1073741824);
+
+      var price = document.createElement('span');
+      price.className = 'er-traffic-package-card-price';
+      price.textContent = formatTrafficPackagePrice(item.price);
+
+      var buy = document.createElement('button');
+      buy.type = 'button';
+      buy.className = 'er-traffic-package-buy';
+      buy.textContent = '购买';
+      buy.addEventListener('click', function () {
+        buy.disabled = true;
+        buy.textContent = '创建订单中';
+        createTrafficPackageOrder(item.id).then(function (tradeNo) {
+          removeTrafficPackageDrawer();
+          window.location.hash = '#/order/' + encodeURIComponent(tradeNo);
+        }).catch(function (error) {
+          console.warn('流量包订单创建失败:', error);
+          buy.disabled = false;
+          buy.textContent = '购买';
+          notify('error', '订单创建失败');
+        });
+      });
+
+      card.appendChild(name);
+      card.appendChild(meta);
+      card.appendChild(price);
+      card.appendChild(buy);
+      list.appendChild(card);
+    });
+
+    panel.appendChild(list);
+    drawer.appendChild(panel);
+    drawer.addEventListener('click', function (event) {
+      if (event.target === drawer) removeTrafficPackageDrawer();
+    });
+    document.body.appendChild(drawer);
+  }
+
+  function renderTrafficPackageCta(main, hasPackages) {
     var existing = main.querySelector(':scope > .er-traffic-package-cta');
-    if (!hasTrafficPackagePlan) {
+    if (!hasPackages) {
       if (existing) existing.remove();
       return;
     }
@@ -1156,9 +1259,9 @@
   function applyTrafficPackageCta(main) {
     if (!main) return false;
 
-    fetchAvailablePlans().then(function (plans) {
+    fetchTrafficPackages().then(function (packages) {
       if (!isDashboardRoute() || !document.body.contains(main)) return;
-      renderTrafficPackageCta(main, plans.some(isTrafficPackagePlan));
+      renderTrafficPackageCta(main, packages.length > 0);
     }).catch(function (error) {
       renderTrafficPackageCta(main, false);
       console.warn('流量包购买提示加载失败:', error);

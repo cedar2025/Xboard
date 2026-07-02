@@ -10,6 +10,31 @@ test('traffic package schema, model, and service store independent package balan
   const migrationFiles = fs.readdirSync(path.join(repoRoot, 'database/migrations'));
   const migrationName = migrationFiles.find((file) => file.includes('create_user_traffic_packages_table'));
   assert.ok(migrationName, 'traffic package migration exists');
+  const packageCatalogMigrationName = migrationFiles.find((file) => file.includes('create_traffic_packages_table'));
+  assert.ok(packageCatalogMigrationName, 'independent traffic package catalog migration exists');
+  const orderLinkMigrationName = migrationFiles.find((file) => file.includes('add_traffic_package_order_links'));
+  assert.ok(orderLinkMigrationName, 'order and user package link migration exists');
+
+  const packageCatalogMigration = read(`database/migrations/${packageCatalogMigrationName}`);
+  assert.match(packageCatalogMigration, /Schema::create\('v2_traffic_packages'/);
+  [
+    "'name'",
+    "'transfer_enable'",
+    "'price'",
+    "'group_id'",
+    "'speed_limit'",
+    "'device_limit'",
+    "'show'",
+    "'sell'",
+    "'sort'",
+    "'content'",
+  ].forEach((field) => assert.match(packageCatalogMigration, new RegExp(field)));
+
+  const orderLinkMigration = read(`database/migrations/${orderLinkMigrationName}`);
+  assert.match(orderLinkMigration, /Schema::table\('v2_order'/);
+  assert.match(orderLinkMigration, /'traffic_package_id'/);
+  assert.match(orderLinkMigration, /nullable\(\)->change\(\)/);
+  assert.match(orderLinkMigration, /Schema::table\('v2_user_traffic_packages'/);
 
   const migration = read(`database/migrations/${migrationName}`);
   assert.match(migration, /Schema::create\('v2_user_traffic_packages'/);
@@ -28,42 +53,54 @@ test('traffic package schema, model, and service store independent package balan
   assert.match(model, /protected \$table = 'v2_user_traffic_packages'/);
   assert.match(model, /const STATUS_ACTIVE = 'active'/);
   assert.match(model, /const STATUS_DEPLETED = 'depleted'/);
+  assert.match(model, /trafficPackage\(\): BelongsTo/);
+
+  const packageModel = read('app/Models/TrafficPackage.php');
+  assert.match(packageModel, /protected \$table = 'v2_traffic_packages'/);
+  assert.match(packageModel, /'transfer_enable'/);
+  assert.match(packageModel, /'price'/);
+  assert.match(packageModel, /orders\(\): HasMany/);
 
   const service = read('app/Services/TrafficPackageService.php');
-  assert.match(service, /function createFromOrder\(Order \$order, User \$user, Plan \$plan\)/);
-  assert.match(service, /\$totalBytes\s*=\s*\(int\)\s*\(\$plan->transfer_enable \* self::BYTES_PER_GB\)/);
+  assert.match(service, /function createFromOrder\(Order \$order, User \$user, TrafficPackage \$trafficPackage\)/);
+  assert.match(service, /\$totalBytes\s*=\s*\(int\)\s*\(\$trafficPackage->transfer_enable \* self::BYTES_PER_GB\)/);
   assert.match(service, /'total_bytes'\s*=>\s*\$totalBytes/);
+  assert.match(service, /'traffic_package_id'\s*=>\s*\$trafficPackage->id/);
+  assert.match(service, /function applyAccessForStandalonePackage\(User \$user, TrafficPackage \$trafficPackage\): void/);
+  assert.match(service, /\$user->plan_id\s*===\s*null/);
+  assert.doesNotMatch(service, /applyAccessForStandalonePackage[\s\S]*\$user->plan_id\s*=\s*\$trafficPackage->id/);
+  assert.doesNotMatch(service, /applyAccessForStandalonePackage[\s\S]*\$user->transfer_enable\s*=/);
   assert.match(service, /function consume\(int \$userId, int \$uploadBytes, int \$downloadBytes\): array/);
   assert.match(service, /orderBy\('id'\)/);
   assert.match(service, /'package_upload'/);
   assert.match(service, /'plan_upload'/);
 });
 
-test('onetime traffic package purchase does not replace current subscription', () => {
-  const planService = read('app/Services/PlanService.php');
-  assert.match(planService, /validateOnetimeTrafficPackagePurchase\(User \$user\)/);
-  assert.match(planService, /expired_at\s*===\s*NULL/);
-  assert.match(planService, /expired_at\s*<=\s*time\(\)/);
-
+test('independent traffic package orders do not replace current subscription', () => {
   const orderService = read('app/Services/OrderService.php');
-  assert.match(orderService, /Plan::PERIOD_ONETIME => \$this->buyTrafficPackage\(\$order, \$plan\)/);
+  assert.match(orderService, /function createTrafficPackageFromRequest\(/);
+  assert.match(orderService, /TrafficPackage \$trafficPackage/);
+  assert.match(orderService, /'traffic_package_id'\s*=>\s*\$trafficPackage->id/);
+  assert.match(orderService, /'plan_id'\s*=>\s*null/);
+  assert.match(orderService, /'period'\s*=>\s*Order::PERIOD_TRAFFIC_PACKAGE/);
+  assert.match(orderService, /Order::TYPE_TRAFFIC_PACKAGE/);
+  assert.match(orderService, /private function buyTrafficPackage\(Order \$order, TrafficPackage \$trafficPackage\)/);
+  assert.match(orderService, /TrafficPackageService::class\)->createFromOrder\(\$order, \$this->user, \$trafficPackage\)/);
+  assert.doesNotMatch(orderService, /createTrafficPackageFromRequest[\s\S]{0,1200}getSurplusValue/);
+  assert.doesNotMatch(orderService, /createTrafficPackageFromRequest[\s\S]{0,1200}setSpeedLimit\(\$plan->speed_limit\)/);
+  assert.match(orderService, /\(int\) \$order->type !== Order::TYPE_TRAFFIC_PACKAGE/);
   assert.doesNotMatch(orderService, /Plan::PERIOD_ONETIME => \$this->buyByOneTime\(\$plan\)/);
-  assert.match(orderService, /private function buyTrafficPackage\(Order \$order, Plan \$plan\)/);
-  assert.match(orderService, /TrafficPackageService::class\)->createFromOrder\(\$order, \$this->user, \$plan\)/);
   assert.doesNotMatch(orderService, /private function buyByOneTime/);
 });
 
-test('traffic package plans are only visible to users with active time subscriptions', () => {
+test('traffic packages are fetched and bought independently from subscription plans', () => {
   const planService = read('app/Services/PlanService.php');
   assert.match(planService, /function isTrafficPackagePlan\(Plan \$plan\): bool/);
   assert.match(planService, /Plan::PERIOD_ONETIME/);
   assert.match(planService, /Plan::PERIOD_MONTHLY/);
-  assert.match(planService, /function hasActiveTimeSubscription\(User \$user\): bool/);
-  assert.match(planService, /\$user->expired_at !== NULL/);
-  assert.match(planService, /\$user->expired_at > time\(\)/);
-  assert.doesNotMatch(planService, /hasActiveTimeSubscription\(User \$user\): bool[\s\S]*hasActivePackageBalance/);
   assert.match(planService, /function getAvailablePlansForUser\(User \$user\): Collection/);
-  assert.match(planService, /!\$this->isTrafficPackagePlan\(\$plan\) \|\| \$this->hasActiveTimeSubscription\(\$user\)/);
+  assert.match(planService, /!\$this->isTrafficPackagePlan\(\$plan\)/);
+  assert.doesNotMatch(planService, /getAvailablePlansForUser\(User \$user\): Collection[\s\S]*hasActiveTimeSubscription/);
 
   const userPlanController = read('app/Http/Controllers/V1/User/PlanController.php');
   assert.match(userPlanController, /getAvailablePlansForUser\(\$user\)/);
@@ -72,7 +109,16 @@ test('traffic package plans are only visible to users with active time subscript
   const guestPlanController = read('app/Http/Controllers/V1/Guest/PlanController.php');
   assert.match(guestPlanController, /getAvailablePlans\(\)/);
 
+  const trafficPackageController = read('app/Http/Controllers/V1/User/TrafficPackageController.php');
+  assert.match(trafficPackageController, /TrafficPackageResource::collection/);
+  assert.match(trafficPackageController, /getAvailablePackages\(\)/);
+
+  const userRoutes = read('app/Http/Routes/V1/UserRoute.php');
+  assert.match(userRoutes, /traffic-package\/fetch/);
+
   const orderController = read('app/Http/Controllers/V1/User/OrderController.php');
+  assert.match(orderController, /traffic_package_id/);
+  assert.match(orderController, /createTrafficPackageFromRequest/);
   assert.match(orderController, /validatePurchase\(\$user, \$request->input\('period'\)\)/);
 });
 
