@@ -27,12 +27,17 @@ else
     RELEASE_VERSION="1.0"
 fi
 
-OUTPUT_NAME="app-release-prd-V$RELEASE_VERSION.apk"
+BUILD_NAME="$RELEASE_VERSION.0"
+BUILD_NUMBER="$(awk -F. '{ printf "%d%02d00", $1, $2 }' <<< "$RELEASE_VERSION")"
+
+OUTPUT_NAME="elephant-route-android-release-arm64-v$RELEASE_VERSION.apk"
 TARGET_APK="$BUILD_DIR/$OUTPUT_NAME"
 
 echo "🚀 Starting Production Build..."
 echo "📍 API Base URL: $PROD_URL"
 echo "🏷️ APK Version: V$RELEASE_VERSION"
+echo "🤖 Android versionName: $BUILD_NAME"
+echo "🔢 Android versionCode: $BUILD_NUMBER"
 echo "📦 Output Filename: $OUTPUT_NAME"
 echo "🧩 Android ABI: arm64-v8a"
 
@@ -44,6 +49,8 @@ flutter clean
 echo "🔨 Building APK..."
 ELEPHANT_ANDROID_ABIS="arm64-v8a" flutter build apk --release \
     --target-platform android-arm64 \
+    --build-name="$BUILD_NAME" \
+    --build-number="$BUILD_NUMBER" \
     --dart-define=BASE_URL="$PROD_URL"
 
 # Rename

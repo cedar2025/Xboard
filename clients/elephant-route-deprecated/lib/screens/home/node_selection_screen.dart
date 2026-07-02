@@ -1,7 +1,11 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/node_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/vpn_provider.dart';
 import '../../models/proxy_node.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -9,6 +13,7 @@ import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../utils/flag_helper.dart';
 import '../../utils/platform_utils.dart';
+import '../../utils/toast_utils.dart';
 
 class NodeSelectionScreen extends StatefulWidget {
   const NodeSelectionScreen({super.key});
@@ -146,18 +151,27 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
           ],
         ),
       ),
-      floatingActionButton: Consumer<NodeProvider>(
-        builder: (context, provider, _) {
+      floatingActionButton: Consumer2<NodeProvider, VpnProvider>(
+        builder: (context, provider, vpnProvider, _) {
           if (provider.nodes.isEmpty) {
             return const SizedBox.shrink();
           }
 
+          final requiresConnectedVpn = !kIsWeb && Platform.isAndroid;
+          final canTestLatency =
+              !requiresConnectedVpn || vpnProvider.isConnected;
+          final isTesting = provider.isLoading;
+
           return Container(
             margin: EdgeInsets.only(bottom: PlatformUtils.isDesktop ? 16 : 90),
             child: FloatingActionButton.extended(
-              onPressed: provider.isLoading
+              onPressed: isTesting
                   ? null
                   : () {
+                      if (!canTestLatency) {
+                        ToastUtils.show(context, '请先开启加速后再测速');
+                        return;
+                      }
                       provider.testAllLatencies(context);
                     },
               backgroundColor:
@@ -168,7 +182,7 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
                 color: Colors.white,
               ),
               label: Text(
-                '一键测速',
+                isTesting ? '测速中' : (canTestLatency ? '一键测速' : '先开启加速'),
                 style: AppTextStyles.buttonSmall.copyWith(color: Colors.white),
               ),
             ),

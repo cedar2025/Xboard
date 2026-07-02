@@ -24,6 +24,17 @@ test('guest app update endpoint scopes updates by app key and signed artifact UR
   assert.match(controller, /false\s*\);/);
 });
 
+test('guest app update endpoint compares normalized app versions before build numbers', () => {
+  const controller = readRepoFile('app/Http/Controllers/V1/Guest/AppUpdateController.php');
+
+  assert.match(controller, /private function normalizeVersionParts\(string \s*\$version\): \?array/);
+  assert.match(controller, /private function compareVersions\(string \s*\$left,\s*string \s*\$right\): \?int/);
+  assert.match(controller, /\$versionComparison = \$this->compareVersions\(\$latest->version,\s*\$currentVersion\);/);
+  assert.match(controller, /\$hasUpdate = \$versionComparison !== null\s*\?\s*\$versionComparison > 0\s*:\s*\$latest->build_number > \$currentBuild;/);
+  assert.match(controller, /Collection::make\(\$candidates\)->sort\(function \(AppVersion \$left,\s*AppVersion \$right\) \{/);
+  assert.match(controller, /return \$this->compareVersions\(\$right->version,\s*\$left->version\)/);
+});
+
 test('android client uses official app identity and current update endpoint', () => {
   const constants = readRepoFile('clients/elephant-route-deprecated/lib/utils/constants.dart');
   const service = readRepoFile('clients/elephant-route-deprecated/lib/core/api/services/app_update_service.dart');
@@ -72,4 +83,15 @@ test('android native layer can expose ABI and install downloaded APK files', () 
   assert.match(mainActivity, /FileProvider\.getUriForFile/);
   assert.match(mainActivity, /application\/vnd\.android\.package-archive/);
   assert.match(mainActivity, /ACTION_MANAGE_UNKNOWN_APP_SOURCES/);
+});
+
+test('android profile content reserves space for floating bottom navigation', () => {
+  const dimensions = readRepoFile('clients/elephant-route-deprecated/lib/core/theme/app_dimensions.dart');
+  const profile = readRepoFile('clients/elephant-route-deprecated/lib/screens/profile/profile_screen.dart');
+
+  assert.match(dimensions, /static double mobileBottomNavigationInset\(BuildContext context\)/);
+  assert.match(dimensions, /MediaQuery\.paddingOf\(context\)\.bottom/);
+  assert.match(dimensions, /navigationBarHeight \+ navigationBarBottomPadding \+ safeBottom \+ spacingLarge/);
+  assert.match(profile, /AppDimensions\.mobileBottomNavigationInset\(context\)/);
+  assert.doesNotMatch(profile, /padding: const EdgeInsets\.fromLTRB\(24,\s*0,\s*24,\s*24\)/);
 });

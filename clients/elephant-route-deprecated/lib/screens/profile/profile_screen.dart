@@ -128,7 +128,12 @@ class ProfileScreen extends StatelessWidget {
                   }
 
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      0,
+                      24,
+                      AppDimensions.mobileBottomNavigationInset(context),
+                    ),
                     physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics()),
                     child: Center(
@@ -148,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
 
                             // 设置信息卡片
                             _buildSettingsCard(context, isDark),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),

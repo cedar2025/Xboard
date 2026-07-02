@@ -166,6 +166,12 @@ class AppDimensions {
   /// 导航栏底部间距 - 24px
   static const double navigationBarBottomPadding = 24.0;
 
+  /// 移动端浮动底部导航占用的内容避让高度
+  static double mobileBottomNavigationInset(BuildContext context) {
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    return navigationBarHeight + navigationBarBottomPadding + safeBottom + spacingLarge;
+  }
+
   /// 连接卡片最小高度 - 380px
   static const double connectionCardMinHeight = 380.0;
 

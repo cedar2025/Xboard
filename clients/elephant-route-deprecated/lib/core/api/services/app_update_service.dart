@@ -67,7 +67,50 @@ class AppUpdateService {
             ? Map<String, dynamic>.from(body)
             : <String, dynamic>{};
 
-    return AppUpdateCheckResult.fromJson(data);
+    final result = AppUpdateCheckResult.fromJson(data);
+    final latest = result.latest;
+    if ((result.hasUpdate || result.force) &&
+        latest != null &&
+        !isVersionNewer(latest.version, packageInfo.version)) {
+      return const AppUpdateCheckResult(hasUpdate: false, force: false);
+    }
+
+    return result;
+  }
+
+  static bool isVersionNewer(String latestVersion, String currentVersion) {
+    final latestParts = _normalizeVersionParts(latestVersion);
+    final currentParts = _normalizeVersionParts(currentVersion);
+    if (latestParts == null || currentParts == null) {
+      return false;
+    }
+
+    final length = max(latestParts.length, currentParts.length);
+    for (var index = 0; index < length; index += 1) {
+      final latestPart = index < latestParts.length ? latestParts[index] : 0;
+      final currentPart = index < currentParts.length ? currentParts[index] : 0;
+      if (latestPart == currentPart) continue;
+      return latestPart > currentPart;
+    }
+
+    return false;
+  }
+
+  static List<int>? _normalizeVersionParts(String version) {
+    var normalized = version.trim().toLowerCase();
+    if (normalized.startsWith('v')) {
+      normalized = normalized.substring(1);
+    }
+    if (!RegExp(r'^\d+(?:\.\d+)*(?:[+-][a-z0-9._-]+)?$').hasMatch(normalized)) {
+      return null;
+    }
+
+    final numericVersion = normalized.split(RegExp(r'[+-]')).first;
+    final parts = numericVersion.split('.').map(int.parse).toList();
+    while (parts.length > 1 && parts.last == 0) {
+      parts.removeLast();
+    }
+    return parts;
   }
 
   Future<void> sendHeartbeat({String channel = 'stable'}) async {
