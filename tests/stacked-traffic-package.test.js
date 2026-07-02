@@ -88,18 +88,26 @@ test('independent traffic package orders do not replace current subscription', (
   assert.match(orderService, /TrafficPackageService::class\)->createFromOrder\(\$order, \$this->user, \$trafficPackage\)/);
   assert.doesNotMatch(orderService, /createTrafficPackageFromRequest[\s\S]{0,1200}getSurplusValue/);
   assert.doesNotMatch(orderService, /createTrafficPackageFromRequest[\s\S]{0,1200}setSpeedLimit\(\$plan->speed_limit\)/);
+  assert.match(orderService, /\$order->period === Plan::PERIOD_ONETIME[\s\S]{0,120}\$order->type = Order::TYPE_TRAFFIC_PACKAGE/);
+  assert.match(orderService, /\(string\) \$order->period === Plan::PERIOD_ONETIME => \$this->buyLegacyTrafficPackage\(\$order, \$plan\)/);
+  assert.match(orderService, /if \(\$newPeriod === Plan::PERIOD_ONETIME && \$couponCode\) \{[\s\S]{0,120}throw new ApiException/);
+  assert.doesNotMatch(orderService, /\(int\) \$order->type === Order::TYPE_TRAFFIC_PACKAGE \|\| \(string\) \$order->period === Order::PERIOD_TRAFFIC_PACKAGE => \$this->buyTrafficPackage/);
   assert.match(orderService, /\(int\) \$order->type !== Order::TYPE_TRAFFIC_PACKAGE/);
   assert.doesNotMatch(orderService, /Plan::PERIOD_ONETIME => \$this->buyByOneTime\(\$plan\)/);
   assert.doesNotMatch(orderService, /private function buyByOneTime/);
 });
 
-test('traffic packages are fetched and bought independently from subscription plans', () => {
+test('legacy one-time traffic packages remain visible on the user purchase page and open independently', () => {
   const planService = read('app/Services/PlanService.php');
   assert.match(planService, /function isTrafficPackagePlan\(Plan \$plan\): bool/);
   assert.match(planService, /Plan::PERIOD_ONETIME/);
   assert.match(planService, /Plan::PERIOD_MONTHLY/);
   assert.match(planService, /function getAvailablePlansForUser\(User \$user\): Collection/);
-  assert.match(planService, /!\$this->isTrafficPackagePlan\(\$plan\)/);
+  assert.match(planService, /getAvailablePlansForUser\(User \$user\): Collection[\s\S]{0,120}return \$this->getSellablePlans\(\)[\s\S]{0,80}->values\(\)/);
+  assert.doesNotMatch(planService, /getAvailablePlansForUser\(User \$user\): Collection[\s\S]{0,220}!\$this->isTrafficPackagePlan\(\$plan\)/);
+  assert.match(planService, /if \(\$this->isTrafficPackagePlan\(\$plan\)\) \{[\s\S]{0,140}return \$plan->show && \$plan->sell && \$this->hasCapacity\(\$plan\)/);
+  assert.match(planService, /if \(\$periodKey === Plan::PERIOD_ONETIME\) \{[\s\S]{0,120}\$this->validateLegacyTrafficPackagePurchase\(\)/);
+  assert.match(planService, /function validateLegacyTrafficPackagePurchase\(\): void/);
   assert.doesNotMatch(planService, /getAvailablePlansForUser\(User \$user\): Collection[\s\S]*hasActiveTimeSubscription/);
 
   const userPlanController = read('app/Http/Controllers/V1/User/PlanController.php');

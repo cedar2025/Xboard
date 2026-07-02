@@ -59,6 +59,10 @@ class OrderService
         return DB::transaction(function () use ($user, $plan, $period, $couponCode, $userService) {
             $newPeriod = PlanService::getPeriodKey($period);
 
+            if ($newPeriod === Plan::PERIOD_ONETIME && $couponCode) {
+                throw new ApiException(__('Coupon failed'));
+            }
+
             $order = new Order([
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
@@ -144,7 +148,7 @@ class OrderService
 
 
         DB::transaction(function () use ($order, $plan, $trafficPackage) {
-            if (((int) $order->type === Order::TYPE_TRAFFIC_PACKAGE || (string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE) && !$trafficPackage) {
+            if ((string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE && !$trafficPackage) {
                 throw new ApiException(__('Subscription plan does not exist'));
             }
 
@@ -158,7 +162,7 @@ class OrderService
             }
 
             match (true) {
-                (int) $order->type === Order::TYPE_TRAFFIC_PACKAGE || (string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE => $this->buyTrafficPackage($order, $trafficPackage),
+                (string) $order->period === Order::PERIOD_TRAFFIC_PACKAGE => $this->buyTrafficPackage($order, $trafficPackage),
                 (string) $order->period === Plan::PERIOD_ONETIME => $this->buyLegacyTrafficPackage($order, $plan),
                 (string) $order->period === Plan::PERIOD_RESET_TRAFFIC => app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER),
                 default => $this->buyByPeriod($order, $plan),
@@ -200,7 +204,7 @@ class OrderService
         if ($order->period === Order::PERIOD_TRAFFIC_PACKAGE) {
             $order->type = Order::TYPE_TRAFFIC_PACKAGE;
         } else if ($order->period === Plan::PERIOD_ONETIME) {
-            $order->type = Order::TYPE_NEW_PURCHASE;
+            $order->type = Order::TYPE_TRAFFIC_PACKAGE;
         } else if ($order->period === Plan::PERIOD_RESET_TRAFFIC) {
             $order->type = Order::TYPE_RESET_TRAFFIC;
         } else if ($user->plan_id !== NULL && $order->plan_id !== $user->plan_id && ($user->expired_at > time() || $user->expired_at === NULL)) {
