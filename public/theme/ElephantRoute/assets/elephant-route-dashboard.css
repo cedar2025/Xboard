@@ -83,6 +83,26 @@
   overflow-wrap: anywhere;
 }
 
+.er-active-product-panel {
+  margin-bottom: 18px;
+}
+
+.er-active-product-name {
+  color: #1f2937;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.er-active-product-status {
+  margin-top: 10px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .er-traffic-package-summary {
   margin-top: 22px;
   padding-top: 18px;

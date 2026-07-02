@@ -442,6 +442,9 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.match(script, /traffic_package_remaining/);
   assert.match(script, /plan_remaining_traffic/);
   assert.match(script, /effective_remaining_traffic/);
+  assert.match(script, /active_product_type/);
+  assert.match(script, /active_product_name/);
+  assert.match(script, /latest_traffic_package/);
   assert.match(script, /TRAFFIC_PACKAGE_API_PATH = '\/api\/v1\/user\/traffic-package\/fetch'/);
   assert.match(script, /ORDER_SAVE_API_PATH = '\/api\/v1\/user\/order\/save'/);
   assert.match(script, /function applyTrafficPackageSummary/);
@@ -457,6 +460,10 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.doesNotMatch(script, /throw new Error\('missing subscribe url'\)/);
   assert.match(script, /订阅链接不存在/);
   assert.match(script, /trafficPackageRemaining <= 0/);
+  assert.match(script, /function getActiveProductName\(info\)/);
+  assert.match(script, /info\.active_product_type === 'traffic_package'/);
+  assert.match(script, /function updateSubscribeCardProduct\(main, info\)/);
+  assert.match(script, /activeProductName/);
   assert.match(script, /er-traffic-package-summary/);
   assert.match(script, /流量构成/);
   assert.match(script, /基础套餐剩余/);
@@ -477,6 +484,9 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.doesNotMatch(script, /优先使用流量包，用完后继续使用套餐流量。套餐重置时间不受影响。/);
   assert.match(script, /流量包可用中/);
   assert.match(script, /当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。/);
+  assert.match(script, /var hasActivePlan = Boolean\(info && info\.has_active_plan\)/);
+  assert.match(script, /var currentUsable = hasActivePlan \? effectiveRemaining : trafficPackageRemaining/);
+  assert.match(script, /var planWidth = hasActivePlan \? Math\.max\(0, Math\.min\(100, \(planRemaining \/ meterTotal\) \* 100\)\) : 0/);
   assert.match(script, /applySubscribeActions\(\)[\s\S]*applyTrafficPackageSummary/);
   assert.match(script, /applySubscribeActions\(\)[\s\S]*applyTrafficPackageCta/);
 

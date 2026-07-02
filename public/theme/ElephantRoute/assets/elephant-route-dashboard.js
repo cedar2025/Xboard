@@ -1034,7 +1034,10 @@
 
   function shouldEnhanceSubscribeCard(content) {
     var text = getNodeText(content);
-    return Boolean(text && text.indexOf('购买订阅') === -1 && text.indexOf('已用') !== -1 && text.indexOf('总计') !== -1);
+    return Boolean(text && (
+      (text.indexOf('已用') !== -1 && text.indexOf('总计') !== -1)
+      || text.indexOf('购买订阅') !== -1
+    ));
   }
 
   function createSubscribeActionButton(type, label, iconSvg) {
@@ -1104,6 +1107,70 @@
 
   function isSubscriptionExpired(info) {
     return info && info.expired_at !== null && Number(info.expired_at) <= Math.floor(Date.now() / 1000);
+  }
+
+  function getActiveProductName(info) {
+    if (!info) return '';
+    if (info.active_product_type === 'traffic_package') {
+      return info.active_product_name
+        || (info.latest_traffic_package && info.latest_traffic_package.name)
+        || '流量包';
+    }
+    if (info.active_product_type === 'plan') {
+      return info.active_product_name || (info.plan && info.plan.name) || '';
+    }
+    return '';
+  }
+
+  function restoreSubscribeCardProduct(main) {
+    var panel = main.querySelector(':scope > .er-active-product-panel');
+    if (panel) panel.remove();
+
+    Array.prototype.forEach.call(main.children, function (child) {
+      if (child.getAttribute('data-er-product-hidden') === 'true') {
+        child.style.display = '';
+        child.removeAttribute('data-er-product-hidden');
+      }
+    });
+  }
+
+  function updateSubscribeCardProduct(main, info) {
+    var activeProductName = getActiveProductName(info);
+    if (!info || info.active_product_type !== 'traffic_package' || !activeProductName) {
+      restoreSubscribeCardProduct(main);
+      return;
+    }
+
+    var panel = main.querySelector(':scope > .er-active-product-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'er-active-product-panel';
+      main.insertBefore(panel, main.firstChild);
+    }
+
+    Array.prototype.forEach.call(main.children, function (child) {
+      if (
+        child === panel
+        || child.classList.contains('er-traffic-package-summary')
+        || child.classList.contains('er-traffic-package-cta')
+      ) {
+        return;
+      }
+      child.setAttribute('data-er-product-hidden', 'true');
+      child.style.display = 'none';
+    });
+
+    panel.innerHTML = '';
+    var name = document.createElement('div');
+    name.className = 'er-active-product-name';
+    name.textContent = activeProductName;
+
+    var status = document.createElement('div');
+    status.className = 'er-active-product-status';
+    status.textContent = '流量包可用中';
+
+    panel.appendChild(name);
+    panel.appendChild(status);
   }
 
   function createTrafficMetric(label, value, className) {
@@ -1283,10 +1350,10 @@
       trafficPackageRemaining,
       Number(info.effective_remaining_traffic) || planRemaining + trafficPackageRemaining
     );
-    var expired = isSubscriptionExpired(info);
-    var currentUsable = expired ? trafficPackageRemaining : effectiveRemaining;
+    var hasActivePlan = Boolean(info && info.has_active_plan);
+    var currentUsable = hasActivePlan ? effectiveRemaining : trafficPackageRemaining;
     var meterTotal = Math.max(1, planRemaining + trafficPackageRemaining);
-    var planWidth = expired ? 0 : Math.max(0, Math.min(100, (planRemaining / meterTotal) * 100));
+    var planWidth = hasActivePlan ? Math.max(0, Math.min(100, (planRemaining / meterTotal) * 100)) : 0;
     var packageWidth = Math.max(0, Math.min(100, (trafficPackageRemaining / meterTotal) * 100));
 
     var summary = existing || document.createElement('section');
@@ -1303,14 +1370,14 @@
 
     var badge = document.createElement('span');
     badge.className = 'er-traffic-package-badge';
-    badge.textContent = expired ? '流量包可用中' : '优先扣套餐';
+    badge.textContent = hasActivePlan ? '优先扣套餐' : '流量包可用中';
 
     header.appendChild(title);
     header.appendChild(badge);
 
     var metrics = document.createElement('div');
     metrics.className = 'er-traffic-package-metrics';
-    metrics.appendChild(createTrafficMetric('基础套餐剩余', expired ? '已到期' : formatTraffic(planRemaining), 'er-traffic-package-item-plan'));
+    metrics.appendChild(createTrafficMetric('基础套餐剩余', hasActivePlan ? formatTraffic(planRemaining) : '已到期', 'er-traffic-package-item-plan'));
     metrics.appendChild(createTrafficMetric('流量包剩余', formatTraffic(trafficPackageRemaining), 'er-traffic-package-item-package'));
     metrics.appendChild(createTrafficMetric('有效可用', formatTraffic(currentUsable), 'er-traffic-package-item-effective'));
 
@@ -1331,9 +1398,9 @@
 
     var note = document.createElement('p');
     note.className = 'er-traffic-package-note';
-    note.textContent = expired
-      ? '当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。'
-      : '优先使用套餐流量，用完后继续使用流量包余额。套餐重置时间不受影响。';
+    note.textContent = hasActivePlan
+      ? '优先使用套餐流量，用完后继续使用流量包余额。套餐重置时间不受影响。'
+      : '当前套餐已到期，仍可继续使用流量包余额。续费后套餐重置时间独立计算。';
 
     summary.appendChild(header);
     summary.appendChild(metrics);
@@ -1350,6 +1417,7 @@
 
     fetchSubscribeInfo().then(function (info) {
       if (!isDashboardRoute() || !document.body.contains(main)) return;
+      updateSubscribeCardProduct(main, info);
       renderTrafficPackageSummary(main, info);
     }).catch(function (error) {
       console.warn('流量包余额展示加载失败:', error);

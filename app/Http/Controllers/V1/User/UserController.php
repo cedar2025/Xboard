@@ -157,19 +157,25 @@ class UserController extends Controller
         if (!$user) {
             return $this->fail([400, __('The user does not exist')]);
         }
-        if ($user->plan_id) {
+        $userService = new UserService();
+        $trafficSummary = $userService->getTrafficSummary($user);
+        if ($trafficSummary['has_active_plan'] && $user->plan_id) {
             $user['plan'] = Plan::find($user->plan_id);
             if (!$user['plan']) {
                 return $this->fail([400, __('Subscription plan does not exist')]);
             }
+        } else {
+            $user['plan_id'] = null;
+            $user['plan'] = null;
         }
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
-        $userService = new UserService();
-        $user['reset_day'] = $userService->getResetDay($user);
-        $trafficSummary = $userService->getTrafficSummary($user);
+        $user['reset_day'] = $trafficSummary['has_active_plan'] ? $userService->getResetDay($user) : null;
         foreach ($trafficSummary as $key => $value) {
             $user[$key] = $value;
         }
+        $user['has_active_plan'] = $trafficSummary['has_active_plan'];
+        $user['effective_expired_at'] = $trafficSummary['effective_expired_at'];
+        $user['expired_at'] = $trafficSummary['effective_expired_at'];
         $user['transfer_enable'] = $trafficSummary['effective_transfer_enable'];
         $user = HookManager::filter('user.subscribe.response', $user);
         return $this->success($user);

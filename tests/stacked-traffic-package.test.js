@@ -67,7 +67,8 @@ test('traffic package schema, model, and service store independent package balan
   assert.match(service, /'total_bytes'\s*=>\s*\$totalBytes/);
   assert.match(service, /'traffic_package_id'\s*=>\s*\$trafficPackage->id/);
   assert.match(service, /function applyAccessForStandalonePackage\(User \$user, TrafficPackage \$trafficPackage\): void/);
-  assert.match(service, /\$user->plan_id\s*===\s*null/);
+  assert.match(service, /function hasActivePlan\(User \$user\): bool/);
+  assert.match(service, /!\$this->hasActivePlan\(\$user\)/);
   assert.doesNotMatch(service, /applyAccessForStandalonePackage[\s\S]*\$user->plan_id\s*=\s*\$trafficPackage->id/);
   assert.doesNotMatch(service, /applyAccessForStandalonePackage[\s\S]*\$user->transfer_enable\s*=/);
   assert.match(service, /function consume\(int \$userId, int \$uploadBytes, int \$downloadBytes\): array/);
@@ -145,7 +146,8 @@ test('traffic fetch consumes active subscription traffic before package balance'
   assert.match(trafficPackageService, /\$planUpload\s*=\s*min\(\$planAvailable, \$remainingUpload\)/);
   assert.match(trafficPackageService, /\$planDownload\s*=\s*min\(\$planAvailable, \$remainingDownload\)/);
   assert.match(trafficPackageService, /function getActivePlanRemainingBytes\(User \$user\): int/);
-  assert.match(trafficPackageService, /\(int\) \$user->expired_at <= time\(\)/);
+  assert.match(trafficPackageService, /function hasActivePlan\(User \$user\): bool[\s\S]*\(int\) \$user->expired_at > time\(\)/);
+  assert.doesNotMatch(trafficPackageService, /\$user->expired_at === null \|\| \(int\) \$user->expired_at <= time\(\)/);
   assert.match(trafficPackageService, /\$planUsedTraffic\s*=\s*\(int\) \(\$user->u \+ \$user->d\)/);
   assert.match(trafficPackageService, /\$packages = UserTrafficPackage::where\('user_id', \$userId\)/);
   assert.match(trafficPackageService, /'package_upload'\s*=>\s*\$packageUpload/);
@@ -171,6 +173,17 @@ test('availability and subscription display account for traffic packages separat
     "'effective_transfer_enable'",
     "'effective_remaining_traffic'",
   ].forEach((field) => assert.match(trafficPackageService, new RegExp(field)));
+  assert.match(trafficPackageService, /function getLatestActivePackage\(User \$user\): \?array/);
+  assert.match(trafficPackageService, /with\(\['trafficPackage:id,name', 'plan:id,name'\]\)/);
+  assert.match(trafficPackageService, /'source'\s*=>\s*\$package->traffic_package_id \? 'traffic_package' : 'legacy_plan'/);
+  assert.match(trafficPackageService, /\$hasActivePlan\s*=\s*\$this->hasActivePlan\(\$user\)/);
+  assert.match(trafficPackageService, /\$planTransferEnable\s*=\s*\$hasActivePlan \? \(int\) \(\$user->transfer_enable \?\? 0\) : 0/);
+  assert.match(trafficPackageService, /'has_active_plan'/);
+  assert.match(trafficPackageService, /'active_product_type'/);
+  assert.match(trafficPackageService, /'active_product_name'/);
+  assert.match(trafficPackageService, /'latest_traffic_package'/);
+  assert.match(trafficPackageService, /'effective_expired_at'/);
+  assert.doesNotMatch(trafficPackageService, /function getTrafficSummary\(User \$user\): array[\s\S]{0,160}\$planTransferEnable\s*=\s*\(int\) \(\$user->transfer_enable \?\? 0\);/);
 
   const serverService = read('app/Services/ServerService.php');
   assert.match(serverService, /leftJoin\('v2_user_traffic_packages as traffic_packages'/);
@@ -184,6 +197,15 @@ test('availability and subscription display account for traffic packages separat
   const userController = read('app/Http/Controllers/V1/User/UserController.php');
   assert.match(userController, /public function getSubscribe\(Request \$request\)[\s\S]*->select\(\[\s*'id'/);
   assert.match(userController, /public function getSubscribe\(Request \$request\)[\s\S]*getTrafficSummary\(\$user\)/);
+  assert.match(userController, /\$user\['has_active_plan'\]\s*=\s*\$trafficSummary\['has_active_plan'\]/);
+  assert.match(userController, /if \(\$trafficSummary\['has_active_plan'\] && \$user->plan_id\)/);
+  assert.match(userController, /else \{[\s\S]{0,160}\$user\['plan_id'\]\s*=\s*null[\s\S]{0,160}\$user\['plan'\]\s*=\s*null/);
+  assert.match(userController, /\$user\['effective_expired_at'\]\s*=\s*\$trafficSummary\['effective_expired_at'\]/);
+  assert.match(userController, /\$user\['expired_at'\]\s*=\s*\$trafficSummary\['effective_expired_at'\]/);
+
+  const clientController = read('app/Http/Controllers/V1/Client/ClientController.php');
+  assert.match(clientController, /\$user\['transfer_enable'\]\s*=\s*\$trafficSummary\['effective_transfer_enable'\]/);
+  assert.match(clientController, /\$user\['expired_at'\]\s*=\s*\$trafficSummary\['effective_expired_at'\]/);
 
   const protocolFiles = [
     'app/Protocols/Clash.php',

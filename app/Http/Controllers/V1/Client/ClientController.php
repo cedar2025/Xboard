@@ -58,6 +58,7 @@ class ClientController extends Controller
             $user[$key] = $value;
         }
         $user['transfer_enable'] = $trafficSummary['effective_transfer_enable'];
+        $user['expired_at'] = $trafficSummary['effective_expired_at'];
 
         if ($servers === null) {
             $servers = ServerService::getAvailableServers($user);
