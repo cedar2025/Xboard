@@ -389,6 +389,20 @@ test('subscription import deeplinks request deterministic Surge format', () => {
   assert.match(v2boardBundle, /appendSubscribeFlag\(e,"surge"\)/);
 });
 
+test('invite copy links point at the SPA app entry before the register hash route', () => {
+  for (const bundlePath of [
+    'theme/ElephantRoute/assets/umi.js',
+    'public/theme/ElephantRoute/assets/umi.js',
+    'public/assets/umi.js',
+    'theme/Xboard/assets/umi.js'
+  ]) {
+    const bundle = readRepoFile(bundlePath);
+
+    assert.match(bundle, /\/app#\/register\?code=\$\{y\.code\}/, `${bundlePath} should use /app before the register hash`);
+    assert.doesNotMatch(bundle, /\/\/\$\{window\.location\.host\}\/#\/register\?code=\$\{y\.code\}/, `${bundlePath} should not copy a root hash register URL`);
+  }
+});
+
 test('ElephantRoute user bundle supports every configured theme color option', () => {
   const config = JSON.parse(readRepoFile('theme/ElephantRoute/config.json'));
   const themeColorConfig = config.configs.find((item) => item.field_name === 'theme_color');
@@ -506,6 +520,7 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
 test('ElephantRoute dashboard asset cache busting is updated for subscription shortcuts', () => {
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
+  assert.match(blade, /umi\.js\?v=\{\{\$version\}\}-er20260703inviteRegister1/);
   assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260703trafficPackageCatalog1/);
   assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260703trafficPackageCatalog1/);
 });
