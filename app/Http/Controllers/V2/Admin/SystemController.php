@@ -7,6 +7,7 @@ use App\Models\Log as LogModel;
 use App\Utils\CacheKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Laravel\Horizon\Contracts\JobRepository;
 use Laravel\Horizon\Contracts\MasterSupervisorRepository;
 use Laravel\Horizon\Contracts\MetricsRepository;
@@ -17,6 +18,11 @@ use App\Helpers\ResponseEnum;
 
 class SystemController extends Controller
 {
+    private const MAX_LOG_PAGE_SIZE = 50;
+    private const MAX_FAILED_JOB_PAGE_SIZE = 50;
+    private const LOG_FIELD_PREVIEW_LENGTH = 1200;
+    private const FAILED_JOB_PAYLOAD_PREVIEW_LENGTH = 2000;
+
     public function getSystemStatus()
     {
         $data = [
@@ -127,8 +133,8 @@ class SystemController extends Controller
 
     public function getSystemLog(Request $request)
     {
-        $current = $request->input('current') ? $request->input('current') : 1;
-        $pageSize = $request->input('page_size') >= 10 ? $request->input('page_size') : 10;
+        $current = max(1, (int) $request->input('current', 1));
+        $pageSize = min(self::MAX_LOG_PAGE_SIZE, max(10, (int) $request->input('page_size', 20)));
         $level = $request->input('level');
         $keyword = $request->input('keyword');
 
@@ -146,24 +152,53 @@ class SystemController extends Controller
             });
 
         $total = $builder->count();
-        $res = $builder->forPage($current, $pageSize)
+        $res = $builder
+            ->select([
+                'id',
+                'title',
+                'level',
+                'host',
+                'uri',
+                'method',
+                'ip',
+                'created_at',
+                'updated_at',
+                DB::raw('LEFT(`data`, ' . self::LOG_FIELD_PREVIEW_LENGTH . ') as data'),
+                DB::raw('LEFT(`context`, ' . self::LOG_FIELD_PREVIEW_LENGTH . ') as context'),
+            ])
+            ->forPage($current, $pageSize)
             ->get();
 
         return response([
             'data' => $res,
-            'total' => $total
+            'total' => $total,
+            'current' => $current,
+            'page_size' => $pageSize,
         ]);
     }
 
     public function getHorizonFailedJobs(Request $request, JobRepository $jobRepository)
     {
         $current = max(1, (int) $request->input('current', 1));
-        $pageSize = max(10, (int) $request->input('page_size', 20));
+        $pageSize = min(self::MAX_FAILED_JOB_PAGE_SIZE, max(10, (int) $request->input('page_size', 20)));
         $offset = ($current - 1) * $pageSize;
 
-        $failedJobs = collect($jobRepository->getFailed())
-            ->sortByDesc('failed_at')
-            ->slice($offset, $pageSize)
+        $failedJobs = $jobRepository->getFailed($offset - 1)
+            ->take($pageSize)
+            ->map(function ($job) {
+                return [
+                    'id' => $job->id ?? null,
+                    'name' => $job->name ?? null,
+                    'queue' => $job->queue ?? null,
+                    'connection' => $job->connection ?? null,
+                    'status' => $job->status ?? null,
+                    'failed_at' => $job->failed_at ?? null,
+                    'retried_by' => $job->retried_by ?? null,
+                    'payload' => $this->truncateText($job->payload ?? null, self::FAILED_JOB_PAYLOAD_PREVIEW_LENGTH),
+                    'exception' => $this->truncateText($job->exception ?? null),
+                    'context' => $this->truncateText($job->context ?? null),
+                ];
+            })
             ->values();
 
         $total = $jobRepository->countFailed();
@@ -174,6 +209,15 @@ class SystemController extends Controller
             'current' => $current,
             'page_size' => $pageSize,
         ]);
+    }
+
+    private function truncateText(mixed $value, int $limit = self::LOG_FIELD_PREVIEW_LENGTH): mixed
+    {
+        if (!is_string($value) || strlen($value) <= $limit) {
+            return $value;
+        }
+
+        return substr($value, 0, $limit) . '...';
     }
 
     /**
