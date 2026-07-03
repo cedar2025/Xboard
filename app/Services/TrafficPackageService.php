@@ -131,6 +131,15 @@ class TrafficPackageService
             $remainingDownload -= $planDownload;
         }
 
+        if ($remainingUpload <= 0 && $remainingDownload <= 0) {
+            return [
+                'package_upload' => $packageUpload,
+                'package_download' => $packageDownload,
+                'plan_upload' => $planUpload,
+                'plan_download' => $planDownload,
+            ];
+        }
+
         $packages = UserTrafficPackage::where('user_id', $userId)
             ->where('status', UserTrafficPackage::STATUS_ACTIVE)
             ->where('remaining_bytes', '>', 0)

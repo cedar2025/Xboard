@@ -37,10 +37,10 @@ class TrafficFetchJob implements ShouldQueue
 
     public function handle(): void
     {
-        DB::transaction(function () {
-            $trafficPackageService = app(TrafficPackageService::class);
+        $trafficPackageService = app(TrafficPackageService::class);
 
-            foreach ($this->data as $uid => $v) {
+        foreach ($this->data as $uid => $v) {
+            DB::transaction(function () use ($trafficPackageService, $uid, $v) {
                 $uploadBytes = (int) ($v[0] * $this->server['rate']);
                 $downloadBytes = (int) ($v[1] * $this->server['rate']);
                 $consumption = $trafficPackageService->consume((int) $uid, $uploadBytes, $downloadBytes);
@@ -54,11 +54,11 @@ class TrafficFetchJob implements ShouldQueue
                             ],
                             ['t' => time()]
                         );
-                    continue;
+                    return;
                 }
 
                 User::where('id', $uid)->update(['t' => time()]);
-            }
-        });
+            }, 3);
+        }
     }
 }

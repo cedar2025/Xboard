@@ -154,6 +154,19 @@ test('traffic fetch consumes active subscription traffic before package balance'
   assert.match(trafficPackageService, /'plan_upload'\s*=>\s*\$planUpload/);
 });
 
+test('traffic fetch uses per-user retryable transactions and avoids unnecessary package locks', () => {
+  const job = read('app/Jobs/TrafficFetchJob.php');
+  const trafficPackageService = read('app/Services/TrafficPackageService.php');
+
+  assert.match(job, /foreach \(\$this->data as \$uid => \$v\) \{[\s\S]{0,220}DB::transaction\(function \(\) use \(\$trafficPackageService, \$uid, \$v\) \{/);
+  assert.match(job, /DB::transaction\([\s\S]{0,950}\},\s*3\);/);
+  assert.doesNotMatch(job, /DB::transaction\(function \(\) \{[\s\S]{0,120}\$trafficPackageService = app\(TrafficPackageService::class\);[\s\S]{0,120}foreach \(\$this->data as \$uid => \$v\)/);
+
+  assert.match(trafficPackageService, /if \(\$remainingUpload <= 0 && \$remainingDownload <= 0\) \{[\s\S]{0,220}'plan_upload'\s*=>\s*\$planUpload/);
+  assert.match(trafficPackageService, /if \(\$remainingUpload <= 0 && \$remainingDownload <= 0\) \{[\s\S]{0,260}'plan_download'\s*=>\s*\$planDownload/);
+  assert.match(trafficPackageService, /if \(\$remainingUpload <= 0 && \$remainingDownload <= 0\) \{[\s\S]{0,360}\];[\s\S]{0,260}\$packages = UserTrafficPackage::where\('user_id', \$userId\)/);
+});
+
 test('availability and subscription display account for traffic packages separately', () => {
   const userService = read('app/Services/UserService.php');
   assert.match(userService, /TrafficPackageService/);
