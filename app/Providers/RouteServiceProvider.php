@@ -31,6 +31,10 @@ class RouteServiceProvider extends ServiceProvider
             resolve(\Illuminate\Routing\UrlGenerator::class)->forceScheme('https');
         }
 
+        RateLimiter::for('send-email', function () {
+            return Limit::perSecond(8)->by('smtp');
+        });
+
         RateLimiter::for('app-download-prepare', function (Request $request) {
             $artifact = $request->route('artifact') ?: 'unknown';
             if (is_object($artifact) && method_exists($artifact, 'getKey')) {

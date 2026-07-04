@@ -176,14 +176,24 @@ return [
                     'order_handle',
                     'traffic_fetch',
                     'stat',
-                    'send_email',
-                    'send_email_mass',
                     'send_telegram',
                     'online_sync'
                 ],
                 'balance' => 'auto',
                 'minProcesses' => 1,
                 'maxProcesses' => 20,
+                'tries' => 1,
+                'balanceCooldown' => 3,
+            ],
+            'XboardEmail' => [
+                'connection' => 'redis',
+                'queue' => [
+                    'send_email',
+                    'send_email_mass'
+                ],
+                'balance' => 'auto',
+                'minProcesses' => 1,
+                'maxProcesses' => 2,
                 'tries' => 1,
                 'balanceCooldown' => 3,
             ],

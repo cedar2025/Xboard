@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\RateLimitedWithRedis;
 use Illuminate\Queue\SerializesModels;
 use RuntimeException;
 
@@ -27,6 +28,13 @@ class SendEmailJob implements ShouldQueue
     {
         $this->onQueue($queue);
         $this->params = $params;
+    }
+
+    public function middleware(): array
+    {
+        return [
+            (new RateLimitedWithRedis('send-email'))->releaseAfter(1),
+        ];
     }
 
     /**
