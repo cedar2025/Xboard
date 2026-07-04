@@ -1,0 +1,41 @@
+- generic [ref=e1]:
+  - region "大象网络品牌介绍" [ref=e2]:
+    - paragraph [ref=e3]: Elephant Route
+    - heading "稳定连接，从这里开始" [level=1] [ref=e4]
+    - paragraph [ref=e5]: 加入大象网络，获取稳定、高效的全球连接体验。
+  - generic [ref=e31]:
+    - generic [ref=e32]:
+      - link "打开大象网络主页" [ref=e33] [cursor=pointer]:
+        - /url: /welcome
+        - img "大象网络" [ref=e34]
+        - generic [ref=e35]:
+          - strong [ref=e36]: 大象网络
+          - generic [ref=e37]: Elephant Route
+      - paragraph [ref=e38]: 创建账号
+    - generic [ref=e39]:
+      - generic [ref=e44]:
+        - textbox "邮箱" [active] [ref=e45]
+        - generic:
+          - generic: 邮箱
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - textbox "密码" [ref=e50]
+          - generic:
+            - generic: 密码
+        - img [ref=e54] [cursor=pointer]
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - textbox "再次输入密码" [ref=e64]
+          - generic:
+            - generic: 再次输入密码
+        - img [ref=e68] [cursor=pointer]
+      - textbox "邀请码,（选填）" [disabled] [ref=e78]: tUOGO4ZV
+      - button "注册" [ref=e80] [cursor=pointer]:
+        - img [ref=e82]
+        - generic [ref=e85]: 注册
+    - generic [ref=e86]:
+      - link "返回登入" [ref=e88] [cursor=pointer]:
+        - /url: "#/login"
+      - button "简体中文" [ref=e90] [cursor=pointer]:
+        - img [ref=e92]
+        - generic [ref=e96]: 简体中文

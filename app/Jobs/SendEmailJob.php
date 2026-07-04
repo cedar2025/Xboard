@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use RuntimeException;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -16,6 +17,7 @@ class SendEmailJob implements ShouldQueue
 
     public $tries = 3;
     public $timeout = 30;
+    public $backoff = [60, 300, 900];
     /**
      * Create a new job instance.
      *
@@ -36,7 +38,11 @@ class SendEmailJob implements ShouldQueue
     {
         $mailLog = MailService::sendEmail($this->params);
         if ($mailLog['error']) {
-            $this->release(); //发送失败将触发重试
+            throw new RuntimeException(sprintf(
+                'SendEmailJob failed for template %s: %s',
+                $mailLog['template_name'] ?? 'unknown',
+                $mailLog['error']
+            ));
         }
     }
 }

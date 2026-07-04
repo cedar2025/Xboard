@@ -26,3 +26,15 @@ test('admin horizon failed jobs uses repository pagination and trims heavy paylo
   assert.match(controller, /'payload'\s*=>\s*\$this->truncateText\(\$job->payload \?\? null, self::FAILED_JOB_PAYLOAD_PREVIEW_LENGTH\)/);
   assert.match(controller, /'exception'\s*=>\s*\$this->truncateText\(\$job->exception \?\? null\)/);
 });
+
+test('admin system status caches log statistics and aggregates by level once', () => {
+  const controller = read('app/Http/Controllers/V2/Admin/SystemController.php');
+  const migration = read('database/migrations/2026_07_04_000001_add_level_index_to_v2_log_table.php');
+
+  assert.match(controller, /Cache::remember\('admin:system:log_statistics', 30,/);
+  assert.match(controller, /->select\('level', DB::raw\('COUNT\(\*\) as aggregate'\)\)/);
+  assert.match(controller, /->groupBy\('level'\)/);
+  assert.doesNotMatch(controller, /LogModel::where\('level', 'INFO'\)->count\(\)/);
+  assert.doesNotMatch(controller, /LogModel::where\('level', 'ERROR'\)->count\(\)/);
+  assert.match(migration, /\$table->index\('level', 'v2_log_level_index'\)/);
+});

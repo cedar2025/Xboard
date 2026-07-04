@@ -1,0 +1,4 @@
+[    3621ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://www.elephant223.com/app#/register?code=tUOGO4ZV:0
+[    3621ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://www.elephant223.com/app#/register?code=tUOGO4ZV:0
+[    3630ms] [LOG] Xboard Theme: Found sidebar target, injecting logo. @ https://www.elephant223.com/app:112
+[    4589ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.elephant223.com/favicon.ico:0

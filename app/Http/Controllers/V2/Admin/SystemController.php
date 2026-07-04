@@ -41,23 +41,33 @@ class SystemController extends Controller
      */
     protected function getLogStatistics(): array
     {
-        // 初始化日志统计数组
-        $statistics = [
-            'info' => 0,
-            'warning' => 0,
-            'error' => 0,
-            'total' => 0
-        ];
+        return Cache::remember('admin:system:log_statistics', 30, function () {
+            $statistics = [
+                'info' => 0,
+                'warning' => 0,
+                'error' => 0,
+                'total' => 0
+            ];
 
-        if (class_exists(LogModel::class) && LogModel::count() > 0) {
-            $statistics['info'] = LogModel::where('level', 'INFO')->count();
-            $statistics['warning'] = LogModel::where('level', 'WARNING')->count();
-            $statistics['error'] = LogModel::where('level', 'ERROR')->count();
-            $statistics['total'] = LogModel::count();
+            if (!class_exists(LogModel::class)) {
+                return $statistics;
+            }
+
+            $counts = LogModel::query()
+                ->select('level', DB::raw('COUNT(*) as aggregate'))
+                ->groupBy('level')
+                ->pluck('aggregate', 'level');
+
+            foreach ($counts as $level => $count) {
+                $normalizedLevel = strtolower((string) $level);
+                if (array_key_exists($normalizedLevel, $statistics)) {
+                    $statistics[$normalizedLevel] = (int) $count;
+                }
+                $statistics['total'] += (int) $count;
+            }
 
             return $statistics;
-        }
-        return $statistics;
+        });
     }
 
     public function getQueueWorkload(WorkloadRepository $workload)
