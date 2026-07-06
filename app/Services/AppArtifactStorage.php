@@ -66,6 +66,11 @@ class AppArtifactStorage
         return Storage::disk($artifact->disk)->path($artifact->path);
     }
 
+    public function exists(AppArtifact $artifact): bool
+    {
+        return Storage::disk($artifact->disk)->exists($artifact->path);
+    }
+
     public function downloadMimeType(AppArtifact $artifact): string
     {
         $extension = strtolower($artifact->extension ?: pathinfo($artifact->original_name, PATHINFO_EXTENSION));

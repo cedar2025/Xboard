@@ -63,3 +63,24 @@ test('android apk downloads use package archive mime even when stored mime is zi
   assert.match(guestController, /\$storage->downloadMimeType\(\$artifact\)/);
   assert.doesNotMatch(guestController, /\['Content-Type' => \$artifact->mime_type \?: 'application\/octet-stream'\]/);
 });
+
+test('app download returns a clear error when the stored file is missing', () => {
+  const storage = readRepoFile('app/Services/AppArtifactStorage.php');
+  const guestController = readRepoFile('app/Http/Controllers/V1/Guest/AppDownloadController.php');
+
+  assert.match(storage, /public function exists\(AppArtifact \$artifact\): bool/);
+  assert.match(guestController, /use Illuminate\\Support\\Facades\\Log;/);
+  assert.match(guestController, /\$downloadPath\s*=\s*\$storage->absolutePath\(\$artifact\);/);
+  assert.match(guestController, /!\$storage->exists\(\$artifact\)/);
+  assert.match(guestController, /App download artifact file missing/);
+  assert.match(guestController, /安装包文件不存在，请联系管理员修复文件绑定/);
+
+  const missingFileCheck = guestController.indexOf('$storage->exists($artifact)');
+  const downloadLogCreate = guestController.indexOf('AppDownloadLog::create');
+  const responseDownload = guestController.indexOf('response()->download');
+  assert.ok(missingFileCheck !== -1, 'missing file check should exist');
+  assert.ok(downloadLogCreate !== -1, 'download log creation should exist');
+  assert.ok(responseDownload !== -1, 'download response should exist');
+  assert.ok(missingFileCheck < downloadLogCreate, 'missing file check should happen before logging a download');
+  assert.ok(missingFileCheck < responseDownload, 'missing file check should happen before streaming the file');
+});

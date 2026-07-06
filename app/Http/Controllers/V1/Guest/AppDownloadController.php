@@ -9,6 +9,7 @@ use App\Models\AppVersion;
 use App\Services\AppArtifactStorage;
 use App\Services\AppDownloadVerificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AppDownloadController extends Controller
 {
@@ -75,6 +76,18 @@ class AppDownloadController extends Controller
         abort_unless($artifact->version?->isPublished(), 404);
         abort_unless((bool) $artifact->version->app?->is_active, 404);
 
+        $downloadPath = $storage->absolutePath($artifact);
+        if (!$storage->exists($artifact) || !is_file($downloadPath)) {
+            Log::warning('App download artifact file missing', [
+                'artifact_id' => $artifact->id,
+                'app_version_id' => $artifact->app_version_id,
+                'disk' => $artifact->disk,
+                'path' => $artifact->path,
+            ]);
+
+            return $this->fail([404, '安装包文件不存在，请联系管理员修复文件绑定']);
+        }
+
         AppDownloadLog::create([
             'app_id' => $artifact->version->app_id,
             'app_version_id' => $artifact->version->id,
@@ -86,7 +99,7 @@ class AppDownloadController extends Controller
         ]);
 
         return response()->download(
-            $storage->absolutePath($artifact),
+            $downloadPath,
             $artifact->original_name,
             ['Content-Type' => $storage->downloadMimeType($artifact)]
         );
