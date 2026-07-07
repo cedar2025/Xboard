@@ -559,7 +559,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "renew_order_event": {
         "title": "Trigger Event on Subscription Renewal",
-        "description": "This task will be triggered when a subscription renewal is completed.",
+        "description": "Legacy compatibility setting. Same-plan early renewals now apply remaining-value credit and start a new cycle immediately, so this event no longer controls traffic reset for them.",
         "options": {
           "no_action": "No Action",
           "reset_traffic": "Reset User Traffic"

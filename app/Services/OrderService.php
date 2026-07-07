@@ -190,6 +190,10 @@ class OrderService
             default => 0,
         };
 
+        if ($this->shouldSkipOpenEvent($order)) {
+            $eventId = 0;
+        }
+
         if ($eventId && (string) $order->period !== Plan::PERIOD_ONETIME && (int) $order->type !== Order::TYPE_TRAFFIC_PACKAGE) {
             $this->openEvent($eventId);
         }
@@ -219,6 +223,10 @@ class OrderService
             } else {
                 $order->total_amount = (int) ($order->total_amount - $order->surplus_amount);
             }
+        } else if ($this->isProratedRenewalCandidate($user, $order)) {
+            $order->type = Order::TYPE_RENEWAL;
+            $this->applyRenewalSurplusCredit($user, $order);
+            $this->applyCappedSurplusCredit($order);
         } else if (($user->expired_at === null || $user->expired_at > time()) && $order->plan_id == $user->plan_id) { // 用户订阅未过期或按流量订阅 且购买订阅与当前订阅相同 === 续费
             $order->type = Order::TYPE_RENEWAL;
         } else { // 新购
@@ -340,6 +348,67 @@ class OrderService
         }
     }
 
+    private function isProratedRenewalCandidate(User $user, Order $order): bool
+    {
+        return $user->plan_id !== null
+            && (int) $order->plan_id === (int) $user->plan_id
+            && $user->expired_at !== null
+            && (int) $user->expired_at > time()
+            && isset(self::STR_TO_TIME[PlanService::getPeriodKey((string) $order->period)]);
+    }
+
+    private function applyRenewalSurplusCredit(User $user, Order $order): void
+    {
+        $orders = Order::query()
+            ->where('user_id', $user->id)
+            ->whereNotIn('period', [Plan::PERIOD_RESET_TRAFFIC, Plan::PERIOD_ONETIME])
+            ->where('type', '!=', Order::TYPE_TRAFFIC_PACKAGE)
+            ->where('status', Order::STATUS_COMPLETED)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $order->surplus_amount = 0;
+            $order->surplus_order_ids = [];
+            return;
+        }
+
+        $orderAmountSum = $orders->sum(fn($item) => $item->total_amount + $item->balance_amount + $item->surplus_amount - $item->refund_amount);
+        $orderMonthSum = $orders->sum(fn($item) => self::STR_TO_TIME[PlanService::getPeriodKey($item->period)] ?? 0);
+        $firstOrderAt = $orders->min('created_at');
+        $expiredAt = Carbon::createFromTimestamp($firstOrderAt)->addMonths($orderMonthSum);
+
+        $now = now();
+        $totalSeconds = $expiredAt->timestamp - $firstOrderAt;
+        $remainSeconds = max(0, $expiredAt->timestamp - $now->timestamp);
+        $cycleRatio = $totalSeconds > 0 ? $remainSeconds / $totalSeconds : 0;
+
+        $plan = Plan::find($user->plan_id);
+        $totalTraffic = $plan?->transfer_enable * $orderMonthSum;
+        $usedTraffic = Helper::transferToGB($user->u + $user->d);
+        $remainTraffic = max(0, $totalTraffic - $usedTraffic);
+        $trafficRatio = $totalTraffic > 0 ? $remainTraffic / $totalTraffic : 0;
+
+        $ratio = min($cycleRatio, $trafficRatio);
+
+        $order->surplus_amount = (int) max(0, $orderAmountSum * $ratio);
+        $order->surplus_order_ids = $orders->pluck('id')->all();
+    }
+
+    private function applyCappedSurplusCredit(Order $order): void
+    {
+        $order->surplus_amount = (int) max(0, $order->surplus_amount ?? 0);
+
+        if ($order->surplus_amount <= 0) {
+            $order->refund_amount = 0;
+            return;
+        }
+
+        $cappedSurplus = (int) min($order->surplus_amount, $order->total_amount);
+        $order->surplus_amount = $cappedSurplus;
+        $order->total_amount = (int) max(0, $order->total_amount - $cappedSurplus);
+        $order->refund_amount = 0;
+    }
+
     public function paid(string $callbackNo)
     {
         $order = $this->order;
@@ -405,13 +474,31 @@ class OrderService
         if ((int) $order->type === Order::TYPE_UPGRADE) {
             $this->user->expired_at = time();
         }
+
+        if ($this->shouldRestartPeriodOnRenewal($order)) {
+            $this->user->expired_at = time();
+        }
         $this->user->transfer_enable = $plan->transfer_enable * 1073741824;
         // 从一次性转换到循环或者新购的时候，重置流量
-        if ($this->user->expired_at === NULL || $order->type === Order::TYPE_NEW_PURCHASE)
+        if ($this->shouldRestartPeriodOnRenewal($order)) {
             app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
+        } else if ($this->user->expired_at === NULL || $order->type === Order::TYPE_NEW_PURCHASE) {
+            app(TrafficResetService::class)->performReset($this->user, TrafficResetLog::SOURCE_ORDER);
+        }
         $this->user->plan_id = $plan->id;
         $this->user->group_id = $plan->group_id;
         $this->user->expired_at = $this->getTime($order->period, $this->user->expired_at);
+    }
+
+    private function shouldRestartPeriodOnRenewal(Order $order): bool
+    {
+        return (int) $order->type === Order::TYPE_RENEWAL
+            && is_array($order->surplus_order_ids);
+    }
+
+    private function shouldSkipOpenEvent(Order $order): bool
+    {
+        return $this->shouldRestartPeriodOnRenewal($order);
     }
 
     private function buyTrafficPackage(Order $order, TrafficPackage $trafficPackage): void

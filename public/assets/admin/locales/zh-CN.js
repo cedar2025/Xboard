@@ -479,7 +479,7 @@ window.XBOARD_TRANSLATIONS['zh-CN'] = {
       },
       "renew_order_event": {
         "title": "当订阅续费时触发事件",
-        "description": "续费订阅完成时将触发该任务。",
+        "description": "历史兼容配置。同套餐提前续费将按剩余价值折抵并立即开启新周期，不再由该事件控制流量重置。",
         "options": {
           "no_action": "不执行任何动作",
           "reset_traffic": "重置用户流量"
