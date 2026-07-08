@@ -206,11 +206,12 @@ class UserController extends Controller
     public static function transformUserData(User $user): array
     {
         $model = $user;
-        $user = $user->toArray();
-        $user['balance'] = $user['balance'] / 100;
-        $user['commission_balance'] = $user['commission_balance'] / 100;
-        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
-        return HookManager::filter('admin.user.transform', $user, $model);
+        $userArray = $user->toArray();
+        $userArray['balance'] = $userArray['balance'] / 100;
+        $userArray['commission_balance'] = $userArray['commission_balance'] / 100;
+        $userArray['subscribe_url'] = Helper::getSubscribeUrl($userArray['token']);
+        $userArray['invite_user_email'] = $user->invite_user->email ?? null;
+        return HookManager::filter('admin.user.transform', $userArray, $model);
     }
 
     public function getUserInfoById(Request $request)
@@ -221,6 +222,9 @@ class UserController extends Controller
             'id.required' => '用户ID不能为空'
         ]);
         $user = User::find($request->input('id'))->load('invite_user');
+        if ($user) {
+            $user->setAttribute('invite_user_email', $user->invite_user->email ?? null);
+        }
         $user = HookManager::filter('admin.user.detail', $user, $request);
         return $this->success($user);
     }
@@ -254,10 +258,17 @@ class UserController extends Controller
             $params['group_id'] = $plan->group_id;
         }
         // 处理邀请用户
-        if ($request->input('invite_user_email') && $inviteUser = User::byEmail($request->input('invite_user_email'))->first()) {
-            $params['invite_user_id'] = $inviteUser->id;
-        } else {
-            $params['invite_user_id'] = null;
+        if ($request->has('invite_user_email')) {
+            $inviteUserEmail = $request->input('invite_user_email');
+            if ($inviteUserEmail) {
+                $inviteUser = User::byEmail($inviteUserEmail)->first();
+                if (!$inviteUser) {
+                    return $this->fail([400202, '邀请人不存在']);
+                }
+                $params['invite_user_id'] = $inviteUser->id;
+            } else {
+                $params['invite_user_id'] = null;
+            }
         }
 
         if (isset($params['banned']) && (int) $params['banned'] === 1) {
