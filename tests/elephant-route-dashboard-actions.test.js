@@ -460,12 +460,11 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.match(script, /active_product_name/);
   assert.match(script, /latest_traffic_package/);
   assert.match(script, /TRAFFIC_PACKAGE_API_PATH = '\/api\/v1\/user\/traffic-package\/fetch'/);
-  assert.match(script, /ORDER_SAVE_API_PATH = '\/api\/v1\/user\/order\/save'/);
   assert.match(script, /function applyTrafficPackageSummary/);
   assert.match(script, /function fetchTrafficPackages/);
-  assert.match(script, /function createTrafficPackageOrder/);
-  assert.match(script, /traffic_package_id/);
   assert.match(script, /function applyTrafficPackageCta/);
+  assert.match(script, /function focusTrafficPackagePurchasePage/);
+  assert.match(script, /function scheduleTrafficPackagePurchaseFocus/);
   assert.match(script, /function requestAuthenticatedJson/);
   assert.match(script, /new XMLHttpRequest\(\)/);
   assert.match(script, /function fetchSubscribeInfo\(\)[\s\S]*var token = getSupportAccessToken\(\)/);
@@ -487,9 +486,16 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
   assert.match(script, /er-traffic-package-cta/);
   assert.match(script, /流量不够用？/);
   assert.match(script, /立即购买流量包/);
-  assert.match(script, /er-traffic-package-drawer/);
-  assert.match(script, /选择流量包/);
-  assert.match(script, /window\.location\.hash = '#\/order\/' \+ encodeURIComponent\(tradeNo\)/);
+  assert.match(script, /window\.location\.hash = '#\/plan'/);
+  assert.match(script, /findTextElement\('按流量'\)/);
+  assert.match(script, /scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/);
+  assert.doesNotMatch(script, /ORDER_SAVE_API_PATH/);
+  assert.doesNotMatch(script, /function createTrafficPackageOrder/);
+  assert.doesNotMatch(script, /traffic_package_id/);
+  assert.doesNotMatch(script, /function showTrafficPackageDrawer/);
+  assert.doesNotMatch(script, /er-traffic-package-drawer/);
+  assert.doesNotMatch(script, /选择流量包/);
+  assert.doesNotMatch(script, /window\.location\.hash = '#\/order\/' \+ encodeURIComponent\(tradeNo\)/);
   assert.match(script, /event\.preventDefault\(\)/);
   assert.match(script, /event\.stopPropagation\(\)/);
   assert.doesNotMatch(script, /cta\.innerHTML = ''/);
@@ -506,9 +512,9 @@ test('ElephantRoute dashboard shows stacked traffic package balance inside subsc
 
   assert.match(stylesheet, /\.er-traffic-package-cta/);
   assert.match(stylesheet, /\.er-traffic-package-cta-action/);
-  assert.match(stylesheet, /\.er-traffic-package-drawer/);
-  assert.match(stylesheet, /\.er-traffic-package-card/);
-  assert.match(stylesheet, /\.er-traffic-package-buy/);
+  assert.doesNotMatch(stylesheet, /\.er-traffic-package-drawer/);
+  assert.doesNotMatch(stylesheet, /\.er-traffic-package-card/);
+  assert.doesNotMatch(stylesheet, /\.er-traffic-package-buy/);
   assert.match(stylesheet, /\.er-traffic-package-summary/);
   assert.match(stylesheet, /\.er-traffic-package-meter/);
   assert.match(stylesheet, /\.er-traffic-package-meter-plan/);
@@ -521,6 +527,6 @@ test('ElephantRoute dashboard asset cache busting is updated for subscription sh
   const blade = readRepoFile('theme/ElephantRoute/dashboard.blade.php');
 
   assert.match(blade, /umi\.js\?v=\{\{\$version\}\}-er20260703inviteRegister1/);
-  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260703trafficPackageCatalog1/);
-  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260703trafficPackageCatalog1/);
+  assert.match(blade, /elephant-route-dashboard\.css\?v=\{\{\$version\}\}-er20260708trafficPackagePlanJump1/);
+  assert.match(blade, /elephant-route-dashboard\.js\?v=\{\{\$version\}\}-er20260708trafficPackagePlanJump1/);
 });

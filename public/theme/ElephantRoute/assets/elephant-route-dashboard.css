@@ -237,114 +237,6 @@
   outline-offset: 3px;
 }
 
-.er-traffic-package-drawer {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 18px;
-  background: rgba(15, 23, 42, 0.42);
-}
-
-.er-traffic-package-drawer-panel {
-  width: min(560px, 100%);
-  max-height: min(640px, calc(100vh - 36px));
-  overflow: auto;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
-}
-
-.er-traffic-package-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-}
-
-.er-traffic-package-drawer-header strong {
-  color: #111827;
-  font-size: 18px;
-  line-height: 1.3;
-}
-
-.er-traffic-package-drawer-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 50%;
-  background: #f1f5f9;
-  color: #475569;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.er-traffic-package-list {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-}
-
-.er-traffic-package-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.er-traffic-package-card-name {
-  min-width: 0;
-  color: #111827;
-  font-size: 15px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.er-traffic-package-card-meta {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.er-traffic-package-card-price {
-  color: #dc2626;
-  font-size: 16px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.er-traffic-package-buy {
-  grid-column: 3;
-  min-height: 32px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 999px;
-  background: #ef4444;
-  color: #ffffff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.er-traffic-package-buy:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
 .er-traffic-package-meter {
   display: flex;
   width: 100%;
@@ -438,15 +330,6 @@ body.er-subscribe-direct-qr-active .er-subscribe-source-modal-hidden {
 
   .er-traffic-package-cta-action {
     min-height: 32px;
-  }
-
-  .er-traffic-package-card {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .er-traffic-package-card-price,
-  .er-traffic-package-buy {
-    grid-column: auto;
   }
 
   .er-traffic-package-metrics {
