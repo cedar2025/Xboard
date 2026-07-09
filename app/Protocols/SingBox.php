@@ -9,7 +9,7 @@ use Log;
 
 class SingBox extends AbstractProtocol
 {
-    public $flags = ['sing-box', 'hiddify', 'sfm', 'inhive'];
+    public $flags = ['sing-box', 'hiddify', 'sfm'];
     public $allowedProtocols = [
         Server::TYPE_SHADOWSOCKS,
         Server::TYPE_TROJAN,
