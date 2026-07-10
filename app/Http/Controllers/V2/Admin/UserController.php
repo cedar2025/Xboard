@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UserUpdate;
 use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\UserTrafficPackage;
 use App\Services\AuthService;
 use App\Services\UserService;
 use App\Traits\QueryOperators;
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Log;
 class UserController extends Controller
 {
     use QueryOperators;
+
+    private ?int $trafficSummaryTimestamp = null;
 
     public function resetSecret(Request $request)
     {
@@ -117,11 +120,10 @@ class UserController extends Controller
                 : (int) $filterValue;
         }
 
-        // 处理计算字段
-        $queryField = match ($field) {
-            'total_used' => DB::raw('(u + d)'),
-            default => $field
-        };
+        $trafficFields = $this->getTrafficFieldExpressions();
+        $queryField = isset($trafficFields[$field])
+            ? DB::raw($trafficFields[$field])
+            : $field;
 
         $this->applyQueryCondition($query, $queryField, $operator, $filterValue);
     }
@@ -142,8 +144,49 @@ class UserController extends Controller
         collect($request->input('sort'))->each(function ($sort) use ($builder) {
             $field = $sort['id'];
             $direction = $sort['desc'] ? 'DESC' : 'ASC';
+            $trafficFields = $this->getTrafficFieldExpressions();
+
+            if (isset($trafficFields[$field])) {
+                $queryField = $trafficFields[$field];
+                $builder->orderByRaw("{$queryField} {$direction}");
+                return;
+            }
+
             $builder->orderBy($field, $direction);
         });
+    }
+
+    /**
+     * SQL expressions shared by list output, filters, and sorting.
+     *
+     * @return array<string, string>
+     */
+    private function getTrafficFieldExpressions(): array
+    {
+        $activePlanCondition = $this->getActivePlanCondition();
+        $planTransferEnable = "CASE WHEN {$activePlanCondition} THEN COALESCE(v2_user.transfer_enable, 0) ELSE 0 END";
+        $planUsedTraffic = "CASE WHEN {$activePlanCondition} THEN COALESCE(v2_user.u, 0) + COALESCE(v2_user.d, 0) ELSE 0 END";
+        $trafficPackageTotal = 'COALESCE(traffic_package_summary.traffic_package_total, 0)';
+        $trafficPackageUsed = 'COALESCE(traffic_package_summary.traffic_package_used, 0)';
+        $trafficPackageRemaining = 'COALESCE(traffic_package_summary.traffic_package_remaining, 0)';
+
+        return [
+            'plan_transfer_enable' => $planTransferEnable,
+            'traffic_package_total' => $trafficPackageTotal,
+            'traffic_package_used' => $trafficPackageUsed,
+            'traffic_package_remaining' => $trafficPackageRemaining,
+            'total_used' => "({$planUsedTraffic}) + ({$trafficPackageUsed})",
+        ];
+    }
+
+    private function getActivePlanCondition(): string
+    {
+        $timestamp = $this->trafficSummaryTimestamp ??= time();
+
+        return '(v2_user.banned = 0'
+            . ' AND v2_user.plan_id IS NOT NULL'
+            . ' AND COALESCE(v2_user.transfer_enable, 0) > 0'
+            . " AND (v2_user.expired_at IS NULL OR v2_user.expired_at > {$timestamp}))";
     }
 
     /**
@@ -157,12 +200,45 @@ class UserController extends Controller
         $current = $request->input('current', 1);
         $pageSize = $request->input('pageSize', 10);
 
+        $trafficPackageSummary = DB::table('v2_user_traffic_packages')
+            ->select('user_id')
+            ->selectRaw('SUM(total_bytes) AS traffic_package_total')
+            ->selectRaw('SUM(total_bytes - remaining_bytes) AS traffic_package_used')
+            ->selectRaw(
+                'SUM(CASE WHEN status = ? AND remaining_bytes > 0 THEN remaining_bytes ELSE 0 END) AS traffic_package_remaining',
+                [UserTrafficPackage::STATUS_ACTIVE]
+            )
+            ->groupBy('user_id');
+
+        $latestActiveTrafficPackageName = DB::table('v2_user_traffic_packages as latest_package')
+            ->leftJoin('v2_traffic_packages as traffic_package', 'traffic_package.id', '=', 'latest_package.traffic_package_id')
+            ->leftJoin('v2_plan as legacy_plan', 'legacy_plan.id', '=', 'latest_package.plan_id')
+            ->selectRaw('COALESCE(traffic_package.name, legacy_plan.name, ?) ', [__('Traffic Package')])
+            ->whereColumn('latest_package.user_id', 'v2_user.id')
+            ->where('latest_package.status', UserTrafficPackage::STATUS_ACTIVE)
+            ->where('latest_package.remaining_bytes', '>', 0)
+            ->orderByDesc('latest_package.id')
+            ->limit(1);
+
+        $trafficFields = $this->getTrafficFieldExpressions();
+        $activePlanCondition = $this->getActivePlanCondition();
+
         $userModel = User::with(['plan:id,name', 'invite_user:id,email', 'group:id,name'])
-            ->select(DB::raw('*, (u+d) as total_used'));
+            ->leftJoinSub($trafficPackageSummary, 'traffic_package_summary', function ($join) {
+                $join->on('traffic_package_summary.user_id', '=', 'v2_user.id');
+            })
+            ->select('v2_user.*')
+            ->selectRaw("{$trafficFields['plan_transfer_enable']} AS plan_transfer_enable")
+            ->selectRaw("{$trafficFields['traffic_package_total']} AS traffic_package_total")
+            ->selectRaw("{$trafficFields['traffic_package_used']} AS traffic_package_used")
+            ->selectRaw("{$trafficFields['traffic_package_remaining']} AS traffic_package_remaining")
+            ->selectRaw("{$trafficFields['total_used']} AS total_used")
+            ->selectRaw("CASE WHEN {$activePlanCondition} THEN 1 ELSE 0 END AS has_active_plan")
+            ->addSelect(['latest_traffic_package_name' => $latestActiveTrafficPackageName]);
 
         $this->applyFiltersAndSorts($request, $userModel);
 
-        $users = $userModel->orderBy('id', 'desc')
+        $users = $userModel->orderBy('v2_user.id', 'desc')
             ->paginate($pageSize, ['*'], 'page', $current);
 
         $users->getCollection()->transform(function ($user): array {
@@ -180,11 +256,26 @@ class UserController extends Controller
      */
     public static function transformUserData(User $user): array
     {
-        $user = $user->toArray();
-        $user['balance'] = $user['balance'] / 100;
-        $user['commission_balance'] = $user['commission_balance'] / 100;
-        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
-        return $user;
+        $hasActivePlan = (bool) $user->has_active_plan;
+        $hasActiveTrafficPackage = (int) $user->traffic_package_remaining > 0;
+        $activeProductName = $hasActivePlan
+            ? $user->plan?->name
+            : ($hasActiveTrafficPackage ? $user->latest_traffic_package_name : null);
+
+        $data = $user->toArray();
+        $data['balance'] = $data['balance'] / 100;
+        $data['commission_balance'] = $data['commission_balance'] / 100;
+        $data['subscribe_url'] = Helper::getSubscribeUrl($data['token']);
+        $data['plan_transfer_enable'] = (int) $data['plan_transfer_enable'];
+        $data['traffic_package_total'] = (int) $data['traffic_package_total'];
+        $data['traffic_package_used'] = (int) $data['traffic_package_used'];
+        $data['traffic_package_remaining'] = (int) $data['traffic_package_remaining'];
+        $data['total_used'] = (int) $data['total_used'];
+        $data['has_active_plan'] = $hasActivePlan;
+        $data['active_product_name'] = $activeProductName;
+        unset($data['latest_traffic_package_name']);
+
+        return $data;
     }
 
     public function getUserInfoById(Request $request)
