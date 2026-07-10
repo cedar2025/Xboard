@@ -6,11 +6,11 @@ import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../core/api/dio_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
-import '../../utils/constants.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/toast_utils.dart';
 import '../../widgets/custom_webview.dart';
@@ -419,8 +419,9 @@ class ProfileScreen extends StatelessWidget {
         debugPrint('DEBUG: ----------------------------------------');
 
         // 增强替换逻辑：确保端口号也正确
-        if (ApiConstants.baseUrl.contains('192.168.')) {
-          final baseUri = Uri.parse(ApiConstants.baseUrl);
+        final currentBaseUrl = context.read<DioClient>().currentBaseUrl;
+        if (currentBaseUrl.contains('192.168.')) {
+          final baseUri = Uri.parse(currentBaseUrl);
           final quickUri = Uri.parse(quickLoginUrl);
 
           // 构造新的 URL，强制使用 API 的 host 和 port

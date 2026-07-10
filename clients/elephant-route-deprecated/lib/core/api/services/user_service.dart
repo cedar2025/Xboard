@@ -60,7 +60,7 @@ class UserService {
     final tradeNo = response.data['data'];
 
     // 修正：根据用户反馈，前端入口 path 为 /app
-    final url = '${ApiConstants.baseUrl}/app#/order/$tradeNo';
+    final url = '${_client.currentBaseUrl}/app#/order/$tradeNo';
     await AppLogger.instance.info('Created order redirect url: $url');
     return url;
   }

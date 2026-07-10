@@ -41,13 +41,41 @@ $serveKnowledgeImage = function (string $path) {
 Route::get('/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*');
 Route::get('/storage/knowledge-images/{path}', $serveKnowledgeImage)->where('path', '.*');
 
+$isAllowedAppHost = function (Request $request): bool {
+    if (!admin_setting('app_url') || !admin_setting('safe_mode_enable', 0)) {
+        return true;
+    }
 
-$redirectToLogin = function (Request $request) {
-    // 检查管理员安全模式设置，保持与 /app 相同的 Host 保护。
-    if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
-        if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
-            abort(403);
+    $allowedHosts = [];
+    $primaryHost = parse_url(admin_setting('app_url'), PHP_URL_HOST);
+    if ($primaryHost) {
+        $allowedHosts[] = strtolower($primaryHost);
+    }
+
+    $aliases = admin_setting('app_url_aliases', []);
+    if (is_string($aliases)) {
+        $aliases = preg_split('/[\s,]+/', $aliases, -1, PREG_SPLIT_NO_EMPTY);
+    }
+
+    if (is_array($aliases)) {
+        foreach ($aliases as $alias) {
+            $alias = trim((string) $alias);
+            if ($alias === '') {
+                continue;
+            }
+
+            $host = parse_url($alias, PHP_URL_HOST) ?: $alias;
+            $allowedHosts[] = strtolower($host);
         }
+    }
+
+    return in_array(strtolower($request->getHost()), array_unique($allowedHosts), true);
+};
+
+$redirectToLogin = function (Request $request) use ($isAllowedAppHost) {
+    // 检查管理员安全模式设置，保持与 /app 相同的 Host 保护。
+    if (!$isAllowedAppHost($request)) {
+        abort(403);
     }
 
     return redirect('/app#/login', 302);
@@ -68,12 +96,10 @@ Route::get('/support/ai', function () {
 
 
 // Dashboard/App Route - for SPA functionality (login, register, dashboard)
-Route::get('/app', function (Request $request) {
+Route::get('/app', function (Request $request) use ($isAllowedAppHost) {
     // Original dashboard logic
-    if (admin_setting('app_url') && admin_setting('safe_mode_enable', 0)) {
-        if ($request->server('HTTP_HOST') !== parse_url(admin_setting('app_url'))['host']) {
-            abort(403);
-        }
+    if (!$isAllowedAppHost($request)) {
+        abort(403);
     }
 
     $theme = admin_setting('frontend_theme', 'Xboard');

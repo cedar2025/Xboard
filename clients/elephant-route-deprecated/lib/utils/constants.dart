@@ -7,23 +7,40 @@ class ApiConstants {
     defaultValue: false,
   );
 
+  static const String domainConfigUrl = String.fromEnvironment(
+    'DOMAIN_CONFIG_URL',
+    defaultValue: 'https://www.elephant-ipcheck.com/api/domains',
+  );
+
+  static const String domainHealthPath = '/api/v1/guest/domain/check';
+
+  static const bool disableDynamicDomain = bool.fromEnvironment(
+    'DISABLE_DYNAMIC_DOMAIN',
+    defaultValue: false,
+  );
+
   // 基础 URL
   static String get baseUrl {
     const envBaseUrl = String.fromEnvironment('BASE_URL');
     if (envBaseUrl.isNotEmpty) return envBaseUrl;
 
-    if (kIsWeb) return 'https://www.elephant223.com';
+    if (kIsWeb) return 'https://www.elephant111.com';
     // 真机访问
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      return 'https://www.elephant223.com';
+      return 'https://www.elephant111.com';
     }
-    return 'https://www.elephant223.com';
+    return 'https://www.elephant111.com';
   }
 
   static String get appDistributionBaseUrl {
     const envBaseUrl = String.fromEnvironment('APP_DISTRIBUTION_URL');
     if (envBaseUrl.isNotEmpty) return envBaseUrl;
     return baseUrl;
+  }
+
+  static bool get hasAppDistributionOverride {
+    const envBaseUrl = String.fromEnvironment('APP_DISTRIBUTION_URL');
+    return envBaseUrl.isNotEmpty;
   }
 
   static const String appDistributionAppKey = String.fromEnvironment(

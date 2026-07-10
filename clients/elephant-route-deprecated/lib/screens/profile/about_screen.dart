@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api/dio_client.dart';
 import '../../core/services/app_logger.dart';
 import '../../core/services/mac_runtime_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -102,7 +103,11 @@ class _AboutScreenState extends State<AboutScreen> {
                               '构建号', data.packageInfo.buildNumber, isDark),
                           _buildInfoRow(
                               '包名', data.packageInfo.packageName, isDark),
-                          _buildInfoRow('后端地址', ApiConstants.baseUrl, isDark),
+                          _buildInfoRow(
+                            '后端地址',
+                            context.read<DioClient>().currentBaseUrl,
+                            isDark,
+                          ),
                           _buildInfoRow(
                             'TLS 校验',
                             ApiConstants.allowInsecureCertificates

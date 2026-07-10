@@ -2,7 +2,7 @@
 set -e
 
 # Configuration
-PROD_URL="https://www.elephant223.com/"
+PROD_URL="https://www.elephant111.com/"
 VERSION_FILE="android_release_version.txt"
 BUILD_DIR="build/app/outputs/flutter-apk"
 SOURCE_APK="$BUILD_DIR/app-release.apk"

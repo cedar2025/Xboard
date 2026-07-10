@@ -11,10 +11,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/app_update.dart';
 import '../../../utils/constants.dart';
+import '../domain_resolver.dart';
 
 class AppUpdateService {
-  AppUpdateService()
-      : _dio = Dio(BaseOptions(
+  AppUpdateService({DomainResolver? domainResolver})
+      : _domainResolver = domainResolver ?? DomainResolver(),
+        _dio = Dio(BaseOptions(
           baseUrl: ApiConstants.appDistributionBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
@@ -34,6 +36,7 @@ class AppUpdateService {
   static const _updateChannel = MethodChannel('com.elephant.network/update');
 
   final Dio _dio;
+  final DomainResolver _domainResolver;
 
   Future<AppUpdateCheckResult> checkForUpdate({
     String channel = 'stable',
@@ -42,6 +45,7 @@ class AppUpdateService {
       return const AppUpdateCheckResult(hasUpdate: false, force: false);
     }
 
+    await _syncBaseUrl();
     final packageInfo = await PackageInfo.fromPlatform();
     final installationId = await getInstallationId();
     final arch = await _arch;
@@ -117,6 +121,7 @@ class AppUpdateService {
     if (!_isSupportedPlatform) return;
     if (Platform.isAndroid) return;
 
+    await _syncBaseUrl();
     final packageInfo = await PackageInfo.fromPlatform();
     final arch = await _arch;
     await _dio.post(
@@ -139,6 +144,7 @@ class AppUpdateService {
     if (!_isSupportedPlatform) return;
     if (Platform.isAndroid) return;
 
+    await _syncBaseUrl();
     final packageInfo = await PackageInfo.fromPlatform();
     await _dio.post(
       ApiConstants.appUpdateResult,
@@ -162,6 +168,7 @@ class AppUpdateService {
       throw StateError('Download URL is empty');
     }
 
+    await _syncBaseUrl();
     final directory = await getTemporaryDirectory();
     final file = File(
       '${directory.path}/elephant-route-update-${update.buildNumber}.apk',
@@ -273,5 +280,13 @@ class AppUpdateService {
       return;
     }
     throw UnsupportedError('Install is not supported on this platform');
+  }
+
+  Future<void> _syncBaseUrl() async {
+    if (ApiConstants.hasAppDistributionOverride) {
+      _dio.options.baseUrl = ApiConstants.appDistributionBaseUrl;
+      return;
+    }
+    _dio.options.baseUrl = await _domainResolver.resolve();
   }
 }

@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/api/dio_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../widgets/custom_webview.dart';
-import '../../utils/constants.dart';
 import '../../utils/platform_utils.dart';
 
 class PlanSelectionScreen extends StatefulWidget {
@@ -418,8 +418,10 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                         'DEBUG: Original QuickLoginUrl = $quickLoginUrl');
 
                     // 仅在本地开发/内网环境下替换 host 和 port（与 ProfileScreen 保持一致）
-                    if (ApiConstants.baseUrl.contains('192.168.')) {
-                      final baseUri = Uri.parse(ApiConstants.baseUrl);
+                    final currentBaseUrl =
+                        context.read<DioClient>().currentBaseUrl;
+                    if (currentBaseUrl.contains('192.168.')) {
+                      final baseUri = Uri.parse(currentBaseUrl);
                       final quickUri = Uri.parse(quickLoginUrl);
                       quickLoginUrl = quickUri
                           .replace(
