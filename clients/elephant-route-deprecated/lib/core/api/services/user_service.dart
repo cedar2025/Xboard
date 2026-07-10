@@ -5,6 +5,16 @@ import '../../services/app_logger.dart';
 import '../../../utils/constants.dart';
 import '../../../models/user.dart';
 
+class InviteSummary {
+  final String? code;
+  final num? commissionRate;
+
+  const InviteSummary({
+    required this.code,
+    required this.commissionRate,
+  });
+}
+
 class UserService {
   final DioClient _client;
 
@@ -84,18 +94,21 @@ class UserService {
     );
   }
 
-  /// 获取真实邀请码
-  Future<String?> getInviteCode() async {
+  /// 获取真实邀请码及后台最终生效的佣金比例
+  Future<InviteSummary?> getInviteSummary() async {
     try {
       final response = await _client.dio.get(ApiConstants.inviteFetch);
       debugPrint('DEBUG InviteCode: fetch response = ${response.data}');
       final data = response.data['data'];
 
-      if (data is Map && data.containsKey('codes')) {
+      if (data is Map) {
         final codes = data['codes'];
         final code = _firstInviteCode(codes);
         if (code != null) {
-          return code;
+          return InviteSummary(
+            code: code,
+            commissionRate: _commissionRate(data['stat']),
+          );
         } else if (codes is List && codes.isEmpty) {
           // 当没有生成过邀请码时，主动调用生成一个
           debugPrint(
@@ -106,18 +119,31 @@ class UserService {
           // 生成后再拉一次
           final fetchAg = await _client.dio.get(ApiConstants.inviteFetch);
           final dataAg = fetchAg.data['data'];
-          if (dataAg is Map && dataAg.containsKey('codes')) {
-            return _firstInviteCode(dataAg['codes']);
+          if (dataAg is Map) {
+            return InviteSummary(
+              code: _firstInviteCode(dataAg['codes']),
+              commissionRate: _commissionRate(dataAg['stat']),
+            );
           }
         }
       } else if (data is List && data.isNotEmpty) {
         // 兼容旧版或其他可能的格式
-        return _firstInviteCode(data);
+        return InviteSummary(
+          code: _firstInviteCode(data),
+          commissionRate: null,
+        );
       }
     } catch (e) {
       debugPrint('获取邀请码失败异常: $e');
     }
     return null;
+  }
+
+  num? _commissionRate(dynamic stat) {
+    if (stat is! List || stat.length <= 3) return null;
+    final rate = stat[3];
+    if (rate is num) return rate;
+    return num.tryParse(rate?.toString() ?? '');
   }
 
   String? _firstInviteCode(dynamic codes) {

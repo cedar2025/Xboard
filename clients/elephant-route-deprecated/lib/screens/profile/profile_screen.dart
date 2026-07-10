@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import '../../providers/app_update_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../core/api/dio_client.dart';
+import '../../core/services/invite_share_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -14,8 +16,9 @@ import '../../core/theme/app_shadows.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/toast_utils.dart';
 import '../../widgets/custom_webview.dart';
+import '../../widgets/invite_share_sheet.dart';
+import '../../widgets/app_update_dialog.dart';
 import 'change_password_screen.dart';
-import 'about_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -357,6 +360,26 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
+          if (PlatformUtils.isAndroid) ...[
+            Consumer<UserProvider>(
+              builder: (context, provider, _) {
+                final rate = InviteShareService.formatCommissionRate(
+                  provider.inviteCommissionRate,
+                );
+                final label = rate.isEmpty ? '邀请好友，获取佣金' : '邀请好友，获取$rate%佣金';
+
+                return _buildActionItem(
+                  context,
+                  Icons.ios_share_rounded,
+                  label,
+                  '',
+                  isDark,
+                  () => _handleInviteShare(context, provider),
+                );
+              },
+            ),
+            _buildDivider(isDark),
+          ],
           _buildActionItem(
             context,
             Icons.lock_outline,
@@ -370,6 +393,45 @@ class ProfileScreen extends StatelessWidget {
             isLast: true,
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _handleInviteShare(
+    BuildContext context,
+    UserProvider provider,
+  ) async {
+    final inviteCode = provider.inviteCode;
+    if (inviteCode == null || inviteCode.isEmpty) {
+      if (!provider.isInviteCodeLoading) {
+        await provider.fetchInviteCode();
+      }
+      if (context.mounted && provider.inviteCodeLoadFailed) {
+        ToastUtils.show(context, '邀请码获取失败，请重试');
+      }
+      return;
+    }
+
+    final baseUrl = context.read<DioClient>().currentBaseUrl;
+    final inviteUrl = InviteShareService.buildInviteUrl(baseUrl, inviteCode);
+    if (!context.mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => InviteShareSheet(
+        inviteUrl: inviteUrl,
+        onCopySuccess: () {
+          if (context.mounted) ToastUtils.show(context, '邀请链接已复制');
+        },
+        onShareError: (platformLabel) {
+          if (context.mounted) {
+            ToastUtils.show(context, '未安装或无法打开$platformLabel');
+          }
+        },
       ),
     );
   }
@@ -512,25 +574,43 @@ class ProfileScreen extends StatelessWidget {
             future: _packageInfoFuture,
             builder: (context, snapshot) {
               final version =
-                  snapshot.hasData ? 'v${snapshot.data!.version}' : '查看版本';
-              return _buildActionItem(
-                context,
-                Icons.info_outline,
-                '关于大象网络',
-                version,
-                isDark,
-                () {
-                  Navigator.push(
+                  snapshot.hasData ? 'v${snapshot.data!.version}' : '获取中...';
+              return Consumer<AppUpdateProvider>(
+                builder: (context, updateProvider, _) {
+                  return _buildActionItem(
                     context,
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                    Icons.system_update_alt_rounded,
+                    '检查更新',
+                    version,
+                    isDark,
+                    () => _checkForUpdate(context, updateProvider),
+                    isLast: true,
                   );
                 },
-                isLast: true,
               );
             },
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _checkForUpdate(
+    BuildContext context,
+    AppUpdateProvider provider,
+  ) async {
+    if (provider.isChecking) return;
+
+    final update = await provider.checkForUpdate();
+    if (!context.mounted) return;
+
+    if (update != null) {
+      await showAppUpdateDialog(context, update);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(provider.errorMessage ?? '当前已是最新版本')),
     );
   }
 

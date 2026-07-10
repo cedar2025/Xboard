@@ -15,6 +15,7 @@ class UserProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String? _inviteCode; // [NEW] Invite code storage
+  num? _inviteCommissionRate;
   bool _isInviteCodeLoading = false;
   bool _inviteCodeLoadFailed = false;
 
@@ -26,6 +27,7 @@ class UserProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get inviteCode => _inviteCode; // Expose invite code
+  num? get inviteCommissionRate => _inviteCommissionRate;
   bool get isInviteCodeLoading => _isInviteCodeLoading;
   bool get inviteCodeLoadFailed => _inviteCodeLoadFailed;
 
@@ -55,9 +57,11 @@ class UserProvider with ChangeNotifier {
     _inviteCodeLoadFailed = false;
     notifyListeners();
 
-    final code = await _userService.getInviteCode();
+    final summary = await _userService.getInviteSummary();
+    final code = summary?.code;
     if (code != null && code.isNotEmpty) {
       _inviteCode = code;
+      _inviteCommissionRate = summary?.commissionRate;
       _inviteCodeLoadFailed = false;
     } else {
       _inviteCodeLoadFailed = true;
@@ -77,6 +81,7 @@ class UserProvider with ChangeNotifier {
   @visibleForTesting
   void clearInviteCodeForTest() {
     _inviteCode = null;
+    _inviteCommissionRate = null;
     _isInviteCodeLoading = false;
     _inviteCodeLoadFailed = false;
   }

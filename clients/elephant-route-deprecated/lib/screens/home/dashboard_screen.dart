@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/vpn_provider.dart';
@@ -20,6 +19,7 @@ import '../../utils/flag_helper.dart';
 import '../../utils/platform_utils.dart';
 import '../../core/singbox/vpn_state.dart';
 import '../../widgets/app_update_dialog.dart';
+import '../../widgets/dashboard_brand_header.dart';
 import 'node_selection_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -244,52 +244,10 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   /// Header
   Widget _buildHeader(bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // 品牌名称
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.read<LanguageProvider>().translate('app_name'),
-              style: AppTextStyles.brandName.copyWith(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
-                fontSize: 22,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              context.read<LanguageProvider>().translate('slogan'),
-              style: AppTextStyles.labelTiny.copyWith(
-                color: isDark ? AppColors.primaryLight : AppColors.primary,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        // Shield 图标
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            borderRadius: AppDimensions.borderRadiusMedium,
-            boxShadow: AppShadows.getCard(isDark),
-            border: Border.all(
-              color:
-                  isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
-            ),
-          ),
-          child: SvgPicture.asset(
-            'assets/images/logo.svg',
-            width: 22,
-            height: 22,
-          ),
-        ),
-      ],
+    return DashboardBrandHeader(
+      appName: context.read<LanguageProvider>().translate('app_name'),
+      slogan: context.read<LanguageProvider>().translate('slogan'),
+      isDark: isDark,
     );
   }
 

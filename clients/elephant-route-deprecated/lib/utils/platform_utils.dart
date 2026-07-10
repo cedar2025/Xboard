@@ -25,6 +25,12 @@ class PlatformUtils {
     return Platform.isMacOS;
   }
 
+  /// 是否为 Android
+  static bool get isAndroid {
+    if (kIsWeb) return false;
+    return Platform.isAndroid;
+  }
+
   /// 是否为 Web
   static bool get isWeb => kIsWeb;
 

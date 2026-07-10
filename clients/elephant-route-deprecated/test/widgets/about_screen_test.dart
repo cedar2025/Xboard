@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:elephant_network/core/services/app_logger.dart';
+import 'package:elephant_network/core/api/dio_client.dart';
 import 'package:elephant_network/screens/profile/about_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:provider/provider.dart';
 
 import '../test_bootstrap.dart';
 
@@ -37,8 +39,11 @@ void main() {
     });
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AboutScreen(),
+      Provider<DioClient>.value(
+        value: DioClient(),
+        child: const MaterialApp(
+          home: AboutScreen(),
+        ),
       ),
     );
     await tester.runAsync(() async {

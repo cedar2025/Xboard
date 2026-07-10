@@ -20,7 +20,8 @@ void main() {
       provider = UserProvider(dioClient);
     });
 
-    test('keeps user info visible and marks invite failure when generation fails',
+    test(
+        'keeps user info visible and marks invite failure when generation fails',
         () async {
       dioClient.dio.httpClientAdapter = _ProviderAdapter((options) {
         if (options.path == '/api/v1/user/info') {
@@ -56,6 +57,7 @@ void main() {
 
       expect(provider.user?.email, 'test@example.com');
       expect(provider.inviteCode, isNull);
+      expect(provider.inviteCommissionRate, isNull);
       expect(provider.isInviteCodeLoading, isFalse);
       expect(provider.inviteCodeLoadFailed, isTrue);
     });
@@ -106,6 +108,7 @@ void main() {
       await provider.fetchInviteCode();
 
       expect(provider.inviteCode, 'RETRY123');
+      expect(provider.inviteCommissionRate, 10);
       expect(provider.inviteCodeLoadFailed, isFalse);
     });
 
@@ -146,6 +149,7 @@ void main() {
       await pumpEventQueue();
 
       expect(provider.inviteCode, 'ENSURE88');
+      expect(provider.inviteCommissionRate, 10);
       expect(provider.inviteCodeLoadFailed, isFalse);
     });
   });

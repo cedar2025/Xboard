@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.ActivityNotFoundException
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -18,6 +19,7 @@ import java.io.File
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.elephant.network/vpn"
     private val UPDATE_CHANNEL = "com.elephant.network/update"
+    private val SHARE_CHANNEL = "com.elephant.network/share"
     private val EVENT_CHANNEL = "com.elephant.network/vpn_state"
     private val VPN_REQUEST_CODE = 100
     private var pendingResult: MethodChannel.Result? = null
@@ -149,6 +151,13 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "shareText" -> shareText(call.arguments, result)
+                else -> result.notImplemented()
+            }
+        }
+
         // EventChannel
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
             object : EventChannel.StreamHandler {
@@ -204,6 +213,41 @@ class MainActivity : FlutterActivity() {
         }
         startActivity(installIntent)
         result.success(null)
+    }
+
+    private fun shareText(arguments: Any?, result: MethodChannel.Result) {
+        val args = arguments as? Map<*, *>
+        val text = args?.get("text") as? String
+        val packageNames = (args?.get("packageNames") as? List<*>)
+            ?.mapNotNull { it as? String }
+            .orEmpty()
+
+        if (text.isNullOrBlank() || packageNames.isEmpty()) {
+            result.error("INVALID_ARGUMENT", "Share text and package names are required", null)
+            return
+        }
+
+        for (targetPackage in packageNames) {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                setPackage(targetPackage)
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+
+            try {
+                if (shareIntent.resolveActivity(packageManager) != null) {
+                    startActivity(shareIntent)
+                    result.success(null)
+                    return
+                }
+            } catch (_: ActivityNotFoundException) {
+                // Try the next compatible package, such as WhatsApp Business.
+            } catch (_: SecurityException) {
+                // Treat blocked package launches the same as an unavailable app.
+            }
+        }
+
+        result.error("APP_NOT_INSTALLED", "Target share app is unavailable", null)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

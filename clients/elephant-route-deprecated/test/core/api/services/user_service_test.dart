@@ -11,7 +11,7 @@ import '../../../test_bootstrap.dart';
 void main() {
   configureTestEnvironment();
 
-  group('UserService.getInviteCode', () {
+  group('UserService.getInviteSummary', () {
     late List<String> requests;
     late DioClient dioClient;
     late UserService service;
@@ -37,10 +37,11 @@ void main() {
       service = UserService(dioClient);
     });
 
-    test('returns existing invite code without generating a new one', () async {
-      final code = await service.getInviteCode();
+    test('returns existing invite code and commission rate', () async {
+      final summary = await service.getInviteSummary();
 
-      expect(code, 'EXIST123');
+      expect(summary?.code, 'EXIST123');
+      expect(summary?.commissionRate, 10);
       expect(requests, ['GET /api/v1/user/invite/fetch']);
     });
 
@@ -72,9 +73,10 @@ void main() {
         return _json({'message': 'method not allowed'}, statusCode: 405);
       });
 
-      final code = await service.getInviteCode();
+      final summary = await service.getInviteSummary();
 
-      expect(code, 'NEWCODE8');
+      expect(summary?.code, 'NEWCODE8');
+      expect(summary?.commissionRate, 10);
       expect(requests, [
         'GET /api/v1/user/invite/fetch',
         'GET /api/v1/user/invite/save',
@@ -98,13 +100,48 @@ void main() {
         return _json({'message': 'failed'}, statusCode: 500);
       });
 
-      final code = await service.getInviteCode();
+      final summary = await service.getInviteSummary();
 
-      expect(code, isNull);
+      expect(summary, isNull);
       expect(requests, [
         'GET /api/v1/user/invite/fetch',
         'GET /api/v1/user/invite/save',
       ]);
+    });
+
+    test('preserves a decimal commission rate', () async {
+      dioClient.dio.httpClientAdapter = _InviteAdapter((options) {
+        return _json({
+          'data': {
+            'codes': [
+              {'code': 'DECIMAL8'}
+            ],
+            'stat': [0, 0, 0, 12.5, 0],
+          }
+        });
+      });
+
+      final summary = await service.getInviteSummary();
+
+      expect(summary?.code, 'DECIMAL8');
+      expect(summary?.commissionRate, 12.5);
+    });
+
+    test('does not invent a rate when stat is missing', () async {
+      dioClient.dio.httpClientAdapter = _InviteAdapter((options) {
+        return _json({
+          'data': {
+            'codes': [
+              {'code': 'NORATE88'}
+            ],
+          }
+        });
+      });
+
+      final summary = await service.getInviteSummary();
+
+      expect(summary?.code, 'NORATE88');
+      expect(summary?.commissionRate, isNull);
     });
   });
 }
