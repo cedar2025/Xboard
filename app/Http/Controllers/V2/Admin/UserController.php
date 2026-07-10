@@ -256,21 +256,29 @@ class UserController extends Controller
      */
     public static function transformUserData(User $user): array
     {
-        $hasActivePlan = (bool) $user->has_active_plan;
-        $hasActiveTrafficPackage = (int) $user->traffic_package_remaining > 0;
+        $attributes = $user->getAttributes();
+        $hasTrafficSummary = array_key_exists('has_active_plan', $attributes);
+        $hasActivePlan = $hasTrafficSummary
+            ? (bool) $attributes['has_active_plan']
+            : !$user->banned
+                && $user->plan_id !== null
+                && (int) $user->transfer_enable > 0
+                && ($user->expired_at === null || (int) $user->expired_at > time());
+        $trafficPackageRemaining = (int) ($attributes['traffic_package_remaining'] ?? 0);
+        $hasActiveTrafficPackage = $trafficPackageRemaining > 0;
         $activeProductName = $hasActivePlan
             ? $user->plan?->name
-            : ($hasActiveTrafficPackage ? $user->latest_traffic_package_name : null);
+            : ($hasActiveTrafficPackage ? ($attributes['latest_traffic_package_name'] ?? null) : null);
 
         $data = $user->toArray();
         $data['balance'] = $data['balance'] / 100;
         $data['commission_balance'] = $data['commission_balance'] / 100;
         $data['subscribe_url'] = Helper::getSubscribeUrl($data['token']);
-        $data['plan_transfer_enable'] = (int) $data['plan_transfer_enable'];
-        $data['traffic_package_total'] = (int) $data['traffic_package_total'];
-        $data['traffic_package_used'] = (int) $data['traffic_package_used'];
-        $data['traffic_package_remaining'] = (int) $data['traffic_package_remaining'];
-        $data['total_used'] = (int) $data['total_used'];
+        $data['plan_transfer_enable'] = (int) ($data['plan_transfer_enable'] ?? ($hasActivePlan ? $user->transfer_enable : 0));
+        $data['traffic_package_total'] = (int) ($data['traffic_package_total'] ?? 0);
+        $data['traffic_package_used'] = (int) ($data['traffic_package_used'] ?? 0);
+        $data['traffic_package_remaining'] = $trafficPackageRemaining;
+        $data['total_used'] = (int) ($data['total_used'] ?? ($hasActivePlan ? $user->u + $user->d : 0));
         $data['has_active_plan'] = $hasActivePlan;
         $data['active_product_name'] = $activeProductName;
         unset($data['latest_traffic_package_name']);

@@ -32,6 +32,16 @@ test('admin user traffic sorting and filtering use displayed aggregate values', 
   assert.match(controller, /orderByRaw\("\{\$queryField\} \{\$direction\}"/);
 });
 
+test('shared user transformer remains compatible with non-list queries such as tickets', () => {
+  const controller = read('app/Http/Controllers/V2/Admin/UserController.php');
+
+  assert.match(controller, /\$attributes = \$user->getAttributes\(\)/);
+  assert.match(controller, /array_key_exists\('has_active_plan', \$attributes\)/);
+  assert.match(controller, /\$attributes\['traffic_package_remaining'\] \?\? 0/);
+  assert.match(controller, /\$data\['plan_transfer_enable'\] \?\?/);
+  assert.match(controller, /\$data\['total_used'\] \?\?/);
+});
+
 test('admin user table splits traffic totals and hides expired plan names', () => {
   const asset = read('public/assets/admin/assets/index.js');
   const subscriptionColumnStart = asset.indexOf('accessorKey:"plan_id",header:');
