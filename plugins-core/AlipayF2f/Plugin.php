@@ -73,9 +73,13 @@ class Plugin extends AbstractPlugin implements PaymentInterface
                 'type' => 0,
                 'data' => $gateway->getQrCodeUrl()
             ];
-        } catch (\Exception $e) {
-            Log::error($e);
-            throw new ApiException($e->getMessage());
+        } catch (\Throwable $e) {
+            $message = trim($e->getMessage()) ?: '支付宝支付处理异常，请检查支付配置';
+            Log::error('支付宝当面付支付失败', [
+                'exception' => get_class($e),
+                'message' => $message
+            ]);
+            throw new ApiException($message);
         }
     }
 
@@ -98,7 +102,11 @@ class Plugin extends AbstractPlugin implements PaymentInterface
             } else {
                 return false;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::warning('支付宝当面付回调验证失败', [
+                'exception' => get_class($e),
+                'message' => trim($e->getMessage()) ?: '未知错误'
+            ]);
             return false;
         }
     }
