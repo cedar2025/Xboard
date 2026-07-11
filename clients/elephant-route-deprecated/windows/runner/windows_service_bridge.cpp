@@ -1,9 +1,6 @@
 #include "windows_service_bridge.h"
 
-#include <cryptuiapi.h>
-#include <softpub.h>
 #include <wincrypt.h>
-#include <wintrust.h>
 
 #include <chrono>
 #include <optional>
@@ -113,27 +110,6 @@ std::optional<std::string> UnprotectSecret(const std::string& key,
   return decrypted;
 }
 
-bool VerifyAuthenticode(const std::wstring& path) {
-  WINTRUST_FILE_INFO file_info{};
-  file_info.cbStruct = sizeof(file_info);
-  file_info.pcwszFilePath = path.c_str();
-
-  WINTRUST_DATA trust_data{};
-  trust_data.cbStruct = sizeof(trust_data);
-  trust_data.dwUIChoice = WTD_UI_NONE;
-  trust_data.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
-  trust_data.dwUnionChoice = WTD_CHOICE_FILE;
-  trust_data.pFile = &file_info;
-  trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
-  trust_data.dwProvFlags = WTD_CACHE_ONLY_URL_RETRIEVAL;
-
-  GUID policy = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-  const LONG status = WinVerifyTrust(nullptr, &policy, &trust_data);
-  trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
-  WinVerifyTrust(nullptr, &policy, &trust_data);
-  return status == ERROR_SUCCESS;
-}
-
 }  // namespace
 
 WindowsServiceBridge::WindowsServiceBridge(flutter::BinaryMessenger* messenger,
@@ -201,12 +177,6 @@ void WindowsServiceBridge::HandleMethod(
     result->Success();
     return;
   }
-  if (method == "verifyAuthenticode") {
-    const auto path = StringArgument(arguments, "path");
-    result->Success(EncodableValue(path && VerifyAuthenticode(elephant::Utf8ToWide(*path))));
-    return;
-  }
-
   std::string arguments_json = "{}";
   if (method == "start" || method == "prepareSpeedTest") {
     const auto config = StringArgument(arguments, "config");

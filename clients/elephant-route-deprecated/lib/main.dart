@@ -84,7 +84,16 @@ void main() async {
   }
 
   // 初始化托盘(桌面端)
-  await TrayService().init();
+  try {
+    await TrayService().init();
+  } catch (error, stackTrace) {
+    // A tray failure must never prevent the main window from starting.
+    await AppLogger.instance.error(
+      'Failed to initialize desktop tray',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
 
   runApp(const MyApp());
 }

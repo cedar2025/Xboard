@@ -208,14 +208,6 @@ class AppUpdateService {
       return;
     }
     if (Platform.isWindows) {
-      final trusted = await _windowsChannel.invokeMethod<bool>(
-            'verifyAuthenticode',
-            {'path': artifact.path},
-          ) ??
-          false;
-      if (!trusted) {
-        throw StateError('Downloaded Windows installer is not trusted');
-      }
       await _windowsChannel.invokeMethod<Object?>('stop');
       await Process.start(
         artifact.path,
@@ -228,8 +220,9 @@ class AppUpdateService {
         ],
         mode: ProcessStartMode.detached,
       );
-      // The signed installer owns shutdown/restart from this point. The VPN
-      // service was stopped before the process was launched.
+      // The installer owns shutdown/restart from this point. The VPN service
+      // was stopped before the process was launched. Artifact integrity is
+      // checked against the server-provided SHA-256 before this method runs.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       exit(0);
     }

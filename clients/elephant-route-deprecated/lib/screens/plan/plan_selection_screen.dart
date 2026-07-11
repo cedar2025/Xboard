@@ -134,25 +134,12 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         constraints: const BoxConstraints(maxWidth: 1000),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              int columns = (constraints.maxWidth / 320).floor();
-              if (columns < 1) columns = 1;
-              if (columns > 3) columns = 3;
-
-              return GridView.builder(
-                shrinkWrap: true,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  mainAxisSpacing: 24,
-                  crossAxisSpacing: 24,
-                  childAspectRatio: 0.65, // 相对较大的空间
-                ),
-                itemCount: provider.plans.length,
-                itemBuilder: (context, index) {
-                  return _buildPlanItem(provider.plans[index], isDark);
-                },
-              );
+          child: ListView.separated(
+            padding: const EdgeInsets.only(bottom: 96),
+            itemCount: provider.plans.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 24),
+            itemBuilder: (context, index) {
+              return _buildPlanItem(provider.plans[index], isDark);
             },
           ),
         ),
@@ -213,7 +200,6 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     required int planId,
     bool isHot = false,
   }) {
-    final detailScrollController = ScrollController();
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -300,85 +286,32 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           const SizedBox(height: 20),
 
           // Features
-          if (PlatformUtils.isDesktop)
-            Expanded(
-              child: RawScrollbar(
-                controller: detailScrollController,
-                thumbVisibility: true,
-                trackVisibility: false,
-                thickness: 6,
-                radius: const Radius.circular(999),
-                thumbColor: isDark
-                    ? AppColors.darkTextTertiary.withValues(alpha: 0.55)
-                    : AppColors.lightTextTertiary.withValues(alpha: 0.55),
-                trackColor: Colors.transparent,
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context).copyWith(
-                    scrollbars: false,
-                  ),
-                  child: SingleChildScrollView(
-                    controller: detailScrollController,
-                    padding: const EdgeInsets.only(right: 14),
-                    physics: const ClampingScrollPhysics(),
-                    child: MarkdownBody(
-                      data: content,
-                      styleSheet: MarkdownStyleSheet(
-                        p: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                          height: 1.5,
-                        ),
-                        h2: AppTextStyles.titleSmall.copyWith(
-                          color: isDark
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        h3: AppTextStyles.titleSmall.copyWith(
-                          color: isDark
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        listBullet: TextStyle(
-                          color: isDark
-                              ? AppColors.primaryLight
-                              : AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+          MarkdownBody(
+            data: content,
+            styleSheet: MarkdownStyleSheet(
+              p: AppTextStyles.bodySmall.copyWith(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+                height: 1.5,
               ),
-            )
-          else
-            MarkdownBody(
-              data: content,
-              styleSheet: MarkdownStyleSheet(
-                p: AppTextStyles.bodySmall.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                  height: 1.5,
-                ),
-                h2: AppTextStyles.titleSmall.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-                h3: AppTextStyles.titleSmall.copyWith(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-                listBullet: TextStyle(
-                  color: isDark ? AppColors.primaryLight : AppColors.primary,
-                ),
+              h2: AppTextStyles.titleSmall.copyWith(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+              h3: AppTextStyles.titleSmall.copyWith(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+              listBullet: TextStyle(
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
               ),
             ),
+          ),
           const SizedBox(height: 16),
 
           // Subscribe Button

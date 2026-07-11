@@ -53,7 +53,7 @@ Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: 
 Filename: "{sys}\sc.exe"; Parameters: "stop ElephantNetworkService"; Flags: runhidden waituntilterminated; Check: ServiceExists
 Filename: "{sys}\sc.exe"; Parameters: "config ElephantNetworkService binPath= ""{app}\ElephantNetworkService.exe"" start= auto DisplayName= ""Elephant Network TUN Service"""; Flags: runhidden waituntilterminated; Check: ServiceExists
 Filename: "{sys}\sc.exe"; Parameters: "create ElephantNetworkService binPath= ""{app}\ElephantNetworkService.exe"" start= auto DisplayName= ""Elephant Network TUN Service"""; Flags: runhidden waituntilterminated; Check: ServiceMissing
-Filename: "{sys}\sc.exe"; Parameters: "description ElephantNetworkService ""Manages the signed Elephant Network sing-box TUN runtime."""; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "description ElephantNetworkService ""Manages the Elephant Network sing-box TUN runtime."""; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "config ElephantNetworkService start= delayed-auto"; Flags: runhidden waituntilterminated
 Filename: "{sys}\sc.exe"; Parameters: "start ElephantNetworkService"; Flags: runhidden waituntilterminated
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "正在安装 Microsoft Edge WebView2 Runtime..."; Flags: waituntilterminated runhidden; Check: NeedsWebView2
