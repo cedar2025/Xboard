@@ -22,7 +22,6 @@ final class WindowsServiceProtocol {
     'unprotectSecret',
     'deleteSecret',
     'deleteAllSecrets',
-    'verifyAuthenticode',
   };
 
   static VpnState parseState(Object? value) {

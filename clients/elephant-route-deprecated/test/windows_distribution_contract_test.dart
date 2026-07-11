@@ -21,16 +21,16 @@ void main() {
     expect(installer, contains('/IM sing-box-windows-amd64.exe'));
   });
 
-  test('release script fails closed for production and verifies signatures',
+  test('release script builds unsigned artifacts and preserves integrity checks',
       () {
     final script = File('scripts/build_windows_release.ps1').readAsStringSync();
 
-    expect(script, contains("SigningMode -eq 'production'"));
-    expect(script, contains('WINDOWS_CERT_THUMBPRINT'));
-    expect(script, contains('signtool.exe'));
-    expect(script, contains('verify /pa /all /v'));
+    expect(script, isNot(contains('WINDOWS_CERT_THUMBPRINT')));
+    expect(script, isNot(contains('New-SelfSignedCertificate')));
+    expect(script, isNot(contains('signtool.exe')));
     expect(script, contains('Get-AuthenticodeSignature'));
     expect(script, contains('MicrosoftEdgeWebview2Setup.exe'));
+    expect(script, contains(r'Get-FileHash $Installer -Algorithm SHA256'));
   });
 
   test('native service is constrained to local IPC and the bundled core', () {

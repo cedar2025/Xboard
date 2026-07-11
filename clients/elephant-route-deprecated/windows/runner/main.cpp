@@ -21,12 +21,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   HANDLE hMutex = CreateMutex(NULL, TRUE, L"ElephantNetwork_SingleInstance_Mutex");
   (void)hMutex;
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
-    // Find the existing window and bring it to foreground
-    HWND hwnd = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"大象网络");
+    // The title may change after Flutter starts. The runner window class is
+    // stable, so use it to restore a hidden tray window on a second launch.
+    HWND hwnd = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", nullptr);
     if (hwnd) {
       if (IsIconic(hwnd)) {
         ShowWindow(hwnd, SW_RESTORE);
+      } else {
+        ShowWindow(hwnd, SW_SHOW);
       }
+      BringWindowToTop(hwnd);
       SetForegroundWindow(hwnd);
     }
     return EXIT_SUCCESS;
@@ -45,7 +49,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   if (!window.Create(L"大象网络", origin, size)) {
     return EXIT_FAILURE;
   }
-  window.SetQuitOnClose(true);
+  // Closing hides the UI; the tray Exit action is the explicit quit path.
+  window.SetQuitOnClose(false);
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

@@ -1,13 +1,29 @@
-# ElephantRoute Client
+# Elephant Network Client
 
 Flutter desktop/mobile client for Xboard-compatible subscriptions.
 
-## Current focus
+## Supported platforms
 
+- Windows 10/11 x64 production release
 - macOS public beta
-- system proxy mode
-- TUN mode with elevated launch path
-- diagnostics export and runtime recovery
+- Android production APK
+
+## Windows production release
+
+The Windows app is distributed as an Inno Setup installer and includes:
+
+- system proxy and TUN connection modes
+- a local Windows service for standard-user TUN operation
+- system tray integration and optional launch at startup
+- in-app update checks with SHA-256 installer verification
+- upgrade and uninstall handling for the app, service, core process, and owned proxy settings
+
+Windows application binaries and the installer are currently distributed
+without an Authenticode signature. Users may see an unknown-publisher or
+Microsoft Defender SmartScreen warning during installation.
+
+Build and release instructions are documented in
+[docs/windows-release.md](./docs/windows-release.md).
 
 ## Development
 
@@ -16,7 +32,10 @@ flutter pub get
 flutter run -d macos --dart-define=BASE_URL=https://www.elephant223.com
 ```
 
-## Release
+For Windows development, run Flutter from a Windows 10/11 x64 environment with
+Visual Studio 2022 Desktop development with C++ installed.
+
+## macOS release
 
 See [docs/macos-beta-release.md](./docs/macos-beta-release.md).
 

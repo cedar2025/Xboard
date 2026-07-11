@@ -70,9 +70,9 @@ jobs:
           cmake --build build/windows/x64 --config Release --target windows_protocol_test
           ctest --test-dir build/windows/x64 -C Release --output-on-failure
 
-      - name: Build self-signed internal installer
+      - name: Build unsigned installer
         shell: pwsh
-        run: .\scripts\build_windows_release.ps1 -Version $env:RELEASE_VERSION -BuildNumber ([int]$env:RELEASE_BUILD) -SigningMode internal
+        run: .\scripts\build_windows_release.ps1 -Version $env:RELEASE_VERSION -BuildNumber ([int]$env:RELEASE_BUILD)
 
       - name: Installer smoke test
         shell: pwsh
@@ -90,11 +90,10 @@ jobs:
           sc.exe query ElephantNetworkService 2>$null
           if ($LASTEXITCODE -eq 0) { throw 'ElephantNetworkService remains after uninstall' }
 
-      - name: Upload internal artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ElephantNetwork-Windows-x64-${{ env.RELEASE_VERSION }}
           path: |
             clients/elephant-route-deprecated/windows/installer/output/*.exe
-            clients/elephant-route-deprecated/windows/installer/output/*.cer
           if-no-files-found: error

@@ -20,7 +20,6 @@ import '../../widgets/custom_webview.dart';
 import '../../widgets/invite_share_sheet.dart';
 import '../../widgets/app_update_dialog.dart';
 import 'change_password_screen.dart';
-import 'about_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -572,31 +571,45 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
-          _buildActionItem(
-            context,
-            Icons.info_outline_rounded,
-            '关于与诊断',
-            '',
-            isDark,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AboutScreen()),
-            ),
-          ),
-          _buildDivider(isDark),
           if (PlatformUtils.isWindows) ...[
             Consumer<StartupProvider>(
-              builder: (context, startup, _) => SwitchListTile.adaptive(
-                secondary: Icon(
-                  Icons.power_settings_new_rounded,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
+              builder: (context, startup, _) => InkWell(
+                onTap: startup.loading
+                    ? null
+                    : () => startup.setEnabled(!startup.enabled),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.power_settings_new_rounded,
+                        size: 20,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '开机自动启动',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Transform.scale(
+                        scale: 0.82,
+                        child: Switch.adaptive(
+                          value: startup.enabled,
+                          onChanged:
+                              startup.loading ? null : startup.setEnabled,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                title: const Text('开机自动启动'),
-                subtitle: const Text('默认关闭，可随时在这里开启'),
-                value: startup.enabled,
-                onChanged: startup.loading ? null : startup.setEnabled,
               ),
             ),
             _buildDivider(isDark),

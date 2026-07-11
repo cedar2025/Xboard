@@ -13,17 +13,21 @@ class TrayService with TrayListener {
       return;
     }
 
+    trayManager.removeListener(this);
     trayManager.addListener(this);
 
     // 设置托盘图标
     final String iconPath = Platform.isWindows
-        ? 'app_icon.ico' // Windows 原生应用图标
+        ? '${File(Platform.resolvedExecutable).parent.path}${Platform.pathSeparator}app_icon.ico'
         : 'assets/images/logo_icon_tray.png';
 
     await trayManager.setIcon(
       iconPath,
       isTemplate: Platform.isMacOS, // 仅 macOS 下支持自适应黑白色（Template Image）
     );
+    // Always initialize the native tooltip buffer. Leaving it unset on
+    // Windows can expose stale text when the pointer hovers over the icon.
+    await trayManager.setToolTip('大象网络');
 
     // 初始化时显示默认状态（未连接）
     await updateMenu(false);
@@ -64,15 +68,20 @@ class TrayService with TrayListener {
 
   @override
   void onTrayIconMouseDown() {
-    // 鼠标点击托盘，也可以直接改为显示窗口：
-    // windowManager.show();
-    // windowManager.focus();
-    trayManager.popUpContextMenu();
+    _showWindow();
   }
 
   @override
   void onTrayIconRightMouseDown() {
     trayManager.popUpContextMenu();
+  }
+
+  Future<void> _showWindow() async {
+    if (await windowManager.isMinimized()) {
+      await windowManager.restore();
+    }
+    await windowManager.show();
+    await windowManager.focus();
   }
 
   @override
@@ -86,12 +95,7 @@ class TrayService with TrayListener {
         debugPrint('TRAY: onToggleVpn callback is NULL');
       }
     } else if (menuItem.key == 'show_window') {
-      bool isMinimized = await windowManager.isMinimized();
-      if (isMinimized) {
-        await windowManager.restore();
-      }
-      await windowManager.show();
-      await windowManager.focus();
+      await _showWindow();
     } else if (menuItem.key == 'exit_app') {
       await onExitApp?.call();
       await windowManager.destroy(); // 使用 window_manager 安全退出
