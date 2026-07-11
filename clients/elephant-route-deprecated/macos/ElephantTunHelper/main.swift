@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 @objc(ElephantTunHelperProtocol)
@@ -9,24 +10,33 @@ protocol ElephantTunHelperProtocol {
 }
 
 private let helperLabel = "com.elphantroute.elephantNetwork.tunhelper"
-private let supportSuffix = "/Library/Application Support/com.elphantroute.elephantNetwork/sing-box"
 
 final class TunHelper: NSObject, ElephantTunHelperProtocol {
   private var coreProcess: Process?
   private let fileManager = FileManager.default
+  private let clientUID: uid_t
+  private let clientHomeDirectory: URL
+  private let runtimeDirectory: URL
   private let logDirectory = URL(fileURLWithPath: "/Library/Logs/ElephantRoute", isDirectory: true)
   private lazy var logURL = logDirectory.appendingPathComponent("tun-helper.log")
 
-  override init() {
+  init(clientUID: uid_t, clientHomeDirectory: URL) {
+    self.clientUID = clientUID
+    self.clientHomeDirectory = clientHomeDirectory
+    runtimeDirectory = clientHomeDirectory
+      .appendingPathComponent("Library/Application Support", isDirectory: true)
+      .appendingPathComponent("com.elphantroute.elephantNetwork", isDirectory: true)
+      .appendingPathComponent("sing-box", isDirectory: true)
     super.init()
     ensureLogDirectory()
-    log("Helper started")
+    log("Helper started for uid=\(clientUID)")
   }
 
   func getStatus(withReply reply: @escaping (NSDictionary) -> Void) {
     reply([
       "ok": true,
       "label": helperLabel,
+      "clientUID": Int(clientUID),
       "coreRunning": isCoreRunning(),
       "logPath": logURL.path
     ])
@@ -126,15 +136,17 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
 
   private func validatedRuntimePaths(configPath: String) -> (configPath: String, binaryPath: String, workDirectory: String)? {
     guard !configPath.contains("..") else { return nil }
+    let expectedDirectory = runtimeDirectory.resolvingSymlinksInPath()
+    let expectedConfigURL = expectedDirectory.appendingPathComponent("config.json")
     let configURL = URL(fileURLWithPath: configPath).resolvingSymlinksInPath()
-    guard configURL.path.hasSuffix("\(supportSuffix)/config.json") else { return nil }
+    guard configURL.path == expectedConfigURL.path else { return nil }
     guard fileManager.fileExists(atPath: configURL.path) else { return nil }
 
-    let workDirectory = configURL.deletingLastPathComponent().path
-    let arch = machineArchitecture()
-    let binaryName = arch == "arm64" ? "sing-box-darwin-arm64" : "sing-box-darwin-amd64"
-    let binaryURL = URL(fileURLWithPath: workDirectory).appendingPathComponent(binaryName).resolvingSymlinksInPath()
-    guard binaryURL.deletingLastPathComponent().path == workDirectory else { return nil }
+    let workDirectory = expectedDirectory.path
+    let binaryURL = expectedDirectory
+      .appendingPathComponent("sing-box-darwin-arm64")
+      .resolvingSymlinksInPath()
+    guard binaryURL.path == expectedDirectory.appendingPathComponent("sing-box-darwin-arm64").path else { return nil }
     guard fileManager.fileExists(atPath: binaryURL.path) else { return nil }
 
     return (configURL.path, binaryURL.path, workDirectory)
@@ -142,12 +154,13 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
 
   private func currentCoreProcessPattern() -> String? {
     let output = runCommand("/bin/ps", args: ["-ax", "-o", "command="])
+    let runtimePath = runtimeDirectory.resolvingSymlinksInPath().path
     return output
       .split(separator: "\n")
       .map(String.init)
-      .first { $0.contains(supportSuffix) && $0.contains("sing-box-darwin") }
+      .first { $0.contains(runtimePath) && $0.contains("sing-box-darwin-arm64") }
       .flatMap { line in
-        line.split(separator: " ").map(String.init).first { $0.contains(supportSuffix) }
+        line.split(separator: " ").map(String.init).first { $0.contains(runtimePath) }
       }
       .flatMap { URL(fileURLWithPath: $0).deletingLastPathComponent().path }
   }
@@ -229,6 +242,7 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
     [
       "ok": true,
       "label": helperLabel,
+      "clientUID": Int(clientUID),
       "coreRunning": isCoreRunning(),
       "logPath": logURL.path
     ]
@@ -277,11 +291,36 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
 }
 
 final class HelperDelegate: NSObject, NSXPCListenerDelegate {
-  private let helper = TunHelper()
+  private var helper: TunHelper?
 
   func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
+    let clientUID = connection.effectiveUserIdentifier
+    var consoleStat = stat()
+    guard clientUID != 0,
+          stat("/dev/console", &consoleStat) == 0,
+          consoleStat.st_uid == clientUID,
+          let passwordEntry = getpwuid(clientUID)
+    else {
+      NSLog("Rejected TUN helper XPC client uid=%d", clientUID)
+      return false
+    }
+
+    let homePath = String(cString: passwordEntry.pointee.pw_dir)
+    let clientHomeDirectory = URL(fileURLWithPath: homePath, isDirectory: true)
+    let exportedHelper: TunHelper
+    if let helper {
+      exportedHelper = helper
+    } else {
+      let newHelper = TunHelper(
+        clientUID: clientUID,
+        clientHomeDirectory: clientHomeDirectory
+      )
+      helper = newHelper
+      exportedHelper = newHelper
+    }
+
     connection.exportedInterface = NSXPCInterface(with: ElephantTunHelperProtocol.self)
-    connection.exportedObject = helper
+    connection.exportedObject = exportedHelper
     connection.resume()
     return true
   }

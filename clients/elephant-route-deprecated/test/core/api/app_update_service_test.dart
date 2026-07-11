@@ -39,4 +39,40 @@ void main() {
       );
     });
   });
+
+  group('AppUpdateService release integrity policy', () {
+    test('requires a complete SHA256 for macOS artifacts', () {
+      expect(
+        AppUpdateService.hasRequiredArtifactHash(
+          platform: 'macos',
+          sha256: null,
+        ),
+        isFalse,
+      );
+      expect(
+        AppUpdateService.hasRequiredArtifactHash(
+          platform: 'macos',
+          sha256: 'abc',
+        ),
+        isFalse,
+      );
+      expect(
+        AppUpdateService.hasRequiredArtifactHash(
+          platform: 'macos',
+          sha256: 'a' * 64,
+        ),
+        isTrue,
+      );
+    });
+
+    test('keeps legacy optional hash behavior outside macOS', () {
+      expect(
+        AppUpdateService.hasRequiredArtifactHash(
+          platform: 'windows',
+          sha256: null,
+        ),
+        isTrue,
+      );
+    });
+  });
 }

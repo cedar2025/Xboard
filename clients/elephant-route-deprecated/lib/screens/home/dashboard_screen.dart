@@ -20,6 +20,7 @@ import '../../utils/platform_utils.dart';
 import '../../core/singbox/vpn_state.dart';
 import '../../widgets/app_update_dialog.dart';
 import '../../widgets/dashboard_brand_header.dart';
+import '../../widgets/mac_setup_guide.dart';
 import 'node_selection_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -48,6 +49,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (context.read<AuthProvider>().isLoggedIn) {
         context.read<UserProvider>().refresh();
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showMacSetupGuideIfNeeded(context);
     });
 
     // 定期同步后端数据（每 10 分钟），防止流量漏报
@@ -283,38 +288,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: Row(
         children: [
-          // 头像
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  isDark ? AppColors.primaryDark : AppColors.primary,
-                  isDark ? AppColors.primary : AppColors.primaryLight,
-                ],
-              ),
-              borderRadius: AppDimensions.borderRadiusMedium,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              user.emailInitial,
-              style: AppTextStyles.titleLarge.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // 右侧信息区域
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1091,12 +1064,34 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     if (status['status'] == 'requiresApproval') {
       if (!mounted) return false;
-      final message =
-          (status['message'] as String?) ?? '后台网络组件未启用，请在系统设置中允许后重试';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+      final openSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('允许后台网络组件'),
+          content: Text(
+            (status['message'] as String?) ?? '请在“登录项与扩展”中允许大象网络后台组件，然后返回重试。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('打开系统设置'),
+            ),
+          ],
+        ),
       );
+      if (openSettings == true) {
+        await runtime.openSystemSettingsLoginItems();
+      }
       return false;
+    }
+
+    if (status['status'] == 'refreshRequired') {
+      final refreshed = await runtime.refreshTunHelper();
+      return refreshed['status'] == 'enabled';
     }
 
     if (!mounted) return false;

@@ -14,10 +14,10 @@ import '../../../utils/constants.dart';
 import '../domain_resolver.dart';
 
 class AppUpdateService {
-  AppUpdateService({DomainResolver? domainResolver})
+  AppUpdateService({DomainResolver? domainResolver, String? initialBaseUrl})
       : _domainResolver = domainResolver ?? DomainResolver(),
         _dio = Dio(BaseOptions(
-          baseUrl: ApiConstants.appDistributionBaseUrl,
+          baseUrl: initialBaseUrl ?? ApiConstants.appDistributionBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
         )) {
@@ -39,6 +39,8 @@ class AppUpdateService {
 
   final Dio _dio;
   final DomainResolver _domainResolver;
+
+  String get currentBaseUrl => _dio.options.baseUrl;
 
   Future<AppUpdateCheckResult> checkForUpdate({
     String channel = 'stable',
@@ -169,6 +171,12 @@ class AppUpdateService {
     if (update.downloadUrl.isEmpty) {
       throw StateError('Download URL is empty');
     }
+    if (!hasRequiredArtifactHash(
+      platform: _platform,
+      sha256: update.sha256,
+    )) {
+      throw StateError('macOS update is missing a valid SHA256');
+    }
 
     await _syncBaseUrl();
     final directory = await getTemporaryDirectory();
@@ -226,7 +234,19 @@ class AppUpdateService {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       exit(0);
     }
+    if (Platform.isMacOS) {
+      await const MethodChannel('com.elephant.network/runtime')
+          .invokeMethod<Object?>('stopCore');
+    }
     await _openDownloadedFile(artifact);
+  }
+
+  static bool hasRequiredArtifactHash({
+    required String platform,
+    required String? sha256,
+  }) {
+    if (platform != 'macos') return true;
+    return RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(sha256?.trim() ?? '');
   }
 
   Future<String> getInstallationId() async {

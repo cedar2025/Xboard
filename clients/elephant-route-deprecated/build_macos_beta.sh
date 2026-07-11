@@ -4,49 +4,50 @@ set -euo pipefail
 APP_NAME="ElephantRoute"
 EXPORT_DIR="build/macos-beta"
 BASE_URL="${BASE_URL:-https://www.elephant223.com}"
-APP_DISTRIBUTION_URL="${APP_DISTRIBUTION_URL:-${BASE_URL}}"
+APP_DISTRIBUTION_URL="${APP_DISTRIBUTION_URL:-}"
 ALLOW_INSECURE_CERTS="${ALLOW_INSECURE_CERTS:-false}"
-MACOS_ARCH="${MACOS_ARCH:-arm64}"
-
-case "${MACOS_ARCH}" in
-  arm64)
-    THIN_ARCH="arm64"
-    KEEP_SING_BOX="sing-box-darwin-arm64"
-    DROP_SING_BOX="sing-box-darwin-amd64"
-    ;;
-  x64)
-    THIN_ARCH="x86_64"
-    KEEP_SING_BOX="sing-box-darwin-amd64"
-    DROP_SING_BOX="sing-box-darwin-arm64"
-    ;;
-  *)
-    echo "MACOS_ARCH must be arm64 or x64, got: ${MACOS_ARCH}" >&2
-    exit 1
-    ;;
-esac
+MACOS_ARCH="arm64"
+THIN_ARCH="arm64"
+KEEP_SING_BOX="sing-box-darwin-arm64"
+DROP_SING_BOX="sing-box-darwin-amd64"
 
 APP_BUNDLE="${EXPORT_DIR}/${APP_NAME}-macos-${MACOS_ARCH}.app"
 DMG_PATH="${EXPORT_DIR}/${APP_NAME}-macos-${MACOS_ARCH}.dmg"
-PRESERVED_EXPORT_DIR=""
+STAGING_DIR=""
+SMOKE_PID=""
+SMOKE_LOG=""
 
-preserve_existing_outputs() {
-  if [[ ! -d "${EXPORT_DIR}" ]]; then
-    return 0
+cleanup() {
+  if [[ -n "${SMOKE_PID}" ]] && kill -0 "${SMOKE_PID}" 2>/dev/null; then
+    kill "${SMOKE_PID}" 2>/dev/null || true
+    wait "${SMOKE_PID}" 2>/dev/null || true
   fi
-
-  PRESERVED_EXPORT_DIR="$(mktemp -d)"
-  cp -R "${EXPORT_DIR}" "${PRESERVED_EXPORT_DIR}/macos-beta"
+  if [[ -n "${SMOKE_LOG}" ]]; then
+    rm -f "${SMOKE_LOG}"
+  fi
+  if [[ -n "${STAGING_DIR}" && -d "${STAGING_DIR}" ]]; then
+    rm -rf "${STAGING_DIR}"
+  fi
 }
+trap cleanup EXIT
 
-restore_existing_outputs() {
-  if [[ -z "${PRESERVED_EXPORT_DIR}" ]]; then
-    return 0
+smoke_test_app() {
+  local app_path="$1"
+  SMOKE_LOG="$(mktemp)"
+  "${app_path}/Contents/MacOS/ElephantRoute" >"${SMOKE_LOG}" 2>&1 &
+  SMOKE_PID=$!
+  sleep 3
+  if ! kill -0 "${SMOKE_PID}" 2>/dev/null; then
+    wait "${SMOKE_PID}" 2>/dev/null || true
+    cat "${SMOKE_LOG}" >&2
+    echo "Packaged app failed the launch smoke test" >&2
+    return 1
   fi
-
-  mkdir -p "$(dirname "${EXPORT_DIR}")"
-  rm -rf "${EXPORT_DIR}"
-  mv "${PRESERVED_EXPORT_DIR}/macos-beta" "${EXPORT_DIR}"
-  rm -rf "${PRESERVED_EXPORT_DIR}"
+  kill "${SMOKE_PID}" 2>/dev/null || true
+  wait "${SMOKE_PID}" 2>/dev/null || true
+  SMOKE_PID=""
+  rm -f "${SMOKE_LOG}"
+  SMOKE_LOG=""
 }
 
 thin_macho_file() {
@@ -87,33 +88,86 @@ prune_for_arch() {
   done < <(find "${app_path}" -type f -perm -111 -print)
 }
 
+is_macho() {
+  /usr/bin/file "$1" | /usr/bin/grep -q "Mach-O"
+}
+
+adhoc_sign_app() {
+  local app_path="$1"
+
+  while IFS= read -r file_path; do
+    if is_macho "${file_path}"; then
+      codesign --force --timestamp=none --sign - "${file_path}"
+    fi
+  done < <(find "${app_path}/Contents" -type f -print)
+
+  codesign --force --timestamp=none \
+    --identifier "com.elphantroute.elephantNetwork.tunhelper" --sign - \
+    "${app_path}/Contents/MacOS/ElephantTunHelper"
+
+  while IFS= read -r framework_path; do
+    codesign --force --timestamp=none --sign - "${framework_path}"
+  done < <(find "${app_path}/Contents/Frameworks" -type d -name '*.framework' -print | sort -r)
+
+  codesign --force --timestamp=none --entitlements \
+    "macos/Runner/Release.entitlements" --sign - "${app_path}"
+  codesign --verify --deep --strict --verbose=4 "${app_path}"
+}
+
 echo "==> Building macOS beta for ${APP_NAME}"
 echo "==> BASE_URL=${BASE_URL}"
-echo "==> APP_DISTRIBUTION_URL=${APP_DISTRIBUTION_URL}"
+echo "==> APP_DISTRIBUTION_URL=${APP_DISTRIBUTION_URL:-runtime resolved domain}"
 echo "==> ALLOW_INSECURE_CERTS=${ALLOW_INSECURE_CERTS}"
 echo "==> MACOS_ARCH=${MACOS_ARCH} (${THIN_ARCH})"
 
 export MACOS_ARCH
-preserve_existing_outputs
 flutter clean
-restore_existing_outputs
 flutter pub get
-flutter build macos --release \
-  --dart-define=BASE_URL="${BASE_URL}" \
-  --dart-define=APP_DISTRIBUTION_URL="${APP_DISTRIBUTION_URL}" \
+BUILD_ARGS=(
+  --release
+  --dart-define=BASE_URL="${BASE_URL}"
   --dart-define=ALLOW_INSECURE_CERTS="${ALLOW_INSECURE_CERTS}"
+)
+if [[ -n "${APP_DISTRIBUTION_URL}" ]]; then
+  BUILD_ARGS+=(--dart-define=APP_DISTRIBUTION_URL="${APP_DISTRIBUTION_URL}")
+fi
+flutter build macos "${BUILD_ARGS[@]}"
 
+rm -rf "${EXPORT_DIR}"
 mkdir -p "${EXPORT_DIR}"
-rm -rf "${APP_BUNDLE}" "${DMG_PATH}"
 cp -R "build/macos/Build/Products/Release/${APP_NAME}.app" "${APP_BUNDLE}"
 
 echo "==> Pruning and thinning ${APP_BUNDLE}"
 prune_for_arch "${APP_BUNDLE}"
 
-echo "==> Packaging ${DMG_PATH}"
-hdiutil create -volname "${APP_NAME}" -srcfolder "${APP_BUNDLE}" -ov -format UDZO "${DMG_PATH}"
+echo "==> Applying ad-hoc signatures after pruning"
+adhoc_sign_app "${APP_BUNDLE}"
 
-echo "==> App output: $(pwd)/${APP_BUNDLE}"
+echo "==> Running packaged app launch smoke test"
+smoke_test_app "${APP_BUNDLE}"
+
+echo "==> Packaging ${DMG_PATH}"
+STAGING_DIR="$(mktemp -d)"
+cp -R "${APP_BUNDLE}" "${STAGING_DIR}/大象网络.app"
+ln -s /Applications "${STAGING_DIR}/Applications"
+cat > "${STAGING_DIR}/安装说明.txt" <<'EOF'
+大象网络 macOS ARM 无证书版
+
+1. 将“大象网络.app”拖入“Applications”。
+2. 首次打开若被 macOS 拦截，请前往“系统设置 > 隐私与安全性”并点击“仍要打开”。
+3. 首次开启加速或后台组件升级时，按提示输入管理员密码完成安装。
+4. 更新时退出旧版本，再从 DMG 拖入“Applications”并选择“替换”。
+5. 卸载后台组件：
+   sudo "/Applications/大象网络.app/Contents/Resources/ElephantTunHelper/install-helper.sh" uninstall
+
+本版本使用 ad-hoc 签名，不使用 Developer ID，也未提交 Apple 公证。
+EOF
+hdiutil create -volname "大象网络" -srcfolder "${STAGING_DIR}" -ov -format UDZO "${DMG_PATH}"
+
+rm -rf "${APP_BUNDLE}"
+
 echo "==> DMG output: $(pwd)/${DMG_PATH}"
-du -sh "${APP_BUNDLE}" "${DMG_PATH}"
-echo "==> Next step for production: sign, notarize, and package with release_macos_dmg.sh."
+du -sh "${DMG_PATH}"
+echo "==> SHA-256"
+shasum -a 256 "${DMG_PATH}"
+echo "==> Code signing: ad-hoc (Developer ID and notarization disabled)"

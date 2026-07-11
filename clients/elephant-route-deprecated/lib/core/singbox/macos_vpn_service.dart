@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../services/app_logger.dart';
 import '../services/mac_runtime_service.dart';
+import 'macos_tun_permission.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
 
@@ -54,7 +55,34 @@ class MacosVpnService implements VpnManager {
   @override
   Future<bool> requestPermission() async {
     await AppLogger.instance.info('macOS requestPermission invoked');
-    return true;
+    try {
+      final permission = MacosTunPermission.fromNative(
+        await _runtime.ensureTunHelper(),
+      );
+      if (permission.granted) return true;
+
+      _updateState(
+        VpnStatus.error,
+        errorMessage: permission.message,
+        failureReason: VpnFailureReason.permissionDenied,
+        runtimeDetails: permission.details,
+      );
+      await AppLogger.instance.warn(
+        'macOS TUN permission denied status=${permission.status} code=${permission.code}',
+      );
+      return false;
+    } on PlatformException catch (error) {
+      _updateState(
+        VpnStatus.error,
+        errorMessage: error.message ?? '后台网络组件检查失败',
+        failureReason: VpnFailureReason.permissionDenied,
+        runtimeDetails: {
+          'status': 'connectionFailed',
+          'code': error.code,
+        },
+      );
+      return false;
+    }
   }
 
   @override

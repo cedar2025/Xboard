@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -74,6 +76,13 @@ Future<void> showAppUpdateDialog(
                     style: TextStyle(color: AppColors.error),
                   ),
                 ],
+                if (Platform.isMacOS) ...[
+                  const SizedBox(height: 14),
+                  const Text(
+                    '下载完成后会打开 DMG。请退出当前版本，将“大象网络”拖到“应用程序”并选择替换，然后重新打开。',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
               ],
             ),
           ),
@@ -106,7 +115,13 @@ Future<void> showAppUpdateDialog(
                       }
                       if (!update.force) Navigator.pop(context);
                     },
-              child: Text(provider.isDownloading ? '正在下载 $progress%' : '立即下载'),
+              child: Text(
+                provider.isDownloading
+                    ? '正在下载 $progress%'
+                    : Platform.isMacOS
+                        ? '下载并打开 DMG'
+                        : '立即下载',
+              ),
             ),
           ],
         );

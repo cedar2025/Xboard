@@ -8,10 +8,10 @@ import 'package:dio/io.dart';
 import 'dart:io';
 
 class DioClient {
-  DioClient({DomainResolver? domainResolver})
+  DioClient({DomainResolver? domainResolver, String? initialBaseUrl})
       : _domainResolver = domainResolver ?? DomainResolver() {
     _dio = Dio(BaseOptions(
-      baseUrl: ApiConstants.baseUrl,
+      baseUrl: initialBaseUrl ?? ApiConstants.baseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
     ));

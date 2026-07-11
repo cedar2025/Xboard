@@ -1,0 +1,86 @@
+name: macOS ARM Client
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'clients/elephant-route-deprecated/lib/**'
+      - 'clients/elephant-route-deprecated/test/**'
+      - 'clients/elephant-route-deprecated/macos/**'
+      - 'clients/elephant-route-deprecated/pubspec.*'
+      - 'clients/elephant-route-deprecated/build_macos_beta.sh'
+      - '.github/workflows/macos-client.yml'
+  pull_request:
+    paths:
+      - 'clients/elephant-route-deprecated/**'
+      - '.github/workflows/macos-client.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-package:
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: clients/elephant-route-deprecated
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.7'
+          channel: stable
+          cache: true
+
+      - name: Confirm Apple Silicon runner
+        run: test "$(uname -m)" = arm64
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Flutter analyzer
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test --no-pub
+
+      - name: Build unsigned ARM DMG
+        run: ./build_macos_beta.sh
+
+      - name: Verify release contract
+        run: |
+          DMG=build/macos-beta/ElephantRoute-macos-arm64.dmg
+          test -f "$DMG"
+          test ! -e build/macos-beta/ElephantRoute-macos-arm64.app
+          MOUNT_DIR=$(mktemp -d)
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT_DIR"
+          trap 'hdiutil detach "$MOUNT_DIR"' EXIT
+          APP="$MOUNT_DIR/大象网络.app"
+          test -d "$APP"
+          lipo -info "$APP/Contents/MacOS/ElephantRoute" | grep arm64
+          lipo -info "$APP/Contents/MacOS/ElephantTunHelper" | grep arm64
+          lipo -info "$APP/Contents/Frameworks/App.framework/Versions/A/App" | grep arm64
+          test -f "$APP/Contents/Frameworks/App.framework/Versions/A/Resources/flutter_assets/assets/bin/sing-box-darwin-arm64"
+          test ! -e "$APP/Contents/Frameworks/App.framework/Versions/A/Resources/flutter_assets/assets/bin/sing-box-darwin-amd64"
+          test -x "$APP/Contents/Resources/ElephantTunHelper/install-helper.sh"
+          test -f "$APP/Contents/Resources/ElephantTunHelper/com.elphantroute.elephantNetwork.tunhelper.legacy.plist"
+          sh -n "$APP/Contents/Resources/ElephantTunHelper/install-helper.sh"
+          plutil -lint "$APP/Contents/Resources/ElephantTunHelper/com.elphantroute.elephantNetwork.tunhelper.legacy.plist"
+          codesign --verify --deep --strict --verbose=4 "$APP"
+          "$APP/Contents/MacOS/ElephantRoute" >"$RUNNER_TEMP/elephant-launch.log" 2>&1 &
+          APP_PID=$!
+          sleep 3
+          kill -0 "$APP_PID"
+          kill "$APP_PID"
+          wait "$APP_PID" || true
+          shasum -a 256 "$DMG"
+
+      - name: Upload ARM DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElephantRoute-macOS-arm64
+          path: clients/elephant-route-deprecated/build/macos-beta/ElephantRoute-macos-arm64.dmg
+          if-no-files-found: error

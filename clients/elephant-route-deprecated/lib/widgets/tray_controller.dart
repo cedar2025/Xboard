@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/services/tray_service.dart';
 import '../providers/vpn_provider.dart';
 import '../providers/auth_provider.dart';
+import '../core/singbox/vpn_state.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TrayController extends StatefulWidget {
@@ -50,6 +51,10 @@ class _TrayControllerState extends State<TrayController> with WindowListener {
 
       debugPrint('TRAY_CTRL: Invoking vpnProvider.toggle()...');
       await vpnProvider.toggle();
+      if (Platform.isMacOS && vpnProvider.state.status == VpnStatus.error) {
+        await windowManager.show();
+        await windowManager.focus();
+      }
     };
     trayService.onExitApp = () async {
       final vpnProvider = context.read<VpnProvider>();

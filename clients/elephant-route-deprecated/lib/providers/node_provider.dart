@@ -156,13 +156,13 @@ class NodeProvider with ChangeNotifier {
       isWeb: kIsWeb,
       isAndroid: !kIsWeb && Platform.isAndroid,
       isWindows: !kIsWeb && Platform.isWindows,
+      isMacOS: !kIsWeb && Platform.isMacOS,
       isMockVpn: _vpnManager is MockVpnService,
     );
 
     if (requiresConnectedVpn &&
         _vpnManager.currentState.status != VpnStatus.connected) {
-      debugPrint(
-          '[SPEED_TEST_DART] Android latency test blocked: VPN not connected');
+      debugPrint('[SPEED_TEST_DART] Latency test blocked: VPN not connected');
       if (context != null && context.mounted) {
         ToastUtils.show(context, '请先开启加速后再测速');
       }

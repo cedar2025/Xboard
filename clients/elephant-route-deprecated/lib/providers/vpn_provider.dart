@@ -90,11 +90,14 @@ class VpnProvider with ChangeNotifier {
       // 1. 请求 VPN 权限
       final hasPermission = await _vpnManager.requestPermission();
       if (!hasPermission) {
-        _state = _state.copyWith(
-          status: VpnStatus.error,
-          errorMessage: '未获得连接权限',
-          failureReason: VpnFailureReason.permissionDenied,
-        );
+        final permissionState = _vpnManager.currentState;
+        _state = permissionState.status == VpnStatus.error
+            ? permissionState
+            : _state.copyWith(
+                status: VpnStatus.error,
+                errorMessage: '未获得连接权限',
+                failureReason: VpnFailureReason.permissionDenied,
+              );
         notifyListeners();
         return false;
       }

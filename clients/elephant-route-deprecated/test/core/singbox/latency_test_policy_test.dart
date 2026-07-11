@@ -85,12 +85,13 @@ void main() {
       expect(await tester.test(), -1);
     });
 
-    test('requires connected VPN for real Android and Windows tests', () {
+    test('requires connected VPN for real Android Windows and macOS tests', () {
       expect(
         LatencyTestPolicy.requiresConnectedVpn(
           isWeb: false,
           isAndroid: true,
           isWindows: false,
+          isMacOS: false,
           isMockVpn: false,
         ),
         isTrue,
@@ -100,6 +101,7 @@ void main() {
           isWeb: false,
           isAndroid: true,
           isWindows: false,
+          isMacOS: false,
           isMockVpn: true,
         ),
         isFalse,
@@ -109,6 +111,7 @@ void main() {
           isWeb: false,
           isAndroid: false,
           isWindows: true,
+          isMacOS: false,
           isMockVpn: false,
         ),
         isTrue,
@@ -118,6 +121,17 @@ void main() {
           isWeb: false,
           isAndroid: false,
           isWindows: false,
+          isMacOS: true,
+          isMockVpn: false,
+        ),
+        isTrue,
+      );
+      expect(
+        LatencyTestPolicy.requiresConnectedVpn(
+          isWeb: false,
+          isAndroid: false,
+          isWindows: false,
+          isMacOS: false,
           isMockVpn: false,
         ),
         isFalse,

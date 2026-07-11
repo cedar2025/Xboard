@@ -219,38 +219,6 @@ class ProfileScreen extends StatelessWidget {
     final tr = context.read<LanguageProvider>();
     return Column(
       children: [
-        // 邮箱首字母标识
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                isDark ? AppColors.primaryDark : AppColors.primary,
-                isDark ? AppColors.primary : AppColors.primaryLight,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            user.emailInitial,
-            style: AppTextStyles.price.copyWith(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
         // 邮箱
         Text(
           user.email,
@@ -361,7 +329,9 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
-          if (PlatformUtils.isAndroid || PlatformUtils.isWindows) ...[
+          if (PlatformUtils.isAndroid ||
+              PlatformUtils.isWindows ||
+              PlatformUtils.isMacOS) ...[
             Consumer<UserProvider>(
               builder: (context, provider, _) {
                 final rate = InviteShareService.formatCommissionRate(
@@ -571,7 +541,7 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
-          if (PlatformUtils.isWindows) ...[
+          if (PlatformUtils.isWindows || PlatformUtils.isMacOS) ...[
             Consumer<StartupProvider>(
               builder: (context, startup, _) => InkWell(
                 onTap: startup.loading
@@ -591,7 +561,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        '开机自动启动',
+                        PlatformUtils.isMacOS ? '登录时自动启动' : '开机自动启动',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark
                               ? AppColors.darkTextPrimary

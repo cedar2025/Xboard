@@ -5,7 +5,7 @@ Flutter desktop/mobile client for Xboard-compatible subscriptions.
 ## Supported platforms
 
 - Windows 10/11 x64 production release
-- macOS public beta
+- macOS 13+ Apple Silicon unsigned production release
 - Android production APK
 
 ## Windows production release
@@ -37,7 +37,15 @@ Visual Studio 2022 Desktop development with C++ installed.
 
 ## macOS release
 
-See [docs/macos-beta-release.md](./docs/macos-beta-release.md).
+The macOS app is distributed as an arm64-only DMG with the bundled sing-box
+core and an administrator-installed LaunchDaemon TUN helper. It is intentionally built without a
+Developer ID certificate or notarization, while retaining ad-hoc signatures
+for bundle integrity. Users must manually approve the app in Privacy & Security
+and enter an administrator password once when installing or upgrading its
+background network component.
+
+Build, publish, clean-machine acceptance, update, and uninstall instructions
+are documented in [docs/macos-beta-release.md](./docs/macos-beta-release.md).
 
 ## Android production APK
 

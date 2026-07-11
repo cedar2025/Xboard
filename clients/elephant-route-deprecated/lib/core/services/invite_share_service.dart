@@ -81,7 +81,7 @@ class InviteShareService {
     required InviteSharePlatform platform,
     required String inviteUrl,
   }) async {
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isMacOS) {
       final opened = await launchUrl(
         buildWebShareUri(platform, inviteUrl),
         mode: LaunchMode.externalApplication,

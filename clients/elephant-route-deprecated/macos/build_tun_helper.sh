@@ -6,6 +6,7 @@ HELPER_LABEL="com.elphantroute.elephantNetwork.tunhelper"
 HELPER_DIR="${PROJECT_DIR}/ElephantTunHelper"
 APP_CONTENTS="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}"
 HELPER_OUTPUT="${APP_CONTENTS}/MacOS/${HELPER_NAME}"
+HELPER_RESOURCE_OUTPUT="${APP_CONTENTS}/Resources/ElephantTunHelper"
 MACOS_ARCH="${MACOS_ARCH:-${NATIVE_ARCH_ACTUAL:-${CURRENT_ARCH:-$(uname -m)}}}"
 case "${MACOS_ARCH}" in
   arm64)
@@ -32,8 +33,18 @@ xcrun swiftc \
 
 chmod 755 "${HELPER_OUTPUT}"
 
+mkdir -p "${HELPER_RESOURCE_OUTPUT}"
+install -m 755 "${HELPER_DIR}/install-helper.sh" \
+  "${HELPER_RESOURCE_OUTPUT}/install-helper.sh"
+install -m 644 \
+  "${HELPER_DIR}/com.elphantroute.elephantNetwork.tunhelper.legacy.plist" \
+  "${HELPER_RESOURCE_OUTPUT}/com.elphantroute.elephantNetwork.tunhelper.legacy.plist"
+
 if [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ] && [ "${EXPANDED_CODE_SIGN_IDENTITY}" != "-" ]; then
-  codesign --force --timestamp=none --options runtime --sign "${EXPANDED_CODE_SIGN_IDENTITY}" "${HELPER_OUTPUT}"
+  codesign --force --timestamp=none --options runtime \
+    --identifier "${HELPER_LABEL}" \
+    --sign "${EXPANDED_CODE_SIGN_IDENTITY}" "${HELPER_OUTPUT}"
 else
-  codesign --force --timestamp=none --sign - "${HELPER_OUTPUT}"
+  codesign --force --timestamp=none \
+    --identifier "${HELPER_LABEL}" --sign - "${HELPER_OUTPUT}"
 fi

@@ -48,6 +48,23 @@ class MacRuntimeService {
   Future<Map<String, dynamic>> getTunHelperStatus() =>
       _invokeMap('getTunHelperStatus');
 
+  Future<Map<String, dynamic>> getSetupStatus() => _invokeMap('getSetupStatus');
+
+  Future<Map<String, dynamic>> refreshTunHelper() =>
+      _invokeMap('refreshTunHelper');
+
+  Future<Map<String, dynamic>> uninstallTunHelper() =>
+      _invokeMap('uninstallTunHelper');
+
+  Future<Map<String, dynamic>> openSystemSettingsLoginItems() =>
+      _invokeMap('openSystemSettingsLoginItems');
+
+  Future<Map<String, dynamic>> getLaunchAtLoginStatus() =>
+      _invokeMap('getLaunchAtLoginStatus');
+
+  Future<Map<String, dynamic>> setLaunchAtLoginEnabled(bool enabled) =>
+      _invokeMap('setLaunchAtLoginEnabled', {'enabled': enabled});
+
   Future<Map<String, dynamic>> stopCore() => _invokeMap('stopCore');
 
   Future<Map<String, dynamic>> applySystemProxy(int proxyPort) {

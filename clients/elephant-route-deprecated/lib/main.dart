@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/api/dio_client.dart';
+import 'core/app_bootstrap.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_text_styles.dart';
 import 'core/theme/app_dimensions.dart';
@@ -31,6 +32,7 @@ import 'widgets/main_scaffold.dart';
 import 'screens/profile/profile_screen.dart';
 import 'utils/platform_utils.dart';
 import 'widgets/tray_controller.dart';
+import 'widgets/app_update_dialog.dart';
 
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -39,6 +41,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppLogger.instance.initialize();
+  final bootstrap = await AppBootstrap.initialize();
 
   // 桌面端：初始化窗口管理器与开机自启
   if (PlatformUtils.isDesktop) {
@@ -95,19 +98,21 @@ void main() async {
     );
   }
 
-  runApp(const MyApp());
+  runApp(MyApp(bootstrap: bootstrap));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.bootstrap});
+
+  final AppBootstrap bootstrap;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // 核心依赖 - DioClient 必须最先注册
-        Provider<DioClient>(
-          create: (_) => DioClient(),
+        Provider<DioClient>.value(
+          value: bootstrap.dioClient,
         ),
         // 提供 VpnManager
         // 桌面端（macOS/Windows）使用对应 Service，其他桌面端降级为 MockVpnService
@@ -139,7 +144,7 @@ class MyApp extends StatelessWidget {
           create: (_) => ConfigProvider(),
         ),
         ChangeNotifierProvider<AppUpdateProvider>(
-          create: (_) => AppUpdateProvider(),
+          create: (_) => AppUpdateProvider(service: bootstrap.appUpdateService),
         ),
         ChangeNotifierProvider<StartupProvider>(
           create: (_) => StartupProvider(),
@@ -361,8 +366,17 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final updateProvider =
+          Provider.of<AppUpdateProvider>(context, listen: false);
 
       final isLoggedIn = await authProvider.restoreLoginStatus();
+
+      await updateProvider.sendHeartbeat();
+      final update = await updateProvider.checkForUpdate(silent: true);
+
+      if (mounted && update != null && updateProvider.shouldPrompt) {
+        await showAppUpdateDialog(context, update);
+      }
 
       if (!mounted) return;
 

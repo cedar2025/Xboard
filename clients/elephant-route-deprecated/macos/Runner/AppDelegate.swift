@@ -1,4 +1,5 @@
 import Cocoa
+import CryptoKit
 import FlutterMacOS
 import Security
 import ServiceManagement
@@ -13,11 +14,18 @@ protocol ElephantTunHelperProtocol {
 
 @main
 class AppDelegate: FlutterAppDelegate {
+  private enum HelperInstallerAction: String {
+    case install
+    case uninstall
+  }
+
   private let runtimeChannelName = "com.elephant.network/runtime"
   private let proxyChannelName = "com.elephant.network/proxy"
   private let secureServiceName = "com.elphantroute.elephantNetwork.secure"
   private let tunHelperLabel = "com.elphantroute.elephantNetwork.tunhelper"
   private let tunHelperPlistName = "com.elphantroute.elephantNetwork.tunhelper.plist"
+  private let installedTunHelperPath = "/Library/PrivilegedHelperTools/ElephantTunHelper"
+  private let installedTunHelperPlistPath = "/Library/LaunchDaemons/com.elphantroute.elephantNetwork.tunhelper.plist"
 
   private var coreProcess: Process?
   private var runtimeState: [String: Any] = [
@@ -122,6 +130,31 @@ class AppDelegate: FlutterAppDelegate {
     case "getTunHelperStatus":
       performAsync(result) {
         self.getTunHelperStatus()
+      }
+    case "getSetupStatus":
+      performAsync(result) {
+        self.getSetupStatus()
+      }
+    case "refreshTunHelper":
+      performAsync(result) {
+        self.refreshTunHelper()
+      }
+    case "uninstallTunHelper":
+      performAsync(result) {
+        self.uninstallTunHelper()
+      }
+    case "openSystemSettingsLoginItems":
+      SMAppService.openSystemSettingsLoginItems()
+      result(["ok": true])
+    case "getLaunchAtLoginStatus":
+      result(self.launchAtLoginStatus())
+    case "setLaunchAtLoginEnabled":
+      guard let args = call.arguments as? [String: Any], let enabled = args["enabled"] as? Bool else {
+        result(FlutterError(code: "INVALID_ARGS", message: "enabled is required", details: nil))
+        return
+      }
+      performAsync(result) {
+        self.setLaunchAtLoginEnabled(enabled)
       }
     case "stopCore":
       performAsync(result) {
@@ -267,8 +300,12 @@ class AppDelegate: FlutterAppDelegate {
 
     _ = runCommand("/usr/bin/pkill", args: ["-f", coreProcessPattern])
 
-    let helperStopResult = callTunHelperIfAvailable { helper, reply in
-      helper.stopTun(withReply: reply)
+    var helperStopResult: [String: Any]?
+    if FileManager.default.fileExists(atPath: installedTunHelperPath),
+       FileManager.default.fileExists(atPath: installedTunHelperPlistPath) {
+      helperStopResult = callTunHelperIfAvailable(timeout: 2) { helper, reply in
+        helper.stopTun(withReply: reply)
+      }
     }
 
     waitForCoreExit(timeout: 2.0)
@@ -617,60 +654,342 @@ class AppDelegate: FlutterAppDelegate {
     SMAppService.daemon(plistName: tunHelperPlistName)
   }
 
+  private func getSetupStatus() -> [String: Any] {
+    let bundlePath = Bundle.main.bundlePath
+    return [
+      "ok": true,
+      "bundlePath": bundlePath,
+      "installedInApplications": isInstalledInApplications(),
+      "helper": getTunHelperStatus(),
+      "launchAtLogin": launchAtLoginStatus()
+    ]
+  }
+
   private func ensureTunHelper() -> [String: Any] {
-    let service = tunHelperService()
-    let status = service.status
-    if status == .enabled {
-      if helperLaunchdNeedsRefresh() {
-        log("TUN helper launchd registration is stale, refreshing registration")
-        do {
-          try? service.unregister()
-          try service.register()
-          return helperStatusMap(status: service.status, error: nil)
-        } catch {
-          return helperStatusMap(status: service.status, error: error as NSError)
-        }
-      }
-      let ping = callTunHelperIfAvailable(timeout: 2) { helper, reply in
-        helper.getStatus(withReply: reply)
-      }
-      if ping?["ok"] as? Bool == true {
-        return getTunHelperStatus()
-      }
-      log("TUN helper enabled but unreachable, refreshing registration")
-      do {
-        try? service.unregister()
-        try service.register()
-        return helperStatusMap(status: service.status, error: nil)
-      } catch {
-        return helperStatusMap(status: service.status, error: error as NSError)
-      }
+    guard isInstalledInApplications() else {
+      return appNotInstalledHelperStatus()
+    }
+    let currentStatus = getTunHelperStatus()
+    if currentStatus["status"] as? String == "enabled" {
+      return currentStatus
     }
 
-    do {
-      if status == .notFound && bundledTunHelperPlistExists() {
-        try? service.unregister()
-      }
-      try service.register()
-      return helperStatusMap(status: service.status, error: nil)
-    } catch {
-      let nextStatus = service.status
-      if nextStatus == .enabled || nextStatus == .requiresApproval {
-        return helperStatusMap(status: nextStatus, error: error as NSError)
-      }
-      return helperStatusMap(status: nextStatus, error: error as NSError)
-    }
+    return installTunHelperWithAdministratorPrivileges()
   }
 
   private func getTunHelperStatus() -> [String: Any] {
-    var status = helperStatusMap(status: tunHelperService().status, error: nil)
-    if tunHelperService().status == .enabled && helperLaunchdNeedsRefresh() {
-      status["ok"] = false
-      status["code"] = "HELPER_REQUIRES_REFRESH"
-      status["message"] = "后台网络组件需要刷新注册"
-      status["requiresRefresh"] = true
+    guard isInstalledInApplications() else {
+      return appNotInstalledHelperStatus()
     }
-    return status
+
+    guard bundledTunHelperBinaryExists(), bundledAdminInstallerExists() else {
+      return helperState(
+        status: "notFound",
+        code: "HELPER_NOT_FOUND",
+        message: "应用包缺少后台网络组件，请重新安装客户端"
+      )
+    }
+
+    let fileManager = FileManager.default
+    guard fileManager.fileExists(atPath: installedTunHelperPath),
+          fileManager.fileExists(atPath: installedTunHelperPlistPath)
+    else {
+      return helperState(
+        status: "notRegistered",
+        code: "HELPER_INSTALL_REQUIRED",
+        message: "需要管理员授权安装后台网络组件"
+      )
+    }
+
+    let bundledHash = sha256(of: bundledTunHelperURL())
+    let installedHash = sha256(of: URL(fileURLWithPath: installedTunHelperPath))
+    guard let bundledHash, let installedHash else {
+      return helperState(
+        status: "connectionFailed",
+        code: "HELPER_INSTALL_FAILED",
+        message: "无法校验后台网络组件完整性"
+      )
+    }
+    if bundledHash != installedHash {
+      return helperState(
+        status: "refreshRequired",
+        code: "HELPER_REFRESH_REQUIRED",
+        message: "后台网络组件需要管理员授权升级",
+        extra: ["bundledSha256": bundledHash, "installedSha256": installedHash]
+      )
+    }
+
+    let launchd = launchdTunHelperStatus()
+    guard launchd.contains("state =") || launchd.contains("active count =") else {
+      return helperState(
+        status: "notRegistered",
+        code: "HELPER_INSTALL_REQUIRED",
+        message: "后台网络组件尚未加载",
+        extra: ["launchd": launchd]
+      )
+    }
+
+    let ping = callTunHelperIfAvailable(timeout: 2) { helper, reply in
+      helper.getStatus(withReply: reply)
+    }
+    guard ping?["ok"] as? Bool == true else {
+      return helperState(
+        status: "connectionFailed",
+        code: "HELPER_HEALTH_CHECK_FAILED",
+        message: (ping?["error"] as? String) ?? "后台网络组件健康检查失败",
+        extra: ["launchd": launchd]
+      )
+    }
+
+    return helperState(
+      status: "enabled",
+      code: "OK",
+      message: "后台网络组件已启用",
+      extra: ["helperSha256": installedHash, "launchd": launchd]
+    )
+  }
+
+  private func refreshTunHelper() -> [String: Any] {
+    guard isInstalledInApplications() else {
+      return appNotInstalledHelperStatus()
+    }
+    return installTunHelperWithAdministratorPrivileges()
+  }
+
+  private func uninstallTunHelper() -> [String: Any] {
+    guard isInstalledInApplications() else {
+      return appNotInstalledHelperStatus()
+    }
+    _ = stopCoreInternal(restoreProxy: true, updateRuntime: true)
+    let uninstallResult = runAdministratorInstaller(.uninstall)
+    guard uninstallResult["ok"] as? Bool == true else {
+      return uninstallResult
+    }
+    return helperState(
+      status: "notRegistered",
+      code: "HELPER_INSTALL_REQUIRED",
+      message: "后台网络组件已卸载"
+    )
+  }
+
+  private func installTunHelperWithAdministratorPrivileges() -> [String: Any] {
+    if let unregisterError = unregisterManagedTunHelperIfNeeded() {
+      return helperState(
+        status: "connectionFailed",
+        code: "HELPER_INSTALL_FAILED",
+        message: "无法清理旧后台组件注册：\(unregisterError)"
+      )
+    }
+
+    let installResult = runAdministratorInstaller(.install)
+    guard installResult["ok"] as? Bool == true else {
+      return installResult
+    }
+
+    for _ in 0..<12 {
+      let ping = callTunHelperIfAvailable(timeout: 1) { helper, reply in
+        helper.getStatus(withReply: reply)
+      }
+      if ping?["ok"] as? Bool == true {
+        return helperState(
+          status: "enabled",
+          code: "OK",
+          message: "后台网络组件安装成功"
+        )
+      }
+      Thread.sleep(forTimeInterval: 0.25)
+    }
+
+    return helperState(
+      status: "connectionFailed",
+      code: "HELPER_HEALTH_CHECK_FAILED",
+      message: "后台网络组件已安装，但健康检查失败",
+      extra: ["launchd": launchdTunHelperStatus()]
+    )
+  }
+
+  private func runAdministratorInstaller(_ action: HelperInstallerAction) -> [String: Any] {
+    let installerURL = bundledAdminInstallerURL()
+    guard FileManager.default.isExecutableFile(atPath: installerURL.path) else {
+      return helperState(
+        status: "notFound",
+        code: "HELPER_NOT_FOUND",
+        message: "应用包缺少管理员安装程序"
+      )
+    }
+
+    let appleScript = """
+    on run argv
+      set installerPath to item 1 of argv
+      set helperAction to item 2 of argv
+      if helperAction is not "install" and helperAction is not "uninstall" then error "Invalid helper action"
+      set commandText to quoted form of installerPath & " " & quoted form of helperAction
+      do shell script commandText with administrator privileges
+    end run
+    """
+
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    process.arguments = ["-e", appleScript, "--", installerURL.path, action.rawValue]
+    let output = Pipe()
+    process.standardOutput = output
+    process.standardError = output
+
+    do {
+      try process.run()
+      let data = output.fileHandleForReading.readDataToEndOfFile()
+      process.waitUntilExit()
+      let message = String(data: data, encoding: .utf8) ?? ""
+      if process.terminationStatus == 0 {
+        return ["ok": true, "action": action.rawValue]
+      }
+      if message.contains("-128") ||
+          message.localizedCaseInsensitiveContains("user canceled") ||
+          message.contains("用户已取消") {
+        return helperState(
+          status: "notRegistered",
+          code: "AUTHORIZATION_CANCELLED",
+          message: "已取消管理员授权"
+        )
+      }
+      return helperState(
+        status: "connectionFailed",
+        code: "HELPER_INSTALL_FAILED",
+        message: message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+          ? "后台网络组件安装失败"
+          : message.trimmingCharacters(in: .whitespacesAndNewlines)
+      )
+    } catch {
+      return helperState(
+        status: "connectionFailed",
+        code: "HELPER_INSTALL_FAILED",
+        message: "无法启动管理员安装程序：\(error.localizedDescription)"
+      )
+    }
+  }
+
+  private func unregisterManagedTunHelperIfNeeded() -> String? {
+    let service = tunHelperService()
+    if service.status == .notRegistered || service.status == .notFound {
+      return nil
+    }
+    let semaphore = DispatchSemaphore(value: 0)
+    var unregisterError: Error?
+    service.unregister { error in
+      unregisterError = error
+      semaphore.signal()
+    }
+    if semaphore.wait(timeout: .now() + 8) == .timedOut {
+      return "注销旧后台组件超时"
+    }
+    return unregisterError?.localizedDescription
+  }
+
+  private func helperState(
+    status: String,
+    code: String,
+    message: String,
+    extra: [String: Any] = [:]
+  ) -> [String: Any] {
+    var value: [String: Any] = [
+      "ok": false,
+      "status": status,
+      "code": code,
+      "message": message,
+      "bundlePath": Bundle.main.bundlePath,
+      "bundledPlistExists": bundledTunHelperPlistExists(),
+      "bundledHelperExists": bundledTunHelperBinaryExists(),
+      "installedHelperExists": FileManager.default.fileExists(atPath: installedTunHelperPath),
+      "installedPlistExists": FileManager.default.fileExists(atPath: installedTunHelperPlistPath)
+    ]
+    if status == "enabled" {
+      value["ok"] = true
+    }
+    for (key, item) in extra {
+      value[key] = item
+    }
+    return value
+  }
+
+  private func appNotInstalledHelperStatus() -> [String: Any] {
+    helperState(
+      status: "notRegistered",
+      code: "APP_NOT_IN_APPLICATIONS",
+      message: "请先将应用拖入“应用程序”目录并重新打开"
+    )
+  }
+
+  private func isInstalledInApplications() -> Bool {
+    let bundlePath = URL(fileURLWithPath: Bundle.main.bundlePath)
+      .standardizedFileURL.path
+    return bundlePath == "/Applications/大象网络.app"
+  }
+
+  private func bundledTunHelperURL() -> URL {
+    Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/ElephantTunHelper")
+  }
+
+  private func bundledAdminInstallerURL() -> URL {
+    Bundle.main.bundleURL.appendingPathComponent(
+      "Contents/Resources/ElephantTunHelper/install-helper.sh"
+    )
+  }
+
+  private func bundledAdminInstallerExists() -> Bool {
+    FileManager.default.isExecutableFile(atPath: bundledAdminInstallerURL().path)
+  }
+
+  private func sha256(of url: URL) -> String? {
+    guard let data = try? Data(contentsOf: url) else { return nil }
+    return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+  }
+
+  private func launchdTunHelperStatus() -> String {
+    runCommand("/bin/launchctl", args: ["print", "system/\(tunHelperLabel)"])
+  }
+
+  private func launchAtLoginStatus() -> [String: Any] {
+    let status = SMAppService.mainApp.status
+    return [
+      "ok": status == .enabled,
+      "enabled": status == .enabled,
+      "status": helperStatusName(status),
+      "code": helperStatusCode(status),
+      "message": helperStatusMessage(status)
+    ]
+  }
+
+  private func setLaunchAtLoginEnabled(_ enabled: Bool) -> [String: Any] {
+    let service = SMAppService.mainApp
+    do {
+      if enabled {
+        if service.status != .enabled {
+          try service.register()
+        }
+      } else if service.status != .notRegistered && service.status != .notFound {
+        let semaphore = DispatchSemaphore(value: 0)
+        var unregisterError: NSError?
+        service.unregister { error in
+          unregisterError = error as NSError?
+          semaphore.signal()
+        }
+        if semaphore.wait(timeout: .now() + 5) == .timedOut {
+          return ["ok": false, "enabled": true, "status": "connectionFailed", "message": "关闭登录启动超时"]
+        }
+        if let unregisterError {
+          return ["ok": false, "enabled": true, "status": "connectionFailed", "message": unregisterError.localizedDescription]
+        }
+      }
+      return launchAtLoginStatus()
+    } catch {
+      return [
+        "ok": false,
+        "enabled": service.status == .enabled,
+        "status": helperStatusName(service.status),
+        "code": helperStatusCode(service.status),
+        "message": error.localizedDescription
+      ]
+    }
   }
 
   private func bundledTunHelperPlistExists() -> Bool {
@@ -681,31 +1000,6 @@ class AppDelegate: FlutterAppDelegate {
   private func bundledTunHelperBinaryExists() -> Bool {
     let path = Bundle.main.bundlePath + "/Contents/MacOS/ElephantTunHelper"
     return FileManager.default.fileExists(atPath: path)
-  }
-
-  private func helperStatusMap(status: SMAppService.Status, error: NSError?) -> [String: Any] {
-    var value: [String: Any] = [
-      "ok": status == .enabled,
-      "status": helperStatusName(status),
-      "code": helperStatusCode(status),
-      "message": helperStatusMessage(status),
-      "bundlePath": Bundle.main.bundlePath,
-      "bundledPlistExists": bundledTunHelperPlistExists(),
-      "bundledHelperExists": bundledTunHelperBinaryExists()
-    ]
-    if let error {
-      value["error"] = error.localizedDescription
-      value["errorCode"] = error.code
-      value["errorDomain"] = error.domain
-    }
-    return value
-  }
-
-  private func helperLaunchdNeedsRefresh() -> Bool {
-    let output = runCommand("/bin/launchctl", args: ["print", "system/\(tunHelperLabel)"])
-    return output.contains("needs LWCR update")
-      || output.contains("last exit code = 78")
-      || output.contains("job state = spawn failed")
   }
 
   private func helperStatusName(_ status: SMAppService.Status) -> String {

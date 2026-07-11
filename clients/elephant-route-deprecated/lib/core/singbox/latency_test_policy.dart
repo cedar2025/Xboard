@@ -21,9 +21,10 @@ class LatencyTestPolicy {
     required bool isWeb,
     required bool isAndroid,
     required bool isWindows,
+    required bool isMacOS,
     required bool isMockVpn,
   }) {
-    return !isWeb && (isAndroid || isWindows) && !isMockVpn;
+    return !isWeb && (isAndroid || isWindows || isMacOS) && !isMockVpn;
   }
 }
 

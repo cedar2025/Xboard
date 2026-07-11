@@ -7,7 +7,8 @@ import '../core/services/app_logger.dart';
 import '../models/app_update.dart';
 
 class AppUpdateProvider with ChangeNotifier {
-  AppUpdateProvider() : _service = AppUpdateService();
+  AppUpdateProvider({AppUpdateService? service})
+      : _service = service ?? AppUpdateService();
 
   static const _dismissedBuildKey = 'app_update_dismissed_build';
   static const _reportedInstallBuildKey = 'app_update_reported_install_build';
