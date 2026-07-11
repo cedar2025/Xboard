@@ -82,7 +82,7 @@ jobs:
           sc.exe query ElephantNetworkService
           if ($LASTEXITCODE -ne 0) { throw 'ElephantNetworkService was not installed' }
           $uninstall = (Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' |
-            Where-Object DisplayName -eq '大象网络' |
+            Where-Object DisplayName -eq "大象网络 $env:RELEASE_VERSION" |
             Select-Object -First 1 -ExpandProperty UninstallString)
           if (!$uninstall) { throw 'Uninstall registration is missing' }
           $uninstaller = $uninstall.Trim('"')
