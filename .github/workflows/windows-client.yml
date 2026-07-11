@@ -87,8 +87,16 @@ jobs:
           if (!$uninstall) { throw 'Uninstall registration is missing' }
           $uninstaller = $uninstall.Trim('"')
           Start-Process $uninstaller -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
-          sc.exe query ElephantNetworkService 2>$null
-          if ($LASTEXITCODE -eq 0) { throw 'ElephantNetworkService remains after uninstall' }
+          $serviceRemoved = $false
+          for ($attempt = 0; $attempt -lt 30; $attempt++) {
+            sc.exe query ElephantNetworkService 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+              $serviceRemoved = $true
+              break
+            }
+            Start-Sleep -Seconds 1
+          }
+          if (!$serviceRemoved) { throw 'ElephantNetworkService remains after uninstall' }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
