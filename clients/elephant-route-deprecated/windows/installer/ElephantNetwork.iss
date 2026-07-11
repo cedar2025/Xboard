@@ -61,10 +61,10 @@ Filename: "{app}\ElephantNetwork.exe"; Description: "启动大象网络"; Flags:
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM ElephantNetwork.exe"; Flags: runhidden waituntilterminated
-Filename: "{sys}\sc.exe"; Parameters: "stop ElephantNetworkService"; Flags: runhidden waituntilterminated; Check: ServiceExists
+Filename: "{sys}\sc.exe"; Parameters: "stop ElephantNetworkService"; Flags: runhidden waituntilterminated
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM sing-box-windows-amd64.exe"; Flags: runhidden waituntilterminated
-Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM ElephantNetworkService.exe"; Flags: runhidden waituntilterminated; Check: ServiceExists
-Filename: "{sys}\sc.exe"; Parameters: "delete ElephantNetworkService"; Flags: runhidden waituntilterminated; Check: ServiceExists
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM ElephantNetworkService.exe"; Flags: runhidden waituntilterminated
+Filename: "{sys}\sc.exe"; Parameters: "delete ElephantNetworkService"; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commonappdata}\ElephantNetwork"
