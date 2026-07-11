@@ -114,6 +114,7 @@ jobs:
             Start-Sleep -Seconds 1
           }
           if (!$serviceRemoved) { throw 'ElephantNetworkService remains after uninstall' }
+          $global:LASTEXITCODE = 0
 
       - name: Upload installer diagnostics
         if: always()
