@@ -74,12 +74,9 @@ var
   RemoveUserData: Boolean;
 
 function ServiceExists: Boolean;
-var
-  ResultCode: Integer;
 begin
-  Result := Exec(ExpandConstant('{sys}\sc.exe'),
-    'query ElephantNetworkService', '', SW_HIDE, ewWaitUntilTerminated,
-    ResultCode) and (ResultCode = 0);
+  Result := RegKeyExists(HKLM64,
+    'SYSTEM\CurrentControlSet\Services\ElephantNetworkService');
 end;
 
 function ServiceMissing: Boolean;
