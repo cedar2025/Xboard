@@ -86,7 +86,24 @@ jobs:
             Select-Object -First 1 -ExpandProperty UninstallString)
           if (!$uninstall) { throw 'Uninstall registration is missing' }
           $uninstaller = $uninstall.Trim('"')
-          Start-Process $uninstaller -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          $uninstallLog = Join-Path $env:RUNNER_TEMP 'ElephantNetwork-uninstall.log'
+          $uninstallArgs = @(
+            '/VERYSILENT',
+            '/SUPPRESSMSGBOXES',
+            '/NORESTART',
+            "/LOG=`"$uninstallLog`""
+          )
+          Write-Host 'Service state before uninstall:'
+          sc.exe queryex ElephantNetworkService
+          tasklist.exe /svc /FI "SERVICES eq ElephantNetworkService"
+          Start-Process $uninstaller -ArgumentList $uninstallArgs -Wait
+          Write-Host 'Service state immediately after uninstall:'
+          sc.exe queryex ElephantNetworkService 2>$null
+          tasklist.exe /svc /FI "SERVICES eq ElephantNetworkService"
+          if (Test-Path $uninstallLog) {
+            Write-Host 'Inno Setup uninstall log:'
+            Get-Content $uninstallLog
+          }
           $serviceRemoved = $false
           for ($attempt = 0; $attempt -lt 30; $attempt++) {
             sc.exe query ElephantNetworkService 2>$null | Out-Null
@@ -97,6 +114,14 @@ jobs:
             Start-Sleep -Seconds 1
           }
           if (!$serviceRemoved) { throw 'ElephantNetworkService remains after uninstall' }
+
+      - name: Upload installer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElephantNetwork-Windows-uninstall-${{ github.run_id }}
+          path: ${{ runner.temp }}/ElephantNetwork-uninstall.log
+          if-no-files-found: warn
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
