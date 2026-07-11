@@ -8,6 +8,8 @@ use App\Exceptions\ApiException;
 use Illuminate\Support\Facades\Log;
 use Plugin\AlipayF2f\library\AlipayF2F;
 
+require_once __DIR__ . '/library/AlipayF2F.php';
+
 class Plugin extends AbstractPlugin implements PaymentInterface
 {
     public function boot(): void
