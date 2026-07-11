@@ -46,7 +46,9 @@ class MockVpnService implements VpnManager {
   Future<void> stopSpeedTest() async {}
 
   @override
-  Future<void> stop() async {
+  Future<void> stop({
+    VpnStopReason reason = VpnStopReason.unspecified,
+  }) async {
     // 停止流量模拟
     _speedTimer?.cancel();
     _speedTimer = null;

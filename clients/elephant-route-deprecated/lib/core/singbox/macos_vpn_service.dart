@@ -13,6 +13,7 @@ import '../services/mac_runtime_service.dart';
 import 'macos_tun_permission.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
+import 'vpn_stop_coordinator.dart';
 
 class MacosVpnService implements VpnManager {
   MacosVpnService()
@@ -44,7 +45,8 @@ class MacosVpnService implements VpnManager {
   String? _singboxBinPath;
   int _proxyPort = 2334;
   bool _isTunMode = false;
-  bool _isRestarting = false;
+  bool _disposed = false;
+  final VpnStopCoordinator<void> _stopCoordinator = VpnStopCoordinator<void>();
 
   @override
   Stream<VpnState> get stateStream => _stateController.stream;
@@ -200,33 +202,41 @@ class MacosVpnService implements VpnManager {
   Future<void> stopSpeedTest() async {}
 
   @override
-  Future<void> stop() async {
-    try {
-      _updateState(VpnStatus.disconnecting, resetError: true);
-      final result = await _runtime.stopCore();
-      final restored = result['proxyRestored'] != false;
-      final nextStatus =
-          restored ? VpnStatus.disconnected : VpnStatus.restoreFailed;
-      _updateState(
-        nextStatus,
-        errorMessage: restored ? null : '系统代理恢复失败，请在设置页手动恢复',
-        failureReason: restored ? null : VpnFailureReason.restoreFailed,
-        resetError: restored,
-        resetFailure: restored,
-        connectionMode: VpnConnectionMode.unknown,
-        runtimeDetails: result,
-      );
-      await AppLogger.instance
-          .info('macOS runtime stopped: restored=$restored');
-    } catch (e, stackTrace) {
-      await AppLogger.instance.error('macOS VpnService stop failed',
-          error: e, stackTrace: stackTrace);
-      _updateState(
-        VpnStatus.restoreFailed,
-        errorMessage: e.toString(),
-        failureReason: VpnFailureReason.restoreFailed,
-      );
-    }
+  Future<void> stop({
+    VpnStopReason reason = VpnStopReason.unspecified,
+  }) {
+    final reused = _stopCoordinator.hasInFlight;
+    AppLogger.instance.info(
+      'macOS runtime stop requested reason=${reason.wireValue} reused=$reused',
+    );
+    return _stopCoordinator.run(() async {
+      try {
+        _updateState(VpnStatus.disconnecting, resetError: true);
+        final result = await _runtime.stopCore(reason: reason.wireValue);
+        final restored = result['proxyRestored'] != false;
+        final nextStatus =
+            restored ? VpnStatus.disconnected : VpnStatus.restoreFailed;
+        _updateState(
+          nextStatus,
+          errorMessage: restored ? null : '系统代理恢复失败，请在设置页手动恢复',
+          failureReason: restored ? null : VpnFailureReason.restoreFailed,
+          resetError: restored,
+          resetFailure: restored,
+          connectionMode: VpnConnectionMode.unknown,
+          runtimeDetails: result,
+        );
+        await AppLogger.instance.info(
+            'macOS runtime stopped: reason=${reason.wireValue} restored=$restored');
+      } catch (e, stackTrace) {
+        await AppLogger.instance.error('macOS VpnService stop failed',
+            error: e, stackTrace: stackTrace);
+        _updateState(
+          VpnStatus.restoreFailed,
+          errorMessage: e.toString(),
+          failureReason: VpnFailureReason.restoreFailed,
+        );
+      }
+    });
   }
 
   @override
@@ -260,7 +270,6 @@ class MacosVpnService implements VpnManager {
     }
 
     try {
-      _isRestarting = true;
       _updateState(VpnStatus.coreStarting);
 
       final config = jsonDecode(_lastSanitizedConfig!) as Map<String, dynamic>;
@@ -282,7 +291,7 @@ class MacosVpnService implements VpnManager {
       await configFile.writeAsString(updatedConfig);
       await _cleanupResidualCacheFiles(_singboxDirPath!);
 
-      await _runtime.stopCore();
+      await _runtime.stopCore(reason: VpnStopReason.nodeSwitch.wireValue);
       Map<String, dynamic> startResult;
       if (_isTunMode) {
         startResult = await _runtime.startTunMode(
@@ -329,16 +338,13 @@ class MacosVpnService implements VpnManager {
         errorMessage: '节点切换失败: $e',
         failureReason: VpnFailureReason.unknown,
       );
-    } finally {
-      _isRestarting = false;
     }
   }
 
   @override
   void dispose() {
-    if (!_isRestarting) {
-      stop();
-    }
+    if (_disposed) return;
+    _disposed = true;
     _stateController.close();
   }
 
@@ -360,7 +366,9 @@ class MacosVpnService implements VpnManager {
       connectionMode: connectionMode,
       runtimeDetails: runtimeDetails,
     );
-    _stateController.add(_state);
+    if (!_disposed && !_stateController.isClosed) {
+      _stateController.add(_state);
+    }
   }
 
   Future<bool> _waitForHealthCheck() async {

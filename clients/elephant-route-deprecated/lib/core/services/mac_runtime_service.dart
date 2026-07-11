@@ -65,7 +65,8 @@ class MacRuntimeService {
   Future<Map<String, dynamic>> setLaunchAtLoginEnabled(bool enabled) =>
       _invokeMap('setLaunchAtLoginEnabled', {'enabled': enabled});
 
-  Future<Map<String, dynamic>> stopCore() => _invokeMap('stopCore');
+  Future<Map<String, dynamic>> stopCore({required String reason}) =>
+      _invokeMap('stopCore', {'reason': reason});
 
   Future<Map<String, dynamic>> applySystemProxy(int proxyPort) {
     return _invokeMap('applySystemProxy', {'proxyPort': proxyPort});

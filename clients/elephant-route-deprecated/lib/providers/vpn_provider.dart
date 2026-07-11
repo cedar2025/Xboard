@@ -30,11 +30,12 @@ class VpnProvider with ChangeNotifier {
     );
   VpnState _state = const VpnState(status: VpnStatus.disconnected);
   Timer? _trafficTimer;
+  late final StreamSubscription<VpnState> _vpnStateSubscription;
 
   VpnProvider(DioClient dioClient, this._vpnManager, this._configProvider)
       : _userService = UserService(dioClient) {
     // 监听 VPN 状态变化
-    _vpnManager.stateStream.listen((state) {
+    _vpnStateSubscription = _vpnManager.stateStream.listen((state) {
       // 检测从已连接变为断开状态
       if (_state.isConnected && state.status == VpnStatus.disconnected) {
         AppLogger.instance
@@ -174,10 +175,12 @@ class VpnProvider with ChangeNotifier {
   }
 
   /// 断开 VPN
-  Future<void> disconnect() async {
+  Future<void> disconnect({
+    VpnStopReason reason = VpnStopReason.userToggle,
+  }) async {
     try {
       _stopTrafficPolling();
-      await _vpnManager.stop();
+      await _vpnManager.stop(reason: reason);
     } catch (e, stackTrace) {
       await AppLogger.instance
           .error('VPN disconnect failed', error: e, stackTrace: stackTrace);
@@ -299,7 +302,7 @@ class VpnProvider with ChangeNotifier {
   @override
   void dispose() {
     _stopTrafficPolling();
-    _vpnManager.dispose();
+    _vpnStateSubscription.cancel();
     super.dispose();
   }
 

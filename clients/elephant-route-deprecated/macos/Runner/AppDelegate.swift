@@ -28,6 +28,7 @@ class AppDelegate: FlutterAppDelegate {
   private let installedTunHelperPlistPath = "/Library/LaunchDaemons/com.elphantroute.elephantNetwork.tunhelper.plist"
 
   private var coreProcess: Process?
+  private let runtimeStopLock = NSLock()
   private var runtimeState: [String: Any] = [
     "status": "disconnected",
     "mode": "unknown",
@@ -74,7 +75,11 @@ class AppDelegate: FlutterAppDelegate {
   }
 
   override func applicationWillTerminate(_ notification: Notification) {
-    _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
+    _ = stopCoreInternal(
+      restoreProxy: true,
+      updateRuntime: false,
+      reason: "app_terminate"
+    )
   }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -157,8 +162,14 @@ class AppDelegate: FlutterAppDelegate {
         self.setLaunchAtLoginEnabled(enabled)
       }
     case "stopCore":
+      let args = call.arguments as? [String: Any]
+      let reason = args?["reason"] as? String ?? "unspecified"
       performAsync(result) {
-        self.stopCoreInternal(restoreProxy: true, updateRuntime: true)
+        self.stopCoreInternal(
+          restoreProxy: true,
+          updateRuntime: true,
+          reason: reason
+        )
       }
     case "applySystemProxy":
       guard let args = call.arguments as? [String: Any], let proxyPort = args["proxyPort"] as? Int else {
@@ -237,7 +248,11 @@ class AppDelegate: FlutterAppDelegate {
 
   private func startProxyMode(configPath: String, binaryPath: String, proxyPort: Int) -> [String: Any] {
     log("Starting proxy mode with binary=\(binaryPath)")
-    _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
+    _ = stopCoreInternal(
+      restoreProxy: true,
+      updateRuntime: false,
+      reason: "start_proxy_cleanup"
+    )
 
     guard launchCore(binaryPath: binaryPath, configPath: configPath) else {
       let error = "Failed to launch sing-box core"
@@ -246,7 +261,11 @@ class AppDelegate: FlutterAppDelegate {
     }
 
     guard applySystemProxyInternal(proxyPort: proxyPort) else {
-      _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
+      _ = stopCoreInternal(
+        restoreProxy: true,
+        updateRuntime: false,
+        reason: "start_proxy_failure"
+      )
       let error = "Failed to apply system proxy"
       updateRuntimeState(status: "error", mode: "proxy", lastError: error, proxyPort: proxyPort, configPath: configPath, binaryPath: binaryPath)
       return ["ok": false, "error": error]
@@ -258,7 +277,11 @@ class AppDelegate: FlutterAppDelegate {
 
   private func startTunMode(configPath: String, binaryPath: String) -> [String: Any] {
     log("Starting TUN mode with binary=\(binaryPath)")
-    _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
+    _ = stopCoreInternal(
+      restoreProxy: true,
+      updateRuntime: false,
+      reason: "start_tun_cleanup"
+    )
 
     if let conflict = activeTunnelConflictDescription() {
       updateRuntimeState(status: "error", mode: "tun", lastError: conflict, configPath: configPath, binaryPath: binaryPath)
@@ -290,8 +313,15 @@ class AppDelegate: FlutterAppDelegate {
     return ["ok": true, "mode": "tun", "helper": startResult]
   }
 
-  private func stopCoreInternal(restoreProxy: Bool, updateRuntime: Bool) -> [String: Any] {
-    log("Stopping macOS runtime")
+  private func stopCoreInternal(
+    restoreProxy: Bool,
+    updateRuntime: Bool,
+    reason: String
+  ) -> [String: Any] {
+    runtimeStopLock.lock()
+    defer { runtimeStopLock.unlock() }
+
+    log("Stopping macOS runtime reason=\(reason)")
     if let process = coreProcess, process.isRunning {
       process.terminate()
       waitForCoreExit(timeout: 1.5)
@@ -321,6 +351,7 @@ class AppDelegate: FlutterAppDelegate {
 
     return [
       "stopped": true,
+      "reason": reason,
       "proxyRestored": restored,
       "helperStop": helperStopResult ?? [:]
     ]
@@ -343,7 +374,11 @@ class AppDelegate: FlutterAppDelegate {
     let hadBackup = FileManager.default.fileExists(atPath: proxyBackupURL.path)
     if hadBackup || isCoreRunning() {
       log("Recovering previous runtime state")
-      _ = stopCoreInternal(restoreProxy: true, updateRuntime: false)
+      _ = stopCoreInternal(
+        restoreProxy: true,
+        updateRuntime: false,
+        reason: "startup_recovery"
+      )
       updateRuntimeState(status: "disconnected", mode: "unknown", lastError: "Recovered previous unfinished session")
     } else {
       persistRuntimeState()
@@ -760,7 +795,11 @@ class AppDelegate: FlutterAppDelegate {
     guard isInstalledInApplications() else {
       return appNotInstalledHelperStatus()
     }
-    _ = stopCoreInternal(restoreProxy: true, updateRuntime: true)
+    _ = stopCoreInternal(
+      restoreProxy: true,
+      updateRuntime: true,
+      reason: "helper_uninstall"
+    )
     let uninstallResult = runAdministratorInstaller(.uninstall)
     guard uninstallResult["ok"] as? Bool == true else {
       return uninstallResult
@@ -1246,16 +1285,23 @@ class AppDelegate: FlutterAppDelegate {
 
   private func runCommand(_ executable: String, args: [String]) -> String {
     let process = Process()
-    process.launchPath = executable
+    process.executableURL = URL(fileURLWithPath: executable)
     process.arguments = args
 
     let pipe = Pipe()
     process.standardOutput = pipe
     process.standardError = pipe
-    process.launch()
-    process.waitUntilExit()
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    return String(data: data, encoding: .utf8) ?? ""
+    do {
+      try process.run()
+      let data = pipe.fileHandleForReading.readDataToEndOfFile()
+      process.waitUntilExit()
+      return String(data: data, encoding: .utf8) ?? ""
+    } catch {
+      log(
+        "Command failed executable=\(executable) args=\(args) error=\(error.localizedDescription)"
+      )
+      return ""
+    }
   }
 
 }

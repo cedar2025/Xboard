@@ -102,4 +102,19 @@ void main() {
     expect(source, contains('sing-box-darwin-arm64'));
     expect(source, isNot(contains('supportSuffix')));
   });
+
+  test('native runtime serializes stop cleanup and safely launches commands',
+      () {
+    final source = File('macos/Runner/AppDelegate.swift').readAsStringSync();
+
+    expect(source, contains('runtimeStopLock'));
+    expect(source, contains('reason: "app_terminate"'));
+    expect(source, contains('reason: "startup_recovery"'));
+    expect(source, contains(r'reason=\(reason)'));
+    expect(source, contains('process.executableURL'));
+    expect(source, contains('try process.run()'));
+    expect(source, contains('Command failed executable='));
+    expect(source, isNot(contains('process.launchPath')));
+    expect(source, isNot(contains('process.launch()')));
+  });
 }

@@ -236,7 +236,7 @@ class AppUpdateService {
     }
     if (Platform.isMacOS) {
       await const MethodChannel('com.elephant.network/runtime')
-          .invokeMethod<Object?>('stopCore');
+          .invokeMethod<Object?>('stopCore', {'reason': 'update_install'});
     }
     await _openDownloadedFile(artifact);
   }
