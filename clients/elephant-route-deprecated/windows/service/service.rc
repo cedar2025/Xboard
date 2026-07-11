@@ -1,0 +1,39 @@
+#include <windows.h>
+
+#if defined(FLUTTER_VERSION_MAJOR) && defined(FLUTTER_VERSION_MINOR) && defined(FLUTTER_VERSION_PATCH) && defined(FLUTTER_VERSION_BUILD)
+#define VERSION_AS_NUMBER FLUTTER_VERSION_MAJOR,FLUTTER_VERSION_MINOR,FLUTTER_VERSION_PATCH,FLUTTER_VERSION_BUILD
+#else
+#define VERSION_AS_NUMBER 1,0,0,0
+#endif
+
+#if defined(FLUTTER_VERSION)
+#define VERSION_AS_STRING FLUTTER_VERSION
+#else
+#define VERSION_AS_STRING "1.0.0"
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VERSION_AS_NUMBER
+ PRODUCTVERSION VERSION_AS_NUMBER
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904e4"
+    BEGIN
+      VALUE "CompanyName", "Elephant Network\0"
+      VALUE "FileDescription", "Elephant Network TUN Service\0"
+      VALUE "FileVersion", VERSION_AS_STRING "\0"
+      VALUE "InternalName", "ElephantNetworkService\0"
+      VALUE "OriginalFilename", "ElephantNetworkService.exe\0"
+      VALUE "ProductName", "Elephant Network\0"
+      VALUE "ProductVersion", VERSION_AS_STRING "\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

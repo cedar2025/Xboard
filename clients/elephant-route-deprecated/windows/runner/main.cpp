@@ -22,7 +22,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   (void)hMutex;
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     // Find the existing window and bring it to foreground
-    HWND hwnd = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"elephant_network"); // Class name from win32_window.cpp
+    HWND hwnd = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"大象网络");
     if (hwnd) {
       if (IsIconic(hwnd)) {
         ShowWindow(hwnd, SW_RESTORE);
@@ -42,7 +42,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"elephant_network", origin, size)) {
+  if (!window.Create(L"大象网络", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

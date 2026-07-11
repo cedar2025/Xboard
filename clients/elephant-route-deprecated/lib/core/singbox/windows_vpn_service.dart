@@ -1,198 +1,133 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
+
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
+import 'windows_service_protocol.dart';
 
 class WindowsVpnService implements VpnManager {
-  static const MethodChannel _proxyChannel =
-      MethodChannel('com.elephant.network/proxy');
-  static const String _clashApiBase = 'http://127.0.0.1:9090';
-
-  // Use a Dio instance that BYPASSES system proxy for Clash API calls
-  late final Dio _clashDio;
-
-  Process? _singboxProcess;
-  bool _isConnected = false;
-  bool _isRestarting =
-      false; // Prevent false disconnect during node switch restart
-  VpnState _state = const VpnState(status: VpnStatus.disconnected);
-  final _stateController = StreamController<VpnState>.broadcast();
-
-  // Store last config info for restart-based node switching
-  String? _lastSanitizedConfig;
-  String? _singboxDirPath;
-  String? _singboxBinPath;
-
-  WindowsVpnService() {
-    _clashDio = Dio(BaseOptions(
-      baseUrl: _clashApiBase,
-      connectTimeout: const Duration(seconds: 3),
-      receiveTimeout: const Duration(seconds: 5),
-    ));
-    // Force Dio to bypass system proxy for local Clash API calls
-    _clashDio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.findProxy = (uri) => 'DIRECT';
-        return client;
+  WindowsVpnService({
+    MethodChannel? methodChannel,
+    EventChannel? eventChannel,
+  })  : _methodChannel = methodChannel ??
+            const MethodChannel(WindowsServiceProtocol.methodChannel),
+        _eventChannel = eventChannel ??
+            const EventChannel(WindowsServiceProtocol.eventChannel) {
+    _eventSubscription = _eventChannel.receiveBroadcastStream().listen(
+      _handleState,
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('Windows service event stream failed: $error');
       },
     );
   }
 
-  void _updateState(VpnStatus status, {String? errorMessage}) {
-    _state = _state.copyWith(status: status, errorMessage: errorMessage);
-    _stateController.add(_state);
-  }
+  final MethodChannel _methodChannel;
+  final EventChannel _eventChannel;
+  final StreamController<VpnState> _stateController =
+      StreamController<VpnState>.broadcast();
+
+  StreamSubscription<Object?>? _eventSubscription;
+  VpnState _state = const VpnState(
+    status: VpnStatus.disconnected,
+    connectionMode: VpnConnectionMode.tun,
+  );
+  bool _disposed = false;
 
   @override
   Future<bool> requestPermission() async {
-    // Windows 在此阶段不需要特殊的 VPN 权限请求
-    return true;
+    try {
+      final result = await _invokeMap('getStatus');
+      _handleState(result);
+      return result['error_code'] != 'service_unavailable';
+    } on PlatformException catch (error) {
+      _setUnavailable(error.message);
+      return false;
+    } on MissingPluginException {
+      _setUnavailable('Windows 后台服务桥接未安装');
+      return false;
+    }
   }
 
   @override
   Future<void> start(String config) async {
+    WindowsServiceProtocol.validateConfig(config);
+    _updateState(_state.copyWith(
+      status: VpnStatus.connecting,
+      connectionMode: VpnConnectionMode.tun,
+      resetErrorMessage: true,
+      resetFailureReason: true,
+    ));
+
+    final runtimeDir = _runtimeDirectory();
+    final sanitized = _sanitizeConfig(config, runtimeDir);
     try {
-      debugPrint('Windows VpnService start...');
-      final singboxDir = await getApplicationSupportDirectory();
-      final configMap = jsonDecode(config);
-      final useTunMode = configMap['use_tun_mode'] ?? false;
-      final updatedConfig =
-          _sanitizeConfig(config, singboxDir.path, useTunMode);
-      final configFile = File('${singboxDir.path}/config.json');
-      await configFile.writeAsString(updatedConfig);
-
-      // Store for restart-based switching
-      _lastSanitizedConfig = updatedConfig;
-      _singboxDirPath = singboxDir.path;
-
-      final binName = 'sing-box-windows-amd64.exe';
-      final binFile = File('${singboxDir.path}/$binName');
-
-      if (!await binFile.exists()) {
-        final byteData = await rootBundle.load('assets/bin/windows/$binName');
-        await binFile.writeAsBytes(byteData.buffer
-            .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-      }
-
-      _singboxBinPath = binFile.path;
-
-      final updatedConfigMap = jsonDecode(updatedConfig);
-      int proxyPort = 2334; // Default to mixed port if possible
-      if (updatedConfigMap['inbounds'] != null) {
-        for (var inbound in updatedConfigMap['inbounds']) {
-          if (inbound['type'] == 'mixed' || inbound['type'] == 'http') {
-            proxyPort = inbound['listen_port'] ?? proxyPort;
-            break;
-          }
-        }
-      }
-
-      // Clear cache files to prevent SQLite corruption errors on start
-      final filesToDelete = [
-        '${singboxDir.path}/cache.db',
-        '${singboxDir.path}/cache.db-wal',
-        '${singboxDir.path}/cache.db-shm'
-      ];
-      for (final filePath in filesToDelete) {
-        final f = File(filePath);
-        if (await f.exists()) {
-          try {
-            await f.delete();
-            debugPrint('WindowsVpnService: deleted $filePath on start');
-          } catch (e) {
-            debugPrint(
-                'WindowsVpnService: failed to delete $filePath on start: $e');
-          }
-        }
-      }
-
-      if (useTunMode) {
-        // TUN 模式：需要提权启动
-        // 使用 PowerShell Start-Process 触发 UAC 提权
-        final script =
-            'Start-Process "${binFile.path}" -ArgumentList "run", "-c", "${configFile.path}" -Verb RunAs -WindowStyle Hidden';
-        _singboxProcess =
-            await Process.start('powershell', ['-Command', script]);
-      } else {
-        // 普通模式：直接启动
-        _singboxProcess = await Process.start(
-          binFile.path,
-          ['run', '-c', configFile.path],
-          workingDirectory: singboxDir.path,
-        );
-      }
-
-      _singboxProcess?.stdout.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box]: $data');
+      final result = await _invokeMap('start', {
+        'protocol_version': WindowsServiceProtocol.protocolVersion,
+        'config': sanitized,
       });
-      _singboxProcess?.stderr.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box ERR]: $data');
-      });
-
-      _singboxProcess?.exitCode.then((code) {
-        debugPrint('sing-box process exited with code $code');
-        if (_isRestarting) {
-          debugPrint('sing-box exit during restart, ignoring...');
-          return;
-        }
-        _isConnected = false;
-        _updateState(VpnStatus.disconnected);
-        _disableSystemProxy();
-      });
-
-      if (!useTunMode) {
-        final proxySuccess = await _enableSystemProxy(proxyPort);
-        // Even if proxy enabling fails, sing-box is running, so we connect.
-        if (!proxySuccess) {
-          debugPrint('Failed to setup system proxy but sing-box is running.');
-        }
-      } else {
-        debugPrint('TUN mode active, bypassing system proxy settings.');
-      }
-
-      _isConnected = true;
-      _updateState(VpnStatus.connected);
-    } catch (e) {
-      debugPrint('macOS VpnService start failed: $e');
-      _updateState(VpnStatus.disconnected, errorMessage: e.toString());
-      await stop();
+      _handleState(result);
+    } on PlatformException catch (error) {
+      _updateState(VpnState(
+        status: VpnStatus.error,
+        connectionMode: VpnConnectionMode.tun,
+        errorMessage: error.message ?? 'Windows TUN 启动失败',
+        failureReason: VpnFailureReason.coreStartFailed,
+      ));
+      rethrow;
     }
   }
 
   @override
-  Future<void> prepareSpeedTest(String config) async {}
+  Future<void> prepareSpeedTest(String config) async {
+    WindowsServiceProtocol.validateConfig(config);
+    await _invokeMap('prepareSpeedTest', {
+      'protocol_version': WindowsServiceProtocol.protocolVersion,
+      'config': _sanitizeConfig(config, _runtimeDirectory()),
+    });
+  }
 
   @override
-  Future<void> stopSpeedTest() async {}
+  Future<void> stopSpeedTest() async {
+    await _invokeMap('stopSpeedTest');
+  }
 
   @override
   Future<void> stop() async {
+    if (_disposed) return;
+    _updateState(_state.copyWith(status: VpnStatus.disconnecting));
     try {
-      debugPrint('Windows VpnService stop...');
-      await _disableSystemProxy();
-
-      if (_singboxProcess != null) {
-        _singboxProcess?.kill();
-        _singboxProcess = null;
-      }
-
-      _isConnected = false;
-      _updateState(VpnStatus.disconnected);
-
-      // 对于通过 UAC 运行的进程，直接 kill 句柄可能无效，
-      // 使用 taskkill 按照文件名杀掉作为兜底
-      await Process.run('taskkill', ['/F', '/IM', 'sing-box.exe']);
-    } catch (e) {
-      debugPrint('macOS VpnService stop error: $e');
-      _updateState(VpnStatus.disconnected, errorMessage: e.toString());
+      final result = await _invokeMap('stop');
+      _handleState(result);
+    } on PlatformException catch (error) {
+      _updateState(VpnState(
+        status: VpnStatus.restoreFailed,
+        connectionMode: VpnConnectionMode.tun,
+        errorMessage: error.message ?? 'Windows TUN 清理失败',
+        failureReason: VpnFailureReason.restoreFailed,
+      ));
+      rethrow;
     }
+  }
+
+  @override
+  Future<int> urlTest(String groupTag) async {
+    final result = await _invokeMap('urlTest', {'group_tag': groupTag});
+    final delay = result['delay'];
+    if (delay is int) return delay;
+    return int.tryParse(delay?.toString() ?? '') ?? -1;
+  }
+
+  @override
+  Future<void> selectOutbound(String groupTag, String outboundTag) async {
+    final result = await _invokeMap('selectOutbound', {
+      'group_tag': groupTag,
+      'outbound_tag': outboundTag,
+    });
+    _handleState(result);
   }
 
   @override
@@ -201,265 +136,115 @@ class WindowsVpnService implements VpnManager {
   @override
   Stream<VpnState> get stateStream => _stateController.stream;
 
-  @override
-  Future<int> urlTest(String groupTag) async {
-    // 通过 Clash API 触发 URL 测试
-    try {
-      final encodedGroup = Uri.encodeComponent(groupTag);
-      final response = await _clashDio.get(
-        '/proxies/$encodedGroup/delay',
-        queryParameters: {
-          'url': 'https://www.gstatic.com/generate_204',
-          'timeout': 3000,
-        },
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final delay = response.data['delay'];
-        if (delay is int && delay > 0) return delay;
-      }
-      return -1;
-    } catch (e) {
-      debugPrint('WindowsVpnService urlTest failed: $e');
-      return -1;
+  void _handleState(Object? value) {
+    _updateState(WindowsServiceProtocol.parseState(value));
+  }
+
+  void _setUnavailable(String? message) {
+    _updateState(VpnState(
+      status: VpnStatus.error,
+      connectionMode: VpnConnectionMode.tun,
+      errorMessage: message ?? 'Windows 后台服务不可用，请重新安装客户端',
+      failureReason: VpnFailureReason.coreStartFailed,
+      runtimeDetails: const {'error_code': 'service_unavailable'},
+    ));
+  }
+
+  void _updateState(VpnState next) {
+    _state = next;
+    if (!_disposed && !_stateController.isClosed) {
+      _stateController.add(next);
     }
   }
 
-  @override
-  Future<void> selectOutbound(String groupTag, String outboundTag) async {
-    if (!_isConnected ||
-        _lastSanitizedConfig == null ||
-        _singboxDirPath == null ||
-        _singboxBinPath == null) {
-      debugPrint(
-          'WindowsVpnService selectOutbound: not connected or no stored config, skipping');
-      return;
-    }
-
-    debugPrint(
-        'WindowsVpnService selectOutbound: switching $groupTag -> $outboundTag via restart');
-
-    try {
-      // 1. Modify the stored config to set the new outbound as the selector's default
-      final Map<String, dynamic> config = jsonDecode(_lastSanitizedConfig!);
-
-      if (config.containsKey('outbounds') && config['outbounds'] is List) {
-        final List<dynamic> outbounds = config['outbounds'];
-        for (var outbound in outbounds) {
-          if (outbound is Map &&
-              outbound['type'] == 'selector' &&
-              outbound['tag'] == groupTag) {
-            outbound['default'] = outboundTag;
-            debugPrint(
-                'WindowsVpnService: set selector "$groupTag" default to "$outboundTag"');
-            break;
-          }
-        }
-      }
-
-      final updatedConfig = jsonEncode(config);
-      _lastSanitizedConfig = updatedConfig;
-
-      // 2. Write updated config
-      final configFile = File('$_singboxDirPath/config.json');
-      await configFile.writeAsString(updatedConfig);
-
-      // 3. Clear cache to prevent sing-box from restoring old selection
-      final filesToDelete = [
-        '$_singboxDirPath/cache.db',
-        '$_singboxDirPath/cache.db-wal',
-        '$_singboxDirPath/cache.db-shm'
-      ];
-      for (final filePath in filesToDelete) {
-        final f = File(filePath);
-        if (await f.exists()) {
-          try {
-            await f.delete();
-            debugPrint('WindowsVpnService: deleted $filePath');
-          } catch (e) {
-            debugPrint('WindowsVpnService: failed to delete $filePath: $e');
-          }
-        }
-      }
-
-      // 4. Kill current sing-box process (set restarting flag to prevent false disconnect)
-      _isRestarting = true;
-      if (_singboxProcess != null) {
-        _singboxProcess?.kill();
-        _singboxProcess = null;
-        // Brief wait for process to exit
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
-
-      // 5. Restart sing-box with updated config (system proxy stays enabled)
-      _singboxProcess = await Process.start(
-        _singboxBinPath!,
-        ['run', '-c', configFile.path],
-        workingDirectory: _singboxDirPath!,
-      );
-
-      _singboxProcess?.stdout.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box]: $data');
-      });
-      _singboxProcess?.stderr.transform(utf8.decoder).listen((data) {
-        debugPrint('[sing-box ERR]: $data');
-      });
-
-      _singboxProcess?.exitCode.then((code) {
-        debugPrint('sing-box process exited with code $code');
-        if (_isRestarting) {
-          debugPrint('sing-box exit during restart, ignoring...');
-          return;
-        }
-        _isConnected = false;
-        _updateState(VpnStatus.disconnected);
-        _disableSystemProxy();
-      });
-
-      // Wait for sing-box to start up then clear restarting flag
-      await Future.delayed(const Duration(milliseconds: 800));
-      _isRestarting = false;
-
-      debugPrint(
-          'WindowsVpnService selectOutbound: restart complete, now using "$outboundTag"');
-    } catch (e) {
-      debugPrint('WindowsVpnService selectOutbound FAILED: $e');
-    }
+  Future<Map<String, dynamic>> _invokeMap(
+    String method, [
+    Map<String, dynamic>? arguments,
+  ]) async {
+    assert(WindowsServiceProtocol.supportedMethods.contains(method));
+    final result =
+        await _methodChannel.invokeMethod<Object?>(method, arguments);
+    if (result is Map) return Map<String, dynamic>.from(result);
+    return const <String, dynamic>{};
   }
 
-  @override
-  void dispose() {
-    stop();
-    _stateController.close();
+  String _runtimeDirectory() {
+    final programData =
+        Platform.environment['ProgramData'] ?? r'C:\ProgramData';
+    return '$programData\\ElephantNetwork\\runtime';
   }
 
-  // ================= 辅助方法 =================
+  String _sanitizeConfig(String jsonConfig, String runtimeDir) {
+    final config = Map<String, dynamic>.from(jsonDecode(jsonConfig) as Map);
+    config.remove('use_tun_mode');
+    config['log'] = {'level': 'warn', 'timestamp': true};
 
-  Future<bool> _enableSystemProxy(int port) async {
-    try {
-      final bool result = await _proxyChannel.invokeMethod('enableProxy', {
-        'port': port,
-      });
-      return result;
-    } catch (e) {
-      debugPrint('Invoke enableProxy failed: $e');
-      return false; // 可能由于没有权限或者还没实现
-    }
-  }
+    final inbounds = (config['inbounds'] as List?) ?? <dynamic>[];
+    inbounds.removeWhere((dynamic inbound) =>
+        inbound is Map &&
+        (inbound['type'] == 'tun' || inbound['type'] == 'mixed'));
+    inbounds.add({
+      'type': 'tun',
+      'tag': 'tun-in',
+      'interface_name': 'ElephantNetwork',
+      'address': ['172.19.0.1/30', 'fdfe:dcba:9876::1/126'],
+      'auto_route': true,
+      'strict_route': true,
+      'stack': 'system',
+      'sniff': true,
+    });
+    config['inbounds'] = inbounds;
 
-  Future<bool> _disableSystemProxy() async {
-    try {
-      final bool result = await _proxyChannel.invokeMethod('disableProxy');
-      return result;
-    } catch (e) {
-      debugPrint('Invoke disableProxy failed: $e');
-      return false;
-    }
-  }
-
-  String _sanitizeConfig(String jsonConfig, String baseDir, bool useTunMode) {
-    try {
-      final Map<String, dynamic> config = jsonDecode(jsonConfig);
-
-      // 1. Set log level to warn to reduce TRACE noise
-      config['log'] = {'level': 'warn', 'timestamp': true};
-
-      // 2. Remove TUN inbounds (unsupported without root perms on macOS desktop)
-      if (config.containsKey('inbounds') && config['inbounds'] is List) {
-        final List<dynamic> inbounds = config['inbounds'];
-
-        if (!useTunMode) {
-          // 非 TUN 模式：移除 tun 入站
-          inbounds.removeWhere((inbound) => inbound['type'] == 'tun');
-        } else {
-          // TUN 模式：确保 tun 入站配置正确
-          bool hasTunInbound =
-              inbounds.any((inbound) => inbound['type'] == 'tun');
-          if (!hasTunInbound) {
-            inbounds.add({
-              "type": "tun",
-              "tag": "tun-in",
-              "interface_name": "singbox-tun",
-              "inet4_address": "172.19.0.1/30",
-              "inet6_address": "fdfe:dcba:9876::1/126",
-              "auto_route": true,
-              "strict_route": true,
-              "stack": "system",
-              "sniff": true
-            });
-          }
-        }
-
-        // Ensure there is at least one mixed or http inbound if none left
-        bool hasProxyInbound = inbounds.any((inbound) =>
-            inbound['type'] == 'mixed' || inbound['type'] == 'http');
-
-        if (!hasProxyInbound) {
-          inbounds.add({
-            "type": "mixed",
-            "tag": "mixed-in",
-            "listen": "127.0.0.1",
-            "listen_port": 2334,
-            "sniff": true
-          });
-        }
-      }
-
-      // 3. Convert remote rule_sets to local rule_sets
-      if (config.containsKey('route') && config['route'] is Map) {
-        final Map<String, dynamic> route = config['route'];
-        if (route.containsKey('rule_set') && route['rule_set'] is List) {
-          final List<dynamic> ruleSets = route['rule_set'];
-          for (var i = 0; i < ruleSets.length; i++) {
-            final ruleSet = ruleSets[i];
-            if (ruleSet is Map && ruleSet['type'] == 'remote') {
-              // Convert to local using the assets we copied
-              final tag = ruleSet['tag'];
-              ruleSets[i] = {
+    final route = config['route'];
+    if (route is Map) {
+      final ruleSets = route['rule_set'];
+      if (ruleSets is List) {
+        for (var index = 0; index < ruleSets.length; index += 1) {
+          final ruleSet = ruleSets[index];
+          if (ruleSet is Map && ruleSet['type'] == 'remote') {
+            final tag = ruleSet['tag']?.toString() ?? '';
+            if (tag == 'geoip-cn' || tag == 'geosite-cn') {
+              ruleSets[index] = {
                 'tag': tag,
                 'type': 'local',
                 'format': ruleSet['format'] ?? 'binary',
-                'path': '$baseDir/$tag.srs',
+                'path': '$runtimeDir\\$tag.srs',
               };
             }
           }
         }
       }
-
-      // 4. Ensure experimental.clash_api is configured for local REST API
-      if (!config.containsKey('experimental')) {
-        config['experimental'] = <String, dynamic>{};
-      }
-      final experimental = config['experimental'] as Map<String, dynamic>;
-
-      // Inject clash_api if not present
-      if (!experimental.containsKey('clash_api')) {
-        experimental['clash_api'] = <String, dynamic>{};
-      }
-      final clashApi = experimental['clash_api'] as Map<String, dynamic>;
-      clashApi['external_controller'] = '127.0.0.1:9090';
-      // Optionally set default mode
-      if (!clashApi.containsKey('default_mode')) {
-        clashApi['default_mode'] = 'rule';
-      }
-
-      // Ensure cache_file path is absolute
-      if (experimental.containsKey('cache_file') &&
-          experimental['cache_file'] is Map) {
-        final cacheFile = experimental['cache_file'] as Map<String, dynamic>;
-        cacheFile['path'] = '$baseDir/cache.db';
-      }
-
-      // 5. Add explicit final outbound to route through 节点选择 selector
-      if (config.containsKey('route') && config['route'] is Map) {
-        final Map<String, dynamic> route = config['route'];
-        // Ensure unmatched traffic goes through the selector for proper outbound switching
-        route['final'] = '节点选择';
-      }
-
-      return jsonEncode(config);
-    } catch (e) {
-      debugPrint('Config sanitization failed: $e');
-      return jsonConfig;
+      route['final'] = '节点选择';
     }
+
+    final experimental = config.putIfAbsent(
+      'experimental',
+      () => <String, dynamic>{},
+    );
+    if (experimental is Map) {
+      final clashApi = experimental.putIfAbsent(
+        'clash_api',
+        () => <String, dynamic>{},
+      );
+      if (clashApi is Map) {
+        clashApi['external_controller'] = '127.0.0.1:9090';
+        clashApi['default_mode'] ??= 'rule';
+      }
+      final cacheFile = experimental['cache_file'];
+      if (cacheFile is Map) cacheFile['path'] = '$runtimeDir\\cache.db';
+    }
+
+    return jsonEncode(config);
+  }
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    unawaited(stop().catchError((Object error) {
+      debugPrint('Windows service cleanup during dispose failed: $error');
+    }));
+    _disposed = true;
+    _eventSubscription?.cancel();
+    _stateController.close();
   }
 }

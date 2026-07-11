@@ -35,6 +35,23 @@ void main() {
     expect(InviteSharePlatform.line.androidPackages, ['jp.naver.line.android']);
   });
 
+  test('builds approved Windows web share URLs', () {
+    final inviteUrl = 'https://example.com/app#/register?code=A+B';
+    final telegram = InviteShareService.buildWebShareUri(
+      InviteSharePlatform.telegram,
+      inviteUrl,
+    );
+    final facebook = InviteShareService.buildWebShareUri(
+      InviteSharePlatform.facebook,
+      inviteUrl,
+    );
+
+    expect(telegram.host, 't.me');
+    expect(telegram.queryParameters['url'], inviteUrl);
+    expect(facebook.host, 'www.facebook.com');
+    expect(facebook.queryParameters['u'], inviteUrl);
+  });
+
   test('sends text and package fallbacks over the Android channel', () async {
     const channel = MethodChannel('test.elephant.network/share');
     MethodCall? receivedCall;

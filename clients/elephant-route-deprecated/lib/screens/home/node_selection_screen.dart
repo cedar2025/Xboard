@@ -157,7 +157,8 @@ class _NodeSelectionScreenState extends State<NodeSelectionScreen> {
             return const SizedBox.shrink();
           }
 
-          final requiresConnectedVpn = !kIsWeb && Platform.isAndroid;
+          final requiresConnectedVpn =
+              !kIsWeb && (Platform.isAndroid || Platform.isWindows);
           final canTestLatency =
               !requiresConnectedVpn || vpnProvider.isConnected;
           final isTesting = provider.isLoading;

@@ -16,6 +16,7 @@ import 'providers/language_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/config_provider.dart';
 import 'providers/app_update_provider.dart';
+import 'providers/startup_provider.dart';
 import 'core/services/tray_service.dart';
 import 'core/services/app_logger.dart';
 import 'core/singbox/vpn_manager.dart';
@@ -33,6 +34,7 @@ import 'widgets/tray_controller.dart';
 
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,14 +49,23 @@ void main() async {
           appName: packageInfo.appName,
           appPath: Platform.resolvedExecutable,
         );
-        // 默认开启自启（可转移到偏好设置）
-        await launchAtStartup.enable();
+        final prefs = await SharedPreferences.getInstance();
+        const initializedKey = 'windows_startup_preference_initialized';
+        if (!(prefs.getBool(initializedKey) ?? false)) {
+          // Previous Windows builds enabled startup unconditionally. The
+          // production client defaults it off and lets the user opt in.
+          await launchAtStartup.disable();
+          await prefs.setBool(initializedKey, true);
+        }
       } catch (e) {
         debugPrint('Failed to setup launchAtStartup: $e');
       }
     }
 
     await windowManager.ensureInitialized();
+    if (Platform.isWindows) {
+      await windowManager.setPreventClose(true);
+    }
 
     const windowOptions = WindowOptions(
       size: Size(1000, 700),
@@ -120,6 +131,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<AppUpdateProvider>(
           create: (_) => AppUpdateProvider(),
+        ),
+        ChangeNotifierProvider<StartupProvider>(
+          create: (_) => StartupProvider(),
         ),
         // 提供 NodeProvider
         ChangeNotifierProvider<NodeProvider>(

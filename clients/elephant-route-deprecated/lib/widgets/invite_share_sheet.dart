@@ -23,7 +23,6 @@ class InviteShareSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final shareText = InviteShareService.buildShareText(inviteUrl);
     final actions = <Widget>[
       _ShareAction(
         label: '复制链接',
@@ -41,9 +40,9 @@ class InviteShareSheet extends StatelessWidget {
           onTap: () async {
             Navigator.pop(context);
             try {
-              await shareService.shareText(
+              await shareService.shareInvite(
                 platform: platform,
-                text: shareText,
+                inviteUrl: inviteUrl,
               );
             } on PlatformException {
               onShareError(platform.label);

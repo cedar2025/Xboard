@@ -7,6 +7,7 @@ import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/startup_provider.dart';
 import '../../core/api/dio_client.dart';
 import '../../core/services/invite_share_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -19,6 +20,7 @@ import '../../widgets/custom_webview.dart';
 import '../../widgets/invite_share_sheet.dart';
 import '../../widgets/app_update_dialog.dart';
 import 'change_password_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -360,7 +362,7 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
-          if (PlatformUtils.isAndroid) ...[
+          if (PlatformUtils.isAndroid || PlatformUtils.isWindows) ...[
             Consumer<UserProvider>(
               builder: (context, provider, _) {
                 final rate = InviteShareService.formatCommissionRate(
@@ -570,6 +572,35 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _buildDivider(isDark),
+          _buildActionItem(
+            context,
+            Icons.info_outline_rounded,
+            '关于与诊断',
+            '',
+            isDark,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
+          ),
+          _buildDivider(isDark),
+          if (PlatformUtils.isWindows) ...[
+            Consumer<StartupProvider>(
+              builder: (context, startup, _) => SwitchListTile.adaptive(
+                secondary: Icon(
+                  Icons.power_settings_new_rounded,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                ),
+                title: const Text('开机自动启动'),
+                subtitle: const Text('默认关闭，可随时在这里开启'),
+                value: startup.enabled,
+                onChanged: startup.loading ? null : startup.setEnabled,
+              ),
+            ),
+            _buildDivider(isDark),
+          ],
           FutureBuilder<PackageInfo>(
             future: _packageInfoFuture,
             builder: (context, snapshot) {

@@ -34,6 +34,8 @@ class AppUpdateService {
 
   static const _installationIdKey = 'app_distribution_installation_id';
   static const _updateChannel = MethodChannel('com.elephant.network/update');
+  static const _windowsChannel =
+      MethodChannel('com.elephant.network/windows_service');
 
   final Dio _dio;
   final DomainResolver _domainResolver;
@@ -170,9 +172,10 @@ class AppUpdateService {
 
     await _syncBaseUrl();
     final directory = await getTemporaryDirectory();
-    final file = File(
-      '${directory.path}/elephant-route-update-${update.buildNumber}.apk',
-    );
+    final file = File('${directory.path}/${updateFileName(
+      platform: _platform,
+      buildNumber: update.buildNumber,
+    )}');
 
     if (await file.exists()) {
       await file.delete();
@@ -190,22 +193,47 @@ class AppUpdateService {
       final digest = sha256.convert(await file.readAsBytes());
       if (digest.toString().toLowerCase() != expectedSha256) {
         await file.delete();
-        throw StateError('Downloaded APK SHA256 mismatch');
+        throw StateError('Downloaded update SHA256 mismatch');
       }
     }
 
     return file;
   }
 
-  Future<void> installDownloadedApk(File apk) async {
-    if (!Platform.isAndroid) {
-      await _openDownloadedFile(apk);
+  Future<void> installDownloadedApk(File artifact) async {
+    if (Platform.isAndroid) {
+      await _updateChannel.invokeMethod<void>('installApk', {
+        'path': artifact.path,
+      });
       return;
     }
-
-    await _updateChannel.invokeMethod<void>('installApk', {
-      'path': apk.path,
-    });
+    if (Platform.isWindows) {
+      final trusted = await _windowsChannel.invokeMethod<bool>(
+            'verifyAuthenticode',
+            {'path': artifact.path},
+          ) ??
+          false;
+      if (!trusted) {
+        throw StateError('Downloaded Windows installer is not trusted');
+      }
+      await _windowsChannel.invokeMethod<Object?>('stop');
+      await Process.start(
+        artifact.path,
+        const [
+          '/SILENT',
+          '/SUPPRESSMSGBOXES',
+          '/NORESTART',
+          '/CLOSEAPPLICATIONS',
+          '/RESTARTAPPLICATIONS',
+        ],
+        mode: ProcessStartMode.detached,
+      );
+      // The signed installer owns shutdown/restart from this point. The VPN
+      // service was stopped before the process was launched.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      exit(0);
+    }
+    await _openDownloadedFile(artifact);
   }
 
   Future<String> getInstallationId() async {
@@ -268,6 +296,22 @@ class AppUpdateService {
 
     final base = Uri.parse(ApiConstants.appDistributionBaseUrl);
     return base.resolve(downloadUrl).toString();
+  }
+
+  static String updateFileName({
+    required String platform,
+    required int buildNumber,
+  }) {
+    switch (platform) {
+      case 'android':
+        return 'elephant-route-update-$buildNumber.apk';
+      case 'windows':
+        return 'ElephantNetwork-Setup-x64-$buildNumber.exe';
+      case 'macos':
+        return 'ElephantNetwork-update-$buildNumber.dmg';
+      default:
+        return 'elephant-route-update-$buildNumber.bin';
+    }
   }
 
   Future<void> _openDownloadedFile(File file) async {

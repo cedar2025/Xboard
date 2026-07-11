@@ -40,6 +40,9 @@ dependencies:
 
   # WebView(支付页面)
   webview_flutter: ^4.10.0
+  # Windows WebView2. Pinned to the upstream API compatible with the current
+  # Flutter/Dart baseline; the newer maintained fork requires Flutter 3.44+.
+  webview_windows: 0.4.0
 
   # 权限管理
   permission_handler: ^12.0.3

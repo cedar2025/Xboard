@@ -4,6 +4,8 @@ import 'package:elephant_network/core/services/app_logger.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
 import 'package:elephant_network/screens/profile/about_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -30,6 +32,12 @@ void main() {
   });
 
   tearDown(() {
+    debugDefaultTargetPlatformOverride = null;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('com.elephant.network/windows_service'),
+      null,
+    );
     PathProviderPlatform.instance = originalPathProvider;
   });
 
@@ -57,6 +65,35 @@ void main() {
     expect(find.text('导出诊断'), findsNothing);
     expect(find.text('恢复系统代理'), findsNothing);
     expect(find.text('复制日志路径'), findsNothing);
+  });
+
+  testWidgets('Windows 关于页显示服务和核心状态', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('com.elephant.network/windows_service'),
+      (call) async => {
+        'status': 'connected',
+        'mode': 'tun',
+        'core_version': '1.12.0',
+      },
+    );
+
+    await tester.pumpWidget(
+      Provider<DioClient>.value(
+        value: DioClient(),
+        child: const MaterialApp(home: AboutScreen()),
+      ),
+    );
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+
+    expect(find.text('大象网络 Windows'), findsOneWidget);
+    expect(find.text('Windows x64'), findsOneWidget);
+    expect(find.text('1.12.0'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
   });
 }
 

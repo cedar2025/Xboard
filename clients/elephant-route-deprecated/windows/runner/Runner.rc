@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.elphantroute" "\0"
-            VALUE "FileDescription", "elephant_network" "\0"
+            VALUE "CompanyName", "Elephant Network" "\0"
+            VALUE "FileDescription", "大象网络 Windows 客户端" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "elephant_network" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.elphantroute. All rights reserved." "\0"
-            VALUE "OriginalFilename", "elephant_network.exe" "\0"
-            VALUE "ProductName", "elephant_network" "\0"
+            VALUE "InternalName", "ElephantNetwork" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Elephant Network. All rights reserved." "\0"
+            VALUE "OriginalFilename", "ElephantNetwork.exe" "\0"
+            VALUE "ProductName", "大象网络" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

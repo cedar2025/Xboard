@@ -16,4 +16,27 @@ void main() {
       expect(AppUpdateService.isVersionNewer('1.2.0', '1.2.0'), isFalse);
     });
   });
+
+  group('AppUpdateService artifact naming', () {
+    test('uses an EXE installer for Windows updates', () {
+      expect(
+        AppUpdateService.updateFileName(
+          platform: 'windows',
+          buildNumber: 10500,
+        ),
+        'ElephantNetwork-Setup-x64-10500.exe',
+      );
+    });
+
+    test('keeps Android and macOS package extensions platform-specific', () {
+      expect(
+        AppUpdateService.updateFileName(platform: 'android', buildNumber: 9),
+        endsWith('.apk'),
+      );
+      expect(
+        AppUpdateService.updateFileName(platform: 'macos', buildNumber: 9),
+        endsWith('.dmg'),
+      );
+    });
+  });
 }

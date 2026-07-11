@@ -20,9 +20,10 @@ class LatencyTestPolicy {
   static bool requiresConnectedVpn({
     required bool isWeb,
     required bool isAndroid,
+    required bool isWindows,
     required bool isMockVpn,
   }) {
-    return !isWeb && isAndroid && !isMockVpn;
+    return !isWeb && (isAndroid || isWindows) && !isMockVpn;
   }
 }
 

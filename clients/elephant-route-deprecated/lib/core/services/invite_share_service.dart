@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum InviteSharePlatform {
   telegram(
@@ -72,5 +75,55 @@ class InviteShareService {
       'packageNames': platform.androidPackages,
       'text': text,
     });
+  }
+
+  Future<void> shareInvite({
+    required InviteSharePlatform platform,
+    required String inviteUrl,
+  }) async {
+    if (Platform.isWindows) {
+      final opened = await launchUrl(
+        buildWebShareUri(platform, inviteUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened) {
+        throw PlatformException(
+          code: 'SHARE_UNAVAILABLE',
+          message: 'Unable to open ${platform.label}',
+        );
+      }
+      return;
+    }
+    await shareText(platform: platform, text: buildShareText(inviteUrl));
+  }
+
+  static Uri buildWebShareUri(
+    InviteSharePlatform platform,
+    String inviteUrl,
+  ) {
+    final text = buildShareText(inviteUrl);
+    switch (platform) {
+      case InviteSharePlatform.telegram:
+        return Uri.https('t.me', '/share/url', {
+          'url': inviteUrl,
+          'text': text,
+        });
+      case InviteSharePlatform.whatsapp:
+        return Uri.https('wa.me', '/', {'text': text});
+      case InviteSharePlatform.x:
+        return Uri.https('twitter.com', '/intent/tweet', {'text': text});
+      case InviteSharePlatform.facebook:
+        return Uri.https(
+          'www.facebook.com',
+          '/sharer/sharer.php',
+          {'u': inviteUrl},
+        );
+      case InviteSharePlatform.line:
+        return Uri.https(
+          'social-plugins.line.me',
+          '/lineit/share',
+          {'url': inviteUrl},
+        );
+    }
   }
 }

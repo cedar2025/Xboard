@@ -1221,6 +1221,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.25.1"
+  webview_windows:
+    dependency: "direct main"
+    description:
+      name: webview_windows
+      sha256: "47fcad5875a45db29dbb5c9e6709bf5c88dcc429049872701343f91ed7255730"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0"
   win32:
     dependency: transitive
     description:

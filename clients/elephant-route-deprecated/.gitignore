@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/windows/installer/MicrosoftEdgeWebview2Setup.exe
+/windows/installer/output/
 
 # Symbolication related
 app.*.symbols

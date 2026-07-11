@@ -1,0 +1,100 @@
+name: Windows client
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: false
+        default: 1.5.0
+      build_number:
+        description: Numeric build number
+        required: false
+        default: '10500'
+  push:
+    paths:
+      - 'clients/elephant-route-deprecated/lib/**'
+      - 'clients/elephant-route-deprecated/test/**'
+      - 'clients/elephant-route-deprecated/windows/**'
+      - 'clients/elephant-route-deprecated/pubspec.*'
+      - 'clients/elephant-route-deprecated/scripts/build_windows_release.ps1'
+      - '.github/workflows/windows-client.yml'
+  pull_request:
+    paths:
+      - 'clients/elephant-route-deprecated/**'
+      - '.github/workflows/windows-client.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-package:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: clients/elephant-route-deprecated
+    env:
+      RELEASE_VERSION: ${{ inputs.version || '1.5.0' }}
+      RELEASE_BUILD: ${{ inputs.build_number || '10500' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.7'
+          channel: stable
+          cache: true
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Flutter analyzer
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test --no-pub
+
+      - name: Windows release build
+        run: flutter build windows --release --build-name $env:RELEASE_VERSION --build-number $env:RELEASE_BUILD
+        shell: pwsh
+
+      - name: Native protocol tests
+        shell: pwsh
+        run: |
+          cmake --build build/windows/x64 --config Release --target windows_protocol_test
+          ctest --test-dir build/windows/x64 -C Release --output-on-failure
+
+      - name: Build self-signed internal installer
+        shell: pwsh
+        run: .\scripts\build_windows_release.ps1 -Version $env:RELEASE_VERSION -BuildNumber ([int]$env:RELEASE_BUILD) -SigningMode internal
+
+      - name: Installer smoke test
+        shell: pwsh
+        run: |
+          $installer = Resolve-Path "windows\installer\output\ElephantNetwork-Setup-x64-v$env:RELEASE_VERSION.exe"
+          Start-Process $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          sc.exe query ElephantNetworkService
+          if ($LASTEXITCODE -ne 0) { throw 'ElephantNetworkService was not installed' }
+          $uninstall = (Get-ItemProperty 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' |
+            Where-Object DisplayName -eq '大象网络' |
+            Select-Object -First 1 -ExpandProperty UninstallString)
+          if (!$uninstall) { throw 'Uninstall registration is missing' }
+          $uninstaller = $uninstall.Trim('"')
+          Start-Process $uninstaller -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          sc.exe query ElephantNetworkService 2>$null
+          if ($LASTEXITCODE -eq 0) { throw 'ElephantNetworkService remains after uninstall' }
+
+      - name: Upload internal artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElephantNetwork-Windows-x64-${{ env.RELEASE_VERSION }}
+          path: |
+            clients/elephant-route-deprecated/windows/installer/output/*.exe
+            clients/elephant-route-deprecated/windows/installer/output/*.cer
+          if-no-files-found: error

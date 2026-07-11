@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -21,11 +23,28 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
+  static const _windowsChannel =
+      MethodChannel('com.elephant.network/windows_service');
   late final Future<_AboutData> _dataFuture = _loadData();
 
   Future<_AboutData> _loadData() async {
     final package = await PackageInfo.fromPlatform();
-    final runtime = await MacRuntimeService.instance.getRuntimeStatus();
+    Map<String, dynamic> runtime = const {};
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      runtime = await MacRuntimeService.instance.getRuntimeStatus();
+    } else if (defaultTargetPlatform == TargetPlatform.windows) {
+      try {
+        final result = await _windowsChannel.invokeMapMethod<String, dynamic>(
+          'getStatus',
+        );
+        runtime = result ?? const {};
+      } on PlatformException catch (error) {
+        runtime = {
+          'status': 'service_unavailable',
+          'error_message': error.message ?? error.code,
+        };
+      }
+    }
     final logPath = await AppLogger.instance.getLogPath();
     return _AboutData(
       packageInfo: package,
@@ -79,7 +98,7 @@ class _AboutScreenState extends State<AboutScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '大象网络 Android',
+                            _platformProductName,
                             style: AppTextStyles.titleLarge.copyWith(
                               color: isDark
                                   ? AppColors.darkTextPrimary
@@ -103,6 +122,7 @@ class _AboutScreenState extends State<AboutScreen> {
                               '构建号', data.packageInfo.buildNumber, isDark),
                           _buildInfoRow(
                               '包名', data.packageInfo.packageName, isDark),
+                          _buildInfoRow('平台', _platformLabel, isDark),
                           _buildInfoRow(
                             '后端地址',
                             context.read<DioClient>().currentBaseUrl,
@@ -127,6 +147,13 @@ class _AboutScreenState extends State<AboutScreen> {
                                 'unknown',
                             isDark,
                           ),
+                          if (defaultTargetPlatform == TargetPlatform.windows)
+                            _buildInfoRow(
+                              '核心版本',
+                              (data.runtimeStatus['core_version'] as String?) ??
+                                  'unknown',
+                              isDark,
+                            ),
                         ],
                       ),
                     ),
@@ -150,7 +177,9 @@ class _AboutScreenState extends State<AboutScreen> {
                               'Dart 日志', data.logPath ?? '未初始化', isDark),
                           _buildInfoRow(
                             '最后错误',
-                            (data.runtimeStatus['lastError'] as String?) ?? '无',
+                            (data.runtimeStatus['error_message'] as String?) ??
+                                (data.runtimeStatus['lastError'] as String?) ??
+                                '无',
                             isDark,
                           ),
                           const SizedBox(height: 16),
@@ -264,6 +293,32 @@ class _AboutScreenState extends State<AboutScreen> {
 
     final message = provider.errorMessage ?? '当前已是最新版本';
     _showCopiedMessage(message);
+  }
+
+  String get _platformProductName {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.windows:
+        return '大象网络 Windows';
+      case TargetPlatform.macOS:
+        return '大象网络 macOS';
+      case TargetPlatform.android:
+        return '大象网络 Android';
+      default:
+        return '大象网络';
+    }
+  }
+
+  String get _platformLabel {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.windows:
+        return 'Windows x64';
+      case TargetPlatform.macOS:
+        return 'macOS';
+      case TargetPlatform.android:
+        return 'Android';
+      default:
+        return defaultTargetPlatform.name;
+    }
   }
 }
 

@@ -85,7 +85,7 @@ class AppUpdateProvider with ChangeNotifier {
 
     try {
       await _safeTelemetry('download_clicked');
-      final apk = await _service.downloadUpdate(
+      final artifact = await _service.downloadUpdate(
         update,
         onProgress: (received, total) {
           if (total <= 0) return;
@@ -94,7 +94,7 @@ class AppUpdateProvider with ChangeNotifier {
         },
       );
       await _safeTelemetry('download_opened');
-      await _service.installDownloadedApk(apk);
+      await _service.installDownloadedApk(artifact);
       _downloadProgress = 1;
       return true;
     } catch (e, stackTrace) {

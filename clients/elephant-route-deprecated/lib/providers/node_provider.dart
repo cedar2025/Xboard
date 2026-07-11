@@ -155,6 +155,7 @@ class NodeProvider with ChangeNotifier {
     final requiresConnectedVpn = LatencyTestPolicy.requiresConnectedVpn(
       isWeb: kIsWeb,
       isAndroid: !kIsWeb && Platform.isAndroid,
+      isWindows: !kIsWeb && Platform.isWindows,
       isMockVpn: _vpnManager is MockVpnService,
     );
 

@@ -31,6 +31,7 @@ class TrayService with TrayListener {
 
   // 记录外部传入的 Toggle 回调
   VoidCallback? onToggleVpn;
+  Future<void> Function()? onExitApp;
 
   bool get _isSupportedPlatform =>
       !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
@@ -92,6 +93,7 @@ class TrayService with TrayListener {
       await windowManager.show();
       await windowManager.focus();
     } else if (menuItem.key == 'exit_app') {
+      await onExitApp?.call();
       await windowManager.destroy(); // 使用 window_manager 安全退出
       exit(0);
     }

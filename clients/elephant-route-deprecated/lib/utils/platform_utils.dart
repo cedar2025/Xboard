@@ -31,6 +31,12 @@ class PlatformUtils {
     return Platform.isAndroid;
   }
 
+  /// 是否为 Windows
+  static bool get isWindows {
+    if (kIsWeb) return false;
+    return Platform.isWindows;
+  }
+
   /// 是否为 Web
   static bool get isWeb => kIsWeb;
 
