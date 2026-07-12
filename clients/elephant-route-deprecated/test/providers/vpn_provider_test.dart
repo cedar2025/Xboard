@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:elephant_network/providers/vpn_provider.dart';
 import 'package:elephant_network/providers/config_provider.dart';
 import 'package:elephant_network/core/singbox/vpn_state.dart';
+import 'package:elephant_network/core/singbox/vpn_manager.dart';
 import 'package:elephant_network/core/api/dio_client.dart';
 import 'package:elephant_network/core/singbox/mock_vpn_service.dart';
 import 'package:elephant_network/utils/constants.dart';
@@ -142,5 +143,34 @@ void main() {
       // Assert
       expect(notificationCount, greaterThan(0));
     });
+
+    test('dispose 不应该释放注入的 VpnManager', () {
+      final manager = _CountingVpnManager();
+      final provider = VpnProvider(DioClient(), manager, ConfigProvider());
+
+      provider.dispose();
+
+      expect(manager.stopCalls, 0);
+      expect(manager.disposeCalls, 0);
+      manager.dispose();
+    });
   });
+}
+
+class _CountingVpnManager extends MockVpnService {
+  int stopCalls = 0;
+  int disposeCalls = 0;
+
+  @override
+  Future<void> stop({
+    VpnStopReason reason = VpnStopReason.unspecified,
+  }) async {
+    stopCalls++;
+  }
+
+  @override
+  void dispose() {
+    disposeCalls++;
+    super.dispose();
+  }
 }

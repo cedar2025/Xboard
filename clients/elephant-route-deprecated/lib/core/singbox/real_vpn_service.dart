@@ -90,7 +90,9 @@ class RealVpnService implements VpnManager {
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop({
+    VpnStopReason reason = VpnStopReason.unspecified,
+  }) async {
     try {
       await _channel.invokeMethod('stop');
     } on PlatformException catch (e) {

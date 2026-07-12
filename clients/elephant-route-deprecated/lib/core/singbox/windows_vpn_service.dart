@@ -96,7 +96,9 @@ class WindowsVpnService implements VpnManager {
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop({
+    VpnStopReason reason = VpnStopReason.unspecified,
+  }) async {
     if (_disposed) return;
     _updateState(_state.copyWith(status: VpnStatus.disconnecting));
     try {

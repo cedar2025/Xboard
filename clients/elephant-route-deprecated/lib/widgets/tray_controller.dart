@@ -6,6 +6,7 @@ import '../core/services/tray_service.dart';
 import '../providers/vpn_provider.dart';
 import '../providers/auth_provider.dart';
 import '../core/singbox/vpn_state.dart';
+import '../core/singbox/vpn_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TrayController extends StatefulWidget {
@@ -59,7 +60,7 @@ class _TrayControllerState extends State<TrayController> with WindowListener {
     trayService.onExitApp = () async {
       final vpnProvider = context.read<VpnProvider>();
       if (vpnProvider.isConnected || vpnProvider.isProcessing) {
-        await vpnProvider.disconnect();
+        await vpnProvider.disconnect(reason: VpnStopReason.trayExit);
       }
     };
 

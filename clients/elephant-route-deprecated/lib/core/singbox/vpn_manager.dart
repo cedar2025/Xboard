@@ -1,5 +1,19 @@
 import 'vpn_state.dart';
 
+enum VpnStopReason {
+  userToggle('user_toggle'),
+  trayExit('tray_exit'),
+  appTerminate('app_terminate'),
+  updateInstall('update_install'),
+  nodeSwitch('node_switch'),
+  startupRecovery('startup_recovery'),
+  unspecified('unspecified');
+
+  const VpnStopReason(this.wireValue);
+
+  final String wireValue;
+}
+
 /// VPN 管理器抽象接口
 abstract class VpnManager {
   /// 请求 VPN 权限
@@ -18,7 +32,7 @@ abstract class VpnManager {
   Future<void> stopSpeedTest();
 
   /// 停止 VPN
-  Future<void> stop();
+  Future<void> stop({VpnStopReason reason = VpnStopReason.unspecified});
 
   /// VPN 状态流
   Stream<VpnState> get stateStream;
