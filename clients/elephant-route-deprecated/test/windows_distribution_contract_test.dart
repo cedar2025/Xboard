@@ -54,21 +54,25 @@ void main() {
     expect(service, isNot(contains('powershell')));
   });
 
-  test('bundled Windows core is the verified AnyTLS-capable release', () {
-    const binaryBase = 'assets/bin/windows/sing-box-windows-amd64';
-    const binaryPath = '$binaryBase.exe';
-    final result = Process.runSync(binaryPath, const ['version']);
-    final version = File('$binaryBase.version').readAsStringSync().trim();
-    final checksum = File('$binaryBase.sha256')
-        .readAsStringSync()
-        .trim()
-        .split(RegExp(r'\s+'))
-        .first;
-    final actualChecksum = sha256.convert(File(binaryPath).readAsBytesSync());
+  test(
+    'bundled Windows core is the verified AnyTLS-capable release',
+    () {
+      const binaryBase = 'assets/bin/windows/sing-box-windows-amd64';
+      const binaryPath = '$binaryBase.exe';
+      final result = Process.runSync(binaryPath, const ['version']);
+      final version = File('$binaryBase.version').readAsStringSync().trim();
+      final checksum = File('$binaryBase.sha256')
+          .readAsStringSync()
+          .trim()
+          .split(RegExp(r'\s+'))
+          .first;
+      final actualChecksum = sha256.convert(File(binaryPath).readAsBytesSync());
 
-    expect(result.exitCode, 0);
-    expect(version, '1.12.25');
-    expect(result.stdout.toString(), contains('sing-box version $version'));
-    expect(actualChecksum.toString(), checksum);
-  });
+      expect(result.exitCode, 0);
+      expect(version, '1.12.25');
+      expect(result.stdout.toString(), contains('sing-box version $version'));
+      expect(actualChecksum.toString(), checksum);
+    },
+    skip: !Platform.isWindows,
+  );
 }
