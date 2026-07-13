@@ -19,7 +19,14 @@ function Resolve-Tool([string]$Name, [string[]]$Candidates) {
   throw "Required tool not found: $Name"
 }
 
+function Assert-NativeSuccess([string]$Step) {
+  if ($LASTEXITCODE -ne 0) {
+    throw "$Step failed with exit code $LASTEXITCODE"
+  }
+}
+
 $Iscc = Resolve-Tool 'ISCC.exe' @(
+  '%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe',
   '%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe',
   '%ProgramFiles%\Inno Setup 6\ISCC.exe'
 )
@@ -27,9 +34,13 @@ $Iscc = Resolve-Tool 'ISCC.exe' @(
 Push-Location $ClientRoot
 try {
   flutter pub get
+  Assert-NativeSuccess 'flutter pub get'
   flutter analyze
+  Assert-NativeSuccess 'flutter analyze'
   flutter test --no-pub
+  Assert-NativeSuccess 'flutter test'
   flutter build windows --release --build-name $Version --build-number $BuildNumber
+  Assert-NativeSuccess 'flutter build windows'
 } finally {
   Pop-Location
 }

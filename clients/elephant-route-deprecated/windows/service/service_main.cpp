@@ -30,6 +30,16 @@ std::string g_error_message;
 std::atomic<ULONGLONG> g_last_client_tick{0};
 std::atomic<bool> g_speed_test{false};
 
+void ApplySingBoxCompatibilityEnvironment() {
+  // sing-box 1.12 keeps legacy subscription formats behind compatibility
+  // switches. The API can still return these fields for AnyTLS and older DNS
+  // or TUN configurations, so every child core must receive the same switches
+  // as the macOS runtime.
+  SetEnvironmentVariableW(L"ENABLE_DEPRECATED_SPECIAL_OUTBOUNDS", L"true");
+  SetEnvironmentVariableW(L"ENABLE_DEPRECATED_LEGACY_DNS_SERVERS", L"true");
+  SetEnvironmentVariableW(L"ENABLE_DEPRECATED_TUN_ADDRESS_X", L"true");
+}
+
 std::string CoreVersion() {
   static const std::string version = [] {
     const auto path = std::filesystem::path(elephant::ExecutableDirectory()) /
@@ -227,6 +237,7 @@ std::string StartCore(const std::string& config, bool speed_test) {
   PROCESS_INFORMATION process{};
   std::wstring command = L"\"" + binary_path.wstring() + L"\" run -c \"" +
                          config_path.wstring() + L"\"";
+  ApplySingBoxCompatibilityEnvironment();
   const BOOL created = CreateProcessW(
       binary_path.c_str(), command.data(), nullptr, nullptr, TRUE,
       CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, runtime_dir.c_str(),

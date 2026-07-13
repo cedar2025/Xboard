@@ -5,11 +5,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'connection_latency_manager.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
+import 'windows_latency_session.dart';
 import 'windows_service_protocol.dart';
 
-class WindowsVpnService implements VpnManager {
+class WindowsVpnService implements VpnManager, ConnectionLatencyManager {
   WindowsVpnService({
     MethodChannel? methodChannel,
     EventChannel? eventChannel,
@@ -36,6 +38,8 @@ class WindowsVpnService implements VpnManager {
     connectionMode: VpnConnectionMode.tun,
   );
   bool _disposed = false;
+  String? _lastRuntimeConfig;
+  WindowsLatencySession? _latencySession;
 
   @override
   Future<bool> requestPermission() async {
@@ -70,6 +74,9 @@ class WindowsVpnService implements VpnManager {
         'config': sanitized,
       });
       _handleState(result);
+      if (_state.status == VpnStatus.connected) {
+        _lastRuntimeConfig = sanitized;
+      }
     } on PlatformException catch (error) {
       _updateState(VpnState(
         status: VpnStatus.error,
@@ -100,6 +107,7 @@ class WindowsVpnService implements VpnManager {
     VpnStopReason reason = VpnStopReason.unspecified,
   }) async {
     if (_disposed) return;
+    await stopConnectionLatencyTest();
     _updateState(_state.copyWith(status: VpnStatus.disconnecting));
     try {
       final result = await _invokeMap('stop');
@@ -130,6 +138,45 @@ class WindowsVpnService implements VpnManager {
       'outbound_tag': outboundTag,
     });
     _handleState(result);
+  }
+
+  @override
+  Future<Map<String, ConnectionLatencyResult>> testConnectionLatencies({
+    required List<String> nodeTags,
+    required String testUrl,
+    required int timeoutMs,
+    required int concurrency,
+    ConnectionLatencyResultCallback? onResult,
+  }) async {
+    final sourceConfig = _lastRuntimeConfig;
+    if (_state.status != VpnStatus.connected || sourceConfig == null) {
+      throw const WindowsLatencyException('请先开启加速后再测速');
+    }
+    await stopConnectionLatencyTest();
+    final executableDirectory = File(Platform.resolvedExecutable).parent.path;
+    final session = WindowsLatencySession(
+      binaryPath: '$executableDirectory\\sing-box-windows-amd64.exe',
+      sourceConfig: sourceConfig,
+      nodeTags: nodeTags,
+      testUrl: testUrl,
+      timeoutMs: timeoutMs,
+      workerCount: concurrency,
+    );
+    _latencySession = session;
+    try {
+      return await session.run(onResult: onResult);
+    } finally {
+      if (identical(_latencySession, session)) {
+        _latencySession = null;
+      }
+    }
+  }
+
+  @override
+  Future<void> stopConnectionLatencyTest() async {
+    final session = _latencySession;
+    _latencySession = null;
+    await session?.close();
   }
 
   @override

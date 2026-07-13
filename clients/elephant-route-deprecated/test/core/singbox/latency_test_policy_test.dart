@@ -34,7 +34,7 @@ void main() {
       ]);
     });
 
-    test('macOS V2BOX profile uses one complete HTTP probe', () {
+    test('desktop V2BOX profile uses one complete HTTP probe', () {
       expect(
         LatencyTestPolicy.probeUrls(
           configuredTestUrl: 'http://cp.cloudflare.com/generate_204',

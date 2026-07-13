@@ -153,8 +153,9 @@ class NodeProvider with ChangeNotifier {
   Future<void> testAllLatencies([BuildContext? context]) async {
     if (_isTestingLatency) return;
 
-    final useMacosConnectionSession =
-        !kIsWeb && Platform.isMacOS && _vpnManager is ConnectionLatencyManager;
+    final useConnectionSession = !kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows) &&
+        _vpnManager is ConnectionLatencyManager;
     final requiresConnectedVpn = LatencyTestPolicy.requiresConnectedVpn(
       isWeb: kIsWeb,
       isAndroid: !kIsWeb && Platform.isAndroid,
@@ -188,7 +189,7 @@ class NodeProvider with ChangeNotifier {
       }
 
       if (requiresConnectedVpn &&
-          !useMacosConnectionSession &&
+          !useConnectionSession &&
           !await _waitForLocalClashApi()) {
         debugPrint(
             '[SPEED_TEST_DART] Android latency test blocked: Clash API not ready');
@@ -209,7 +210,7 @@ class NodeProvider with ChangeNotifier {
       }).toList();
       notifyListeners();
 
-      final latencyProfile = !kIsWeb && Platform.isMacOS
+      final latencyProfile = !kIsWeb && (Platform.isMacOS || Platform.isWindows)
           ? LatencyTestProfile.v2boxConnection
           : LatencyTestProfile.standard;
       final probeUrls = LatencyTestPolicy.probeUrls(
@@ -217,8 +218,8 @@ class NodeProvider with ChangeNotifier {
         profile: latencyProfile,
       );
 
-      if (useMacosConnectionSession) {
-        await _testMacosConnectionLatencies(
+      if (useConnectionSession) {
+        await _testConnectionLatencies(
           realNodes,
           probeUrls.single,
           LatencyTestPolicy.timeoutMsFor(latencyProfile),
@@ -248,7 +249,7 @@ class NodeProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _testMacosConnectionLatencies(
+  Future<void> _testConnectionLatencies(
     List<ProxyNode> nodes,
     String testUrl,
     int timeout,

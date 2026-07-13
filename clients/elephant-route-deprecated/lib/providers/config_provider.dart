@@ -9,8 +9,9 @@ class ConfigProvider with ChangeNotifier {
   static const String defaultDomesticDns = '223.5.5.5';
   static const String defaultServiceMode = 'VPN (TUN模式)';
   static const String defaultTestUrl = 'http://cp.cloudflare.com/generate_204';
-  static const String macosDefaultTestUrl =
+  static const String desktopDefaultTestUrl =
       'https://www.gstatic.com/generate_204';
+  static const String macosDefaultTestUrl = desktopDefaultTestUrl;
 
   // 可选的服务模式列表
   static const List<String> serviceModes = [
@@ -48,10 +49,13 @@ class ConfigProvider with ChangeNotifier {
       _serviceMode =
           prefs.getString('config_service_mode') ?? defaultServiceMode;
       final savedTestUrl = prefs.getString('config_test_url');
-      if (defaultTargetPlatform == TargetPlatform.macOS &&
+      final usesDesktopConnectionTest =
+          defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.macOS;
+      if (usesDesktopConnectionTest &&
           (savedTestUrl == null || savedTestUrl.trim() == defaultTestUrl)) {
-        _testUrl = macosDefaultTestUrl;
-        await prefs.setString('config_test_url', macosDefaultTestUrl);
+        _testUrl = desktopDefaultTestUrl;
+        await prefs.setString('config_test_url', desktopDefaultTestUrl);
       } else {
         _testUrl = savedTestUrl ?? defaultTestUrl;
       }
@@ -113,8 +117,9 @@ class ConfigProvider with ChangeNotifier {
     _foreignDns = defaultForeignDns;
     _domesticDns = defaultDomesticDns;
     _serviceMode = defaultServiceMode;
-    _testUrl = defaultTargetPlatform == TargetPlatform.macOS
-        ? macosDefaultTestUrl
+    _testUrl = defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS
+        ? desktopDefaultTestUrl
         : defaultTestUrl;
     _useTunMode = false;
     notifyListeners();

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -21,7 +22,8 @@ void main() {
     expect(installer, contains('/IM sing-box-windows-amd64.exe'));
   });
 
-  test('release script builds unsigned artifacts and preserves integrity checks',
+  test(
+      'release script builds unsigned artifacts and preserves integrity checks',
       () {
     final script = File('scripts/build_windows_release.ps1').readAsStringSync();
 
@@ -46,6 +48,27 @@ void main() {
       contains(r'D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GRGW;;;IU)'),
     );
     expect(service, contains('sing-box-windows-amd64.exe'));
+    expect(service, contains('ENABLE_DEPRECATED_SPECIAL_OUTBOUNDS'));
+    expect(service, contains('ENABLE_DEPRECATED_LEGACY_DNS_SERVERS'));
+    expect(service, contains('ENABLE_DEPRECATED_TUN_ADDRESS_X'));
     expect(service, isNot(contains('powershell')));
+  });
+
+  test('bundled Windows core is the verified AnyTLS-capable release', () {
+    const binaryBase = 'assets/bin/windows/sing-box-windows-amd64';
+    const binaryPath = '$binaryBase.exe';
+    final result = Process.runSync(binaryPath, const ['version']);
+    final version = File('$binaryBase.version').readAsStringSync().trim();
+    final checksum = File('$binaryBase.sha256')
+        .readAsStringSync()
+        .trim()
+        .split(RegExp(r'\s+'))
+        .first;
+    final actualChecksum = sha256.convert(File(binaryPath).readAsBytesSync());
+
+    expect(result.exitCode, 0);
+    expect(version, '1.12.25');
+    expect(result.stdout.toString(), contains('sing-box version $version'));
+    expect(actualChecksum.toString(), checksum);
   });
 }
