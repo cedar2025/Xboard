@@ -62,14 +62,15 @@ worker:
 
 1. selects the node on its private hidden selector through the temporary Clash
    API;
-2. creates a fresh HTTP client configured to use that worker's loopback mixed
-   inbound;
+2. starts one `/usr/bin/curl` HTTP client configured to use that worker's
+   loopback mixed inbound;
 3. starts a five-second deadline for the whole node test;
 4. sends a first HTTPS request to the configured Google endpoint as warm-up;
-5. sends a second request with the same HTTP client so the proxy connection and
-   TLS session can be reused;
+5. sends a second URL in the same libcurl process so the proxy connection and
+   TLS session are reused;
 6. accepts HTTP 200 or 204 responses and returns the lower valid duration;
-7. closes the HTTP client before the worker selects its next node.
+7. waits for or terminates the owned curl process before the worker selects its
+   next node.
 
 The default endpoint remains `https://www.gstatic.com/generate_204`. A custom
 user endpoint remains authoritative. Both requests use the same endpoint.
@@ -79,7 +80,7 @@ user endpoint remains authoritative. Both requests use the same endpoint.
 Only one macOS latency session may run at a time. Cancellation, navigation,
 timeout, process exit, or an exception triggers the same idempotent cleanup:
 
-- close worker HTTP clients;
+- terminate owned worker curl processes;
 - terminate the temporary sing-box process;
 - wait briefly and force-kill only that owned process if necessary;
 - remove the generated config and transient log;
@@ -130,7 +131,8 @@ Add tests before implementation for:
 - active selector and route configuration are not mutated;
 - cache and port conflicts are removed;
 - compatibility environment variables are present;
-- two successful requests reuse one client and return the lower duration;
+- two successful requests reuse one libcurl connection and return the lower
+  duration;
 - a failed warm-up can still return a valid second result within the deadline;
 - a failed second request can return a valid first result;
 - the five-second deadline covers both requests;

@@ -11,6 +11,7 @@ import '../core/api/services/user_service.dart';
 import '../models/proxy_node.dart';
 import '../utils/singbox_parser.dart';
 import '../core/storage/local_storage.dart';
+import '../core/singbox/connection_latency_manager.dart';
 import '../core/singbox/latency_test_policy.dart';
 import '../core/singbox/vpn_manager.dart';
 import '../core/singbox/mock_vpn_service.dart';
@@ -152,6 +153,8 @@ class NodeProvider with ChangeNotifier {
   Future<void> testAllLatencies([BuildContext? context]) async {
     if (_isTestingLatency) return;
 
+    final useMacosConnectionSession =
+        !kIsWeb && Platform.isMacOS && _vpnManager is ConnectionLatencyManager;
     final requiresConnectedVpn = LatencyTestPolicy.requiresConnectedVpn(
       isWeb: kIsWeb,
       isAndroid: !kIsWeb && Platform.isAndroid,
@@ -184,7 +187,9 @@ class NodeProvider with ChangeNotifier {
         }
       }
 
-      if (requiresConnectedVpn && !await _waitForLocalClashApi()) {
+      if (requiresConnectedVpn &&
+          !useMacosConnectionSession &&
+          !await _waitForLocalClashApi()) {
         debugPrint(
             '[SPEED_TEST_DART] Android latency test blocked: Clash API not ready');
         if (context != null && context.mounted) {
@@ -204,16 +209,29 @@ class NodeProvider with ChangeNotifier {
       }).toList();
       notifyListeners();
 
+      final latencyProfile = !kIsWeb && Platform.isMacOS
+          ? LatencyTestProfile.v2boxConnection
+          : LatencyTestProfile.standard;
       final probeUrls = LatencyTestPolicy.probeUrls(
         configuredTestUrl: _configProvider.testUrl,
+        profile: latencyProfile,
       );
 
-      await _testNodesConcurrently(
-        realNodes,
-        probeUrls,
-        LatencyTestPolicy.timeoutMs,
-        LatencyTestPolicy.concurrency,
-      );
+      if (useMacosConnectionSession) {
+        await _testMacosConnectionLatencies(
+          realNodes,
+          probeUrls.single,
+          LatencyTestPolicy.timeoutMsFor(latencyProfile),
+          LatencyTestPolicy.concurrency,
+        );
+      } else {
+        await _testNodesConcurrently(
+          realNodes,
+          probeUrls,
+          LatencyTestPolicy.timeoutMsFor(latencyProfile),
+          LatencyTestPolicy.concurrency,
+        );
+      }
 
       // 测速完成后评估自动选择
       _evaluateAutoSelect();
@@ -226,6 +244,44 @@ class NodeProvider with ChangeNotifier {
       _isTestingLatency = false;
       _ignoreNativeLatencyUpdatesUntil =
           DateTime.now().add(const Duration(seconds: 5));
+      notifyListeners();
+    }
+  }
+
+  Future<void> _testMacosConnectionLatencies(
+    List<ProxyNode> nodes,
+    String testUrl,
+    int timeout,
+    int concurrency,
+  ) async {
+    final manager = _vpnManager as ConnectionLatencyManager;
+    try {
+      await manager.testConnectionLatencies(
+        nodeTags: nodes.map((node) => node.name).toList(growable: false),
+        testUrl: testUrl,
+        timeoutMs: timeout,
+        concurrency: concurrency,
+        onResult: _applyConnectionLatencyResult,
+      );
+    } catch (_) {
+      for (final node in nodes) {
+        _applyConnectionLatencyResult(
+          node.name,
+          const ConnectionLatencyResult(latencyMs: -1, elapsedMs: 0),
+        );
+      }
+      rethrow;
+    }
+  }
+
+  void _applyConnectionLatencyResult(
+    String nodeTag,
+    ConnectionLatencyResult result,
+  ) {
+    final index = _nodes.indexWhere((node) => node.name == nodeTag);
+    if (index == -1) return;
+    if (_nodes[index].latency != result.latencyMs) {
+      _nodes[index] = _nodes[index].copyWithLatency(result.latencyMs);
       notifyListeners();
     }
   }
@@ -310,6 +366,8 @@ class NodeProvider with ChangeNotifier {
       if (response.statusCode == 200 && response.data != null) {
         final delay = response.data['delay'];
         if (delay != null && delay is int && delay > 0) {
+          debugPrint(
+              '[SPEED_TEST_DART] node=${node.name} url=$testUrl delay=${delay}ms');
           return delay;
         } else {
           debugPrint('[SPEED_TEST_DART] 节点 ${node.name} 返回无效延迟: $delay');

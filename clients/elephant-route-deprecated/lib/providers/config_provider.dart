@@ -9,6 +9,8 @@ class ConfigProvider with ChangeNotifier {
   static const String defaultDomesticDns = '223.5.5.5';
   static const String defaultServiceMode = 'VPN (TUN模式)';
   static const String defaultTestUrl = 'http://cp.cloudflare.com/generate_204';
+  static const String macosDefaultTestUrl =
+      'https://www.gstatic.com/generate_204';
 
   // 可选的服务模式列表
   static const List<String> serviceModes = [
@@ -45,7 +47,14 @@ class ConfigProvider with ChangeNotifier {
           prefs.getString('config_domestic_dns') ?? defaultDomesticDns;
       _serviceMode =
           prefs.getString('config_service_mode') ?? defaultServiceMode;
-      _testUrl = prefs.getString('config_test_url') ?? defaultTestUrl;
+      final savedTestUrl = prefs.getString('config_test_url');
+      if (defaultTargetPlatform == TargetPlatform.macOS &&
+          (savedTestUrl == null || savedTestUrl.trim() == defaultTestUrl)) {
+        _testUrl = macosDefaultTestUrl;
+        await prefs.setString('config_test_url', macosDefaultTestUrl);
+      } else {
+        _testUrl = savedTestUrl ?? defaultTestUrl;
+      }
       _useTunMode = prefs.getBool('config_use_tun_mode') ?? false;
       _isLoaded = true;
       notifyListeners();
@@ -104,7 +113,9 @@ class ConfigProvider with ChangeNotifier {
     _foreignDns = defaultForeignDns;
     _domesticDns = defaultDomesticDns;
     _serviceMode = defaultServiceMode;
-    _testUrl = defaultTestUrl;
+    _testUrl = defaultTargetPlatform == TargetPlatform.macOS
+        ? macosDefaultTestUrl
+        : defaultTestUrl;
     _useTunMode = false;
     notifyListeners();
 

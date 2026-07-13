@@ -33,6 +33,16 @@ void main() {
     expect(script, contains('shasum -a 256'));
   });
 
+  test('bundled arm64 core supports AnyTLS', () {
+    final result = Process.runSync(
+      'assets/bin/sing-box-darwin-arm64',
+      const ['version'],
+    );
+
+    expect(result.exitCode, 0);
+    expect(result.stdout.toString(), contains('sing-box version 1.12.25'));
+  });
+
   test('ad-hoc helper signing does not enable hardened runtime', () {
     final script = File('macos/build_tun_helper.sh').readAsStringSync();
     final adHocBranch = script.split('else').last;

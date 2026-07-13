@@ -10,12 +10,15 @@ import 'package:path_provider/path_provider.dart';
 
 import '../services/app_logger.dart';
 import '../services/mac_runtime_service.dart';
+import 'connection_latency_manager.dart';
+import 'macos_latency_session.dart';
 import 'macos_tun_permission.dart';
+import 'macos_singbox_runtime.dart';
 import 'vpn_manager.dart';
 import 'vpn_state.dart';
 import 'vpn_stop_coordinator.dart';
 
-class MacosVpnService implements VpnManager {
+class MacosVpnService implements VpnManager, ConnectionLatencyManager {
   MacosVpnService()
       : _clashDio = Dio(
           BaseOptions(
@@ -46,6 +49,7 @@ class MacosVpnService implements VpnManager {
   int _proxyPort = 2334;
   bool _isTunMode = false;
   bool _disposed = false;
+  MacosLatencySession? _latencySession;
   final VpnStopCoordinator<void> _stopCoordinator = VpnStopCoordinator<void>();
 
   @override
@@ -112,14 +116,17 @@ class MacosVpnService implements VpnManager {
           arch == 'arm64' ? 'sing-box-darwin-arm64' : 'sing-box-darwin-amd64';
       final binFile = File('${singBoxDir.path}/$binName');
 
-      if (!await binFile.exists()) {
-        final byteData = await rootBundle.load('assets/bin/$binName');
-        await binFile.writeAsBytes(
-          byteData.buffer
-              .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
-        );
-        await Process.run('chmod', ['+x', binFile.path]);
-      }
+      final coreReady = await _ensureCoreInstalled(
+        singBoxDir: singBoxDir,
+        binaryName: binName,
+      );
+      if (!coreReady) return;
+
+      final configValid = await _validateConfig(
+        binaryPath: binFile.path,
+        configPath: configFile.path,
+      );
+      if (!configValid) return;
 
       _singboxBinPath = binFile.path;
       _proxyPort = _extractProxyPort(sanitizedConfig);
@@ -199,7 +206,48 @@ class MacosVpnService implements VpnManager {
   Future<void> prepareSpeedTest(String config) async {}
 
   @override
-  Future<void> stopSpeedTest() async {}
+  Future<void> stopSpeedTest() => stopConnectionLatencyTest();
+
+  @override
+  Future<Map<String, ConnectionLatencyResult>> testConnectionLatencies({
+    required List<String> nodeTags,
+    required String testUrl,
+    required int timeoutMs,
+    required int concurrency,
+    ConnectionLatencyResultCallback? onResult,
+  }) async {
+    final config = _lastSanitizedConfig;
+    final binaryPath = _singboxBinPath;
+    if (config == null || binaryPath == null) {
+      throw const MacosLatencyException('测速服务未就绪，请先连接大象网络');
+    }
+
+    await stopConnectionLatencyTest();
+    final session = MacosLatencySession(
+      binaryPath: binaryPath,
+      sourceConfig: config,
+      nodeTags: nodeTags,
+      testUrl: testUrl,
+      timeoutMs: timeoutMs,
+      workerCount: concurrency,
+    );
+    _latencySession = session;
+    try {
+      return await session.run(onResult: onResult);
+    } finally {
+      if (identical(_latencySession, session)) {
+        _latencySession = null;
+      }
+      await session.close();
+    }
+  }
+
+  @override
+  Future<void> stopConnectionLatencyTest() async {
+    final session = _latencySession;
+    _latencySession = null;
+    await session?.close();
+  }
 
   @override
   Future<void> stop({
@@ -211,6 +259,7 @@ class MacosVpnService implements VpnManager {
     );
     return _stopCoordinator.run(() async {
       try {
+        await stopConnectionLatencyTest();
         _updateState(VpnStatus.disconnecting, resetError: true);
         final result = await _runtime.stopCore(reason: reason.wireValue);
         final restored = result['proxyRestored'] != false;
@@ -291,6 +340,12 @@ class MacosVpnService implements VpnManager {
       await configFile.writeAsString(updatedConfig);
       await _cleanupResidualCacheFiles(_singboxDirPath!);
 
+      final configValid = await _validateConfig(
+        binaryPath: _singboxBinPath!,
+        configPath: configFile.path,
+      );
+      if (!configValid) return;
+
       await _runtime.stopCore(reason: VpnStopReason.nodeSwitch.wireValue);
       Map<String, dynamic> startResult;
       if (_isTunMode) {
@@ -345,6 +400,7 @@ class MacosVpnService implements VpnManager {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    unawaited(stopConnectionLatencyTest());
     _stateController.close();
   }
 
@@ -465,6 +521,80 @@ class MacosVpnService implements VpnManager {
       return 'arm64';
     }
     return 'amd64';
+  }
+
+  Future<bool> _ensureCoreInstalled({
+    required Directory singBoxDir,
+    required String binaryName,
+  }) async {
+    final installer = MacosSingBoxRuntimeInstaller(
+      assetLoader: (assetPath) async {
+        final byteData = await rootBundle.load(assetPath);
+        return byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        );
+      },
+      stopCore: () async {
+        await _runtime.stopCore(reason: 'core_upgrade');
+      },
+      makeExecutable: (file) async {
+        final result = await Process.run('chmod', ['+x', file.path]);
+        if (result.exitCode != 0) {
+          throw FileSystemException(
+            'Failed to make sing-box executable',
+            file.path,
+          );
+        }
+      },
+    );
+
+    try {
+      final updated = await installer.ensureInstalled(
+        runtimeDirectory: singBoxDir,
+        binaryName: binaryName,
+      );
+      if (updated) {
+        await AppLogger.instance.info(
+          'Updated macOS sing-box runtime to ${MacosSingBoxRuntime.targetVersion}',
+        );
+      }
+      return true;
+    } catch (error, stackTrace) {
+      await AppLogger.instance.error(
+        'Failed to update macOS sing-box runtime',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _updateState(
+        VpnStatus.error,
+        errorMessage: '后台内核更新失败，请重新安装客户端',
+        failureReason: VpnFailureReason.coreStartFailed,
+        runtimeDetails: const {'code': 'CORE_VERSION_MISMATCH'},
+      );
+      return false;
+    }
+  }
+
+  Future<bool> _validateConfig({
+    required String binaryPath,
+    required String configPath,
+  }) async {
+    final validation = await MacosSingBoxRuntime.validateConfig(
+      binaryPath: binaryPath,
+      configPath: configPath,
+    );
+    if (validation.isValid) return true;
+
+    final error = validation.error ?? 'sing-box 配置检查失败';
+    await AppLogger.instance.warn('macOS config validation failed: $error');
+    _updateState(
+      VpnStatus.error,
+      errorMessage: error,
+      failureReason: VpnFailureReason.coreStartFailed,
+      runtimeDetails: const {'code': 'CONFIG_INVALID'},
+    );
+    return false;
   }
 
   String _sanitizeConfig(String jsonConfig, String baseDir, bool useTunMode) {

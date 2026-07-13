@@ -10,6 +10,11 @@ protocol ElephantTunHelperProtocol {
 }
 
 private let helperLabel = "com.elphantroute.elephantNetwork.tunhelper"
+private let singBoxCompatibilityEnvironment = [
+  "ENABLE_DEPRECATED_SPECIAL_OUTBOUNDS": "true",
+  "ENABLE_DEPRECATED_LEGACY_DNS_SERVERS": "true",
+  "ENABLE_DEPRECATED_TUN_ADDRESS_X": "true"
+]
 
 final class TunHelper: NSObject, ElephantTunHelperProtocol {
   private var coreProcess: Process?
@@ -19,6 +24,8 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
   private let runtimeDirectory: URL
   private let logDirectory = URL(fileURLWithPath: "/Library/Logs/ElephantRoute", isDirectory: true)
   private lazy var logURL = logDirectory.appendingPathComponent("tun-helper.log")
+  private let coreOutputLock = NSLock()
+  private var latestCoreOutput = ""
 
   init(clientUID: uid_t, clientHomeDirectory: URL) {
     self.clientUID = clientUID
@@ -82,11 +89,15 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
     }
 
     cleanupRoutes()
+    replaceLatestCoreOutput(with: "")
 
     let process = Process()
     process.executableURL = URL(fileURLWithPath: paths.binaryPath)
     process.arguments = ["run", "-c", paths.configPath]
     process.currentDirectoryURL = URL(fileURLWithPath: paths.workDirectory)
+    process.environment = ProcessInfo.processInfo.environment.merging(
+      singBoxCompatibilityEnvironment
+    ) { _, compatibilityValue in compatibilityValue }
 
     let output = Pipe()
     process.standardOutput = output
@@ -94,7 +105,9 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
     output.fileHandleForReading.readabilityHandler = { [weak self] handle in
       let data = handle.availableData
       guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
-      self?.log("[sing-box] \(text.trimmingCharacters(in: .whitespacesAndNewlines))")
+      let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+      self?.appendLatestCoreOutput(trimmed)
+      self?.log("[sing-box] \(trimmed)")
     }
 
     do {
@@ -106,11 +119,13 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
     }
 
     guard waitForHealthCheck() else {
+      let coreExited = coreProcess?.isRunning != true
+      let failureMessage = recentTunFailureMessage()
       _ = stopTunInternal()
-      let error = recentTunFailureMessage() ?? "Health check failed after TUN launch"
+      let error = failureMessage ?? "Health check failed after TUN launch"
       let code = error.contains("其他 TUN/VPN 会话") || error.contains("冲突路由")
         ? "TUN_ROUTE_CONFLICT"
-        : "HEALTH_CHECK_FAILED"
+        : (coreExited ? "CORE_EXITED" : "HEALTH_CHECK_FAILED")
       return ["ok": false, "code": code, "error": error]
     }
 
@@ -184,6 +199,9 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
   private func waitForHealthCheck() -> Bool {
     guard let url = URL(string: "http://127.0.0.1:9090/proxies") else { return false }
     for _ in 0..<12 {
+      if let process = coreProcess, !process.isRunning {
+        return false
+      }
       if let data = try? Data(contentsOf: url), !data.isEmpty {
         return true
       }
@@ -213,12 +231,49 @@ final class TunHelper: NSObject, ElephantTunHelperProtocol {
   }
 
   private func recentTunFailureMessage() -> String? {
-    guard let logContents = try? String(contentsOf: logURL, encoding: .utf8) else { return nil }
-    let recentLines = logContents.split(separator: "\n").suffix(100).map(String.init)
+    let recentLines = readLatestCoreOutput()
+      .split(separator: "\n")
+      .suffix(100)
+      .map { stripAnsi(String($0)).trimmingCharacters(in: .whitespacesAndNewlines) }
     if recentLines.contains(where: { $0.contains("configure tun interface: add route:") && $0.contains("file exists") }) {
       return "检测到系统中存在冲突路由。请先断开其他 TUN/VPN 会话后再启动 TUN 模式。"
     }
-    return nil
+    return recentLines.last(where: {
+      $0.contains("FATAL") || $0.contains("ERROR")
+    })
+  }
+
+  private func replaceLatestCoreOutput(with value: String) {
+    coreOutputLock.lock()
+    latestCoreOutput = value
+    coreOutputLock.unlock()
+  }
+
+  private func appendLatestCoreOutput(_ value: String) {
+    guard !value.isEmpty else { return }
+    coreOutputLock.lock()
+    if !latestCoreOutput.isEmpty {
+      latestCoreOutput.append("\n")
+    }
+    latestCoreOutput.append(value)
+    if latestCoreOutput.count > 64_000 {
+      latestCoreOutput = String(latestCoreOutput.suffix(64_000))
+    }
+    coreOutputLock.unlock()
+  }
+
+  private func readLatestCoreOutput() -> String {
+    coreOutputLock.lock()
+    defer { coreOutputLock.unlock() }
+    return latestCoreOutput
+  }
+
+  private func stripAnsi(_ value: String) -> String {
+    guard let regex = try? NSRegularExpression(pattern: "\u{001B}\\[[0-9;]*[mK]") else {
+      return value
+    }
+    let range = NSRange(value.startIndex..<value.endIndex, in: value)
+    return regex.stringByReplacingMatches(in: value, range: range, withTemplate: "")
   }
 
   private func cleanupRoutes() {

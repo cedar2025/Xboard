@@ -12,6 +12,7 @@ void main() {
     test('uses built-in 204 probe URLs before user configured URL', () {
       final urls = LatencyTestPolicy.probeUrls(
         configuredTestUrl: 'https://example.com/custom_204',
+        profile: LatencyTestProfile.standard,
       );
 
       expect(urls, [
@@ -24,12 +25,40 @@ void main() {
     test('deduplicates configured URL when it matches a built-in URL', () {
       final urls = LatencyTestPolicy.probeUrls(
         configuredTestUrl: ' http://cp.cloudflare.com/generate_204 ',
+        profile: LatencyTestProfile.standard,
       );
 
       expect(urls, [
         'https://www.gstatic.com/generate_204',
         'http://cp.cloudflare.com/generate_204',
       ]);
+    });
+
+    test('macOS V2BOX profile uses one complete HTTP probe', () {
+      expect(
+        LatencyTestPolicy.probeUrls(
+          configuredTestUrl: 'http://cp.cloudflare.com/generate_204',
+          profile: LatencyTestProfile.v2boxConnection,
+        ),
+        ['https://www.gstatic.com/generate_204'],
+      );
+      expect(
+        LatencyTestPolicy.timeoutMsFor(
+          LatencyTestProfile.v2boxConnection,
+        ),
+        5000,
+      );
+      expect(LatencyTestPolicy.concurrency, 4);
+    });
+
+    test('macOS V2BOX profile preserves an explicit custom probe URL', () {
+      expect(
+        LatencyTestPolicy.probeUrls(
+          configuredTestUrl: ' https://example.com/custom_204 ',
+          profile: LatencyTestProfile.v2boxConnection,
+        ),
+        ['https://example.com/custom_204'],
+      );
     });
 
     test('selects minimum valid latency from multiple probes', () async {

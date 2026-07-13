@@ -117,4 +117,22 @@ void main() {
     expect(source, isNot(contains('process.launchPath')));
     expect(source, isNot(contains('process.launch()')));
   });
+
+  test('native runtimes allow current config compatibility and surface exits',
+      () {
+    final appSource = File('macos/Runner/AppDelegate.swift').readAsStringSync();
+    final helperSource =
+        File('macos/ElephantTunHelper/main.swift').readAsStringSync();
+
+    for (final source in [appSource, helperSource]) {
+      expect(source, contains('ENABLE_DEPRECATED_SPECIAL_OUTBOUNDS'));
+      expect(source, contains('ENABLE_DEPRECATED_LEGACY_DNS_SERVERS'));
+      expect(source, contains('ENABLE_DEPRECATED_TUN_ADDRESS_X'));
+    }
+
+    expect(appSource, contains('callTunHelperIfAvailable(timeout: 12, body)'));
+    expect(helperSource, contains('CORE_EXITED'));
+    expect(helperSource, contains('latestCoreOutput'));
+    expect(helperSource, contains('process.isRunning'));
+  });
 }

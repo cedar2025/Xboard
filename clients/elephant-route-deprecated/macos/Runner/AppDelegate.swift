@@ -26,6 +26,11 @@ class AppDelegate: FlutterAppDelegate {
   private let tunHelperPlistName = "com.elphantroute.elephantNetwork.tunhelper.plist"
   private let installedTunHelperPath = "/Library/PrivilegedHelperTools/ElephantTunHelper"
   private let installedTunHelperPlistPath = "/Library/LaunchDaemons/com.elphantroute.elephantNetwork.tunhelper.plist"
+  private let singBoxCompatibilityEnvironment = [
+    "ENABLE_DEPRECATED_SPECIAL_OUTBOUNDS": "true",
+    "ENABLE_DEPRECATED_LEGACY_DNS_SERVERS": "true",
+    "ENABLE_DEPRECATED_TUN_ADDRESS_X": "true"
+  ]
 
   private var coreProcess: Process?
   private let runtimeStopLock = NSLock()
@@ -576,6 +581,9 @@ class AppDelegate: FlutterAppDelegate {
     process.executableURL = URL(fileURLWithPath: binaryPath)
     process.arguments = ["run", "-c", configPath]
     process.currentDirectoryURL = URL(fileURLWithPath: URL(fileURLWithPath: configPath).deletingLastPathComponent().path)
+    process.environment = ProcessInfo.processInfo.environment.merging(
+      singBoxCompatibilityEnvironment
+    ) { _, compatibilityValue in compatibilityValue }
 
     let pipe = Pipe()
     process.standardOutput = pipe
@@ -1087,7 +1095,7 @@ class AppDelegate: FlutterAppDelegate {
   }
 
   private func callTunHelper(_ body: @escaping (ElephantTunHelperProtocol, @escaping (NSDictionary) -> Void) -> Void) -> [String: Any] {
-    callTunHelperIfAvailable(timeout: 5, body) ?? [
+    callTunHelperIfAvailable(timeout: 12, body) ?? [
       "ok": false,
       "code": "HELPER_CONNECTION_FAILED",
       "error": "无法连接后台网络组件"
