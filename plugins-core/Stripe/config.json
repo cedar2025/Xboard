@@ -1,0 +1,8 @@
+{
+    "name": "Stripe Checkout",
+    "code": "stripe",
+    "type": "payment",
+    "version": "1.0.0",
+    "description": "Stripe Checkout payment plugin with configurable payment methods",
+    "author": "QFL"
+}
