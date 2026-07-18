@@ -366,6 +366,43 @@ class ServerService
                 'transport' => data_get($protocolSettings, 'transport', 'TCP'),
                 'traffic_pattern' => $protocolSettings['traffic_pattern'],
             ],
+            'tsunami' => [
+                'protocol' => Server::TYPE_TSUNAMI,
+                'listen' => self::buildListenAddress(
+                    data_get($protocolSettings, 'listen_ip', '0.0.0.0'),
+                    (int) $serverPort
+                ),
+                'tls' => [
+                    'cert_file' => data_get($protocolSettings, 'tls.cert_file'),
+                    'key_file' => data_get($protocolSettings, 'tls.key_file'),
+                ],
+                'transport' => [
+                    'mode' => data_get($protocolSettings, 'transport.mode', 'raw'),
+                    'path' => data_get($protocolSettings, 'transport.path', '/assets/update'),
+                    'host' => data_get($protocolSettings, 'transport.host') ?: $host,
+                ],
+                'surge' => [
+                    'mode' => data_get($protocolSettings, 'surge.mode', 'auto'),
+                    'max_connections' => (int) data_get($protocolSettings, 'surge.max_connections', 4),
+                    'threshold' => (int) data_get($protocolSettings, 'surge.threshold', 8),
+                ],
+                'fallback' => data_get($protocolSettings, 'fallback'),
+                'fronting' => [
+                    'enabled' => (bool) data_get($protocolSettings, 'fronting.enabled', false),
+                    'path' => data_get($protocolSettings, 'transport.path', '/assets/update'),
+                    'secret' => data_get($protocolSettings, 'fronting.secret'),
+                    'server_header' => data_get($protocolSettings, 'fronting.server_header', 'Caddy'),
+                    'site_name' => data_get($protocolSettings, 'fronting.site_name', 'Welcome'),
+                    'decoy_proxy' => data_get($protocolSettings, 'fronting.decoy_proxy'),
+                ],
+                'padding_scheme' => data_get($protocolSettings, 'padding_scheme'),
+                'allow_all' => (bool) data_get($protocolSettings, 'routing.allow_all', false),
+                'device_limit_mode' => data_get($protocolSettings, 'security.device_limit_mode', 'ip'),
+                'base_config' => [
+                    'push_interval' => (int) admin_setting('server_push_interval', 60),
+                    'pull_interval' => (int) admin_setting('server_pull_interval', 60),
+                ],
+            ],
             default => [],
         };
 
@@ -394,6 +431,18 @@ class ServerService
         }
 
         return $response;
+    }
+
+    private static function buildListenAddress(?string $host, int $port): string
+    {
+        $host = trim((string) $host);
+        if ($host === '') {
+            $host = '0.0.0.0';
+        }
+        if (str_contains($host, ':') && !str_starts_with($host, '[')) {
+            $host = "[{$host}]";
+        }
+        return "{$host}:{$port}";
     }
 
     /**

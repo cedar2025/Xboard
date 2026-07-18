@@ -78,6 +78,7 @@ class Kernel extends HttpKernel
         'log' => \App\Http\Middleware\RequestLog::class,
         'server' => \App\Http\Middleware\Server::class,
         'server.v2' => \App\Http\Middleware\ServerV2::class,
+        'tsunami.node' => \App\Http\Middleware\TsunamiNode::class,
         'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
         'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
     ];

@@ -8,6 +8,7 @@ use App\Http\Controllers\V2\Admin\Server\GroupController;
 use App\Http\Controllers\V2\Admin\Server\RouteController;
 use App\Http\Controllers\V2\Admin\Server\ManageController;
 use App\Http\Controllers\V2\Admin\Server\MachineController;
+use App\Http\Controllers\V2\Admin\Server\TsunamiController as TsunamiManageController;
 use App\Http\Controllers\V2\Admin\OrderController;
 use App\Http\Controllers\V2\Admin\UserController;
 use App\Http\Controllers\V2\Admin\StatController;
@@ -94,6 +95,15 @@ class AdminRoute
                 $router->post('/resetTraffic', [ManageController::class, 'resetTraffic']);
                 $router->post('/batchResetTraffic', [ManageController::class, 'batchResetTraffic']);
                 $router->get('/generateEchKey', [ManageController::class, 'generateEchKey']);
+            });
+
+            $router->group([
+                'prefix' => 'server/manage/tsunami'
+            ], function ($router) {
+                $router->get('/credential', [TsunamiManageController::class, 'credential']);
+                $router->post('/issueEnrollment', [TsunamiManageController::class, 'issueEnrollment']);
+                $router->post('/rotateCredential', [TsunamiManageController::class, 'rotateCredential']);
+                $router->post('/revokeCredential', [TsunamiManageController::class, 'revokeCredential']);
             });
 
             // 机器管理接口

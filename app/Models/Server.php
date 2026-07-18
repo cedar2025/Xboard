@@ -70,6 +70,7 @@ class Server extends Model
     public const TYPE_NAIVE = 'naive';
     public const TYPE_HTTP = 'http';
     public const TYPE_MIERU = 'mieru';
+    public const TYPE_TSUNAMI = 'tsunami';
     public const STATUS_OFFLINE = 0;
     public const STATUS_ONLINE_NO_PUSH = 1;
     public const STATUS_ONLINE = 2;
@@ -108,6 +109,7 @@ class Server extends Model
         self::TYPE_NAIVE,
         self::TYPE_HTTP,
         self::TYPE_MIERU,
+        self::TYPE_TSUNAMI,
     ];
 
     protected $table = 'v2_server';
@@ -320,6 +322,58 @@ class Server extends Model
             'transport' => ['type' => 'string', 'default' => 'TCP'],
             'traffic_pattern' => ['type' => 'string', 'default' => ''],
             ...self::MULTIPLEX_CONFIGURATION,
+        ],
+        self::TYPE_TSUNAMI => [
+            'listen_ip' => ['type' => 'string', 'default' => '0.0.0.0'],
+            'transport' => [
+                'type' => 'object',
+                'fields' => [
+                    'mode' => ['type' => 'string', 'default' => 'raw'],
+                    'path' => ['type' => 'string', 'default' => '/assets/update'],
+                    'host' => ['type' => 'string', 'default' => null],
+                ]
+            ],
+            'tls' => [
+                'type' => 'object',
+                'fields' => [
+                    'server_name' => ['type' => 'string', 'default' => null],
+                    'allow_insecure' => ['type' => 'boolean', 'default' => false],
+                    'cert_file' => ['type' => 'string', 'default' => null],
+                    'key_file' => ['type' => 'string', 'default' => null],
+                ]
+            ],
+            'fronting' => [
+                'type' => 'object',
+                'fields' => [
+                    'enabled' => ['type' => 'boolean', 'default' => false],
+                    'secret' => ['type' => 'string', 'default' => null],
+                    'server_header' => ['type' => 'string', 'default' => 'Caddy'],
+                    'site_name' => ['type' => 'string', 'default' => 'Welcome'],
+                    'decoy_proxy' => ['type' => 'string', 'default' => null],
+                ]
+            ],
+            'surge' => [
+                'type' => 'object',
+                'fields' => [
+                    'mode' => ['type' => 'string', 'default' => 'auto'],
+                    'max_connections' => ['type' => 'integer', 'default' => 4],
+                    'threshold' => ['type' => 'integer', 'default' => 8],
+                ]
+            ],
+            'security' => [
+                'type' => 'object',
+                'fields' => [
+                    'device_limit_mode' => ['type' => 'string', 'default' => 'ip'],
+                ]
+            ],
+            'routing' => [
+                'type' => 'object',
+                'fields' => [
+                    'allow_all' => ['type' => 'boolean', 'default' => false],
+                ]
+            ],
+            'fallback' => ['type' => 'string', 'default' => null],
+            'padding_scheme' => ['type' => 'string', 'default' => null],
         ]
     ];
 

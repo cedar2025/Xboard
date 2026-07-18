@@ -33,7 +33,7 @@ class DeviceStateService
         $this->removeNodeDevices($nodeId, $userId);
 
         // Normalize: strip port suffix and deduplicate
-        $ips = array_values(array_unique(array_map([self::class, 'normalizeIP'], $ips)));
+        $ips = array_values(array_unique(array_filter(array_map([self::class, 'normalizeIP'], $ips))));
 
         if (!empty($ips)) {
             $fields = [];
@@ -173,17 +173,27 @@ class DeviceStateService
     /**
      * Strip port from IP address: "1.2.3.4:12345" → "1.2.3.4", "[::1]:443" → "::1"
      */
-    private static function normalizeIP(string $ip): string
+    public static function normalizeIP(string $ip): string
     {
+        $ip = trim($ip);
         // [IPv6]:port
-        if (preg_match('/^\[(.+)\]:\d+$/', $ip, $m)) {
+        if (preg_match('/^\[([^\]]+)\](?::\d+)?$/', $ip, $m)) {
             return $m[1];
         }
         // IPv4:port
         if (preg_match('/^(\d+\.\d+\.\d+\.\d+):\d+$/', $ip, $m)) {
-            return $m[1];
+            $ip = $m[1];
         }
-        return $ip;
+
+        $packed = @inet_pton($ip);
+        if ($packed === false) {
+            return $ip;
+        }
+        if (strlen($packed) === 16
+            && substr($packed, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+            return inet_ntop(substr($packed, 12));
+        }
+        return inet_ntop($packed);
     }
 
     /**
