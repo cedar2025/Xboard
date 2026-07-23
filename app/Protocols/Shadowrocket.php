@@ -18,6 +18,7 @@ class Shadowrocket extends AbstractProtocol
         Server::TYPE_TUIC,
         Server::TYPE_ANYTLS,
         Server::TYPE_SOCKS,
+        Server::TYPE_MIERU,
     ];
 
     protected $protocolRequirements = [
@@ -65,6 +66,9 @@ class Shadowrocket extends AbstractProtocol
             }
             if ($item['type'] === Server::TYPE_SOCKS) {
                 $uri .= self::buildSocks($item['password'], $item);
+            }
+            if ($item['type'] === Server::TYPE_MIERU) {
+                $uri .= self::buildMieru($item['password'], $item);
             }
         }
         return response(base64_encode($uri))
@@ -451,4 +455,58 @@ class Shadowrocket extends AbstractProtocol
         $uri .= "\r\n";
         return $uri;
     }
+
+    /**
+     * Export Mieru nodes for Shadowrocket using official "mieru simple" URLs.
+     *
+     * Official formats (enfein/mieru pkg/appctl/url.go):
+     * - mieru://  + base64(protobuf ClientConfig)  [opaque full config]
+     * - mierus:// user:pass@host?profile=...&port=...&protocol=TCP|UDP  [simple]
+     *
+     * Host must NOT include port. Port/protocol are query parameters.
+     * profile is required. Credentials match ClashMeta (username=password=user token).
+     */
+    public static function buildMieru($password, $server)
+    {
+        $protocol_settings = data_get($server, 'protocol_settings', []);
+        $password = (string) data_get($server, 'password', $password);
+        $name = rawurlencode($server['name']);
+        $host = Helper::wrapIPv6($server['host']);
+        $transport = strtoupper((string) data_get($protocol_settings, 'transport', 'TCP'));
+        if (!in_array($transport, ['TCP', 'UDP'], true)) {
+            $transport = 'TCP';
+        }
+
+        $profile = (string) ($server['name'] ?? 'default');
+        $port = data_get($server, 'ports') ?: $server['port'];
+
+        $params = [
+            'profile' => $profile,
+            'port' => (string) $port,
+            'protocol' => $transport,
+        ];
+
+        if ($pattern = data_get($protocol_settings, 'traffic_pattern')) {
+            $params['traffic-pattern'] = $pattern;
+        }
+
+        $multiplex = data_get($protocol_settings, 'multiplex');
+        if (is_array($multiplex) && data_get($multiplex, 'enabled')) {
+            $level = (string) data_get($multiplex, 'protocol', 'MULTIPLEXING_LOW');
+            $allowed = ['MULTIPLEXING_OFF', 'MULTIPLEXING_LOW', 'MULTIPLEXING_MIDDLE', 'MULTIPLEXING_HIGH'];
+            if (!in_array($level, $allowed, true)) {
+                $level = 'MULTIPLEXING_LOW';
+            }
+            $params['multiplexing'] = $level;
+        } elseif (is_string($multiplex) && $multiplex !== '') {
+            $params['multiplexing'] = $multiplex;
+        }
+
+        // RFC3986: encode spaces as %20 (not +) so Shadowrocket shows names with spaces
+        $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+        $userInfo = rawurlencode($password) . ':' . rawurlencode($password);
+        $uri = "mierus://{$userInfo}@{$host}?{$query}#{$name}\r\n";
+        return $uri;
+    }
+
 }
