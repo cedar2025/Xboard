@@ -239,7 +239,7 @@ class General extends AbstractProtocol
 
         $user = $uuid . '@' . Helper::wrapIPv6($host) . ':' . $port;
         $query = http_build_query($config);
-        $fragment = urlencode($name);
+        $fragment = rawurlencode($name);
         $link = sprintf("vless://%s?%s#%s\r\n", $user, $query, $fragment);
         return $link;
     }
