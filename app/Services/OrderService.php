@@ -74,11 +74,13 @@ class OrderService
 
             $orderService->setVipDiscount($user);
             $orderService->setOrderType($user);
-            $orderService->setInvite(user: $user);
 
             if ($user->balance && $order->total_amount > 0) {
                 $orderService->handleUserBalance($user, $userService);
             }
+
+            // 余额抵扣后的 total_amount 才是用户实际支付金额，返利必须基于该金额计算。
+            $orderService->setInvite(user: $user);
 
             if (!$order->save()) {
                 throw new ApiException(__('Failed to create order'));
