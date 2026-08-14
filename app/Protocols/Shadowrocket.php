@@ -379,6 +379,8 @@ class Shadowrocket extends AbstractProtocol
             case 2:
                 $params = [
                     "obfs" => 'none',
+                    "upmbps" => data_get($protocol_settings, 'bandwidth.up'),
+                    "downmbps" => data_get($protocol_settings, 'bandwidth.down'),
                     "fastopen" => 1
                 ];
                 if ($serverName = data_get($protocol_settings, 'tls.server_name')) {
