@@ -100,7 +100,14 @@ class OrderService
         HookManager::call('order.open.before', $order);
 
 
-        DB::transaction(function () use ($order, $plan) {
+        $opened = DB::transaction(function () use ($order, $plan) {
+            // 锁定订单行并复查状态：仅开通中可开通，防队列重派/回调并发重复入账（#1021 机制 B）
+            $locked = Order::lockForUpdate()->find($order->id);
+            if (!$locked || (int) $locked->status !== Order::STATUS_PROCESSING) {
+                return false;
+            }
+            $order->setRawAttributes($locked->getAttributes());
+
             $this->user = User::lockForUpdate()->find($order->user_id);
 
             if ($order->surplus_credit) {
@@ -129,7 +136,12 @@ class OrderService
             if (!$order->save()) {
                 throw new \RuntimeException('订单信息保存失败');
             }
+            return true;
         });
+
+        if (!$opened) {
+            return;
+        }
 
         $eventId = match ((int) $order->type) {
             Order::STATUS_PROCESSING => admin_setting('new_order_event_id', 0),
@@ -288,12 +300,19 @@ class OrderService
         $order = $this->order;
         if ($order->status !== Order::STATUS_PENDING)
             return true;
-        $order->status = Order::STATUS_PROCESSING;
-        $order->paid_at = time();
-        $order->callback_no = $callbackNo;
-        if (!$order->save())
-            return false;
         try {
+            // 仅允许从待支付原子迁移，并发回调只有一方成功（#1021 机制 B）
+            $updated = Order::where('id', $order->id)
+                ->where('status', Order::STATUS_PENDING)
+                ->update([
+                    'status' => Order::STATUS_PROCESSING,
+                    'paid_at' => time(),
+                    'callback_no' => $callbackNo,
+                ]);
+            if ($updated === 0) {
+                return true;
+            }
+            $order->refresh();
             OrderHandleJob::dispatchSync($order->trade_no);
         } catch (\Exception $e) {
             Log::error($e);
@@ -307,25 +326,32 @@ class OrderService
         $order = $this->order;
         HookManager::call('order.cancel.before', $order);
         try {
-            DB::beginTransaction();
-            $order->status = Order::STATUS_CANCELLED;
-            if (!$order->save()) {
-                throw new \Exception('Failed to save order status.');
-            }
-            if ($order->balance_amount) {
-                $userService = new UserService();
-                if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
-                    throw new \Exception('Failed to add balance.');
+            $refunded = DB::transaction(function () use ($order) {
+                // 仅待支付可取消：条件更新保证状态迁移与退款最多一次（#1021 机制 A）
+                $updated = Order::where('id', $order->id)
+                    ->where('status', Order::STATUS_PENDING)
+                    ->update(['status' => Order::STATUS_CANCELLED]);
+                if ($updated === 0) {
+                    return false;
                 }
+                if ($order->balance_amount) {
+                    $userService = new UserService();
+                    if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
+                        throw new \Exception('Failed to add balance.');
+                    }
+                }
+                return true;
+            });
+            if (!$refunded) {
+                return false;
             }
-            DB::commit();
-            HookManager::call('order.cancel.after', $order);
-            return true;
+            $order->status = Order::STATUS_CANCELLED;
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error($e);
             return false;
         }
+        HookManager::call('order.cancel.after', $order);
+        return true;
     }
 
     private function setSpeedLimit($speedLimit)
