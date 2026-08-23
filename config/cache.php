@@ -20,6 +20,10 @@ return [
 
     'default' => env('CACHE_DRIVER', 'file'),
 
+    // Cache store for admin settings (App\Support\Setting).
+    // Defaults to redis in production; tests override with array.
+    'setting_store' => env('CACHE_SETTING_STORE', 'redis'),
+
     /*
     |--------------------------------------------------------------------------
     | Cache Stores
