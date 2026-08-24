@@ -27,6 +27,10 @@ class MachineController extends Controller
                     'notes' => $machine->notes,
                     'is_active' => $machine->is_active,
                     'last_seen_at' => $machine->last_seen_at,
+                    'agent_version' => $machine->agent_version,
+                    // 离线判定：3 个心跳周期（server_push_interval 默认 60s）无上报视为离线
+                    'is_online' => $machine->last_seen_at !== null
+                        && $machine->last_seen_at > now()->subSeconds(max(180, (int) admin_setting('server_push_interval', 60) * 3))->timestamp,
                     'load_status' => $machine->load_status,
                     'servers_count' => $machine->servers_count,
                     'created_at' => $machine->created_at,
