@@ -103,4 +103,27 @@ class MachineStatusVersionTest extends TestCase
         $machine->update(['last_seen_at' => now()->timestamp]);
         $this->artisan(CheckMachineOffline::class)->expectsOutputToContain('机器恢复')->assertSuccessful();
     }
+
+    public function test_high_load_alerts_after_sustained_rounds_and_recovers(): void
+    {
+        config()->set('cache.setting_store', 'array');
+        Cache::forget('machine_highload_rounds_1');
+        Cache::forget('machine_highload_alerted_1');
+
+        $machine = $this->machine([
+            'load_status' => ['cpu' => 95.0, 'mem' => ['total' => 1000, 'used' => 500]],
+        ]);
+
+        // 前 4 轮高负载：累计但不告警
+        for ($i = 0; $i < 4; $i++) {
+            $this->artisan(CheckMachineOffline::class)->assertSuccessful();
+        }
+
+        // 第 5 轮：触发告警
+        $this->artisan(CheckMachineOffline::class)->expectsOutputToContain('机器高负载')->assertSuccessful();
+
+        // 负载恢复：发恢复通知，且状态复位（再来高负载需重新累计）
+        $machine->update(['load_status' => ['cpu' => 10.0, 'mem' => ['total' => 1000, 'used' => 500]]]);
+        $this->artisan(CheckMachineOffline::class)->expectsOutputToContain('负载恢复')->assertSuccessful();
+    }
 }
