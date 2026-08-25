@@ -108,6 +108,8 @@ class AdminRoute
                 $router->get('/installCommand', [MachineController::class, 'installCommand']);
                 $router->get('/nodes', [MachineController::class, 'nodes']);
                 $router->get('/history', [MachineController::class, 'history']);
+                $router->post('/reload', [MachineController::class, 'controlReload']);
+                $router->post('/restart', [MachineController::class, 'controlRestart']);
             });
 
             // Order

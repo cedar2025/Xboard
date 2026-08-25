@@ -165,6 +165,50 @@ class MachineController extends Controller
     }
 
     /**
+     * 远程指令：reload（node_id>0 重载单节点，缺省整台机器）
+     */
+    public function controlReload(Request $request)
+    {
+        $params = $request->validate([
+            'machine_id' => 'required|integer|exists:v2_server_machine,id',
+            'node_id' => 'nullable|integer',
+        ]);
+
+        $machine = ServerMachine::findOrFail($params['machine_id']);
+        if (!$machine->is_active) {
+            return $this->fail([400, '机器已停用']);
+        }
+
+        NodeSyncService::pushMachine($machine->id, 'control.reload', array_filter([
+            'node_id' => $params['node_id'] ?? null,
+        ], fn ($v) => $v !== null));
+
+        return $this->success(true);
+    }
+
+    /**
+     * 远程指令：restart（node_id>0 重启单节点进程，缺省重启 agent）
+     */
+    public function controlRestart(Request $request)
+    {
+        $params = $request->validate([
+            'machine_id' => 'required|integer|exists:v2_server_machine,id',
+            'node_id' => 'nullable|integer',
+        ]);
+
+        $machine = ServerMachine::findOrFail($params['machine_id']);
+        if (!$machine->is_active) {
+            return $this->fail([400, '机器已停用']);
+        }
+
+        NodeSyncService::pushMachine($machine->id, 'control.restart', array_filter([
+            'node_id' => $params['node_id'] ?? null,
+        ], fn ($v) => $v !== null));
+
+        return $this->success(true);
+    }
+
+    /**
      * 获取机器负载历史
      */
     public function history(Request $request)
