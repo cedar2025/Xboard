@@ -16,7 +16,7 @@ class Setting
 
     public function __construct()
     {
-        $this->cache = Cache::store('redis');
+        $this->cache = Cache::store(config('cache.setting_store', 'redis'));
     }
 
     /**

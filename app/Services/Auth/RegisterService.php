@@ -177,8 +177,10 @@ class RegisterService
             Cache::forget(CacheKey::get('EMAIL_VERIFY_CODE', $email));
         }
 
-        // 更新最近登录时间
+        // 更新最近登录时间与注册 IP（溯源/风控基础数据）
         $user->last_login_at = time();
+        $user->register_ip = $request->ip();
+        $user->last_login_ip = $request->ip();
         $user->save();
 
         // 更新IP注册计数

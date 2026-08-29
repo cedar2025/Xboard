@@ -22,11 +22,13 @@ class MachineController extends Controller
         $machine = $this->authenticateMachine($request);
 
         $nodes = ServerService::getMachineNodes($machine)
-            ->map(fn($node) => [
-                'id' => $node->id,
-                'type' => $node->type,
-                'name' => $node->name,
-            ])->values();
+            ->map(function ($node) {
+                $config = \App\Services\ServerService::buildNodeConfig($node);
+                $config['id'] = $node->id;
+                $config['type'] = $node->type;
+                $config['name'] = $node->name;
+                return $config;
+            })->values();
 
         return response()->json([
             'nodes' => $nodes,
@@ -87,6 +89,9 @@ class MachineController extends Controller
         $machine->forceFill([
             'load_status' => $loadStatus,
             'last_seen_at' => $recordedAt,
+            'agent_version' => $request->filled('agent_version')
+                ? substr((string) $request->input('agent_version'), 0, 64)
+                : $machine->agent_version,
         ])->save();
 
         $historyData = [

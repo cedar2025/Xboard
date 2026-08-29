@@ -27,6 +27,10 @@ class MachineController extends Controller
                     'notes' => $machine->notes,
                     'is_active' => $machine->is_active,
                     'last_seen_at' => $machine->last_seen_at,
+                    'agent_version' => $machine->agent_version,
+                    // 离线判定：3 个心跳周期（server_push_interval 默认 60s）无上报视为离线
+                    'is_online' => $machine->last_seen_at !== null
+                        && $machine->last_seen_at > now()->subSeconds(max(180, (int) admin_setting('server_push_interval', 60) * 3))->timestamp,
                     'load_status' => $machine->load_status,
                     'servers_count' => $machine->servers_count,
                     'created_at' => $machine->created_at,
@@ -158,6 +162,50 @@ class MachineController extends Controller
             ->get(['id', 'name', 'type', 'host', 'port', 'show', 'enabled', 'sort']);
 
         return $this->success($nodes);
+    }
+
+    /**
+     * 远程指令：reload（node_id>0 重载单节点，缺省整台机器）
+     */
+    public function controlReload(Request $request)
+    {
+        $params = $request->validate([
+            'machine_id' => 'required|integer|exists:v2_server_machine,id',
+            'node_id' => 'nullable|integer',
+        ]);
+
+        $machine = ServerMachine::findOrFail($params['machine_id']);
+        if (!$machine->is_active) {
+            return $this->fail([400, '机器已停用']);
+        }
+
+        NodeSyncService::pushMachine($machine->id, 'control.reload', array_filter([
+            'node_id' => $params['node_id'] ?? null,
+        ], fn ($v) => $v !== null));
+
+        return $this->success(true);
+    }
+
+    /**
+     * 远程指令：restart（node_id>0 重启单节点进程，缺省重启 agent）
+     */
+    public function controlRestart(Request $request)
+    {
+        $params = $request->validate([
+            'machine_id' => 'required|integer|exists:v2_server_machine,id',
+            'node_id' => 'nullable|integer',
+        ]);
+
+        $machine = ServerMachine::findOrFail($params['machine_id']);
+        if (!$machine->is_active) {
+            return $this->fail([400, '机器已停用']);
+        }
+
+        NodeSyncService::pushMachine($machine->id, 'control.restart', array_filter([
+            'node_id' => $params['node_id'] ?? null,
+        ], fn ($v) => $v !== null));
+
+        return $this->success(true);
     }
 
     /**

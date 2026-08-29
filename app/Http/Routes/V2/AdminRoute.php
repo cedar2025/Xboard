@@ -28,7 +28,7 @@ class AdminRoute
     {
         $router->group([
             'prefix' => admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))),
-            'middleware' => ['admin', 'log'],
+            'middleware' => ['admin.ip.allowlist', 'admin', 'log'],
         ], function ($router) {
             // Config
             $router->group([
@@ -108,6 +108,8 @@ class AdminRoute
                 $router->get('/installCommand', [MachineController::class, 'installCommand']);
                 $router->get('/nodes', [MachineController::class, 'nodes']);
                 $router->get('/history', [MachineController::class, 'history']);
+                $router->post('/reload', [MachineController::class, 'controlReload']);
+                $router->post('/restart', [MachineController::class, 'controlRestart']);
             });
 
             // Order
