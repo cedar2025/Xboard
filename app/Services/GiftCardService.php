@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Log;
 
 class GiftCardService
 {
-    protected readonly GiftCardCode $code;
-    protected readonly GiftCardTemplate $template;
+    protected GiftCardCode $code;
+    protected GiftCardTemplate $template;
     protected ?User $user = null;
 
     public function __construct(string $code)
@@ -106,6 +106,23 @@ class GiftCardService
         }
 
         return DB::transaction(function () use ($options) {
+            $this->code = GiftCardCode::whereKey($this->code->id)
+                ->lockForUpdate()
+                ->first()
+                ?? throw new ApiException('兑换码不存在');
+
+            $this->template = GiftCardTemplate::whereKey($this->code->template_id)
+                ->lockForUpdate()
+                ->first()
+                ?? throw new ApiException('该礼品卡类型不存在');
+
+            $this->user = User::whereKey($this->user->id)
+                ->lockForUpdate()
+                ->first()
+                ?? throw new ApiException('用户信息未提供');
+
+            $this->validate();
+
             $actualRewards = $this->template->calculateActualRewards($this->user);
 
             if ($this->template->type === GiftCardTemplate::TYPE_MYSTERY) {
@@ -198,7 +215,7 @@ class GiftCardService
             return null;
         }
 
-        $inviteUser = User::find($this->user->invite_user_id);
+        $inviteUser = User::lockForUpdate()->find($this->user->invite_user_id);
         if (!$inviteUser) {
             return null;
         }
@@ -212,7 +229,9 @@ class GiftCardService
         if (isset($rewards['balance']) && $rewards['balance'] > 0) {
             $inviteBalance = intval($rewards['balance'] * $rate);
             if ($inviteBalance > 0) {
-                $userService->addBalance($inviteUser->id, $inviteBalance);
+                if (!$userService->addBalance($inviteUser->id, $inviteBalance)) {
+                    throw new ApiException('邀请人余额发放失败');
+                }
                 $inviteRewards['balance'] = $inviteBalance;
             }
         }

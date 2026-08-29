@@ -26,6 +26,7 @@
     "No active subscription. Unable to use our provided Apple ID": "Нет активной подписки. Невозможно использовать предоставленный Apple ID",
     "Oops, there's a problem... Please refresh the page and try again later": "Ой, возникла проблема... Обновите страницу и попробуйте позже",
     "Order does not exist": "Заказ не существует",
+    "Order amount is invalid": "Некорректная сумма заказа",
     "Order does not exist or has been paid": "Заказ не существует или уже оплачен",
     "Payment failed. Please check your credit card information": "Ошибка оплаты. Проверьте данные карты",
     "Payment gateway request failed": "Ошибка запроса к платёжному шлюзу",

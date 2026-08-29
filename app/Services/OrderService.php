@@ -33,6 +33,21 @@ class OrderService
         $this->order = $order;
     }
 
+    private function lockCurrentOrder(): ?Order
+    {
+        return Order::whereKey($this->order->id)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    private function lockCurrentOrderWhenStatus(int $status): ?Order
+    {
+        return Order::whereKey($this->order->id)
+            ->where('status', $status)
+            ->lockForUpdate()
+            ->first();
+    }
+
     /**
      * Create an order from a request.
      *
@@ -56,6 +71,15 @@ class OrderService
         HookManager::call('order.create.before', [$user, $plan, $period, $couponCode]);
 
         return DB::transaction(function () use ($user, $plan, $period, $couponCode, $userService) {
+            $user = User::lockForUpdate()->find($user->id);
+            if (!$user) {
+                throw new ApiException(__('The user does not exist'));
+            }
+
+            if ($userService->isNotCompleteOrderByUserId($user->id)) {
+                throw new ApiException(__('You have an unpaid or pending order, please try again later or cancel it'));
+            }
+
             $newPeriod = PlanService::getPeriodKey($period);
 
             $order = new Order([
@@ -79,7 +103,6 @@ class OrderService
                 $orderService->handleUserBalance($user, $userService);
             }
 
-            // 余额抵扣后的 total_amount 才是用户实际支付金额，返利必须基于该金额计算。
             $orderService->setInvite(user: $user);
 
             if (!$order->save()) {
@@ -96,13 +119,19 @@ class OrderService
 
     public function open(): void
     {
-        $order = $this->order;
-        $plan = Plan::find($order->plan_id);
+        $openedOrder = DB::transaction(function () {
+            $order = $this->lockCurrentOrderWhenStatus(Order::STATUS_PROCESSING);
+            if (!$order) {
+                return null;
+            }
 
-        HookManager::call('order.open.before', $order);
+            $plan = Plan::find($order->plan_id);
+            if (!$plan) {
+                throw new \RuntimeException('订阅不存在');
+            }
 
+            HookManager::call('order.open.before', $order);
 
-        DB::transaction(function () use ($order, $plan) {
             $this->user = User::lockForUpdate()->find($order->user_id);
 
             if ($order->surplus_credit) {
@@ -131,10 +160,19 @@ class OrderService
             if (!$order->save()) {
                 throw new \RuntimeException('订单信息保存失败');
             }
+
+            return $order;
         });
 
+        if (!$openedOrder) {
+            return;
+        }
+
+        $order = $openedOrder;
+        $this->order = $order;
+
         $eventId = match ((int) $order->type) {
-            Order::STATUS_PROCESSING => admin_setting('new_order_event_id', 0),
+            Order::TYPE_NEW_PURCHASE => admin_setting('new_order_event_id', 0),
             Order::TYPE_RENEWAL => admin_setting('renew_order_event_id', 0),
             Order::TYPE_UPGRADE => admin_setting('change_order_event_id', 0),
             default => 0,
@@ -287,16 +325,31 @@ class OrderService
 
     public function paid(string $callbackNo)
     {
-        $order = $this->order;
-        if ($order->status !== Order::STATUS_PENDING)
-            return true;
-        $order->status = Order::STATUS_PROCESSING;
-        $order->paid_at = time();
-        $order->callback_no = $callbackNo;
-        if (!$order->save())
-            return false;
         try {
-            OrderHandleJob::dispatchSync($order->trade_no);
+            [$order, $shouldDispatch] = DB::transaction(function () use ($callbackNo) {
+                $order = $this->lockCurrentOrder();
+                if (!$order) {
+                    throw new \RuntimeException('Order not found.');
+                }
+                if ((int) $order->status !== Order::STATUS_PENDING) {
+                    return [$order, false];
+                }
+
+                $order->status = Order::STATUS_PROCESSING;
+                $order->paid_at = time();
+                $order->callback_no = $callbackNo;
+                if (!$order->save()) {
+                    throw new \RuntimeException('Failed to save order status.');
+                }
+
+                return [$order, true];
+            });
+
+            $this->order = $order;
+
+            if ($shouldDispatch) {
+                OrderHandleJob::dispatchSync($order->trade_no);
+            }
         } catch (\Exception $e) {
             Log::error($e);
             return false;
@@ -306,25 +359,37 @@ class OrderService
 
     public function cancel(): bool
     {
-        $order = $this->order;
-        HookManager::call('order.cancel.before', $order);
         try {
-            DB::beginTransaction();
-            $order->status = Order::STATUS_CANCELLED;
-            if (!$order->save()) {
-                throw new \Exception('Failed to save order status.');
-            }
-            if ($order->balance_amount) {
-                $userService = new UserService();
-                if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
-                    throw new \Exception('Failed to add balance.');
+            $cancelledOrder = DB::transaction(function () {
+                $order = $this->lockCurrentOrderWhenStatus(Order::STATUS_PENDING);
+                if (!$order) {
+                    return null;
                 }
+
+                HookManager::call('order.cancel.before', $order);
+
+                $order->status = Order::STATUS_CANCELLED;
+                if (!$order->save()) {
+                    throw new \RuntimeException('Failed to save order status.');
+                }
+                if ($order->balance_amount) {
+                    $userService = new UserService();
+                    if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
+                        throw new \RuntimeException('Failed to add balance.');
+                    }
+                }
+
+                return $order;
+            });
+
+            if (!$cancelledOrder) {
+                return false;
             }
-            DB::commit();
-            HookManager::call('order.cancel.after', $order);
+
+            $this->order = $cancelledOrder;
+            HookManager::call('order.cancel.after', $cancelledOrder);
             return true;
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error($e);
             return false;
         }

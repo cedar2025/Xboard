@@ -26,6 +26,7 @@
     "No active subscription. Unable to use our provided Apple ID": "No active subscription. Unable to use our provided Apple ID",
     "Oops, there's a problem... Please refresh the page and try again later": "Oops, there's a problem... Please refresh the page and try again later",
     "Order does not exist": "Order does not exist",
+    "Order amount is invalid": "Order amount is invalid",
     "Order does not exist or has been paid": "Order does not exist or has been paid",
     "Payment failed. Please check your credit card information": "Payment failed. Please check your credit card information",
     "Payment gateway request failed": "Payment gateway request failed",

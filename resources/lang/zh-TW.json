@@ -22,6 +22,7 @@
     "Withdrawal account": "提現賬號",
     "Unsupported withdrawal": "不支持提現",
     "Order does not exist": "訂單不存在",
+    "Order amount is invalid": "訂單金額異常",
     "You have an unpaid or pending order, please try again later or cancel it": "您有未付款或開通中的訂單，請稍後再試或將其取消",
     "This subscription has been sold out, please choose another subscription": "該訂閱已售罄，請更換其它訂閱",
     "This subscription cannot be renewed, please change to another subscription": "該訂閱無法續費，請更換其它訂閱",
