@@ -102,7 +102,7 @@ class AlipayF2F
             'method' => $this->method,
             'charset' => 'UTF-8',
             'sign_type' => $this->signType,
-            'timestamp' => date('Y-m-d H:m:s'),
+            'timestamp' => date('Y-m-d H:i:s'),
             'biz_content' => $this->bizContent,
             'version' => '1.0',
             '_input_charset' => 'UTF-8'
