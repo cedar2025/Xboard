@@ -126,6 +126,10 @@ class OrderController extends Controller
         if (!$order) {
             return $this->fail([400, __('Order does not exist or has been paid')]);
         }
+        // negative amounts must never open a subscription for free (#1021)
+        if ($order->total_amount < 0) {
+            return $this->fail([400, __('Order amount is invalid')]);
+        }
         // free process
         if ($order->total_amount <= 0) {
             $orderService = new OrderService($order);

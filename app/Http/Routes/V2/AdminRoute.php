@@ -28,7 +28,7 @@ class AdminRoute
     {
         $router->group([
             'prefix' => admin_setting('secure_path', admin_setting('frontend_admin_path', hash('crc32b', config('app.key')))),
-            'middleware' => ['admin', 'log'],
+            'middleware' => ['admin.ip.allowlist', 'admin', 'log'],
         ], function ($router) {
             // Config
             $router->group([
