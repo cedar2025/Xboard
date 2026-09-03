@@ -7,6 +7,7 @@ use App\Services\Plugin\HookManager;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class LoginService
 {
@@ -110,7 +111,18 @@ class LoginService
         $user->password_algo = NULL;
         $user->password_salt = NULL;
 
-        if (!$user->save()) {
+        $saved = DB::transaction(function () use ($user) {
+            if (!$user->save()) {
+                return false;
+            }
+
+            // 重置密码后撤销该用户所有设备的登录凭证。
+            $user->tokens()->delete();
+
+            return true;
+        });
+
+        if (!$saved) {
             return [false, [500, __('Reset failed')]];
         }
 
