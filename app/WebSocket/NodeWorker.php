@@ -23,7 +23,13 @@ class NodeWorker
     private const HEARTBEAT_INTERVAL = 10;
     private const HEARTBEAT_TTL = 30;
 
+    private const FULL_SYNC_INTERVAL = 0.1;
+    private const FULL_SYNC_BUDGET = 0.05;
+
     private Worker $worker;
+
+    /** @var array<string, array{0: TcpConnection, 1: int}> */
+    private array $pendingFullSync = [];
 
     private array $handlers = [
         'pong' => [NodeEventHandlers::class, 'handlePong'],
@@ -60,9 +66,16 @@ class NodeWorker
     {
         $this->worker->onWorkerStart = [$this, 'onWorkerStart'];
         $this->worker->onConnect = [$this, 'onConnect'];
-        $this->worker->onWebSocketConnect = [$this, 'onWebSocketConnect'];
-        $this->worker->onMessage = [$this, 'onMessage'];
-        $this->worker->onClose = [$this, 'onClose'];
+        $this->worker->onWebSocketConnect = $this->guarded(
+            'auth',
+            [$this, 'onWebSocketConnect'],
+            fn(TcpConnection $conn) => $conn->close(json_encode([
+                'event' => 'error',
+                'data' => ['message' => 'server unavailable'],
+            ]))
+        );
+        $this->worker->onMessage = $this->guarded('message', [$this, 'onMessage']);
+        $this->worker->onClose = $this->guarded('close', [$this, 'onClose']);
     }
 
     public function onWorkerStart(Worker $worker): void
@@ -75,9 +88,11 @@ class NodeWorker
     private function setupTimers(): void
     {
         Cache::put(self::HEARTBEAT_CACHE_KEY, time(), self::HEARTBEAT_TTL);
-        Timer::add(self::HEARTBEAT_INTERVAL, function () {
+        Timer::add(self::HEARTBEAT_INTERVAL, $this->guarded('heartbeat', function () {
             Cache::put(self::HEARTBEAT_CACHE_KEY, time(), self::HEARTBEAT_TTL);
-        });
+        }));
+
+        Timer::add(self::FULL_SYNC_INTERVAL, [$this, 'drainFullSyncQueue']);
 
         Timer::add(self::PING_INTERVAL, function () {
             $seen = [];
@@ -105,7 +120,7 @@ class NodeWorker
             }
         });
 
-        Timer::add(10, function () {
+        Timer::add(10, $this->guarded('device push', function () {
             $pendingNodeIds = Redis::spop('device:push_pending_nodes', 100);
             if (empty($pendingNodeIds)) {
                 return;
@@ -118,7 +133,68 @@ class NodeWorker
                     NodeEventHandlers::pushDeviceStateToNode($nodeId, $service);
                 }
             }
-        });
+        }));
+    }
+
+    /**
+     * Workerman stops the whole worker, dropping every node, when a callback
+     * throws. A database or Redis blip must only fail the work at hand.
+     */
+    private function guarded(string $context, callable $callback, ?callable $onFailure = null): \Closure
+    {
+        return function (...$args) use ($context, $callback, $onFailure) {
+            try {
+                return $callback(...$args);
+            } catch (\Throwable $e) {
+                // Log the root cause only: QueryException messages embed
+                // bindings such as machine tokens.
+                $root = $e;
+                while ($root->getPrevious()) {
+                    $root = $root->getPrevious();
+                }
+                Log::error("[WS] {$context} failed: " . get_class($e) . ': ' . $root->getMessage());
+
+                if ($onFailure) {
+                    $onFailure(...$args);
+                }
+            }
+        };
+    }
+
+    private function queueFullSync(TcpConnection $conn, int $nodeId): void
+    {
+        $this->pendingFullSync[spl_object_id($conn) . ':' . $nodeId] = [$conn, $nodeId];
+    }
+
+    /**
+     * Push queued full syncs for a short time slice, then yield to the event
+     * loop so handshakes and node messages are never stuck behind them.
+     *
+     * @return int number of syncs still queued
+     */
+    public function drainFullSyncQueue(): int
+    {
+        $deadline = microtime(true) + self::FULL_SYNC_BUDGET;
+
+        while ($this->pendingFullSync && microtime(true) < $deadline) {
+            $key = array_key_first($this->pendingFullSync);
+            [$conn, $nodeId] = $this->pendingFullSync[$key];
+            unset($this->pendingFullSync[$key]);
+
+            // Closed or replaced while waiting: nobody is listening any more.
+            if (NodeRegistry::get($nodeId) !== $conn) {
+                continue;
+            }
+
+            $this->guarded("full sync of node#{$nodeId}", function () use ($conn, $nodeId) {
+                $node = Server::find($nodeId);
+                if ($node) {
+                    NodeEventHandlers::pushFullSync($conn, $node);
+                }
+            }, fn() => $conn->close())();
+        }
+
+        return count($this->pendingFullSync);
     }
 
     public function onConnect(TcpConnection $conn): void
@@ -198,7 +274,8 @@ class NodeWorker
             'data' => ['node_id' => $nodeId],
         ]));
 
-        NodeEventHandlers::pushFullSync($conn, $node);
+        // Sync after the handshake has been answered, see drainFullSyncQueue().
+        $this->queueFullSync($conn, $nodeId);
     }
 
     /**
@@ -224,21 +301,20 @@ class NodeWorker
         $nodes = ServerService::getMachineNodes($machine);
 
         $machine->forceFill(['last_seen_at' => now()->timestamp])->saveQuietly();
+
+        // 连接上记录所属机器和节点列表（先于注册，保证中途失败时 onClose 能完整清理）
+        $nodeIds = $nodes->pluck('id')->all();
+        $conn->machineId = $machineId;
+        $conn->machineNodeIds = $nodeIds;
+
         NodeRegistry::addMachine($machineId, $conn);
 
         // 把同一个连接注册到该机器下所有节点
-        $nodeIds = [];
-        $deviceService = app(DeviceStateService::class);
-        foreach ($nodes as $node) {
-            NodeRegistry::add($node->id, $conn);
-            Cache::put("node_ws_alive:{$node->id}", true, 86400);
-            $deviceService->clearAllNodeDevices($node->id);
-            $nodeIds[] = $node->id;
+        foreach ($nodeIds as $nodeId) {
+            NodeRegistry::add($nodeId, $conn);
+            Cache::put("node_ws_alive:{$nodeId}", true, 86400);
         }
-
-        // 连接上记录所属机器和节点列表
-        $conn->machineId = $machineId;
-        $conn->machineNodeIds = $nodeIds;
+        app(DeviceStateService::class)->clearNodesDevices($nodeIds);
 
         Log::debug("[WS] Machine#{$machineId} connected, nodes: " . implode(',', $nodeIds), [
             'remote' => $conn->getRemoteIp(),
@@ -254,9 +330,9 @@ class NodeWorker
             ],
         ]));
 
-        // 为每个节点推送完整同步
-        foreach ($nodes as $node) {
-            NodeEventHandlers::pushFullSync($conn, $node);
+        // 握手应答之后再逐个推送完整同步，见 drainFullSyncQueue()
+        foreach ($nodeIds as $nodeId) {
+            $this->queueFullSync($conn, $nodeId);
         }
     }
 
@@ -307,16 +383,13 @@ class NodeWorker
             foreach ($conn->machineNodeIds as $nodeId) {
                 NodeRegistry::remove($nodeId, $conn);
                 Cache::forget("node_ws_alive:{$nodeId}");
-
-                $affectedUserIds = $service->clearAllNodeDevices($nodeId);
-                foreach ($affectedUserIds as $userId) {
-                    $service->notifyUpdate($userId);
-                }
             }
 
             if (!empty($conn->machineId)) {
                 NodeRegistry::removeMachine((int) $conn->machineId, $conn);
             }
+
+            $service->clearNodesDevices($conn->machineNodeIds);
 
             Log::debug("[WS] Machine#{$machineId} disconnected", [
                 'nodes' => $conn->machineNodeIds,
@@ -333,9 +406,6 @@ class NodeWorker
             Cache::forget("node_ws_alive:{$nodeId}");
 
             $affectedUserIds = $service->clearAllNodeDevices($nodeId);
-            foreach ($affectedUserIds as $userId) {
-                $service->notifyUpdate($userId);
-            }
 
             Log::debug("[WS] Node#{$nodeId} disconnected", [
                 'total' => NodeRegistry::count(),
