@@ -407,7 +407,7 @@ class UserController extends Controller
             $userService = app(UserService::class);
             $user = $userService->createUser([
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $request->input('password'),
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ]);
@@ -432,7 +432,7 @@ class UserController extends Controller
             $email = Helper::randomChar(6) . '@' . $request->input('email_suffix');
             $usersData[] = [
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $request->input('password'),
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ];
@@ -515,7 +515,7 @@ class UserController extends Controller
             $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
             $usersData[] = [
                 'email' => $email,
-                'password' => $request->input('password') ?? $email,
+                'password' => $request->input('password'),
                 'plan_id' => $request->input('plan_id'),
                 'expired_at' => $request->input('expired_at'),
             ];
