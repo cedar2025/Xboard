@@ -327,6 +327,11 @@ class SingBox extends AbstractProtocol
             $this->upgradeSpecialOutboundsToActions();
         }
 
+        // >= 1.14.0: rule_set download_detour → http_client
+        if (version_compare($coreVersion, '1.14.0', '>=')) {
+            $this->upgradeRuleSetDownloadDetour();
+        }
+
         // < 1.11.0: rule action 降级为旧出站; 恢复废弃字段
         if (version_compare($coreVersion, '1.11.0', '<')) {
             $this->downgradeActionsToSpecialOutbounds();
@@ -399,6 +404,26 @@ class SingBox extends AbstractProtocol
             }
             unset($rule);
         }
+    }
+
+    /**
+     * sing-box >= 1.14.0: rule_set 的 download_detour 升级为 http_client
+     */
+    private function upgradeRuleSetDownloadDetour(): void
+    {
+        if (!isset($this->config['route']['rule_set'])) {
+            return;
+        }
+        foreach ($this->config['route']['rule_set'] as &$ruleSet) {
+            if (!isset($ruleSet['download_detour'])) {
+                continue;
+            }
+            if (!isset($ruleSet['http_client'])) {
+                $ruleSet['http_client'] = ['detour' => $ruleSet['download_detour']];
+            }
+            unset($ruleSet['download_detour']);
+        }
+        unset($ruleSet);
     }
 
     /**
