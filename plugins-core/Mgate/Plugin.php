@@ -106,13 +106,27 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     public function notify($params): array|bool
     {
+        $secret = $this->getConfig('mgate_app_secret');
+        if (!is_string($secret) || trim($secret) === '' || !is_array($params)) {
+            return false;
+        }
+        foreach ($params as $value) {
+            if (!is_string($value) && !is_int($value)) {
+                return false;
+            }
+        }
+        foreach (['sign', 'out_trade_no', 'trade_no'] as $field) {
+            if (!is_string($params[$field] ?? null) || trim($params[$field]) === '') {
+                return false;
+            }
+        }
         $sign = $params['sign'];
         unset($params['sign']);
         ksort($params);
         reset($params);
         $str = http_build_query($params) . $this->getConfig('mgate_app_secret');
 
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), $sign)) {
             return false;
         }
 

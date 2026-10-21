@@ -41,7 +41,14 @@ class PaymentService
 
         $this->config = [];
         if (isset($payment)) {
+            // The callback path must not select a different verifier for this configuration.
+            if ($payment['payment'] !== $method) {
+                throw new ApiException('payment method mismatch');
+            }
             $this->config = is_string($payment['config']) ? json_decode($payment['config'], true) : $payment['config'];
+            if (!is_array($this->config)) {
+                throw new ApiException('invalid payment config');
+            }
             $this->config['enable'] = $payment['enable'];
             $this->config['id'] = $payment['id'];
             $this->config['uuid'] = $payment['uuid'];
@@ -54,21 +61,40 @@ class PaymentService
             $paymentPlugins = $this->pluginManager->getEnabledPaymentPlugins();
             foreach ($paymentPlugins as $plugin) {
                 if ($plugin->getPluginCode() === $pluginCode) {
-                    $plugin->setConfig($this->config);
-                    $this->payment = $plugin;
+                    // Loaded plugins may be shared by long-running workers.
+                    $this->payment = clone $plugin;
+                    $this->payment->setConfig($this->config);
                     return;
                 }
             }
         }
 
-        $this->payment = new $this->class($this->config);
+        throw new ApiException('payment method is unavailable');
     }
 
     public function notify($params)
     {
         if (!$this->config['enable'])
             throw new ApiException('gate is not enable');
+        $secretKey = match ($this->method) {
+            'EPay' => 'key',
+            'MGate' => 'mgate_app_secret',
+            'Coinbase' => 'coinbase_webhook_key',
+            'BTCPay' => 'btcpay_webhook_key',
+            'CoinPayments' => 'coinpayments_ipn_secret',
+            'AlipayF2F' => 'public_key',
+            default => null,
+        };
+        if ($secretKey !== null && (!is_string($this->config[$secretKey] ?? null)
+            || trim($this->config[$secretKey]) === '')) {
+            throw new ApiException('payment verification key is missing');
+        }
         return $this->payment->notify($params);
+    }
+
+    public function getPaymentId(): int
+    {
+        return (int) ($this->config['id'] ?? 0);
     }
 
     public function pay($order)

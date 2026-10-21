@@ -79,18 +79,50 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     public function notify($params): array|bool
     {
+        $key = $this->getConfig('key');
+        $pid = $this->getConfig('pid');
+        if (!is_string($key) || trim($key) === '' || !is_scalar($pid)
+            || trim((string) $pid) === '' || !is_array($params)) {
+            return false;
+        }
+        foreach ($params as $value) {
+            if (!is_string($value) && !is_int($value)) {
+                return false;
+            }
+        }
+        foreach (['sign', 'out_trade_no', 'trade_no'] as $field) {
+            if (!is_string($params[$field] ?? null) || trim($params[$field]) === '') {
+                return false;
+            }
+        }
+        if (($params['trade_status'] ?? null) !== 'TRADE_SUCCESS'
+            || (string) ($params['pid'] ?? '') !== (string) $pid
+            || (isset($params['sign_type']) && $params['sign_type'] !== 'MD5')) {
+            return false;
+        }
+        // Parse decimal yuan into integer cents without floating-point rounding.
+        $money = $params['money'] ?? null;
+        if ((!is_string($money) && !is_int($money))
+            || !preg_match('/\A([0-9]{1,10})(?:\.([0-9]{1,2}))?\z/', (string) $money, $parts)) {
+            return false;
+        }
+        $paidAmount = (int) $parts[1] * 100 + (int) str_pad($parts[2] ?? '', 2, '0');
+        if ($paidAmount <= 0) {
+            return false;
+        }
         $sign = $params['sign'];
         unset($params['sign'], $params['sign_type']);
         ksort($params);
         $str = stripslashes(urldecode(http_build_query($params))) . $this->getConfig('key');
 
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), $sign)) {
             return false;
         }
 
         return [
             'trade_no' => $params['out_trade_no'],
-            'callback_no' => $params['trade_no']
+            'callback_no' => $params['trade_no'],
+            'paid_amount' => $paidAmount,
         ];
     }
 }
