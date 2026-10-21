@@ -71,6 +71,31 @@ The container always runs `php artisan xboard:update` (migrate + plugin install 
 > docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
 > ```
 
+#### PHP security updates
+
+The Docker image includes its own PHP runtime. Updating PHP on the host or
+updating Xboard's application code does not update PHP inside an existing image.
+
+For [CVE-2026-109618 and CVE-2026-109619](https://www.php.net/archive/2026.php#2026-10-21-1),
+the PHP 8.2 runtime must be **8.2.35 or newer**. Image builds reject older PHP
+versions. If the Swoole base image has not received the fix yet, the build will
+fail; retry with `docker build --pull .` or rerun the publishing workflow after a
+patched base is available for both amd64 and arm64.
+
+After a patched Xboard image has been published, back up your database and
+mounted files, pull the image and recreate the containers. Verify the runtime
+in the running container:
+
+```bash
+docker compose exec -T xboard php -r 'echo PHP_VERSION, PHP_EOL;'
+```
+
+Split deployments must recreate every PHP service (`web`, `horizon`, and
+`ws-server`) and verify each runtime. Restarting an existing container does not
+install a newer image. Native PHP session upload progress is disabled in the
+shipped PHP configuration as defense in depth; this alone does not fix either
+vulnerability or replace the runtime update.
+
 ### 4. Version Rollback
 
 1. Modify the version number in `docker-compose.yaml` to the version you want to roll back to

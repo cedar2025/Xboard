@@ -1,5 +1,13 @@
 FROM phpswoole/swoole:php8.2-alpine
 
+# CVE-2026-109618 and CVE-2026-109619 require a patched PHP runtime.
+# Fail before building/publishing if the upstream image has not been rebuilt yet.
+RUN php -r ' \
+    if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 2 || version_compare(PHP_VERSION, "8.2.35", "<")) { \
+        fwrite(STDERR, "Xboard requires PHP >= 8.2.35 in the 8.2 series; found " . PHP_VERSION . ". Rebuild with --pull after the Swoole base image is updated.\n"); \
+        exit(1); \
+    }'
+
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 # Install PHP extensions one by one with lower optimization level for ARM64 compatibility
