@@ -2,6 +2,8 @@
 
 This guide explains how to deploy Xboard using 1Panel.
 
+The Xboard container must run **PHP 8.2.35 or later**, with the latest security patch for its PHP release series. Host PHP is not required.
+
 ## 1. Environment Preparation
 
 Install 1Panel:
