@@ -13,7 +13,7 @@ class PaymentService
     protected $config;
     protected $payment;
     protected $pluginManager;
-    protected $class;
+    protected ?string $configuredMethod = null;
 
     public function __construct($method, $id = NULL, $uuid = NULL)
     {
@@ -41,7 +41,11 @@ class PaymentService
 
         $this->config = [];
         if (isset($payment)) {
+            $this->configuredMethod = $payment['payment'];
             $this->config = is_string($payment['config']) ? json_decode($payment['config'], true) : $payment['config'];
+            if (!is_array($this->config)) {
+                throw new ApiException('invalid payment config');
+            }
             $this->config['enable'] = $payment['enable'];
             $this->config['id'] = $payment['id'];
             $this->config['uuid'] = $payment['uuid'];
@@ -54,18 +58,22 @@ class PaymentService
             $paymentPlugins = $this->pluginManager->getEnabledPaymentPlugins();
             foreach ($paymentPlugins as $plugin) {
                 if ($plugin->getPluginCode() === $pluginCode) {
-                    $plugin->setConfig($this->config);
-                    $this->payment = $plugin;
+                    $this->payment = clone $plugin;
+                    $this->payment->setConfig($this->config);
                     return;
                 }
             }
         }
 
-        $this->payment = new $this->class($this->config);
+        throw new ApiException('payment method is unavailable');
     }
 
     public function notify($params)
     {
+        // Forms may preview another plugin; callbacks must use the configured verifier.
+        if ($this->configuredMethod !== $this->method) {
+            throw new ApiException('payment method mismatch');
+        }
         if (!$this->config['enable'])
             throw new ApiException('gate is not enable');
         return $this->payment->notify($params);
