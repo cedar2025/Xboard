@@ -1,8 +1,5 @@
-FROM phpswoole/swoole:php8.2-alpine AS runtime
-
-RUN php -r 'if (version_compare(PHP_VERSION, "8.2.35", "<")) { \
-    fwrite(STDERR, "PHP >= 8.2.35 is required for security fixes; found " . PHP_VERSION . "\n"); exit(1); \
-}'
+# syntax=docker/dockerfile:1
+FROM php:8.2.35-cli-alpine AS runtime
 
 COPY --from=mlocati/php-extension-installer:2.12.3 /usr/bin/install-php-extensions /usr/local/bin/
 COPY --from=composer:2.10.3 /usr/bin/composer /usr/local/bin/composer
@@ -11,7 +8,49 @@ COPY --from=composer:2.10.3 /usr/bin/composer /usr/local/bin/composer
 RUN CFLAGS="-O0" install-php-extensions pcntl && \
     CFLAGS="-O0 -g0" install-php-extensions bcmath
 
-RUN IPE_PROCESSOR_COUNT=2 install-php-extensions zip
+# Use curl retries because PECL's downloader can fail on transient HTTP 500 responses.
+RUN <<'SH'
+set -eu
+mkdir -p /tmp/extensions
+# Start with bundled extensions; append verified PECL sources below.
+set -- pdo_mysql sockets zip
+
+while read -r package checksum; do
+    archive="/tmp/extensions/$package.tgz"
+    source_dir="/tmp/extensions/$package"
+
+    curl -fsSL --retry 5 --connect-timeout 20 --max-time 180 \
+        "https://pecl.php.net/get/$package.tgz" -o "$archive"
+    printf '%s  %s\n' "$checksum" "$archive" | sha256sum -c -
+    tar -xzf "$archive" -C /tmp/extensions
+    mv /tmp/extensions/package.xml "$source_dir/package.xml"
+    set -- "$@" "$source_dir"
+done <<'EXTENSIONS'
+igbinary-3.2.16 8bf25d465abc7973d9e2c9a3039a5f8eea635b23bc1477017ff3999ff95836da
+redis-6.3.0 0d5141f634bd1db6c1ddcda053d25ecf2c4fc1c395430d534fd3f8d51dd7f0b5
+EXTENSIONS
+
+IPE_PROCESSOR_COUNT=2 install-php-extensions "$@"
+rm -rf /tmp/extensions
+SH
+
+# Cache Swoole separately so changes here do not rebuild the other extensions.
+RUN <<'SH'
+set -eu
+package=swoole-6.2.3
+checksum=21dfa1c4a4a09f4d1cb4b154f7defdc91fbabafc8d44a77f8f618b9742c67304
+
+mkdir -p /tmp/swoole-src
+curl -fsSL --retry 5 --connect-timeout 20 --max-time 180 \
+    "https://pecl.php.net/get/$package.tgz" -o /tmp/swoole.tgz
+printf '%s  %s\n' "$checksum" /tmp/swoole.tgz | sha256sum -c -
+tar -xzf /tmp/swoole.tgz -C /tmp/swoole-src
+mv /tmp/swoole-src/package.xml "/tmp/swoole-src/$package/package.xml"
+
+IPE_PROCESSOR_COUNT=2 IPE_SWOOLE_WITHOUT_IOURING=1 \
+    install-php-extensions "/tmp/swoole-src/$package"
+rm -rf /tmp/swoole-src /tmp/swoole.tgz
+SH
 
 RUN apk --no-cache add \
         shadow \
