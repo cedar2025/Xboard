@@ -254,6 +254,10 @@ class Surge extends AbstractProtocol
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
             $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
+        // Surge 只支持 salamander 混淆
+        if (data_get($protocol_settings, 'obfs.open') && (data_get($protocol_settings, 'obfs.type') ?: 'salamander') === 'salamander') {
+            $config[] = "salamander-password=" . data_get($protocol_settings, 'obfs.password');
+        }
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
