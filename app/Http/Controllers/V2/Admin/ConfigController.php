@@ -191,6 +191,8 @@ class ConfigController extends Controller
                 'password_limit_enable' => (bool) admin_setting('password_limit_enable', 1),
                 'password_limit_count' => admin_setting('password_limit_count', 5),
                 'password_limit_expire' => admin_setting('password_limit_expire', 60),
+                'expiry_remove_enable' => (bool) admin_setting('expiry_remove_enable', 1),
+                'expiry_grace_seconds' => (int) admin_setting('expiry_grace_seconds', 60),
                 // 保持向后兼容
                 'recaptcha_enable' => (bool) admin_setting('captcha_enable', 0)
             ],
