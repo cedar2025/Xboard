@@ -4,9 +4,21 @@ namespace App\Utils;
 
 use App\Services\Plugin\HookManager;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
 
 class Helper
 {
+    private const SUBSCRIPTION_TOKEN_PATTERN = '/\A[a-f0-9]{32}\z/i';
+
+    public static function validateSubscriptionToken(mixed $token): ?string
+    {
+        $validator = Validator::make(['token' => $token], [
+            'token' => ['bail', 'required', 'string', 'regex:' . self::SUBSCRIPTION_TOKEN_PATTERN],
+        ]);
+
+        return $validator->fails() ? null : $validator->validated()['token'];
+    }
+
     public static function uuidToBase64($uuid, $length)
     {
         return base64_encode(substr($uuid, 0, $length));
