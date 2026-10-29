@@ -161,12 +161,12 @@ class UserService
     public function createUser(array $data): User
     {
         $user = new User();
+        $email = strtolower(trim($data['email']));
+        $password = $data['password'] ?? $email;
 
         // 基本信息
-        $user->email = $data['email'];
-        $user->password = isset($data['password'])
-            ? Hash::make($data['password'])
-            : Hash::make($data['email']);
+        $user->email = $email;
+        $user->password = Hash::make($password);
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
 
