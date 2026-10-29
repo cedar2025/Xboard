@@ -22,8 +22,23 @@ class InviteController extends Controller
         }
         $inviteCode = new InviteCode();
         $inviteCode->user_id = $request->user()->id;
-        $inviteCode->code = Helper::randomChar(8);
+        $inviteCode->code = $this->generateUniqueInviteCode();
         return $this->success($inviteCode->save());
+    }
+
+    /**
+     * Generate an unused invite code and retry on collision.
+     */
+    private function generateUniqueInviteCode(int $maxAttempts = 16): string
+    {
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $code = Helper::randomChar(8);
+            if (!InviteCode::where('code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        throw new ApiException(__('Invite code generation failed, please try again'));
     }
 
     public function details(Request $request)

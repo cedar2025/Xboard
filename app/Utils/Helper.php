@@ -76,10 +76,10 @@ class Helper
         }
 
         $charsLen = count($chars) - 1;
-        shuffle($chars);
         $str = '';
         for ($i = 0; $i < $len; $i++) {
-            $str .= $chars[mt_rand(0, $charsLen)];
+            // random_int(): CSPRNG; safe under Octane/Swoole (mt_rand state can be inherited across workers)
+            $str .= $chars[random_int(0, $charsLen)];
         }
         return $str;
     }
