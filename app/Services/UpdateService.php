@@ -257,9 +257,11 @@ class UpdateService
     protected function getCurrentCommit(): string
     {
         try {
-            // Ensure git configuration is correct
-            Process::run(sprintf('git config --global --add safe.directory %s', base_path()));
-            $result = Process::run('git rev-parse HEAD');
+            // Pass safe.directory inline instead of appending it to the global git
+            // config. `git config --global --add` appends a duplicate entry on every
+            // call, so ~/.gitconfig grows without bound and every later git command
+            // pays the cost of parsing it.
+            $result = Process::run(sprintf('git -c safe.directory=%s rev-parse HEAD', escapeshellarg(base_path())));
             $fullHash = trim($result->output());
             return $fullHash ? $this->formatCommitHash($fullHash) : 'unknown';
         } catch (\Exception $e) {
@@ -308,8 +310,9 @@ class UpdateService
             // Get current project root directory
             $basePath = base_path();
             
-            // Ensure git configuration is correct
-            Process::run(sprintf('git config --global --add safe.directory %s', $basePath));
+            // Use --replace-all rather than --add so this entry can never accumulate
+            // duplicates in ~/.gitconfig.
+            Process::run(sprintf('git config --global --replace-all safe.directory %s', escapeshellarg($basePath)));
             
             // Pull latest code
             Process::run('git fetch origin master');
