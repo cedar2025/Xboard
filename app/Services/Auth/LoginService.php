@@ -101,7 +101,8 @@ class LoginService
 
         // 查找用户
         $user = User::byEmail($email)->first();
-        if (!$user) {
+        // SQL 排序规则可能忽略重音差异，必须核对验证码邮箱与账号邮箱。
+        if (!$user || !hash_equals(strtolower(trim((string) $user->email)), strtolower(trim($email)))) {
             return [false, [400, __('This email is not registered in the system')]];
         }
 
