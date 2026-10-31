@@ -19,26 +19,15 @@ class LoginService
      */
     public function login(string $email, string $password): array
     {
-        // 检查密码错误限制
-        if ((int) admin_setting('password_limit_enable', true)) {
-            $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
-            if ($passwordErrorCount >= (int) admin_setting('password_limit_count', 5)) {
-                return [
-                    false,
-                    [
-                        429,
-                        __('There are too many password errors, please try again after :minute minutes.', [
-                            'minute' => admin_setting('password_limit_expire', 60)
-                        ])
-                    ]
-                ];
-            }
-        }
-
         // 查找用户
         $user = User::byEmail($email)->first();
         if (!$user) {
             return [false, [400, __('Incorrect email or password')]];
+        }
+
+        // 按实际账号计数，不能用请求邮箱的大小写或数据库等价写法分摊次数。
+        if ($error = $this->passwordLimitError($user)) {
+            return [false, $error];
         }
 
         // 验证密码
@@ -50,15 +39,7 @@ class LoginService
                 $user->password
             )
         ) {
-            // 增加密码错误计数
-            if ((int) admin_setting('password_limit_enable', true)) {
-                $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
-                Cache::put(
-                    CacheKey::get('PASSWORD_ERROR_LIMIT', $email),
-                    (int) $passwordErrorCount + 1,
-                    60 * (int) admin_setting('password_limit_expire', 60)
-                );
-            }
+            $this->recordPasswordFailure($user);
             return [false, [400, __('Incorrect email or password')]];
         }
 
@@ -73,6 +54,31 @@ class LoginService
 
         HookManager::call('user.login.after', $user);
         return [true, $user];
+    }
+
+    /** 网页和 App 共用账号密码错误限制，必须在密码校验之前调用。 */
+    public function passwordLimitError(User $user): ?array
+    {
+        if (!(int) admin_setting('password_limit_enable', true)) {
+            return null;
+        }
+        $key = CacheKey::get('PASSWORD_ERROR_LIMIT', strtolower(trim((string) $user->email)));
+        if ((int) Cache::get($key, 0) >= (int) admin_setting('password_limit_count', 5)) {
+            return [429, __('There are too many password errors, please try again after :minute minutes.', [
+                'minute' => admin_setting('password_limit_expire', 60)
+            ])];
+        }
+        return null;
+    }
+
+    /** 沿用原来的计数缓存键及失败后有效期。 */
+    public function recordPasswordFailure(User $user): void
+    {
+        if (!(int) admin_setting('password_limit_enable', true)) {
+            return;
+        }
+        $key = CacheKey::get('PASSWORD_ERROR_LIMIT', strtolower(trim((string) $user->email)));
+        Cache::put($key, (int) Cache::get($key, 0) + 1, 60 * (int) admin_setting('password_limit_expire', 60));
     }
 
     /**
@@ -101,7 +107,8 @@ class LoginService
 
         // 查找用户
         $user = User::byEmail($email)->first();
-        if (!$user) {
+        // SQL 排序规则可能忽略重音差异，必须核对验证码邮箱与账号邮箱。
+        if (!$user || !hash_equals(strtolower(trim((string) $user->email)), strtolower(trim($email)))) {
             return [false, [400, __('This email is not registered in the system')]];
         }
 
