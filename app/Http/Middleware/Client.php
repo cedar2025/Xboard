@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Exceptions\ApiException;
 use Closure;
 use App\Models\User;
+use App\Utils\Helper;
 use Illuminate\Support\Facades\Auth;
 
 class Client
@@ -18,15 +19,22 @@ class Client
      */
     public function handle($request, Closure $next)
     {
-        $token = $request->input('token', $request->route('token'));
-        if (empty($token)) {
-            throw new ApiException('token is null',403);
+        $routeToken = $request->route('token');
+        $token = $routeToken !== null ? $routeToken : $request->query('token');
+
+        if ($token === null || $token === '') {
+            throw new ApiException('token is null', 403);
         }
+        $token = Helper::validateSubscriptionToken($token);
+        if ($token === null) {
+            throw new ApiException('token is error', 403);
+        }
+
         $user = User::where('token', $token)->first();
         if (!$user) {
-            throw new ApiException('token is error',403);
+            throw new ApiException('token is error', 403);
         }
-        
+
         Auth::setUser($user);
         return $next($request);
     }

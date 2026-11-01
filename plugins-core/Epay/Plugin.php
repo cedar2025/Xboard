@@ -79,12 +79,34 @@ class Plugin extends AbstractPlugin implements PaymentInterface
 
     public function notify($params): array|bool
     {
+        $secret = $this->getConfig('key');
+        if (!is_string($secret) || trim($secret) === '' || !is_array($params)) {
+            return false;
+        }
+        foreach ($params as $value) {
+            if (!is_string($value) && !is_int($value)) {
+                return false;
+            }
+        }
+        if (!is_string($params['sign'] ?? null)
+            || !is_string($params['out_trade_no'] ?? null) || trim($params['out_trade_no']) === ''
+            || !is_string($params['trade_no'] ?? null) || trim($params['trade_no']) === '') {
+            return false;
+        }
+        $pid = $this->getConfig('pid');
+        if ((!is_string($pid) && !is_int($pid)) || trim((string) $pid) === ''
+            || (string) ($params['pid'] ?? '') !== (string) $pid
+            || ($params['trade_status'] ?? null) !== 'TRADE_SUCCESS'
+            || ($params['sign_type'] ?? 'MD5') !== 'MD5') {
+            return false;
+        }
+
         $sign = $params['sign'];
         unset($params['sign'], $params['sign_type']);
         ksort($params);
-        $str = stripslashes(urldecode(http_build_query($params))) . $this->getConfig('key');
+        $str = stripslashes(urldecode(http_build_query($params))) . $secret;
 
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), $sign)) {
             return false;
         }
 

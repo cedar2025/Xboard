@@ -17,7 +17,7 @@
 ### Software Requirements
 - Operating System: Ubuntu 20.04+ / Debian 10+ (⚠️ CentOS 7 is not recommended)
 - Latest version of aaPanel
-- PHP 8.2
+- PHP **8.2.35 or later**, using the latest security patch for your PHP release series
 - MySQL 5.7+
 - Redis
 - Nginx (any version)
@@ -37,7 +37,9 @@ bash install_6.0_en.sh aapanel
 In the aaPanel dashboard, install:
 - Nginx (any version)
 - MySQL 5.7
-- PHP 8.2
+- PHP 8.2, updated to **8.2.35 or later** within the 8.2 series
+
+Check the installed version with `/www/server/php/82/bin/php -v` and `php -v`. The website, CLI, scheduled tasks and Supervisor processes must all use an updated PHP runtime. After upgrading, restart PHP-FPM and any running Horizon, Octane and WebSocket workers.
 
 #### 2.2 Install PHP Extensions
 Required PHP extensions:
@@ -62,7 +64,7 @@ Functions that need to be enabled:
 2. Fill in the information:
    - Domain: Enter your site domain
    - Database: Select MySQL
-   - PHP Version: Select 8.2
+   - PHP Version: Select 8.2 with patch version **8.2.35 or later**
 
 #### 3.2 Deploy Xboard
 ```bash

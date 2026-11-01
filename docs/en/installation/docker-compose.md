@@ -2,6 +2,8 @@
 
 This guide explains how to quickly deploy Xboard using Docker Compose. By default, it uses SQLite database, eliminating the need for a separate MySQL installation.
 
+The Xboard container must run **PHP 8.2.35 or later**, with the latest security patch for its PHP release series. Host PHP is not required.
+
 ### 1. Environment Preparation
 
 Install Docker:
@@ -70,6 +72,8 @@ The container always runs `php artisan xboard:update` (migrate + plugin install 
 > ```bash
 > docker compose pull && docker compose run -it --rm web php artisan xboard:update && docker compose up -d
 > ```
+
+For security, upgrade to an image running **PHP 8.2.35 or later** with the latest security fixes for its PHP release series.
 
 ### 4. Version Rollback
 
