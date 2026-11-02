@@ -13,7 +13,7 @@ class StatController extends Controller
 {
     public function getTrafficLog(Request $request)
     {
-        $startDate = now()->startOfMonth()->timestamp;
+        $startDate = now()->subDays(31)->timestamp;
         $records = StatUser::query()
             ->where('user_id', $request->user()->id)
             ->where('record_at', '>=', $startDate)
