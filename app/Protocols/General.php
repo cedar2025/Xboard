@@ -398,10 +398,10 @@ class General extends AbstractProtocol
 
         // udp_relay_mode参数，默认native
         $udpRelay = data_get($protocol_settings, 'udp_relay_mode', 'native');
-        $queryParams['udp-relay-mode'] = $udpRelay;
+        $queryParams['udp_relay_mode'] = $udpRelay;
 
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
-            $queryParams['insecure'] = '1';
+            $queryParams['allow_insecure'] = '1';
         }
 
         $query = http_build_query($queryParams);
