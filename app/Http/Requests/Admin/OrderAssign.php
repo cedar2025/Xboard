@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Concerns\NormalizesEmail;
 use Illuminate\Foundation\Http\FormRequest;
 
 class OrderAssign extends FormRequest
 {
+    use NormalizesEmail;
     /**
      * Get the validation rules that apply to the request.
      *
@@ -15,7 +17,7 @@ class OrderAssign extends FormRequest
     {
         return [
             'plan_id' => 'required',
-            'email' => 'required',
+            'email' => 'required|email:strict|max:64',
             'total_amount' => 'required',
             'period' => 'required|in:month_price,quarter_price,half_year_price,year_price,two_year_price,three_year_price,onetime_price,reset_price'
         ];

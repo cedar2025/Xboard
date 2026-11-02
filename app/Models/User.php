@@ -86,16 +86,43 @@ class User extends Authenticatable
     protected function email(): Attribute
     {
         return Attribute::make(
-            set: fn (string $value) => strtolower(trim($value)),
+            set: fn (string $value) => self::normalizeEmail($value),
         );
     }
 
     /**
-     * 按邮箱查询（大小写不敏感，兼容所有数据库）
+     * Normalize an email consistently for storage, lookup and cache keys.
+     */
+    public static function normalizeEmail(string $email): string
+    {
+        $email = trim($email);
+        $email = \Normalizer::normalize($email, \Normalizer::FORM_C) ?: $email;
+
+        $at = strrpos($email, '@');
+        if ($at === false) {
+            return mb_strtolower($email, 'UTF-8');
+        }
+
+        $local = mb_strtolower(substr($email, 0, $at), 'UTF-8');
+        $local = \Normalizer::normalize($local, \Normalizer::FORM_C) ?: $local;
+        $domain = substr($email, $at + 1);
+        $asciiDomain = idn_to_ascii(
+            $domain,
+            IDNA_USE_STD3_RULES | IDNA_CHECK_BIDI | IDNA_CHECK_CONTEXTJ | IDNA_NONTRANSITIONAL_TO_ASCII,
+            INTL_IDNA_VARIANT_UTS46
+        );
+
+        return $local . '@' . ($asciiDomain === false
+            ? mb_strtolower($domain, 'UTF-8')
+            : strtolower($asciiDomain));
+    }
+
+    /**
+     * Query by the canonical email identity.
      */
     public function scopeByEmail(Builder $query, string $email): Builder
     {
-        return $query->where('email', strtolower(trim($email)));
+        return $query->where('email', self::normalizeEmail($email));
     }
 
     // 获取邀请人信息

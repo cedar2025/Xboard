@@ -53,6 +53,19 @@ class LoginServiceTest extends TestCase
         $this->assertNull(Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $user->email)));
     }
 
+    public function test_reset_password_uses_canonical_email_for_verification_code(): void
+    {
+        $user = $this->createUser('José@example.com', 'old-password');
+        $email = "JOSE\u{0301}@EXAMPLE.COM";
+        Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', User::normalizeEmail($email)), 123456, 300);
+
+        [$success, $result] = $this->service->resetPassword($email, '123456', 'new-password');
+
+        $this->assertTrue($success);
+        $this->assertTrue($result);
+        $this->assertTrue(password_verify('new-password', $user->fresh()->password));
+    }
+
     public function test_forget_password_validation_rejects_boolean_email_code(): void
     {
         $validator = Validator::make([

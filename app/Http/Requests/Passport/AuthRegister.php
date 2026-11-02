@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Passport;
 
+use App\Http\Requests\Concerns\NormalizesEmail;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AuthRegister extends FormRequest
 {
+    use NormalizesEmail;
     /**
      * Get the validation rules that apply to the request.
      *
@@ -14,7 +16,7 @@ class AuthRegister extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email:strict',
+            'email' => 'required|email:strict|max:64',
             'password' => 'required|min:8'
         ];
     }

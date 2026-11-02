@@ -3,10 +3,12 @@
 namespace App\Http\Requests\Admin;
 
 use App\Services\Plugin\HookManager;
+use App\Http\Requests\Concerns\NormalizesEmail;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UserUpdate extends FormRequest
 {
+    use NormalizesEmail;
     /**
      * Get the validation rules that apply to the request.
      *
@@ -16,7 +18,7 @@ class UserUpdate extends FormRequest
     {
         $rules = [
             'id' => 'required|integer',
-            'email' => 'email:strict',
+            'email' => 'email:strict|max:64',
             'password' => 'nullable|min:8',
             'transfer_enable' => 'numeric',
             'expired_at' => 'nullable|integer',

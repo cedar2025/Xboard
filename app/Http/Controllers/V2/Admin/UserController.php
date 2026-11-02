@@ -88,12 +88,19 @@ class UserController extends Controller
             [$relation, $relationField] = explode('.', $field);
             $query->whereHas($relation, function ($q) use ($relationField, $value) {
                 if (is_array($value)) {
-                    $q->whereIn($relationField, $value);
-                } else if (is_string($value) && str_contains($value, ':')) {
+                    $values = $relationField === 'email'
+                        ? array_map(static fn ($value) => User::normalizeEmail((string) $value), $value)
+                        : $value;
+                    $q->whereIn($relationField, $values);
+                } elseif (is_string($value) && str_contains($value, ':')) {
                     [$operator, $filterValue] = explode(':', $value, 2);
+                    if ($relationField === 'email') {
+                        $filterValue = User::normalizeEmail($filterValue);
+                    }
                     $this->applyQueryCondition($q, $relationField, $operator, $filterValue);
                 } else {
-                    $q->where($relationField, 'like', "%{$value}%");
+                    $filterValue = $relationField === 'email' ? User::normalizeEmail((string) $value) : $value;
+                    $q->where($relationField, 'like', "%{$filterValue}%");
                 }
             });
             return;
@@ -101,17 +108,24 @@ class UserController extends Controller
 
         // 处理数组值的 'in' 操作
         if (is_array($value)) {
-            $query->whereIn($field === 'group_ids' ? 'group_id' : $field, $value);
+            $values = $field === 'email'
+                ? array_map(static fn ($value) => User::normalizeEmail((string) $value), $value)
+                : $value;
+            $query->whereIn($field === 'group_ids' ? 'group_id' : $field, $values);
             return;
         }
 
         // 处理基于运算符的过滤
         if (!is_string($value) || !str_contains($value, ':')) {
-            $query->where($field, 'like', "%{$value}%");
+            $filterValue = $field === 'email' ? User::normalizeEmail((string) $value) : $value;
+            $query->where($field, 'like', "%{$filterValue}%");
             return;
         }
 
         [$operator, $filterValue] = explode(':', $value, 2);
+        if ($field === 'email') {
+            $filterValue = User::normalizeEmail($filterValue);
+        }
 
         // 转换数字字符串为适当的类型
         if (is_numeric($filterValue)) {
@@ -225,6 +239,24 @@ class UserController extends Controller
         return $this->success($user);
     }
 
+    public function setInviteUser(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|integer|exists:App\\Models\\User,id',
+            'invite_user_id' => 'nullable|integer|different:id|exists:App\\Models\\User,id',
+        ]);
+        $parent = $data['invite_user_id'] ?? null;
+        $visited = [(int) $data['id']];
+        for ($cursor = $parent; $cursor; $cursor = User::find($cursor)?->invite_user_id) {
+            if (in_array((int) $cursor, $visited, true)) {
+                return $this->fail([422, '邀请关系不能形成循环']);
+            }
+            $visited[] = (int) $cursor;
+        }
+        User::findOrFail($data['id'])->update(['invite_user_id' => $parent]);
+        return $this->success(true);
+    }
+
     public function update(UserUpdate $request)
     {
         $params = $request->validated();
@@ -234,7 +266,8 @@ class UserController extends Controller
             return $this->fail([400202, '用户不存在']);
         }
         if (isset($params['email'])) {
-            if (User::byEmail($params['email'])->first() && $user->email !== $params['email']) {
+            $existingUser = User::byEmail($params['email'])->first();
+            if ($existingUser && $existingUser->id !== $user->id) {
                 return $this->fail([400201, '邮箱已被使用']);
             }
         }
@@ -398,7 +431,7 @@ class UserController extends Controller
             }
             
             // Single user generation with email_prefix
-            $email = $request->input('email_prefix') . '@' . $request->input('email_suffix');
+            $email = User::normalizeEmail($request->input('email_prefix') . '@' . $request->input('email_suffix'));
 
             if (User::byEmail($email)->exists()) {
                 return $this->fail([400201, '邮箱已存在于系统中']);
@@ -429,7 +462,7 @@ class UserController extends Controller
         $usersData = [];
 
         for ($i = 0; $i < $request->input('generate_count'); $i++) {
-            $email = Helper::randomChar(6) . '@' . $request->input('email_suffix');
+            $email = User::normalizeEmail(Helper::randomChar(6) . '@' . $request->input('email_suffix'));
             $usersData[] = [
                 'email' => $email,
                 'password' => $request->input('password') ?? $email,
@@ -504,15 +537,15 @@ class UserController extends Controller
 
         // Check if any of the emails with prefix already exist
         for ($i = 1; $i <= $generateCount; $i++) {
-            $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
-            if (User::where('email', $email)->exists()) {
+            $email = User::normalizeEmail($emailPrefix . '_' . $i . '@' . $emailSuffix);
+            if (User::byEmail($email)->exists()) {
                 return $this->fail([400201, '邮箱 ' . $email . ' 已存在于系统中']);
             }
         }
 
         // Generate user data for batch creation
         for ($i = 1; $i <= $generateCount; $i++) {
-            $email = $emailPrefix . '_' . $i . '@' . $emailSuffix;
+            $email = User::normalizeEmail($emailPrefix . '_' . $i . '@' . $emailSuffix);
             $usersData[] = [
                 'email' => $email,
                 'password' => $request->input('password') ?? $email,
@@ -672,9 +705,14 @@ class UserController extends Controller
         } // all: ignore filter/sort
 
         try {
-            $builder->update([
-                'banned' => 1
-            ]);
+            DB::transaction(function () use ($builder): void {
+                $ids = (clone $builder)->reorder()->lockForUpdate()->pluck('id');
+                $builder->update(['banned' => 1]);
+                foreach ($ids->chunk(500) as $chunk) {
+                    \Laravel\Sanctum\PersonalAccessToken::where('tokenable_type', (new User())->getMorphClass())
+                        ->whereIn('tokenable_id', $chunk)->delete();
+                }
+            });
         } catch (\Exception $e) {
             Log::error($e);
             return $this->fail([500, '处理失败']);

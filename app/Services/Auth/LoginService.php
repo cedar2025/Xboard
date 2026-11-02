@@ -19,6 +19,8 @@ class LoginService
      */
     public function login(string $email, string $password): array
     {
+        $email = User::normalizeEmail($email);
+
         // 检查密码错误限制
         if ((int) admin_setting('password_limit_enable', true)) {
             $passwordErrorCount = (int) Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
@@ -85,6 +87,8 @@ class LoginService
      */
     public function resetPassword(string $email, string $emailCode, string $password): array
     {
+        $email = User::normalizeEmail($email);
+
         // 检查重置请求限制
         $forgetRequestLimitKey = CacheKey::get('FORGET_REQUEST_LIMIT', $email);
         $forgetRequestLimit = (int) Cache::get($forgetRequestLimitKey);

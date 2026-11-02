@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\Passport;
 
 use App\Helpers\ResponseEnum;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\AuthForget;
 use App\Http\Requests\Passport\AuthLogin;
@@ -34,8 +35,12 @@ class AuthController extends Controller
      */
     public function loginWithMailLink(Request $request)
     {
+        if (is_string($email = $request->input('email'))) {
+            $request->merge(['email' => User::normalizeEmail($email)]);
+        }
+
         $params = $request->validate([
-            'email' => 'required|email:strict',
+            'email' => 'required|email:strict|max:64',
             'redirect' => 'nullable'
         ]);
 
@@ -112,7 +117,7 @@ class AuthController extends Controller
 
             $user = \App\Models\User::find($userId);
 
-            if (!$user) {
+            if (!$user || $user->banned) {
                 return response()->json([
                     'message' => __('User not found')
                 ], 400);
@@ -137,7 +142,7 @@ class AuthController extends Controller
     {
         $authorization = $request->input('auth_data') ?? $request->header('authorization');
 
-        if (!$authorization) {
+        if (!is_string($authorization) || $authorization === '') {
             return response()->json([
                 'message' => ResponseEnum::CLIENT_HTTP_UNAUTHORIZED
             ], 401);

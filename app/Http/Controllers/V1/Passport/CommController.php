@@ -25,16 +25,14 @@ class CommController extends Controller
             return $this->fail($captchaError);
         }
 
-        $email = $request->input('email');
+        $inputEmail = $request->input('email');
+        $email = User::normalizeEmail($inputEmail);
 
         // 检查白名单后缀限制
         if ((int) admin_setting('email_whitelist_enable', 0)) {
             $isRegisteredEmail = User::byEmail($email)->exists();
             if (!$isRegisteredEmail) {
-                $allowedSuffixes = Helper::getEmailSuffix();
-                $emailSuffix = substr(strrchr($email, '@'), 1);
-
-                if (!in_array($emailSuffix, $allowedSuffixes)) {
+                if (!Helper::emailSuffixVerify($inputEmail, Helper::getEmailSuffix())) {
                     return $this->fail([400, __('Email suffix is not in whitelist')]);
                 }
             }

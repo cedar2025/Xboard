@@ -19,6 +19,8 @@ class MailLinkService
      */
     public function handleMailLink(string $email, ?string $redirect = null): array
     {
+        $email = User::normalizeEmail($email);
+
         if (!(int) admin_setting('login_with_mail_link_enable')) {
             return [false, [404, null]];
         }

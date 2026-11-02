@@ -12,6 +12,7 @@ use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Dict;
 use App\Utils\Helper;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,6 +26,8 @@ class RegisterService
      */
     public function validateRegister(Request $request): array
     {
+        $emailIdentity = User::normalizeEmail((string) $request->input('email'));
+
         // 检查IP注册限制
         if ((int) admin_setting('register_limit_by_ip_enable', 0)) {
             $registerCountByIP = Cache::get(CacheKey::get('REGISTER_IP_RATE_LIMIT', $request->ip())) ?? 0;
@@ -87,14 +90,14 @@ class RegisterService
                 return [false, [422, __('Email verification code cannot be empty')]];
             }
 
-            $cachedEmailCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $request->input('email')));
+            $cachedEmailCode = Cache::get(CacheKey::get('EMAIL_VERIFY_CODE', $emailIdentity));
             if ($cachedEmailCode === null || !hash_equals((string) $cachedEmailCode, (string) $emailCode)) {
                 return [false, [400, __('Incorrect email verification code')]];
             }
         }
 
         // 检查邮箱是否存在
-        $exist = User::byEmail($request->input('email'))->first();
+        $exist = User::byEmail($emailIdentity)->first();
         if ($exist) {
             return [false, [400201, __('Email already exists')]];
         }
@@ -147,7 +150,7 @@ class RegisterService
 
         HookManager::call('user.register.before', $request);
 
-        $email = $request->input('email');
+        $email = User::normalizeEmail((string) $request->input('email'));
         $password = $request->input('password');
         $inviteCode = $request->input('invite_code');
 
@@ -165,9 +168,17 @@ class RegisterService
             'invite_user_id' => $inviteUserId,
         ]);
 
-        // 保存用户
-        if (!$user->save()) {
-            return [false, [500, __('Register failed')]];
+        // The unique index is the final guard against concurrent registrations.
+        try {
+            if (!$user->save()) {
+                return [false, [500, __('Register failed')]];
+            }
+        } catch (UniqueConstraintViolationException $exception) {
+            if (User::byEmail($email)->exists()) {
+                return [false, [400201, __('Email already exists')]];
+            }
+
+            throw $exception;
         }
 
         HookManager::call('user.register.after', $user);
