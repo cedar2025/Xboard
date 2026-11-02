@@ -313,7 +313,7 @@ class SingBox extends AbstractProtocol
 
     /**
      * 根据客户端版本自适应配置格式
-     * 模板基准格式: 1.13.0+ (最新)
+     * 模板基准格式: 1.13.0+；>= 1.14.0 时把 rule-set 的 download_detour 升级为 http_client
      */
     protected function adaptConfigForVersion(): void
     {
@@ -325,6 +325,11 @@ class SingBox extends AbstractProtocol
         // >= 1.13.0: 移除已删除的 block/dns 出站
         if (version_compare($coreVersion, '1.13.0', '>=')) {
             $this->upgradeSpecialOutboundsToActions();
+        }
+
+        // >= 1.14.0: remote rule-set 的 download_detour 已废弃（1.16.0 移除），改用 http_clients
+        if (version_compare($coreVersion, '1.14.0', '>=')) {
+            $this->config = self::upgradeRuleSetDownloadDetour($this->config);
         }
 
         // < 1.11.0: rule action 降级为旧出站; 恢复废弃字段
@@ -365,6 +370,57 @@ class SingBox extends AbstractProtocol
         }
 
         return '1.13.0';
+    }
+
+    /**
+     * sing-box >= 1.14.0: remote rule-set 的 download_detour 迁移为 http_client
+     *
+     * 1.14.0 起 download_detour 废弃、1.16.0 移除；未显式配置 http_clients 时使用默认出站下载也已废弃。
+     * 每个不同的 detour 生成一个共享 HTTP client（tag: rule-set-download[-N]），规则集按 tag 引用；
+     * 未设置 route.default_http_client 时指向第一个。模板仍可保持旧写法，< 1.14 的客户端原样下发，
+     * 因为旧内核遇到 http_clients/http_client 字段会拒绝整份配置。
+     * 已有 http_client 的规则集、非 remote 规则集不处理。
+     */
+    public static function upgradeRuleSetDownloadDetour(array $config): array
+    {
+        if (empty($config['route']['rule_set']) || !is_array($config['route']['rule_set'])) {
+            return $config;
+        }
+
+        $clients = [];
+        $existing = array_column($config['http_clients'] ?? [], 'tag');
+        foreach ($config['route']['rule_set'] as &$ruleSet) {
+            if (($ruleSet['type'] ?? '') !== 'remote' || !isset($ruleSet['download_detour'])) {
+                continue;
+            }
+            $detour = $ruleSet['download_detour'];
+            unset($ruleSet['download_detour']);
+            if (isset($ruleSet['http_client'])) {
+                continue;
+            }
+            if (!isset($clients[$detour])) {
+                $tag = 'rule-set-download';
+                for ($i = 2; in_array($tag, $existing, true) || in_array($tag, $clients, true); $i++) {
+                    $tag = 'rule-set-download-' . $i;
+                }
+                $clients[$detour] = $tag;
+            }
+            $ruleSet['http_client'] = $clients[$detour];
+        }
+        unset($ruleSet);
+
+        if (empty($clients)) {
+            return $config;
+        }
+
+        foreach ($clients as $detour => $tag) {
+            $config['http_clients'][] = ['tag' => $tag, 'detour' => $detour];
+        }
+        if (empty($config['route']['default_http_client'])) {
+            $config['route']['default_http_client'] = reset($clients);
+        }
+
+        return $config;
     }
 
     /**
