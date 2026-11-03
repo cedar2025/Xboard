@@ -53,17 +53,42 @@ class DeviceStateService
      */
     public function getNodeDevices(int $nodeId): array
     {
-        $keys = Redis::keys(self::PREFIX . '*');
-        $prefix = "{$nodeId}:";
-        $result = [];
-        foreach ($keys as $key) {
-            $actualKey = $this->removeRedisPrefix($key);
-            $uid = (int) substr($actualKey, strlen(self::PREFIX));
-            $data = Redis::hgetall($actualKey);
-            foreach ($data as $field => $timestamp) {
-                if (str_starts_with($field, $prefix)) {
-                    $ip = substr($field, strlen($prefix));
-                    $result[$uid][] = $ip;
+        return $this->getNodesDevices([$nodeId])[$nodeId];
+    }
+
+    /**
+     * 一次扫描获取多个节点的设备数据
+     * 返回: {nodeId: {userId: [ip1, ip2, ...], ...}, ...}
+     */
+    public function getNodesDevices(array $nodeIds): array
+    {
+        $result = array_fill_keys($nodeIds, []);
+        if (empty($nodeIds)) {
+            return $result;
+        }
+
+        $keys = array_map(fn($key) => $this->removeRedisPrefix($key), Redis::keys(self::PREFIX . '*'));
+        if (empty($keys)) {
+            return $result;
+        }
+
+        // 一次往返取回所有哈希，避免每个在线用户一次请求
+        $hashes = Redis::pipeline(function ($pipe) use ($keys) {
+            foreach ($keys as $key) {
+                $pipe->hgetall($key);
+            }
+        });
+
+        foreach ($keys as $index => $key) {
+            $uid = (int) substr($key, strlen(self::PREFIX));
+            foreach ($hashes[$index] ?: [] as $field => $timestamp) {
+                $separator = strpos($field, ':');
+                if ($separator === false) {
+                    continue;
+                }
+                $nodeId = (int) substr($field, 0, $separator);
+                if (isset($result[$nodeId])) {
+                    $result[$nodeId][$uid][] = substr($field, $separator + 1);
                 }
             }
         }
@@ -91,20 +116,28 @@ class DeviceStateService
      */
     public function clearAllNodeDevices(int $nodeId): array
     {
-        $oldDevices = $this->getNodeDevices($nodeId);
-        $prefix = "{$nodeId}:";
+        return $this->clearNodesDevices([$nodeId]);
+    }
 
-        foreach ($oldDevices as $userId => $ips) {
-            $key = self::PREFIX . $userId;
-            foreach (Redis::hkeys($key) as $field) {
-                if (str_starts_with($field, $prefix)) {
-                    Redis::hdel($key, $field);
-                }
+    /**
+     * 一次扫描清除多个节点的设备数据，受影响用户合并通知
+     * 返回受影响的用户 ID
+     */
+    public function clearNodesDevices(array $nodeIds): array
+    {
+        $affected = [];
+
+        foreach ($this->getNodesDevices($nodeIds) as $nodeId => $devices) {
+            foreach ($devices as $userId => $ips) {
+                $fields = array_map(fn($ip) => "{$nodeId}:{$ip}", $ips);
+                Redis::hdel(self::PREFIX . $userId, ...$fields);
+                $affected[$userId] = true;
             }
-            $this->notifyUpdate($userId);
         }
 
-        return array_keys($oldDevices);
+        $this->notifyUpdates(array_keys($affected));
+
+        return array_keys($affected);
     }
 
     /**
@@ -203,5 +236,26 @@ class DeviceStateService
                     'last_online_at' => now(),
                 ]);
         // }
+    }
+
+    /**
+     * notify update for many users: one statement per distinct device count
+     * instead of one per user
+     */
+    public function notifyUpdates(array $userIds): void
+    {
+        $userIdsByCount = [];
+        foreach ($userIds as $userId) {
+            $userIdsByCount[$this->getDeviceCount($userId)][] = $userId;
+        }
+
+        foreach ($userIdsByCount as $count => $ids) {
+            User::query()
+                ->whereIn('id', $ids)
+                ->update([
+                    'online_count' => $count,
+                    'last_online_at' => now(),
+                ]);
+        }
     }
 }
